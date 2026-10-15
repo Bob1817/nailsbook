@@ -52,7 +52,8 @@ global.wx = {
   navigateTo: (opts) => redirects.push(opts.url),
   setNavigationBarTitle: () => {},
   showLoading: () => {},
-  hideLoading: () => {}
+  hideLoading: () => {},
+  showModal: ({ success }) => success({ confirm: true })
 };
 
 function createPage(name) {

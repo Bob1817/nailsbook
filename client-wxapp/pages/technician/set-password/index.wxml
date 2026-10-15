@@ -25,10 +25,10 @@
 
     <block wx:if="{{phone}}">
       <button wx:if="{{wechatAvailable}}" class="btn-primary wechat-set-btn booking-action" open-type="getPhoneNumber" bindgetphonenumber="onWechatPhone" loading="{{loading}}" disabled="{{loading}}">
-        {{loading ? '设置中...' : '微信授权设置并登录'}}
+        {{loading ? '设置中...' : '验证手机号并登录'}}
       </button>
       <view wx:elif="{{!wechatChecking}}" class="fallback-card">
-        <text class="fallback-text">当前环境暂不支持微信授权验证，请联系客服协助设置密码</text>
+        <text class="fallback-text">当前环境暂不支持手机号快捷验证，请联系客服协助设置密码</text>
         <button class="contact-btn" open-type="contact" show-message-card="true" send-message-title="首次设置密码">联系客服</button>
       </view>
     </block>

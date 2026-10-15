@@ -75,7 +75,14 @@ function normalizeWork(raw, technician, options) {
   // ===== 2. 作品自身标准字段 =====
   const coverUrl = raw.coverUrl || (raw.imageUrls && raw.imageUrls[0]) || '';
   const imageUrls = raw.imageUrls && raw.imageUrls.length ? raw.imageUrls : (coverUrl ? [coverUrl] : []);
-  const tags = Array.isArray(raw.tags) ? raw.tags : [];
+  let rawTags = raw.tags || [];
+  if (typeof rawTags === 'string') {
+    try { rawTags = JSON.parse(rawTags); } catch (error) { rawTags = rawTags.split(/[、，,]/); }
+  }
+  const tags = (Array.isArray(rawTags) ? rawTags : [])
+    .flatMap((tag) => String(tag || '').split(/[、，,]/))
+    .map((tag) => tag.trim())
+    .filter((tag, tagIndex, values) => tag && values.indexOf(tag) === tagIndex);
   const firstTag = tags[0] || (styleTags[index % (styleTags.length || 1)]) || '';
   const duration = raw.duration || [60, 75, 90, 120][index % 4];
   const priceFen = Number(raw.standardPriceFen || raw.serviceSubtotalFen || raw.priceCents || 0);
@@ -102,6 +109,11 @@ function normalizeWork(raw, technician, options) {
     isLiked: !!raw.isLiked,
     isFavorited: !!raw.isFavorited,
     description: raw.description || '',
+    isPinned: !!raw.isPinned,
+    isFeatured: !!raw.isFeatured,
+    heroSlot: raw.heroSlot == null ? null : Number(raw.heroSlot),
+    createdAt: raw.createdAt || '',
+    updatedAt: raw.updatedAt || raw.createdAt || '',
 
     // —— 美甲师信息：嵌套对象（public-work 作品详情页用）——
     technician: {

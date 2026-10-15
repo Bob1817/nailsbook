@@ -202,7 +202,7 @@
 
   <!-- ============ 底部操作 ============ -->
   <view class="bottom-actions">
-    <view class="action-btn action-primary booking-action" bindtap="newOrder" role="button">联系客户发起预约</view>
+    <view class="action-btn action-primary booking-action" bindtap="newOrder" role="button">为客户创建预约</view>
     <view wx:if="{{customer.archiveEligible}}" class="archive-btn {{archiving ? 'is-disabled' : ''}}" role="button" aria-disabled="{{archiving}}" bindtap="archiveCustomer">{{archiving ? '正在归档…' : '归档长期未互动客户'}}</view>
   </view>
 </view>

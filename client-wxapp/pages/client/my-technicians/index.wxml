@@ -14,7 +14,7 @@
   <view class="manager-content">
     <view wx:if="{{loading}}" class="manager-state"><view class="manager-state-mark"></view><text>正在加载美甲师…</text></view>
     <view wx:elif="{{loadFailed}}" class="manager-state"><text class="manager-state-title">美甲师加载失败</text><text class="manager-state-sub">请检查网络后重试</text><button class="booking-action manager-retry" bindtap="loadProfile">重新加载</button></view>
-    <view wx:elif="{{!technicians.length}}" class="manager-state"><image class="manager-empty-icon" src="/static/icons/technician.svg" mode="aspectFit"/><text class="manager-state-title">还没有绑定美甲师</text><text class="manager-state-sub">使用邀请码或从已关注美甲师中发起申请</text><button class="booking-action manager-empty-action" bindtap="openBindModal">绑定美甲师</button></view>
+    <view wx:elif="{{!technicians.length}}" class="manager-state"><image class="manager-empty-icon" src="/static/icons/technician.svg" mode="aspectFit"/><text class="manager-state-title">还没有绑定美甲师</text><text class="manager-state-sub">输入美甲师邀请码即可直接建立关系</text><button class="booking-action manager-empty-action" bindtap="openBindModal">绑定美甲师</button></view>
     <block wx:else>
       <view class="manager-list">
         <view wx:for="{{technicians}}" wx:key="id" class="manager-card {{item.bindingStatus === 'pending' ? 'manager-card-pending' : ''}}">
@@ -66,19 +66,14 @@
       <view class="modal-close" bindtap="closeBindModal">×</view>
     </view>
 
-    <view class="bind-mode-tabs">
-      <view class="bind-mode-tab {{bindMode === 'invite' ? 'bind-mode-tab-active' : ''}}" bindtap="switchBindMode" data-mode="invite">填写邀请码</view>
-      <view class="bind-mode-tab {{bindMode === 'followed' ? 'bind-mode-tab-active' : ''}}" bindtap="switchBindMode" data-mode="followed">从已关注中选择</view>
-    </view>
-
-    <view wx:if="{{bindMode === 'invite'}}" class="modal-body">
+    <view class="modal-body">
       <form-field
         label="邀请码"
         icon="/static/icons/key.svg"
         value="{{inviteCode}}"
         maxlength="{{8}}"
         placeholder="请输入美甲师提供的邀请码"
-        hint="输入美甲师邀请码，提交绑定申请，待其通过后生效"
+        hint="验证邀请码后立即绑定，无需等待美甲师确认"
         error="{{inviteError}}"
         bind:input="onInviteCodeInput"
       >
@@ -105,35 +100,12 @@
         maxlength="100" confirm-type="done" />
     </view>
 
-    <view wx:else class="modal-body">
-      <view wx:if="{{followedLoading}}" class="followed-state">正在加载已关注美甲师…</view>
-      <view wx:elif="{{followedTechnicians.length === 0}}" class="followed-state">暂无可申请绑定的已关注美甲师</view>
-      <view wx:else class="followed-list">
-        <view wx:for="{{followedTechnicians}}" wx:key="id" class="followed-item {{selectedFollowedTech && selectedFollowedTech.id === item.id ? 'followed-item-active' : ''}} {{item.bindingStatus === 'pending' ? 'followed-item-pending' : ''}}" bindtap="selectFollowedTech" data-id="{{item.id}}">
-          <image wx:if="{{item.avatarUrl}}" class="followed-avatar" src="{{item.avatarUrl}}" mode="aspectFill"/>
-          <view wx:else class="followed-avatar followed-avatar-fallback"><image src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" /></view>
-          <view class="followed-info"><text class="found-name">{{item.name}}</text><text class="found-city">{{item.city || '暂未填写服务城市'}}</text></view>
-          <text class="followed-status">{{item.bindingStatus === 'pending' ? '审核中' : (selectedFollowedTech && selectedFollowedTech.id === item.id ? '已选择' : '选择')}}</text>
-        </view>
-      </view>
-      <textarea wx:if="{{selectedFollowedTech}}" class="bind-note-input" value="{{bindNote}}" bindinput="onBindNoteInput" placeholder="给美甲师留言（可选）" maxlength="100" confirm-type="done" />
-      <text class="field-hint">提交后将发送系统提醒，美甲师可在消息中同意或拒绝。</text>
-    </view>
-
     <view class="bind-modal-actions">
       <action-button
-        wx:if="{{bindMode === 'invite'}}"
-        label="申请绑定"
+        label="确认绑定"
         loading="{{binding}}"
         disabled="{{!foundTech}}"
         bind:tap="bindTechnician"
-      />
-      <action-button
-        wx:else
-        label="申请绑定"
-        loading="{{binding}}"
-        disabled="{{!selectedFollowedTech}}"
-        bind:tap="requestFollowedBinding"
       />
     </view>
   </view>

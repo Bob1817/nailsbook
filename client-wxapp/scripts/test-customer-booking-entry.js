@@ -7,13 +7,13 @@ vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../pages/technician/cus
   require: () => ({}), Page: value => { page = value; }, Date,
   wx: { navigateTo: value => { destination = value.url; }, showToast: value => { toast = value.title; } }
 });
-const context = { customerId: 10, data: { customer: { clientUserId: 71, _displayName: '客户 A' } } };
+const context = { customerId: 10, data: { customer: { id: 10, clientUserId: 71, _displayName: '客户 A' } } };
 page.newOrder.call(context);
-assert(destination.includes('clientId=71&'));
-assert(!destination.includes('clientId=10&'), '档案ID不能当作聊天账号ID');
+assert(destination.includes('customerId=10'), '创建预约必须传客户档案 ID，由后端核验其绑定账号');
+assert(!destination.includes('clientId='), '创建预约页不直接接收可伪造的客户账号 ID');
 destination = '';
 context.data.customer.clientUserId = null;
 page.newOrder.call(context);
 assert.equal(destination, '', '无账号客户不得进入错误聊天');
 assert(toast.includes('尚未关联'));
-console.log('客户预约联系入口：账号ID与档案ID分离、未关联账号拦截通过');
+console.log('美甲师代客预约入口：客户档案与账号关联校验通过');

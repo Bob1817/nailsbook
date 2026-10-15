@@ -63,6 +63,7 @@ Page({
     scheduleSummary: '工作时间加载中',
     capacitySummary: '每日最多 2 位 · 每单预留 60 分钟',
     showCapacityModal: false,
+    showSwitchAccountDialog: false,
     savingCapacity: false,
     dailyBookingLimit: 2,
     appointmentBufferMinutes: 60,
@@ -75,6 +76,7 @@ Page({
     needsSetup: false,       // shopService 未配置时显示引导卡
     shopServiceOn: false,
     setupSteps: [],
+    growthSteps: [],
 
     // 服务类型引导弹窗（仅工作时间设置时触发）
     showServiceTypeModal: false,
@@ -209,13 +211,28 @@ Page({
     ];
     const canAcceptOrders = serviceReady && shopReady && scheduleReady;
     this.setData({ userInfo, shopServiceOn, needsSetup: !canAcceptOrders, canAcceptOrders, setupSteps });
+    this.refreshGrowthSteps();
     this.computeAccepting();
+  },
+
+  refreshGrowthSteps() {
+    const userInfo = this.data.userInfo || {};
+    const stats = this.data.stats || {};
+    const homepageReady = !!(userInfo.name && userInfo.avatarUrl && (userInfo.bio || userInfo.city));
+    this.setData({ growthSteps: [
+      { key: 'homepage', label: '建立个人品牌', hint: homepageReady ? '主页形象与公开资料已完善' : '完善头像、简介与服务区域', done: homepageReady, route: 'homepage' },
+      { key: 'works', label: '管理并宣传作品', hint: Number(stats.works) > 0 ? `已有 ${stats.works} 个作品` : '发布首个作品并分享获客', done: Number(stats.works) > 0, route: 'works' },
+      { key: 'customers', label: '管理客户与预约', hint: Number(stats.customers) > 0 ? `已有 ${stats.customers} 位客户` : '邀请客户绑定并发起预约', done: Number(stats.customers) > 0, route: 'customers' }
+    ] });
   },
 
   goSetupStep(e) {
     const route = e.currentTarget.dataset.route;
     if (route === 'schedule') return this.openScheduleModal();
     if (route === 'shops') return wx.navigateTo({ url: '/pages/technician/shop-management/index' });
+    if (route === 'homepage') return wx.navigateTo({ url: '/pages/technician/homepage-settings/index' });
+    if (route === 'works') return wx.reLaunch({ url: '/pages/technician/works/index' });
+    if (route === 'customers') return wx.reLaunch({ url: '/pages/technician/customers/index' });
     wx.navigateTo({ url: '/pages/technician/services/index' });
   },
 
@@ -381,6 +398,7 @@ Page({
             count: byStatus[item.status] || 0
           }))
         });
+        this.refreshGrowthSteps();
         return;
       }
 
@@ -442,6 +460,7 @@ Page({
         },
         orderShortcuts
       });
+      this.refreshGrowthSteps();
     } finally {
       this._statsLoading = false;
     }
@@ -502,8 +521,8 @@ Page({
       return { title: `${u.name || '美甲师'}邀请你成为专属客户`, path: `/pages/login/index?invite=${encodeURIComponent(code)}&source=invite`, imageUrl: u.avatarUrl || '' };
     }
     return {
-      title: `美甲师 ${u.name || '小美'} 的名片`,
-      path: u.id ? `/pages/client/works/index?techId=${u.id}&source=card` : (code ? `/pages/client/login/index?invite=${code}` : '/pages/login/index'),
+      title: require('../../../utils/share-copy').buildArtistShareTitle(u),
+      path: u.id ? `/pages/client/artist-home/index?id=${u.id}&source=card` : (code ? `/pages/login/index?invite=${code}` : '/pages/login/index'),
       imageUrl: u.avatarUrl || ''
     };
   },
@@ -883,38 +902,19 @@ Page({
   navigateToHelp() { wx.navigateTo({ url: '/pages/technician/help-feedback/index' }); },
   navigateToAbout() { wx.navigateTo({ url: '/pages/technician/about/index' }); },
 
-  async switchRole() {
-    if (this._switchingRole) return;
-    this._switchingRole = true;
-    const app = getApp();
-    try {
-      if (!app.switchRole('client')) {
-        wx.showLoading({ title: '切换中...' });
-        const res = await api.technician.auth.switchToClient();
-        app.setLogin('client', res.accessToken, res.client, res.roles || ['client', 'technician']);
-        if (res.refreshToken) wx.setStorageSync('client_refreshToken', res.refreshToken);
-      }
-      wx.hideLoading();
-      wx.reLaunch({ url: '/pages/client/home/index' });
-    } catch (err) {
-      wx.hideLoading();
-      wx.showToast({ title: err.message || '切换失败，请重试', icon: 'none' });
-    } finally {
-      this._switchingRole = false;
-    }
-  },
 
   switchAccount() {
-    wx.showModal({
-      title: '切换账号',
-      content: '将退出当前账号并返回登录页，是否继续？',
-      confirmText: '继续切换',
-      success: (res) => {
-        if (!res.confirm) return;
-        getApp().logout();
-        wx.reLaunch({ url: '/pages/login/index' });
-      }
-    });
+    this.setData({ showSwitchAccountDialog: true });
+  },
+
+  closeSwitchAccountDialog() {
+    this.setData({ showSwitchAccountDialog: false });
+  },
+
+  confirmSwitchAccount() {
+    this.setData({ showSwitchAccountDialog: false });
+    getApp().logout();
+    wx.reLaunch({ url: '/pages/login/index' });
   },
 
   logout() {

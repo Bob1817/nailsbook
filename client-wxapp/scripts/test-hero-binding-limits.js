@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const root = path.join(__dirname, '..');
-const { bindingSummary, normalizeBindings } = require('../utils/client-bindings');
+const { bindingSummary, normalizeBindings } = require('../pages/client/utils/client-bindings');
 const summary = bindingSummary(normalizeBindings([
   ...Array.from({length: 5}, (_, i) => ({ id: i + 1, name: '美甲师' + i, isDefault: i === 0, boundAt: '2026-09-0' + (i + 1), relationship: i === 0 ? { completedVisits: 4, savedAmountFen: 1200 } : undefined })),
   {id: 9, name: '待审核', bindingStatus: 'pending'}

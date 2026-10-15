@@ -21,11 +21,17 @@ page {
   padding: calc(24px + env(safe-area-inset-top)) var(--space-xl) calc(var(--space-xl) + env(safe-area-inset-bottom));
 }
 
+.quick-login-root {
+  justify-content: flex-start;
+}
+
 .login-stack {
+  flex: 1;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
 }
 
 /* ===== WeChat 登录屏 ===== */
@@ -59,13 +65,17 @@ page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-md);
+  gap: var(--space-sm);
 }
 
-/* WeChat 登录按钮：主操作，石墨底白字 */
+/* 快捷登录按钮：主操作，石墨底白字 */
 .wechat-btn {
   width: 100%;
-  height: var(--btn-height);
+  height: 52px;
+  min-height: 52px;
+  margin: 0;
+  padding: 0 var(--space-lg);
+  box-sizing: border-box;
   border-radius: var(--btn-radius);
   background: var(--nb-action);
   border: 0;
@@ -83,12 +93,6 @@ page {
 
 .wechat-btn:active {
   opacity: 0.88;
-}
-
-.wechat-btn-icon {
-  width: 36rpx;
-  height: 36rpx;
-  flex-shrink: 0;
 }
 
 .wechat-unavailable {
@@ -112,13 +116,23 @@ page {
   padding: 0 var(--space-sm);
 }
 
+.login-footer {
+  width: 100%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .guest-entry { min-height:88rpx; display:flex; align-items:center; justify-content:center; color:var(--nb-secondary); font-size:28rpx; }
 
 .alt-login:active { opacity: 0.6; }
 
 .wechat-privacy-consent {
   width: 100%;
-  margin-top: var(--space-xl);
+  min-height: 44px;
+  margin-top: 0;
+  padding: 0;
   justify-content: center;
 }
 
@@ -320,6 +334,6 @@ page {
 @import '../../styles/booking-actions.wxss';
 .wechat-btn.booking-action,
 .submit-btn.booking-action { height: var(--control-hit-height); min-height: 44px; border-radius: 8px; font-size: var(--font-sm); box-shadow: none; }
-.wechat-btn.booking-action { background: var(--nb-action); color: var(--nb-inverse); }
+.wechat-btn.booking-action { height: 52px; min-height: 52px; background: var(--nb-action); color: var(--nb-inverse); }
 .submit-btn.booking-action { background: var(--nb-soft-surface); color: var(--nb-secondary); }
 .submit-btn.booking-action.submit-btn-active { background: var(--nb-action); color: var(--text-inverse); }

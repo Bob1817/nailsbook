@@ -7,6 +7,9 @@ module.exports = {
   bookingHourBeforeTemplateId: '',
   bookingClientSuccessTemplateId: '',
   bookingTechnicianNewTemplateId: '',
+  bookingClientStatusTemplateId: '',
+  bookingTechnicianStatusTemplateId: '',
+  consultationReplyTemplateId: '',
   // 上线前按营业执照、个体工商户执照和小程序备案信息如实填写。
   operatorName: '',
   storeName: '',

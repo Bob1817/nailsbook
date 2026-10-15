@@ -8,7 +8,7 @@ const {
   normalizeOrder,
   decorateTechnicianOrder
 } = require('../../../utils/order');
-const { technicianBookingCardHandlers = {} } = require('../../../utils/technician-booking-actions');
+const { technicianBookingCardHandlers = {} } = require('../utils/technician-booking-actions');
 
 // 行程状态：已确认排期 / 进行中（完成预约但未做完美甲）
 const TRIP_STATUSES = ['pending_shop', 'in_progress'];

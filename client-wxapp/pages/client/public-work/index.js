@@ -3,6 +3,8 @@ const { parseWorkScene } = require('../../../utils/work-share-scene');
 const { trackConversion } = require('../../../utils/conversion-tracking');
 const { normalizeWork, normalizeWorkDetail } = require('../../../utils/normalize-work');
 const { buildClientLoginUrl } = require('../../../utils/artist-navigation');
+const { rememberShareRegistration } = require('../../../utils/work-share-registration');
+const { buildWorkShareTitle } = require('../../../utils/share-copy');
 
 Page({
   data: {
@@ -21,23 +23,18 @@ Page({
   },
 
   onLoad(options) {
-    this.shareChannel = options.scene || options.channel === 'wechat_moments' ? 'wechat_moments' : 'wechat_share';
+    this.shareChannel = options.channel === 'wechat_moments' ? 'wechat_moments' : 'wechat_share';
+    this.entrySource = options.source || 'work_share';
     if (options.scene) options = parseWorkScene(options.scene) || {};
+    this.inviteCode = options.invite ? decodeURIComponent(options.invite) : '';
+    if (wx.showShareMenu) {
+      wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
+    }
     if (!options.shareToken && !options.id) {
       this.setData({ loading: false, error: true, errorMessage: '分享链接无效', errorDescription: '链接信息不完整，请返回浏览，或请分享者重新发送作品链接。', canRetry: false });
       return;
     }
-    // 分享作品需先登录，并保留令牌、作品 ID 与预约意图。
     const token = wx.getStorageSync('token') || wx.getStorageSync('client_token') || wx.getStorageSync('technician_token');
-    if (!token) {
-      const query = options.shareToken
-        ? 'shareToken=' + encodeURIComponent(options.shareToken)
-        : 'id=' + encodeURIComponent(options.id);
-      const returnPath = '/pages/client/public-work/index?' + query +
-        (options.book === '1' ? '&book=1' : '') + '&channel=' + this.shareChannel;
-      wx.redirectTo({ url: buildClientLoginUrl(returnPath, { source: 'work_share' }) });
-      return;
-    }
     this.setData({ isLoggedIn: !!token });
     this._techId = null; // 缓存美甲师 ID，登录绑定时使用
     this.resumeBooking = options.book === '1';
@@ -66,6 +63,7 @@ Page({
       };
       const techId = rawWork.technicianId || (rawWork.technician && (rawWork.technician.id || rawWork.technician.technicianId));
       this._techId = techId || null;
+      this.inviteCode = this.inviteCode || (rawWork.technician && rawWork.technician.invitationCode) || '';
       const app = getApp();
       const role = wx.getStorageSync('role') || (app.globalData && app.globalData.role);
       const currentTechnician = wx.getStorageSync('technician_userInfo') || wx.getStorageSync('userInfo') || (app.globalData && app.globalData.userInfo) || {};
@@ -84,6 +82,7 @@ Page({
               city: artist.city || '',
               bio: artist.bio || '',
               acceptingBookings: artist.acceptingBookings !== false,
+              invitationCode: artist.invitationCode || this.inviteCode,
               shops: (artist.shopAddresses || []).filter(shop => shop && shop.enabled !== false).map(shop => ({
                 name: shop.name || '服务店铺',
                 address: [shop.province, shop.city, shop.district, shop.detailAddress].filter(Boolean).join(' '),
@@ -92,6 +91,7 @@ Page({
                 longitude: shop.longitude
               }))
             };
+            this.inviteCode = this.inviteCode || artist.invitationCode || '';
             artist.styleTags = (artist.styleTags || artist.specialties || []).slice(0, 5);
             artist.specialtiesText = artist.specialtiesText || (artist.styleTags.length ? artist.styleTags.slice(0, 2).join(' · ') : '');
             techSnapshot = {
@@ -185,7 +185,12 @@ Page({
   },
 
   goToLogin() {
-    wx.navigateTo({ url: '/pages/client/login/index' });
+    wx.navigateTo({
+      url: buildClientLoginUrl(this.publicWorkPath(false), {
+        source: 'work_share',
+        inviteCode: this.inviteCode
+      })
+    });
   },
 
   // 未登录：联系该美甲师 → 跳转登录，登录后自动绑定并进入对话
@@ -193,15 +198,20 @@ Page({
     const techId = this._techId;
     if (!techId) return wx.showToast({ title: '美甲师信息不完整', icon: 'none' });
     const returnPath = `/pages/client/chat-detail/index?techId=${techId}`;
-    wx.navigateTo({ url: buildClientLoginUrl(returnPath, { source: 'work_share' }) + '&techId=' + techId + '&action=chat' });
+    wx.navigateTo({
+      url: buildClientLoginUrl(returnPath, {
+        source: 'work_share',
+        inviteCode: this.inviteCode
+      }) + '&techId=' + techId + '&action=chat'
+    });
   },
 
-  // 未登录：查看更多作品 → 跳转登录，登录后自动绑定并进入作品列表
+  // 公开作品和美甲师主页允许游客继续浏览；账户操作再要求登录。
   viewMoreWorks() {
     const techId = this._techId;
     if (!techId) return wx.showToast({ title: '美甲师信息不完整', icon: 'none' });
-    const returnPath = `/pages/client/works/index?techId=${techId}`;
-    wx.navigateTo({ url: buildClientLoginUrl(returnPath, { source: 'work_share' }) + '&techId=' + techId + '&action=works' });
+    const invite = this.inviteCode ? '&invite=' + encodeURIComponent(this.inviteCode) : '';
+    wx.navigateTo({ url: `/pages/client/artist-home/index?id=${techId}&source=${encodeURIComponent(this.entrySource || 'work_share')}${invite}` });
   },
 
   async bookSameStyle() {
@@ -213,14 +223,57 @@ Page({
     }
     this._bookingOpening = true;
     try {
-    trackConversion({ eventType: 'booking_intent', workId: work.id, technicianId: work.technicianId || (work.technician || {}).id, channel: this.shareChannel || 'wechat_share', touchpoint: 'work_share', shareToken: this.shareToken });
-    const techId = work.technicianId || (work.technician || {}).id;
-    if (!techId) return wx.showToast({ title: '作品美甲师信息不完整', icon: 'none' });
-    const shareQuery = this.shareToken ? '&shareToken=' + encodeURIComponent(this.shareToken) : '';
-    wx.navigateTo({ url: '/pages/client/create-order/index?workId=' + work.id + '&techId=' + techId + shareQuery + '&source=work_share' });
+      trackConversion({ eventType: 'booking_intent', workId: work.id, technicianId: work.technicianId || (work.technician || {}).id, channel: this.shareChannel || 'wechat_share', touchpoint: 'work_share', shareToken: this.shareToken });
+      const techId = work.technicianId || (work.technician || {}).id;
+      if (!techId) return wx.showToast({ title: '作品美甲师信息不完整', icon: 'none' });
+      if (this.data.visitorInfo && this.data.visitorInfo.acceptingBookings === false) {
+        return wx.showToast({ title: '这位美甲师暂未接单', icon: 'none' });
+      }
+      const app = getApp();
+      const role = app.globalData.role || wx.getStorageSync('role');
+      const token = app.globalData.token || wx.getStorageSync('token');
+      if (role === 'technician') {
+        return wx.showToast({ title: '美甲师账号不能以客户身份预约', icon: 'none' });
+      }
+      if (!token || role !== 'client') {
+        const redirect = this.publicWorkPath(true);
+        rememberShareRegistration({
+          shareWorkId: Number(work.id),
+          shareToken: this.shareToken,
+          shareChannel: this.shareChannel
+        }, redirect);
+        wx.navigateTo({
+          url: buildClientLoginUrl(redirect, {
+            source: 'work_share',
+            inviteCode: this.inviteCode,
+            quickBookingTechId: techId
+          })
+        });
+        return;
+      }
+      wx.showLoading({ title: '正在关联美甲师', mask: true });
+      await api.client.profile.bindSharedWork(Number(work.id), this.shareToken);
+      wx.hideLoading();
+      const shareQuery = this.shareToken ? '&shareToken=' + encodeURIComponent(this.shareToken) : '';
+      const inviteQuery = this.inviteCode ? '&invite=' + encodeURIComponent(this.inviteCode) : '';
+      wx.navigateTo({ url: '/pages/client/create-order/index?workId=' + work.id + '&techId=' + techId + shareQuery + inviteQuery + '&source=work_share' });
+    } catch (err) {
+      wx.hideLoading();
+      wx.showToast({ title: err.message || '关联美甲师失败，请重试', icon: 'none' });
     } finally {
       this._bookingOpening = false;
     }
+  },
+
+  publicWorkPath(book) {
+    const params = [];
+    if (this.shareToken) params.push('shareToken=' + encodeURIComponent(this.shareToken));
+    else params.push('id=' + encodeURIComponent((this.data.work || {}).id || this.workId));
+    if (this.inviteCode) params.push('invite=' + encodeURIComponent(this.inviteCode));
+    if (book) params.push('book=1');
+    params.push('source=' + encodeURIComponent(this.entrySource || 'work_share'));
+    params.push('channel=' + encodeURIComponent(this.shareChannel || 'wechat_share'));
+    return '/pages/client/public-work/index?' + params.join('&');
   },
 
   editWork() {
@@ -232,7 +285,10 @@ Page({
   goToArtist() {
     const work = this.data.work || {};
     const technicianId = work.technicianId || (work.technician && work.technician.id);
-    if (technicianId) wx.navigateTo({ url: `/pages/client/artist-home/index?id=${technicianId}` });
+    if (technicianId) {
+      const invite = this.inviteCode ? '&invite=' + encodeURIComponent(this.inviteCode) : '';
+      wx.navigateTo({ url: `/pages/client/artist-home/index?id=${technicianId}&source=${encodeURIComponent(this.entrySource || 'work_share')}${invite}` });
+    }
   },
 
   goToCommentArtist(e) {
@@ -242,11 +298,20 @@ Page({
 
   onShareAppMessage() {
     const work = this.data.work || {};
+    trackConversion({ eventType:'work_share_intent', workId:work.id, technicianId:work.technicianId || (work.technician || {}).id, channel:'wechat_share', touchpoint:'work_share', shareToken:this.shareToken });
     return {
-      title: work.title || '美甲作品',
-      path: this.shareToken
-        ? `/pages/client/public-work/index?shareToken=${this.shareToken}`
-        : `/pages/client/public-work/index?id=${this.workId}`,
+      title: buildWorkShareTitle(work, this.data.visitorInfo),
+      path: this.publicWorkPath(false),
+      imageUrl: work.imageUrls && work.imageUrls[0]
+    };
+  },
+
+  onShareTimeline() {
+    const work = this.data.work || {};
+    trackConversion({ eventType:'work_share_intent', workId:work.id, technicianId:work.technicianId || (work.technician || {}).id, channel:'wechat_moments', touchpoint:'work_share', shareToken:this.shareToken });
+    return {
+      title: buildWorkShareTitle(work, this.data.visitorInfo),
+      query: this.publicWorkPath(false).split('?')[1].replace(/channel=[^&]+/, 'channel=wechat_moments'),
       imageUrl: work.imageUrls && work.imageUrls[0]
     };
   }

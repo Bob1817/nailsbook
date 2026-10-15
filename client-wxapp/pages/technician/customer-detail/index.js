@@ -1,7 +1,7 @@
 const api = require('../../../services/api');
 const { formatMoney, formatBookingDate, parseDate } = require('../../../utils/format');
 const { decorateTechnicianOrder } = require('../../../utils/order');
-const { technicianBookingCardHandlers = {} } = require('../../../utils/technician-booking-actions');
+const { technicianBookingCardHandlers = {} } = require('../utils/technician-booking-actions');
 
 const LIFECYCLE_LABELS = {
   new: '新客',
@@ -313,7 +313,7 @@ Page({
       return;
     }
     wx.navigateTo({
-      url: `/pages/technician/chat-detail/index?clientId=${customer.clientUserId}&clientName=${encodeURIComponent(customer._displayName || customer.name || '客户')}`
+      url: `/pages/technician/create-order/index?customerId=${customer.id}`
     });
   },
 

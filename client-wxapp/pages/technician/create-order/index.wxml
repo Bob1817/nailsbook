@@ -1,0 +1,37 @@
+<nav-bar title="创建预约" showBack titleCenter />
+<view class="booking-page">
+  <text wx:if="{{loading}}">正在加载…</text>
+  <view wx:elif="{{error}}"><text>{{error}}</text><button class="booking-action" bindtap="load">重新加载</button></view>
+  <block wx:else>
+    <view class="section">
+      <text class="section-title">选择客户</text>
+      <input class="form-input" value="{{search}}" bindinput="onSearch" bindconfirm="searchCustomers" placeholder="搜索客户姓名或手机号" confirm-type="search" />
+      <button class="booking-action" bindtap="searchCustomers">搜索客户</button>
+      <text wx:if="{{customer}}" class="section-sub">已选：{{customer.accountName || customer.name}}</text>
+      <button wx:for="{{customers}}" wx:key="id" class="customer-button booking-action {{customer.id === item.id ? 'selected' : ''}}" data-id="{{item.id}}" bindtap="selectCustomer">{{item.accountName || item.name}} · {{item.phone}}</button>
+      <text wx:if="{{!customers.length}}" class="section-sub">暂无可选客户，仅可为已有效绑定的客户发起预约</text>
+      <button wx:if="{{moreCustomers}}" class="booking-action" bindtap="moreCustomers">加载更多客户</button>
+    </view>
+    <view class="section">
+      <text class="section-title">服务与报价</text>
+      <checkbox-group bindchange="selectServices"><label class="service-choice" wx:for="{{services}}" wx:key="id"><checkbox value="{{item.id}}" />{{item.name}} · ¥{{item.price}}</label></checkbox-group>
+      <text class="section-sub">也可填写本次定制服务</text>
+      <input class="form-input" value="{{serviceNames}}" bindinput="onServiceName" placeholder="服务内容" />
+      <text class="field-label">预估时长（分钟）</text><input class="form-input" type="number" value="{{duration}}" bindinput="onDuration" />
+      <text class="field-label">最终报价（元）</text><input class="form-input" type="digit" value="{{price}}" bindinput="onPrice" placeholder="请输入报价" />
+    </view>
+    <view class="section">
+      <text class="section-title">门店与时间</text>
+      <picker wx:if="{{shops.length}}" range="{{shops}}" range-key="name" bindchange="selectShop"><view class="form-input picker-value">{{shop.name || '选择门店'}} ›</view></picker>
+      <text wx:else class="section-sub">请先在店铺管理中设置可用门店</text>
+      <booking-time-picker wx:if="{{shop}}" horizontal tech-id="{{technician.id}}" service-date="{{serviceDate}}" start-time="{{startTime}}" service-type="到店美甲" shop-name="{{shop.name}}" duration-minutes="{{duration}}" bindchange="onTimeChange" bindavailability="onAvailability" />
+    </view>
+    <view class="section">
+      <text class="section-title">参考图片与备注</text>
+      <view class="reference" wx:for="{{images}}" wx:key="*this"><image src="{{item}}" mode="aspectFill"/><button class="booking-action" data-index="{{index}}" bindtap="removeImage">移除</button></view>
+      <button wx:if="{{images.length < 6}}" class="booking-action" loading="{{uploading}}" bindtap="addImages">添加参考图片</button>
+      <textarea class="remark-input" value="{{note}}" bindinput="onNote" placeholder="填写服务说明或备注" maxlength="500" />
+    </view>
+    <view class="submit-bar"><text class="section-sub">发送报价后，客户确认才正式成立预约</text><button class="submit-btn booking-action" loading="{{submitting}}" disabled="{{submitting || uploading}}" bindtap="submit">提交报价给客户确认</button></view>
+  </block>
+</view>

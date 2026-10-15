@@ -40,9 +40,9 @@
   </view>
 
   <view class="section" wx:if="{{selectedTech && quickMode}}">
-    <view class="section-head quick-time-head">
+    <view class="section-head section-head-inline quick-time-head">
       <text class="section-title">预约时间</text>
-      <text class="section-sub">先申请时间，美甲师确认后生效；款式、价格和时长可稍后沟通</text>
+      <text class="section-sub section-sub-inline">先选时间，确认后生效</text>
     </view>
     <booking-time-picker
       horizontal
@@ -61,15 +61,20 @@
 
   <!-- 服务内容 -->
   <view class="section service-selection-section" wx:if="{{selectedTech}}">
-    <view class="section-head">
-      <text class="section-title">{{sourceWork ? '服务项目' : quickMode ? '补充款式参考（选填）' : '选择服务 · 可多选'}}</text>
-      <view wx:if="{{quickMode && !sourceWork}}" class="section-head-action" bindtap="toggleQuickRef" role="button" aria-label="{{showQuickRef ? '收起' : '展开'}}款式参考">
-        <text class="section-head-action-text">{{showQuickRef ? '收起' : '展开'}}</text>
-        <text class="section-head-action-arrow">{{showQuickRef ? '‹' : '›'}}</text>
-      </view>
+    <view class="section-head {{quickMode ? 'section-head-inline' : ''}}">
+      <text class="section-title">{{sourceWork ? (quickMode ? '预约同款' : '服务项目') : quickMode ? '款式参考' : '选择服务 · 可多选'}}</text>
+      <text wx:if="{{quickMode}}" class="section-sub section-sub-inline">{{sourceWork ? '已选择同款' : '选填，可稍后沟通'}}</text>
     </view>
 
-    <view wx:if="{{lastServiceHint && !sourceWork}}" class="last-service-hint">{{lastServiceHint}}</view>
+    <view wx:if="{{quickMode && !sourceWork}}" class="quick-ref-trigger" bindtap="toggleQuickRef" role="button" aria-expanded="{{showQuickRef}}" aria-label="{{showQuickRef ? '收起' : '展开'}}款式参考">
+      <view class="quick-ref-copy">
+        <text class="quick-ref-title">{{showQuickRef ? '收起款式参考' : '填写款式参考'}}</text>
+        <text class="quick-ref-meta">自定义需求或选择预约同款</text>
+      </view>
+      <text class="quick-ref-arrow {{showQuickRef ? 'quick-ref-arrow-open' : ''}}">›</text>
+    </view>
+
+    <view wx:if="{{lastServiceHint && !sourceWork && (!quickMode || showQuickRef)}}" class="last-service-hint">{{lastServiceHint}}</view>
 
     <!-- 切换：选服务项目 / 自定义需求 -->
     <view wx:if="{{!sourceWork && !quickMode}}" class="segment-wrap content-segment">
@@ -102,7 +107,6 @@
       <text wx:if="{{!sourceWork.pricingReady}}" class="section-sub">价格与服务时长待美甲师确认</text>
     </view>
 
-    <text wx:if="{{quickMode && (!sourceWork || referenceOnly)}}" class="section-sub">此项可跳过，不影响提交时间申请</text>
     <!-- 自定义需求表单 -->
     <view wx:if="{{isCustomService && !sourceWork && (showQuickRef || !quickMode)}}" class="custom-form">
       <view class="form-field" wx:if="{{!quickMode}}">
@@ -130,13 +134,13 @@
       <!-- 参考作品 -->
       <view class="form-field" wx:if="{{techWorks.length > 0}}">
         <view class="form-label-row">
-          <text class="form-label">参考作品（可选）</text>
+          <text class="form-label">{{quickMode ? '预约同款（可选）' : '参考作品（可选）'}}</text>
           <text class="form-label-count">{{selectedWorkIds.length}}/3</text>
         </view>
         <view class="work-picker-trigger" bindtap="toggleWorkSelector" role="button" aria-label="{{showWorkSelector ? '收起作品选择' : '选择参考作品'}}">
           <image class="work-picker-icon" src="/static/icons/image.svg" mode="aspectFit" />
           <view class="work-picker-copy">
-            <text class="work-picker-title">{{showWorkSelector ? '收起作品选择' : '从美甲师作品中选择'}}</text>
+            <text class="work-picker-title">{{showWorkSelector ? '收起作品选择' : quickMode ? '选择预约同款' : '从美甲师作品中选择'}}</text>
             <text class="work-picker-meta">{{selectedWorkIds.length > 0 ? '已选 ' + selectedWorkIds.length + ' 个，还可选 ' + (3 - selectedWorkIds.length) + ' 个' : '选择接近你需求的款式作为参考'}}</text>
           </view>
           <image class="work-picker-arrow {{showWorkSelector ? 'work-picker-arrow-open' : ''}}" src="/static/icons/arrow-right.svg" mode="aspectFit" />
@@ -244,7 +248,35 @@
 
   <!-- 提交栏 -->
   <view class="submit-bar {{hasPriceContent ? 'submit-bar-split' : ''}}" wx:if="{{selectedTech}}">
-    <view class="submit-price-col {{hasPriceContent ? 'submit-price-col-visible' : ''}}">
+    <view class="booking-summary">
+      <text class="booking-summary-title">预约信息</text>
+      <view class="booking-summary-grid">
+        <view wx:if="{{selectedTech.name}}" class="booking-summary-item">
+          <text class="booking-summary-label">美甲师</text>
+          <text class="booking-summary-value">{{selectedTech.name}}</text>
+        </view>
+        <view wx:if="{{serviceDate && startTime}}" class="booking-summary-item">
+          <text class="booking-summary-label">时间</text>
+          <text class="booking-summary-value">{{serviceDate}} {{startTime}}</text>
+        </view>
+        <view wx:if="{{selectedShopName}}" class="booking-summary-item">
+          <text class="booking-summary-label">门店</text>
+          <text class="booking-summary-value">{{selectedShopName}}</text>
+        </view>
+        <view wx:if="{{serviceType}}" class="booking-summary-item">
+          <text class="booking-summary-label">形式</text>
+          <text class="booking-summary-value">{{serviceType}}</text>
+        </view>
+        <block wx:for="{{serviceOptions}}" wx:key="key">
+          <view wx:if="{{item.key === selectedServiceOptionKey && item.detail}}" class="booking-summary-item booking-summary-address">
+            <text class="booking-summary-label">地址</text>
+            <text class="booking-summary-value">{{item.detail}}</text>
+          </view>
+        </block>
+      </view>
+    </view>
+    <view class="submit-action-row">
+      <view class="submit-price-col {{hasPriceContent ? 'submit-price-col-visible' : ''}}">
       <!-- 有服务内容时：展示价格 -->
       <block wx:if="{{sourceWork}}">
         <view class="submit-price-row" wx:if="{{sourceWork.pricingReady && !referenceOnly && sourceWork.standardPriceFen !== sourceWork.serviceSubtotalFen}}">
@@ -272,9 +304,10 @@
       <view wx:if="{{hasPriceContent && depositMode !== 'none'}}" class="submit-price-note">
         定金 {{depositText}}
       </view>
-    </view>
-    <view class="submit-btn {{hasPriceContent ? 'submit-btn-compact' : 'submit-btn-full'}} {{submitting || bookingPaused || !bookingReady ? 'btn-disabled' : ''}}" bindtap="handleSubmit">
-      <text>{{bookingPaused ? '暂停接单' : submitting ? '提交中...' : quickMode ? '提交申请' : isCustomService ? '提交需求' : '确认预约'}}</text>
+      </view>
+      <view class="submit-btn {{hasPriceContent ? 'submit-btn-compact' : 'submit-btn-full'}} {{submitting || bookingPaused || !bookingReady ? 'btn-disabled' : ''}}" bindtap="handleSubmit">
+        <text>{{bookingPaused ? '暂停接单' : submitting ? '提交中...' : quickMode ? '提交申请' : isCustomService ? '提交需求' : '确认预约'}}</text>
+      </view>
     </view>
   </view>
 

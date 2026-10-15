@@ -83,24 +83,6 @@ Page({
     this.setData({ isDefault: e.detail.value });
   },
 
-  // 微信选择地址
-  chooseLocation() {
-    wx.chooseLocation({
-      success: (res) => {
-        // res.name, res.address, res.latitude, res.longitude
-        // 简单解析省市区（实际项目可接腾讯地图逆地理编码）
-        this.setData({
-          detailAddress: res.address || '',
-          province: '',
-          city: res.city || '',
-          district: '',
-          _latitude: res.latitude,
-          _longitude: res.longitude
-        });
-      }
-    });
-  },
-
   validate() {
     const { contactName, contactPhone, province, city, detailAddress } = this.data;
     if (!contactName.trim()) { wx.showToast({ title: '请输入联系人姓名', icon: 'none' }); return false; }
@@ -112,7 +94,7 @@ Page({
   async handleSubmit() {
     if (!this.validate() || this.data.submitting) return;
 
-    const { contactName, contactPhone, province, city, district, detailAddress, doorInfo, isDefault, isEdit, addressId, _latitude, _longitude } = this.data;
+    const { contactName, contactPhone, province, city, district, detailAddress, doorInfo, isDefault, isEdit, addressId } = this.data;
 
     const payload = {
       contactName: contactName.trim(),
@@ -122,9 +104,7 @@ Page({
       district: district.trim(),
       detailAddress: detailAddress.trim(),
       doorInfo: doorInfo.trim() || undefined,
-      isDefault,
-      latitude: _latitude,
-      longitude: _longitude
+      isDefault
     };
 
     this.setData({ submitting: true });

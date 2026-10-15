@@ -1,6 +1,7 @@
 const api = require('../../../services/api');
 const {
   getBookingReminderResultState,
+  isSubscriptionCategoryMissing,
   prepareBookingReminderStatus,
   requestBookingReminder
 } = require('../../../utils/wechat-subscription');
@@ -208,6 +209,7 @@ Page({
     emptyCopy: '选择喜欢的作品或服务，发起你的下一次美甲预约',
     tradeView: false,
     reminderStatus: null,
+    bookingReminderNeeded: false,
     reminderRequesting: false
   },
 
@@ -238,9 +240,15 @@ Page({
         'client',
         result.data || result
       );
-      this.setData({ reminderStatus });
+      this.setData({
+        reminderStatus,
+        bookingReminderNeeded: isSubscriptionCategoryMissing(
+          reminderStatus,
+          ['bookingStatus']
+        )
+      });
     } catch (_) {
-      this.setData({ reminderStatus: null });
+      this.setData({ reminderStatus: null, bookingReminderNeeded: false });
     }
   },
 
@@ -248,27 +256,36 @@ Page({
     if (this.data.reminderRequesting) return;
     this.setData({ reminderRequesting: true });
     try {
+      // 此入口只接收报价、改期等进展，不能轮换到预约成功或聊天模板。
       const result = await requestBookingReminder(
         'client',
-        this.data.reminderStatus && this.data.reminderStatus.templates
+        this.data.reminderStatus || {},
+        ['bookingStatus']
       );
       const resultState = getBookingReminderResultState(result);
       if (resultState === 'accepted') {
         await this.loadReminderStatus();
-        wx.showToast({ title: '预约提醒已开启', icon: 'success' });
-      } else if (resultState === 'banned') {
+        wx.showToast({ title: '可接收一条预约进展提醒', icon: 'none' });
+      } else if (resultState === 'settings_disabled') {
         wx.showModal({
           title: '提醒权限已关闭',
-          content: '请在小程序右上角“···”的设置中开启订阅消息后，再回来补充提醒。',
+          content: '请点击小程序右上角“···”→“设置”，打开“接收订阅消息”，再回到这里点击“接收提醒”。',
           showCancel: false,
           confirmText: '我知道了'
         });
       } else if (resultState === 'rejected') {
-        wx.showToast({ title: '你暂未允许提醒', icon: 'none' });
-      } else if (resultState === 'missing') {
-        wx.showToast({ title: '提醒配置未就绪，请重新进入页面', icon: 'none' });
+        wx.showToast({ title: '未开启，仍可在预约页查看进展', icon: 'none' });
+      } else if (['missing', 'configuration_error', 'banned'].includes(resultState)) {
+        wx.showModal({
+          title: '微信提醒暂不可用',
+          content: '提醒服务配置异常，不是你的操作问题。你仍可在预约页查看报价和时间安排。',
+          showCancel: false,
+          confirmText: '我知道了'
+        });
+      } else if (resultState === 'record_failed') {
+        wx.showToast({ title: '提醒设置未保存，请稍后重试', icon: 'none' });
       } else {
-        wx.showToast({ title: '未能开启，请稍后重试', icon: 'none' });
+        wx.showToast({ title: '暂时无法连接微信，请稍后重试', icon: 'none' });
       }
     } finally {
       this.setData({ reminderRequesting: false });

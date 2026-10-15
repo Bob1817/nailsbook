@@ -83,9 +83,7 @@ Page({
 
       wx.showToast({ title: '密码设置成功', icon: 'success' });
       setTimeout(() => {
-        const nextPage = res.needsOnboarding
-          ? '/pages/onboarding/index'
-          : consumePostAuthRedirect('/pages/client/home/index');
+        const nextPage = consumePostAuthRedirect('/pages/client/home/index');
         wx.reLaunch({ url: needsClientProfile(userInfo) ? completionUrl(nextPage) : nextPage });
       }, 1200);
     } catch (err) {

@@ -59,7 +59,7 @@
           </view>
         </view>
 
-        <button class="business-book-btn booking-action" bindtap="bookArtist">查看可约时间并预约</button>
+        <button class="business-book-btn booking-action {{artist.acceptingBookings === false ? 'is-disabled' : ''}}" bindtap="bookArtist" disabled="{{artist.acceptingBookings === false}}">{{artist.acceptingBookings === false ? '暂未接单' : '查看可约时间并预约'}}</button>
       </view>
 
       <!-- 空状态 -->
@@ -85,6 +85,12 @@
           <text class="count-text">{{totalCount}} 条动态</text>
         </view>
       </view>
+
+      <scroll-view wx:if="{{categoryFilters.length > 1}}" scroll-x class="tech-scroll category-scroll" enhanced show-scrollbar="{{false}}">
+        <view class="tech-pills">
+          <view wx:for="{{categoryFilters}}" wx:key="*this" class="tech-pill {{selectedCategory === item ? 'tech-pill-active' : ''}}" bindtap="switchCategory" data-name="{{item}}">{{item}}</view>
+        </view>
+      </scroll-view>
 
       <!-- 排序 tabs -->
       <view wx:if="{{!businessPage}}" class="sort-tabs">

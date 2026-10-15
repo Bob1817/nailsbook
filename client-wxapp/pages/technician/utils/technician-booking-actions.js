@@ -1,6 +1,6 @@
-const api = require('../services/api');
-const uiColors = require('./colors');
-const { parseDate, formatClock } = require('./format');
+const api = require('../../../services/api');
+const uiColors = require('../../../utils/colors');
+const { parseDate, formatClock } = require('../../../utils/format');
 
 function eventId(event) {
   return event && event.detail && event.detail.id;

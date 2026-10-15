@@ -3,7 +3,7 @@ const {
   decorateTechnicianOrder,
   ORDER_TABS
 } = require('../../../utils/order');
-const { technicianBookingCardHandlers = {} } = require('../../../utils/technician-booking-actions');
+const { technicianBookingCardHandlers = {} } = require('../utils/technician-booking-actions');
 
 Page({
   onBookingCardOpen: technicianBookingCardHandlers.onBookingCardOpen,

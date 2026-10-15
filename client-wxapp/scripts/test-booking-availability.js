@@ -13,9 +13,11 @@ let definition;
 let artist;
 let blocked = [];
 let days = [];
+let dailyBookingLimit = 2;
+let bookingCounts = {};
 let fail = false;
 const api = {
-  public: { artists: { detail: async () => ({ artist }) }, bookingSettings: async () => { if (fail) throw Error('offline'); return { days, blockedSlots: blocked }; } },
+  public: { artists: { detail: async () => ({ artist }) }, bookingSettings: async () => { if (fail) throw Error('offline'); return { days, blockedSlots: blocked, dailyBookingLimit, bookingCounts }; } },
   client: { orders: { blockedSlots: async () => { if (fail) throw Error('offline'); return blocked; } } }
 };
 vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../components/booking-time-picker/index.js'), 'utf8'), {
@@ -49,6 +51,16 @@ const day = () => picker.data.calendarDays.find(d => d.dateStr === '2099-01-05')
   assert.equal(day().disabled, false, '公开接口 artist 解包后可选日期');
   assert.equal(picker.data.timeSlotStatuses[0].time, '11:00');
   assert.equal(picker.data.timeSlotStatuses.at(-1).time, '14:00', '服务必须在营业结束前完成');
+  bookingCounts = { '2099-01-05': 1 };
+  await picker._loadTech(7);
+  assert.equal(day().disabled, false, '未达到每日接待上限时仍可预约');
+  assert.equal(day().label, '仅余1席', '最后一个预约名额必须使用紧凑文案');
+  bookingCounts = { '2099-01-05': 2 };
+  await picker._loadTech(7);
+  assert.equal(day().disabled, true, '达到每日接待上限后整日不可预约');
+  assert.equal(day().label, '已约满');
+  bookingCounts = {};
+  await picker._loadTech(7);
   picker.selectTime({ currentTarget: { dataset: { time: '14:00' } } });
   picker.data.durationMinutes = 120;
   picker._refreshTimeSlots();
@@ -143,16 +155,17 @@ const day = () => picker.data.calendarDays.find(d => d.dateStr === '2099-01-05')
   strip._slotsForDate = () => [];
   strip._updateCalendar();
   assert.equal(strip.data.todayOption.label, '休息日');
-  assert.equal(strip.data.todayOption.isSelected, false);
-  assert.equal(strip.data.serviceDate, '', '休息日清除选中');
+  assert.equal(strip.data.todayOption.isSelected, true, '不可约的今天仍保留明确选中态');
+  assert.equal(strip.data.serviceDate, todayKey, '不可约日期保留选中日期供用户确认状态');
   strip.onSelectDate({ currentTarget: { dataset: { date: todayKey } } });
-  assert.equal(strip.data.serviceDate, '', '休息日不可点击选中');
+  assert.equal(strip.data.serviceDate, todayKey, '休息日可选中查看状态但不产生时间段');
+  assert.equal(strip.data.timeSlotStatuses.length, 0);
   strip.data.closedDates = [];
   strip._slotsForDate = () => [{ time: '12:00', occupied: true, reason: 'occupied' }];
   strip._updateCalendar();
   assert.equal(strip.data.todayOption.label, '已约满');
   strip.onSelectDate({ currentTarget: { dataset: { date: todayKey } } });
-  assert.equal(strip.data.serviceDate, '', '约满日期不可选中');
+  assert.equal(strip.data.serviceDate, todayKey, '约满日期可选中查看状态但不能提交时间');
   page.data.sourceWork = { serviceLines: [{ name: '同款服务' }] };
   page.data.selectedServiceIds = [];
   page.toggleService({ currentTarget: { dataset: { id: 99 } } });

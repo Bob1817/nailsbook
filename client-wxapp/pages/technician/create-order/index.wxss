@@ -1,0 +1,17 @@
+@import '../../../styles/booking-form.wxss';
+@import '../../../styles/booking-actions.wxss';
+page { background: var(--bg-page); color: var(--text-primary); }
+.booking-page { padding: 24rpx 24rpx calc(220rpx + env(safe-area-inset-bottom)); }
+.section { padding: 24rpx; margin-bottom: 24rpx; background: var(--bg-card); border-radius: var(--radius-card); }
+.section-title, .section-sub, .field-label { display: block; margin-bottom: 16rpx; }
+.section-sub { color: var(--text-secondary); }
+.form-input { background: var(--bg-page); margin-bottom: 16rpx; }
+.service-choice { display: flex; align-items: center; min-height: 44px; font-size: var(--font-sm); }
+.customer-button { width: 100%; margin: 12rpx 0; }
+.selected { border: 1px solid var(--text-primary); }
+.picker-value { display: flex; align-items: center; }
+.remark-input { width: 100%; padding: 20rpx; box-sizing: border-box; margin-top: 16rpx; background: var(--bg-page); }
+.reference { display: inline-flex; flex-direction: column; width: 180rpx; margin: 8rpx; }
+.reference image { width: 180rpx; height: 180rpx; }
+.submit-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 20rpx 24rpx calc(20rpx + env(safe-area-inset-bottom)); background: var(--bg-card); }
+.submit-btn { background: var(--text-primary); color: var(--bg-card); }

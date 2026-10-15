@@ -66,6 +66,7 @@ function guidanceFromPublicArtist(result, params = {}) {
 
 // ========== 鉴权 ==========
 const auth = {
+  accountStatus: phone => api.post('/api/wechat/auth/account-status', { phone }, { needAuth: false }),
   wechatLogin: (code, role) =>
     api.post('/api/wechat/auth/login', { code, role }, { needAuth: false, silent: true }),
   /** 获取微信 session token（登录页 _getWechatSession 使用） */
@@ -91,10 +92,6 @@ const auth = {
   /** 新流程：SMS 验证码直接登录 */
   loginBySms: (phone, code) =>
     api.post(`${C}/auth/login-by-sms`, { phone, code }, { needAuth: false }),
-
-  /** 新流程：使用激活密钥激活美甲师身份（需要客户 JWT） */
-  activateTechnician: (activationKey) =>
-    api.post(`${C}/auth/activate-technician`, { activationKey }, { needAuth: true }),
 
   /** 发送 SMS 登录验证码 */
   sendSmsCodeForLogin: (phone) =>
@@ -138,10 +135,6 @@ const auth = {
   /** 微信注册/首次登录 → 设置密码 */
   setupPassword: (passwordSetupToken, password) =>
     api.post(`${C}/auth/setup-password`, { passwordSetupToken, password }, { needAuth: false }),
-
-  /** 历史账号补全角色：客户和美甲师都必须提交对应邀请凭证。 */
-  selectRole: (role, { inviteCode, activationKey } = {}) =>
-    api.post(`${C}/auth/select-role`, { role, inviteCode, activationKey }, { needAuth: true }),
 
   sendResetCode: (phone, role = 'client') => {
     const base = role === 'technician' ? T : C;
@@ -200,7 +193,8 @@ const client = {
   favorites: { list: () => api.get(`${C}/favorites`) },
   likes: { list: () => api.get(`${C}/likes`) },
   wechatSubscriptions: {
-    record: (decisions) => api.post(`${C}/wechat-subscriptions/authorization`, { decisions })
+    record: (decisions) => api.post(`${C}/wechat-subscriptions/authorization`, { decisions }),
+    status: () => api.get(`${C}/wechat-subscriptions/status`)
   },
 
   orders: {
@@ -296,7 +290,8 @@ const technician = {
     overview: (params) => api.get(`${T}/insights/overview`, params)
   },
   wechatSubscriptions: {
-    record: (decisions) => api.post(`${T}/wechat-subscriptions/authorization`, { decisions })
+    record: (decisions) => api.post(`${T}/wechat-subscriptions/authorization`, { decisions }),
+    status: () => api.get(`${T}/wechat-subscriptions/status`)
   },
 
   auth: {
@@ -313,7 +308,6 @@ const technician = {
     wechatSetInitialPassword: ({ phone, phoneCode, newPassword }) =>
       api.post('/api/wechat/auth/technician/set-initial-password', { phone, phoneCode, newPassword }, { needAuth: false }),
     setPassword: (newPassword) => api.post(`${T}/auth/set-password`, { newPassword }),
-    switchToClient: () => api.post(`${T}/auth/switch-to-client`, {}),
     bindingApplications: () => api.get(`${T}/auth/binding-applications`),
     approveBinding: (id) => api.post(`${T}/auth/binding-applications/${id}/approve`, {}),
     rejectBinding: (id, reason) => api.post(`${T}/auth/binding-applications/${id}/reject`, { reason })
@@ -622,7 +616,8 @@ const publicApi = {
   brands: {
     profile: (id, params) => api.get(`${P}/brands/${id}`, params, { needAuth: false }),
     services: (id, params) => api.get(`${P}/brands/${id}/services`, params, { needAuth: false }),
-    works: (id, params) => api.get(`${P}/brands/${id}/works`, params),
+    works: (id, params) => api.get(`${P}/brands/${id}/works`, params, { needAuth: false }),
+    workDetail: (id, workId, params) => api.get(`${P}/brands/${id}/works/${workId}`, params, { needAuth: false }),
     reviews: (id, params) => api.get(`${P}/brands/${id}/reviews`, params, { needAuth: false }),
     comments: (id, params) => api.get(`${P}/brands/${id}/comments`, params, { needAuth: false }),
     availability: (id, params) => api.get(`${P}/brands/${id}/availability`, params, { needAuth: false })
@@ -631,10 +626,10 @@ const publicApi = {
     resolve: (token) => api.get(`${P}/referrals/${token}`, null, { needAuth: false })
   },
   works: {
-    list: (params) => api.get(`${P}/works`, params),
-    featured: () => api.get(`${P}/works/featured`),
-    detail: (id) => api.get(`${P}/works/${id}`),
-    shared: (token) => api.get(`${P}/works/shared/${token}`),
+    list: (params) => api.get(`${P}/works`, params, { needAuth: false }),
+    featured: () => api.get(`${P}/works/featured`, null, { needAuth: false }),
+    detail: (id) => api.get(`${P}/works/${id}`, null, { needAuth: false }),
+    shared: (token) => api.get(`${P}/works/shared/${token}`, null, { needAuth: false }),
     shareCode: (id, shareToken) => api.get(`${P}/works/${id}/share-code`, shareToken ? { shareToken } : null)
   }
 };
@@ -671,6 +666,10 @@ technician.bookingDays = {
   updateSettings: async (data) => {
     await requireBookingSettings();
     return api.patch(`${T}/booking-days/settings`, data);
+  },
+  updateCapacity: async (data) => {
+    await requireBookingSettings();
+    return api.patch(`${T}/booking-days/capacity`, data);
   }
 };
 module.exports = { auth, client, technician, chat, upload, public: publicApi };

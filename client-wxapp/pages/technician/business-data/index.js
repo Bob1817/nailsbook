@@ -52,8 +52,24 @@ Page({
 
   formatOverview(data) {
     const performance = data.performance || {};
+    const conversion = data.conversion || {};
+    const formatRate = (value) => value == null ? '待积累' : `${Math.round(value * 100)}%`;
+    const homepage = conversion.homepage || null;
+    const worksConversion = conversion.works || null;
     return {
-      workShare: data.conversion && data.conversion.workShare || null,
+      workShare: conversion.workShare || null,
+      homepageConversion: homepage && {
+        ...homepage,
+        followRateText: formatRate(homepage.rates && homepage.rates.followRate),
+        bookingRateText: formatRate(homepage.rates && homepage.rates.bookingIntentRate),
+        orderRateText: formatRate(homepage.rates && homepage.rates.orderRate)
+      },
+      worksConversion: worksConversion && {
+        ...worksConversion,
+        shareRateText: formatRate(worksConversion.rates && worksConversion.rates.shareRate),
+        bookingRateText: formatRate(worksConversion.rates && worksConversion.rates.bookingIntentRate),
+        orderRateText: formatRate(worksConversion.rates && worksConversion.rates.orderRate)
+      },
       revenue: formatMoney(data.revenue.monthConfirmed || 0),
       averageTicket: data.revenue.averageTicket == null ? '待积累' : formatMoney(data.revenue.averageTicket),
       monthCompleted: data.bookings.monthCompleted || 0,

@@ -2,6 +2,7 @@ const api = require('../../../services/api');
 const { validatePhone } = require('../../../utils/util');
 const { silentWechatLogin } = require('../../../utils/wechat-auth');
 const { consumePostAuthRedirect } = require('../../../utils/artist-navigation');
+const { postLoginPath } = require('../../../utils/account-navigation');
 const { needsClientProfile, completionUrl } = require('../../../utils/client-profile-completion');
 const privacy = require('../../../utils/privacy');
 
@@ -67,15 +68,15 @@ Page({
   async handleWechatLogin() {
     if (this.data.loading || this.data.wechatChecking) return;
     this.setData({ loading: true });
-    wx.showLoading({ title: '微信登录中...' });
+    wx.showLoading({ title: '登录中...' });
     try {
       const res = await silentWechatLogin('client');
-      if (!res.authenticated) throw new Error('该微信尚未绑定客户账号');
+      if (!res.authenticated) throw new Error('该登录方式尚未绑定客户账号');
       await this._afterAuth(res);
     } catch (err) {
       wx.hideLoading();
       this.setData({ loading: false });
-      wx.showToast({ title: err.message || '微信登录失败', icon: 'none' });
+      wx.showToast({ title: err.message || '快捷登录失败', icon: 'none' });
     }
   },
 
@@ -89,11 +90,11 @@ Page({
     const wechatSessionToken = wx.getStorageSync('wechat_session_token');
     if (!wechatSessionToken) {
       await this.tryWechatLogin();
-      wx.showToast({ title: '请再次点击微信手机号登录', icon: 'none' });
+      wx.showToast({ title: '请再次点击手机号快捷登录', icon: 'none' });
       return;
     }
     this.setData({ loading: true });
-    wx.showLoading({ title: '微信登录中...' });
+    wx.showLoading({ title: '登录中...' });
     try {
       await privacy.requireWechatPrivacyAuthorization();
       const res = await api.auth.completeWechatClient({
@@ -125,7 +126,7 @@ Page({
     } catch (err) {
       wx.hideLoading();
       this.setData({ loading: false });
-      wx.showToast({ title: err.message || '微信登录失败', icon: 'none' });
+      wx.showToast({ title: err.message || '快捷登录失败', icon: 'none' });
     }
   },
 
@@ -155,9 +156,13 @@ Page({
 
     wx.showLoading({ title: '检查中...' });
     try {
-      const res = await api.auth.checkPhone(phone, 'client');
+      const res = await api.auth.accountStatus(phone);
       wx.hideLoading();
       if (res.exists) {
+        if (res.role !== 'client') {
+          wx.reLaunch({ url: `/pages/login/index?phone=${phone}` });
+          return;
+        }
         this.setData({ step: 'login' });
       } else {
         // 跳转到注册页面
@@ -199,8 +204,8 @@ Page({
       if (err.message && err.message.includes('未设置密码')) {
         wx.showModal({
           title: '账号未设置密码',
-          content: '该手机号通过微信注册，尚未设置登录密码。您可以使用微信登录，或通过短信验证设置密码。',
-          confirmText: '微信登录',
+          content: '该手机号尚未设置登录密码。您可以使用手机号快捷登录，或通过短信验证设置密码。',
+          confirmText: '快捷登录',
           cancelText: '短信设置密码',
           success: (modalRes) => {
             if (modalRes.confirm) {
@@ -231,15 +236,21 @@ Page({
 
   async _afterAuth(res) {
     const app = getApp();
-    const userInfo = res.client || res.userInfo;
-    app.setLogin('client', res.accessToken, userInfo, res.roles || ['client']);
+    const role = res.role || (res.technician && !res.client ? 'technician' : 'client');
+    const userInfo = role === 'technician' ? res.technician : (res.client || res.userInfo);
+    app.setLogin(role, res.accessToken, userInfo, [role]);
     if (res.refreshToken) {
-      wx.setStorageSync('client_refreshToken', res.refreshToken);
+      wx.setStorageSync(`${role}_refreshToken`, res.refreshToken);
     }
     wx.removeStorageSync('wechat_session_token');
-    if (res.technician) {
+    if (role === 'client' && res.technician) {
       wx.setStorageSync('client_bindings', res.technicians || [res.technician]);
       wx.setStorageSync('defaultTechId', res.technician.id);
+    }
+    if (role === 'technician') {
+      wx.hideLoading();
+      wx.reLaunch({ url: postLoginPath(role, this.redirect) });
+      return;
     }
     const referralToken = this.referralToken || wx.getStorageSync('pending_referral_token');
     if (referralToken) {
@@ -251,7 +262,7 @@ Page({
       }
     }
     wx.hideLoading();
-    const nextPage = consumePostAuthRedirect(this.redirect);
+    const nextPage = postLoginPath(role, consumePostAuthRedirect(this.redirect));
     wx.reLaunch({ url: needsClientProfile(userInfo) ? completionUrl(nextPage) : nextPage });
   }
 });

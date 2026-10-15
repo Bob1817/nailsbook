@@ -9,7 +9,7 @@ let definition, role = '', confirm = false, calls = 0, destination = '';
 const storage = {};
 const publicApi = {};
 const wx = { getStorageSync: key => storage[key], setStorageSync: (key, value) => { storage[key] = value; },
-  navigateTo: ({ url }) => { destination = url; }, showModal: async () => ({ confirm }), showToast() {} };
+  navigateTo: ({ url }) => { destination = url; }, showModal: async () => ({ confirm }), showToast() {}, showLoading() {}, hideLoading() {} };
 global.wx = wx;
 vm.runInNewContext(fs.readFileSync(file, 'utf8'), {
   Page: p => { definition = p; }, wx, getApp: () => ({ globalData: { role, token: role ? 'test' : '' } }),
@@ -51,12 +51,14 @@ const p = { ...definition, data: { ...definition.data, work: { id: 10, technicia
   assert.equal(booking._pendingWorkPrefill.sourceWorkId, 10);
   assert.equal(booking._pendingWorkPrefill.techId, 7);
   await p.bookSameStyle();
-  assert.equal(destination, '/pages/client/create-order/index?workId=10&techId=7&shareToken=abc&source=work_share');
-  assert.equal(storage.post_auth_redirect, undefined, '浏览分享作品后先选时间，提交时再登录');
-  assert.equal(calls, 0, '进入预约页不提前绑定');
+  assert(destination.startsWith('/pages/login/index?redirect='), '游客预约同款应先进入登录');
+  assert(destination.includes('quickBookingTechId=7'), '登录入口应保留自动关联的美甲师');
+  assert.equal(calls, 0, '游客登录前不应建立绑定');
   role = 'client';
+  destination = '';
   await p.bookSameStyle();
-  assert.equal(calls, 0, '已登录也不在选时间前建立绑定');
+  assert.equal(calls, 1, '已登录客户应在进入预约前直接关联作品美甲师');
+  assert.equal(destination, '/pages/client/create-order/index?workId=10&techId=7&shareToken=abc&source=work_share');
   p.data.binding = true;
   destination = '';
   await p.bookSameStyle();

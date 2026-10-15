@@ -2,11 +2,56 @@ const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
 const { guardTourist } = require('../../../utils/permission');
 
+function getShareState(work) {
+  if (work.archivedAt) return { ready: false, key: 'needs_action', text: '已归档', reason: '已归档作品不可分享' };
+  if (work.publicationStatus === 'draft') return { ready: false, key: 'needs_action', text: '草稿', reason: '请先提交作品审核' };
+  if (work.publicationStatus === 'pending') return { ready: false, key: 'reviewing', text: '审核中', reason: '作品审核通过后可以分享' };
+  if (work.publicationStatus === 'rejected') return { ready: false, key: 'needs_action', text: '审核未通过', reason: work.reviewNote || '请修改作品后重新提交审核' };
+  if (work.isVisible === false) return { ready: false, key: 'needs_action', text: '已隐藏', reason: '请先将作品设为显示' };
+  if (work.visibilityScope !== 'public') return { ready: false, key: 'needs_action', text: '仅授权客户可见', reason: '请将作品可见范围改为公开' };
+  if (work.assetStatus !== 'public') return { ready: false, key: 'needs_action', text: '素材未公开', reason: '请先完成作品素材发布' };
+  if (work.publicAuthorizationStatus !== 'authorized') return { ready: false, key: 'needs_action', text: '公开授权待完成', reason: '请先完成作品公开授权' };
+  return { ready: true, key: 'shareable', text: '可公开分享', reason: '' };
+}
+
+function decorateWork(work, profile) {
+  const shareState = getShareState(work);
+  return {
+    ...work,
+    coverUrl: work.coverUrl || (work.imageUrls && work.imageUrls[0]) || '',
+    tags: (Array.isArray(work.tags) ? work.tags : String(work.tags || '').split(',')).map(tag => String(tag).trim()).filter(Boolean),
+    technicianId: profile.id || '',
+    technicianName: profile.name || '我的作品',
+    technicianAvatarUrl: profile.avatarUrl || '',
+    techInitial: (profile.name || '我').charAt(0),
+    expertiseText: profile.specialty || '',
+    isShareReady: shareState.ready,
+    shareStateKey: shareState.key,
+    shareStatusText: shareState.text,
+    shareBlockReason: shareState.reason
+  };
+}
+
 Page({
   data: {
     works: [],
     leftCol: [],
     rightCol: [],
+    filteredWorks: [],
+    keyword: '',
+    categoryFilters: ['全部分类'],
+    selectedCategory: '全部分类',
+    statusFilters: [
+      { key: 'all', label: '全部' },
+      { key: 'shareable', label: '可分享' },
+      { key: 'needs_action', label: '待完善' },
+      { key: 'hero', label: '首页主推' },
+      { key: 'featured', label: '主页精选' },
+      { key: 'hidden', label: '已隐藏' }
+    ],
+    selectedStatus: 'all',
+    sortBy: 'updated',
+    sortLabel: '最近更新',
     loading: false,
     loadFailed: false,
     selectedWorkId: null
@@ -21,18 +66,10 @@ Page({
     try {
       const res = await api.technician.works.list({});
       const profile = wx.getStorageSync('userInfo') || wx.getStorageSync('technician_userInfo') || {};
-      const works = (Array.isArray(res) ? res : (res.data || [])).map((work) => ({
-        ...work,
-        coverUrl: work.coverUrl || (work.imageUrls && work.imageUrls[0]) || '',
-        tags: Array.isArray(work.tags) ? work.tags : String(work.tags || '').split(',').filter(Boolean),
-        technicianId: profile.id || '',
-        technicianName: profile.name || '我的作品',
-        technicianAvatarUrl: profile.avatarUrl || '',
-        techInitial: (profile.name || '我').charAt(0),
-        expertiseText: profile.specialty || ''
-      }));
-      this.setData({ works });
-      this.splitIntoColumns(works);
+      const works = (Array.isArray(res) ? res : (res.data || [])).map((work) => decorateWork(work, profile));
+      const categoryFilters = ['全部分类'].concat([...new Set(works.flatMap(work => work.tags || []))]);
+      this.setData({ works, categoryFilters });
+      this.applyFilters();
     } catch (err) {
       this.setData({ loadFailed: true });
     } finally {
@@ -47,7 +84,68 @@ Page({
       if (index % 2 === 0) leftCol.push(work);
       else rightCol.push(work);
     });
-    this.setData({ leftCol, rightCol });
+    this.setData({ filteredWorks: works, leftCol, rightCol });
+  },
+
+  onKeywordInput(e) {
+    this.setData({ keyword: e.detail.value });
+    this.applyFilters();
+  },
+
+  clearKeyword() {
+    this.setData({ keyword: '' });
+    this.applyFilters();
+  },
+
+  selectCategory(e) {
+    this.setData({ selectedCategory: e.currentTarget.dataset.name });
+    this.applyFilters();
+  },
+
+  selectStatus(e) {
+    this.setData({ selectedStatus: e.currentTarget.dataset.key });
+    this.applyFilters();
+  },
+
+  chooseSort() {
+    const options = [
+      { key: 'updated', label: '最近更新' },
+      { key: 'likes', label: '点赞最多' },
+      { key: 'favorites', label: '收藏最多' },
+      { key: 'price', label: '价格从高到低' }
+    ];
+    wx.showActionSheet({ itemList: options.map(item => item.label), success: (res) => {
+      const option = options[res.tapIndex];
+      if (!option) return;
+      this.setData({ sortBy: option.key, sortLabel: option.label });
+      this.applyFilters();
+    } });
+  },
+
+  applyFilters() {
+    const keyword = String(this.data.keyword || '').trim().toLowerCase();
+    const category = this.data.selectedCategory;
+    const status = this.data.selectedStatus;
+    const works = this.data.works.filter(work => {
+      const text = [work.title].concat(work.tags || []).join(' ').toLowerCase();
+      if (keyword && text.indexOf(keyword) < 0) return false;
+      if (category !== '全部分类' && !(work.tags || []).includes(category)) return false;
+      if (status === 'shareable' && !work.isShareReady) return false;
+      if (status === 'needs_action' && work.shareStateKey !== 'needs_action' && work.shareStateKey !== 'reviewing') return false;
+      if (status === 'hero' && !work.heroSlot) return false;
+      if (status === 'featured' && !work.isFeatured) return false;
+      if (status === 'hidden' && work.isVisible !== false) return false;
+      return true;
+    }).sort((a, b) => {
+      if (this.data.sortBy === 'likes') return Number(b.likeCount || 0) - Number(a.likeCount || 0);
+      if (this.data.sortBy === 'favorites') return Number(b.favoriteCount || 0) - Number(a.favoriteCount || 0);
+      if (this.data.sortBy === 'price') {
+        const priceFen = work => Number(work.standardPriceFen || 0) || Math.round(Number(work.standardPrice || work.price || 0) * 100);
+        return priceFen(b) - priceFen(a);
+      }
+      return new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0);
+    });
+    this.splitIntoColumns(works);
   },
 
   /* ===== 操作菜单 ===== */
@@ -94,9 +192,10 @@ Page({
   async toggleVisible(id) {
     try {
       await api.technician.works.toggleVisible(id);
-      const works = this.data.works.map(w => w.id === id ? { ...w, isVisible: !w.isVisible } : w );
+      const profile = wx.getStorageSync('userInfo') || wx.getStorageSync('technician_userInfo') || {};
+      const works = this.data.works.map(w => w.id === id ? decorateWork({ ...w, isVisible: !w.isVisible }, profile) : w );
       this.setData({ works });
-      this.splitIntoColumns(works);
+      this.applyFilters();
       wx.showToast({ title: works.find(w => w.id === id)?.isVisible ? '作品已显示' : '作品已隐藏', icon: 'success' });
     } catch (err) { wx.showToast({ title: err.message || '操作失败', icon: 'none' }); }
   },
@@ -106,7 +205,7 @@ Page({
       await api.technician.works.togglePinned(id);
       const works = this.data.works.map(w => w.id === id ? { ...w, isPinned: !w.isPinned } : w );
       this.setData({ works });
-      this.splitIntoColumns(works);
+      this.applyFilters();
       wx.showToast({ title: works.find(w => w.id === id)?.isPinned ? '作品已置顶' : '已取消作品置顶', icon: 'success' });
     } catch (err) { wx.showToast({ title: err.message || '操作失败', icon: 'none' }); }
   },
@@ -116,7 +215,7 @@ Page({
       await api.technician.works.toggleFeatured(id);
       const works = this.data.works.map(w => w.id === id ? { ...w, isFeatured: !w.isFeatured } : w );
       this.setData({ works });
-      this.splitIntoColumns(works);
+      this.applyFilters();
       wx.showToast({ title: works.find(w => w.id === id)?.isFeatured ? '已加入主页精选' : '已移出主页精选', icon: 'success' });
     } catch (err) { wx.showToast({ title: err.message || '操作失败', icon: 'none' }); }
   },
@@ -139,10 +238,31 @@ Page({
       wx.showToast({ title: '已删除', icon: 'success' });
       const works = this.data.works.filter(w => w.id !== id);
       this.setData({ works });
-      this.splitIntoColumns(works);
+      this.applyFilters();
     } catch (err) {
       wx.hideLoading();
       wx.showToast({ title: '删除失败', icon: 'none' });
     }
+  }
+  ,
+
+  manageHero(e) {
+    const dataset = e.currentTarget.dataset;
+    wx.navigateTo({ url: '/pages/technician/hero-recommendations/index?' + (dataset.hero ? 'removeWorkId=' : 'workId=') + dataset.id });
+  },
+
+  showShareBlockReason(e) {
+    wx.showToast({ title: e.currentTarget.dataset.reason || '该作品暂不可公开分享', icon: 'none' });
+  },
+
+  onShareAppMessage(options) {
+    const id = options && options.target && options.target.dataset.id;
+    const work = this.data.works.find(item => String(item.id) === String(id));
+    if (!work) return { title: '我的美甲作品', path: '/pages/client/works/index' };
+    if (!work.isShareReady) return { title: '我的美甲作品', path: '/pages/client/works/index' };
+    const profile = wx.getStorageSync('userInfo') || wx.getStorageSync('technician_userInfo') || {};
+    const inviteCode = profile.invitationCode || profile.inviteCode || '';
+    const inviteQuery = inviteCode ? '&invite=' + encodeURIComponent(inviteCode) : '';
+    return { title: require('../../../utils/share-copy').buildWorkShareTitle(work), path: '/pages/client/public-work/index?id=' + work.id + inviteQuery + '&channel=wechat_share', imageUrl: work.coverUrl || '' };
   }
 });

@@ -84,7 +84,7 @@ Page({
     try {
       await api.client.profile.bindTechnician(foundTech.id, inviteCode, bindNote);
       wx.hideLoading();
-      wx.showToast({ title: '绑定申请已提交', icon: 'success' });
+      wx.showToast({ title: '绑定成功', icon: 'success' });
 
       // 回到首页
       this._goHome();

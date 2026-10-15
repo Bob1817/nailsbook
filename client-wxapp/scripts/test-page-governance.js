@@ -12,7 +12,7 @@ const cases = [
   ['公开服务空态', 'pages/client/brand-services', 1, '.state button.booking-action'],
   ['公开作品空态', 'pages/client/brand-works', 1, '.state button.booking-action'],
   ['创建预约操作', 'pages/client/create-order', 4, '.confirm-btn.booking-action'],
-  ['美甲师主页操作', 'pages/client/artist-home', 9, '.btn-book-main'],
+  ['美甲师主页操作', 'pages/client/artist-home', 6, '.btn-book-main'],
   ['客户端作品列表操作', 'pages/client/works', 3, '.business-book-btn.booking-action'],
   ['美甲师资料营销操作', 'pages/technician/profile', 3, '.invite-action.booking-action'],
   ['推荐分享', 'pages/client/referrals', 2, '.primary'],

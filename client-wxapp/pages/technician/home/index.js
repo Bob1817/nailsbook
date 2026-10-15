@@ -1,7 +1,10 @@
 const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
 const {
+  claimFirstSubscriptionPrompt,
   getBookingReminderResultState,
+  isSubscriptionCategoryMissing,
+  isSubscriptionCategoryUnavailable,
   prepareBookingReminderStatus,
   requestBookingReminder
 } = require('../../../utils/wechat-subscription');
@@ -40,6 +43,8 @@ Page({
     worksRight: [],
     unreadMessageCount: 0,
     reminderStatus: null,
+    bookingReminderNeeded: false,
+    showSubscriptionOnboarding: false,
     reminderRequesting: false
   },
 
@@ -251,6 +256,22 @@ Page({
         newCustomers: insights.customers.newThisMonth || 0
       } : null;
 
+      const bookingReminderNeeded = isSubscriptionCategoryUnavailable(
+        reminderStatus,
+        ['bookingEvent', 'bookingStatus', 'dayBefore', 'hourBefore']
+      );
+      const showSubscriptionOnboarding = Boolean(
+        reminderStatus &&
+        claimFirstSubscriptionPrompt('technician', technicianProfile) &&
+        isSubscriptionCategoryMissing(reminderStatus, [
+          'bookingEvent',
+          'bookingStatus',
+          'dayBefore',
+          'hourBefore',
+          'consultationReply'
+        ])
+      );
+
       this.setData({
         loading: false,
         nextOrder,
@@ -264,14 +285,18 @@ Page({
         worksLeft,
         worksRight,
         unreadMessageCount: unread,
-        reminderStatus
+        reminderStatus,
+        bookingReminderNeeded,
+        showSubscriptionOnboarding
       });
-      this.maybeShowDailySummary({
-        todoTotal,
-        pendingActionCount: pendingActionCount + confirmationTodos.length,
-        unread,
-        nextOrder
-      });
+      if (!showSubscriptionOnboarding) {
+        this.maybeShowDailySummary({
+          todoTotal,
+          pendingActionCount: pendingActionCount + confirmationTodos.length,
+          unread,
+          nextOrder
+        });
+      }
     } catch (e) {
       this.setData({ loading: false });
     } finally {
@@ -314,14 +339,22 @@ Page({
     try {
       const result = await requestBookingReminder(
         'technician',
-        this.data.reminderStatus && this.data.reminderStatus.templates
+        this.data.reminderStatus || {}
       );
       const resultState = getBookingReminderResultState(result);
       if (resultState === 'accepted') {
+        this.setData({
+          bookingReminderNeeded: false,
+          showSubscriptionOnboarding: false
+        });
         const statusResult = await api.technician.wechatSubscriptions.status();
-        this.setData({ reminderStatus: statusResult.data || statusResult });
+        const reminderStatus = await prepareBookingReminderStatus(
+          'technician',
+          statusResult.data || statusResult
+        );
+        this.setData({ reminderStatus });
         wx.showToast({ title: '提醒设置已更新', icon: 'success' });
-      } else if (resultState === 'banned') {
+      } else if (['banned', 'settings_disabled'].includes(resultState)) {
         wx.showModal({
           title: '提醒权限已关闭',
           content: '请在小程序右上角“···”的设置中开启订阅消息后，再回来补充提醒。',
@@ -332,12 +365,33 @@ Page({
         wx.showToast({ title: '你暂未允许提醒', icon: 'none' });
       } else if (resultState === 'missing') {
         wx.showToast({ title: '提醒配置未就绪，请重新进入页面', icon: 'none' });
+      } else if (resultState === 'configuration_error') {
+        const app = getApp();
+        if (app && typeof app.loadLaunchConfig === 'function') {
+          await app.loadLaunchConfig(true);
+        }
+        const statusResult = await api.technician.wechatSubscriptions.status();
+        const reminderStatus = await prepareBookingReminderStatus(
+          'technician',
+          statusResult.data || statusResult
+        );
+        this.setData({ reminderStatus });
+        wx.showToast({ title: '提醒配置已更新，请重新点击', icon: 'none' });
       } else {
         wx.showToast({ title: '未能开启，请稍后重试', icon: 'none' });
       }
     } finally {
       this.setData({ reminderRequesting: false });
     }
+  },
+
+  closeSubscriptionOnboarding() {
+    this.setData({ showSubscriptionOnboarding: false });
+  },
+
+  async enableFirstSubscription() {
+    await this.enableBookingReminders();
+    this.setData({ showSubscriptionOnboarding: false });
   },
 
   // ---------- 导航 ----------

@@ -129,6 +129,15 @@ page {
   position: sticky;
   z-index: 90;
 }
+.availability-title-wrap { display:flex; align-items:baseline; gap:16rpx; min-width:0; }
+.availability-headline { font-size:var(--font-xs); color:var(--nb-muted); white-space:nowrap; }
+.availability-scroll { width:100%; white-space:nowrap; }
+.availability-days { display:inline-flex; gap:12rpx; padding:4rpx 0; }
+.availability-day { width:104rpx; min-height:128rpx; padding:16rpx 8rpx; box-sizing:border-box; border-radius:18rpx; background:var(--nb-surface); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4rpx; }
+.availability-day.is-full { background:var(--nb-pressed); }
+.availability-weekday { font-size:22rpx; color:var(--nb-muted); }
+.availability-date { font-size:32rpx; font-weight:600; color:var(--nb-ink); }
+.availability-status { font-size:19rpx; color:var(--nb-muted); }
 .artist-sticky {
   position: relative;
   z-index: 1;
@@ -776,8 +785,8 @@ page {
   align-items: center;
   justify-content: space-between;
   gap: 24rpx;
-  padding: 12rpx 32rpx 0;
-  transform: translateY(12rpx);
+  padding: 12rpx 32rpx max(12rpx, calc(env(safe-area-inset-bottom, 0px) - 20rpx));
+  box-sizing: border-box;
 }
 .bottom-actions {
   display: flex;
@@ -836,10 +845,6 @@ page {
   border: none;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.35);
 }
-.safe-area-bottom {
-  height: env(safe-area-inset-bottom, 0px);
-}
-
 /* ===== 空状态 ===== */
 .empty-hint {
   padding: 80rpx 0;
@@ -934,58 +939,6 @@ page {
   color: var(--warm-text-primary);
   display: block;
 }
-.modal-desc {
-  font-size: 24rpx;
-  color: var(--warm-text-muted);
-  margin-top: 16rpx;
-  display: block;
-  line-height: 1.6;
-}
-.modal-input-row {
-  display: flex;
-  gap: 16rpx;
-  margin-top: 32rpx;
-}
-.modal-input {
-  flex: 1;
-  min-width: 0;
-  height: var(--input-height);
-  min-height: 44px;
-  box-sizing: border-box;
-  padding: 0 var(--input-padding-h);
-  border: 0;
-  border-radius: var(--input-radius);
-  font-size: var(--font-sm);
- background: var(--nb-soft-surface);}
-.modal-placeholder { font-size: var(--font-sm); color: var(--nb-muted); }
-.modal-verify-btn {
-  height: 44px;
-  min-height: 44px;
-  padding: 0 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  line-height: 1;
-  box-sizing: border-box;
-  width: 160rpx;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--warm-accent-light);
-  color: var(--warm-primary);
-  font-weight: 600;
-}
-.modal-success {
-  margin-top: 20rpx;
-  color: var(--warm-green);
-  font-size: 24rpx;
-}
-.modal-error {
-  display: block;
-  margin-top: 16rpx;
-  color: var(--nb-ink);
-  font-size: 24rpx;
-}
 .modal-actions {
   display: flex;
   gap: 16rpx;
@@ -1016,7 +969,7 @@ page {
 }
 .is-disabled { opacity: 0.5; }
 
-.btn-book-main:active, .action-btn:active, .retry-btn:active, .modal-verify-btn:active, .modal-cancel:active, .modal-confirm:active { opacity: 0.85; }
+.btn-book-main:active, .action-btn:active, .retry-btn:active, .modal-cancel:active, .modal-confirm:active { opacity: 0.85; }
 
 /* ===== P1 真实化：资质 / 环境 / 保障 / FAQ ===== */
 .banner-mosaic-fallback {

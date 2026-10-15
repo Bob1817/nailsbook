@@ -162,12 +162,6 @@
             <text class="menu-label">账号注销申请</text>
             <text class="menu-arrow">›</text>
           </view>
-          <view class="menu-item" bindtap="switchRole">
-            <view class="menu-icon-wrap menu-icon-purple"><image class="m-icon" src="/static/icons/switch.svg" mode="aspectFit" /></view>
-            <text class="menu-label">切换角色</text>
-            <text class="menu-value">当前：客户</text>
-            <text class="menu-arrow">›</text>
-          </view>
           <view class="menu-item" bindtap="switchAccount">
             <view class="menu-icon-wrap menu-icon-purple"><image class="m-icon" src="/static/icons/tab-profile.svg" mode="aspectFit" /></view>
             <text class="menu-label">切换账号</text>
@@ -179,105 +173,13 @@
             <text class="menu-arrow">›</text>
           </view>
         </view>
-        <view class="version-row">
-          <view class="menu-icon-wrap menu-icon-gray"><image class="m-icon" src="/static/icons/info.svg" mode="aspectFit" /></view>
-          <text class="menu-label version-label">版本</text>
-          <text class="version-text">1.0.0</text>
-        </view>
       </view>
 
       <view class="logout-btn" bindtap="logout" role="button" aria-label="退出登录">退出登录</view>
+      <text class="version">OnlyNail v1.0.0</text>
 
     </view>
   </scroll-view>
-</view>
-
-<!-- 客户 → 美甲师：确认切换弹窗 -->
-<view wx:if="{{showSwitchConfirmModal}}" class="modal-mask" bindtap="closeSwitchConfirmModal">
-  <view class="modal-content" catchtap="">
-    <view class="modal-header">
-      <text class="modal-title">切换身份</text>
-      <view class="modal-close" bindtap="closeSwitchConfirmModal">&#x2715;</view>
-    </view>
-    <view class="modal-body">
-      <text class="confirm-text">检测到该手机号已开通美甲师账户，是否切换到美甲师身份？</text>
-    </view>
-    <view class="modal-btn-group">
-      <view class="modal-btn modal-btn-secondary" bindtap="closeSwitchConfirmModal">取消</view>
-      <view class="modal-btn" bindtap="confirmSwitchToTechnician">
-        <text>{{switchLoading ? '切换中...' : '确认切换'}}</text>
-      </view>
-    </view>
-  </view>
-</view>
-
-<!-- 客户 → 美甲师：激活密钥弹窗 -->
-<view wx:if="{{showActivateModal}}" class="modal-mask" bindtap="closeActivateModal">
-  <view class="modal-content" catchtap="">
-    <view class="modal-header">
-      <text class="modal-title">开通美甲师账户</text>
-      <view class="modal-close" bindtap="closeActivateModal">&#x2715;</view>
-    </view>
-    <view class="modal-body">
-      <text class="field-label">激活密钥</text>
-      <view class="code-input-wrap">
-        <input
-          class="code-input"
-          value="{{activationKey}}"
-          bindinput="onActivationKeyInput"
-          placeholder="请输入超管分配的激活密钥"
-          placeholder-class="code-placeholder" confirm-type="done" />
-      </view>
-      <text class="field-hint">输入激活密钥后即可开通美甲师账户，开通后可管理预约、服务客户并展示作品。</text>
-    </view>
-    <view class="modal-btn {{!activationKey || activating ? 'modal-btn-disabled' : ''}}" bindtap="activateTechnicianAccount">
-      <text>{{activating ? '开通中...' : '立即开通'}}</text>
-    </view>
-  </view>
-</view>
-
-<!-- 美甲师 → 绑定/切换弹窗 -->
-<view wx:if="{{showTechSwitchModal}}" class="modal-mask" bindtap="closeTechSwitchModal">
-  <view class="modal-content" catchtap="">
-    <view class="modal-header">
-      <text class="modal-title">绑定美甲师或切换客户</text>
-      <view class="modal-close" bindtap="closeTechSwitchModal">&#x2715;</view>
-    </view>
-    <view class="modal-body">
-      <text class="field-label">邀请码 / 邀请链接</text>
-      <view class="code-input-wrap">
-        <input
-          class="code-input"
-          value="{{techSwitchInviteCode}}"
-          bindinput="onTechSwitchInviteInput"
-          placeholder="输入邀请码绑定美甲师"
-          placeholder-class="code-placeholder" confirm-type="done" />
-        <view wx:if="{{techSwitchCheckingCode}}" class="code-spinner"></view>
-      </view>
-      <text class="field-hint">输入美甲师邀请码，提交绑定申请，待其通过后即可将其设为专属美甲师。</text>
-
-      <view wx:if="{{techSwitchFoundTech}}" class="found-tech">
-        <view class="found-avatar" bindtap="viewTechnicianHome" data-id="{{techSwitchFoundTech.id}}" role="button" aria-label="查看{{techSwitchFoundTech.name || '美甲师'}}主页">
-          <image wx:if="{{techSwitchFoundTech.avatarUrl}}" src="{{techSwitchFoundTech.avatarUrl}}" mode="aspectFill" class="found-avatar-img" aria-label="{{techSwitchFoundTech.name || '美甲师'}}的头像"/>
-          <image wx:else src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" />
-        </view>
-        <view class="found-info">
-          <text class="found-name">{{techSwitchFoundTech.name}}</text>
-          <text class="found-city">{{techSwitchFoundTech.city || '未知城市'}}</text>
-        </view>
-      </view>
-    </view>
-
-    <view class="modal-btn-group modal-btn-group-vertical">
-      <view
-        class="modal-btn {{!techSwitchFoundTech || techSwitchBinding ? 'modal-btn-disabled' : ''}}"
-        bindtap="bindTechnicianFromTechSwitch"
-      >
-        <text>{{techSwitchBinding ? '申请中...' : '申请绑定'}}</text>
-      </view>
-      <view class="modal-btn modal-btn-secondary" bindtap="skipToClient">跳过，进入客户账户</view>
-    </view>
-  </view>
 </view>
 
 <tab-bar selected="profile" />

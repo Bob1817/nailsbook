@@ -1,6 +1,6 @@
 const api = require('../../../services/api');
 const uiColors = require('../../../utils/colors');
-const { normalizeBindings, bindingSummary } = require('../../../utils/client-bindings');
+const { normalizeBindings, bindingSummary } = require('../utils/client-bindings');
 Page({
   data: {
     isBindingManager: true, technicians: [], activeCount: 0, pendingCount: 0, loading: true, loadFailed: false,
@@ -183,33 +183,21 @@ Page({
     if (!foundTech || binding || !/^[A-Z0-9]{8}$/.test(inviteCode) || String(foundTech.invitationCode || '').toUpperCase() !== inviteCode) return;
 
     this.setData({ binding: true });
-    wx.showLoading({ title: '申请中...' });
+    wx.showLoading({ title: '绑定中...' });
 
     try {
       await api.client.profile.bindTechnician(foundTech.id, inviteCode, bindNote);
       wx.hideLoading();
-      wx.showToast({ title: '申请已提交，待通过', icon: 'none' });
-      const pendingCard = {
-        id: foundTech.id,
-        name: foundTech.name || '美甲师',
-        phone: foundTech.phone || '',
-        avatar: foundTech.avatarUrl || '',
-        city: foundTech.city || '',
-        status: foundTech.status || 'active',
-        bindingStatus: 'pending',
-        shopService: !!foundTech.shopService,
-        shopName: (foundTech.shopAddresses || []).find(shop => shop.enabled !== false)?.name || ''
-      };
+      wx.showToast({ title: '绑定成功', icon: 'success' });
       this.setData({
         showBindModal: false,
         inviteCode: '',
         inviteError: '',
         bindNote: '',
-        foundTech: null,
-        ...bindingSummary([...this.data.technicians.filter(item => Number(item.id) !== Number(pendingCard.id)), pendingCard])
+        foundTech: null
       });
 
-      // 绑定已经成功；资料刷新失败不能回滚申请或误报“绑定失败”。
+      // 绑定已经成功；资料刷新失败不能回滚关系或误报“绑定失败”。
       try {
         const res = await api.auth.getUserInfo('client');
         if (res.bindings || res.technicians || res.pendingTechnicians) {
@@ -220,7 +208,7 @@ Page({
         }
         this.loadProfile();
       } catch (refreshError) {
-        console.warn('refresh pending binding failed:', refreshError);
+        console.warn('refresh active binding failed:', refreshError);
       }
     } catch (err) {
       wx.hideLoading();

@@ -75,6 +75,19 @@
     </view>
   </view>
 
+  <view class="setup-guide-card growth-guide-card">
+    <view class="setup-guide-head">
+      <view class="setup-guide-title-row"><text class="setup-guide-title">经营成长路径</text><view class="setup-guide-badge">三项核心</view></view>
+      <text class="setup-guide-desc">依次完善个人品牌、作品内容和客户预约，形成稳定的获客与服务闭环</text>
+    </view>
+    <view class="setup-steps">
+      <view wx:for="{{growthSteps}}" wx:key="key" class="setup-step" bindtap="goSetupStep" data-route="{{item.route}}">
+        <view class="setup-step-left"><view class="setup-step-icon-wrap {{item.done ? 'setup-step-done' : ''}}"><text>{{item.done ? '✓' : index + 1}}</text></view><view class="setup-step-text"><text class="setup-step-label">{{item.label}}</text><text class="setup-step-hint">{{item.hint}}</text></view></view>
+        <view class="setup-step-action"><text class="setup-step-btn">{{item.done ? '查看' : '去完善'}}</text><text class="setup-step-arrow">›</text></view>
+      </view>
+    </view>
+  </view>
+
   <!-- ============ 我的预约 ============ -->
   <view class="card card-gap">
     <view class="card-head">
@@ -161,17 +174,25 @@
       <view class="menu-item" bindtap="navigateToAbout">
         <image class="menu-icon" src="/static/icons/info.svg" mode="aspectFit" aria-hidden="true" /><text class="menu-label">关于我们</text><text class="menu-arrow">›</text>
       </view>
-      <view class="menu-item" bindtap="switchRole">
-        <image class="menu-icon" src="/static/icons/switch.svg" mode="aspectFit" aria-hidden="true" /><text class="menu-label">切换角色</text><text class="menu-value">当前：美甲师</text><text class="menu-arrow">›</text>
-      </view>
       <view class="menu-item" bindtap="switchAccount">
         <image class="menu-icon" src="/static/icons/tab-profile.svg" mode="aspectFit" aria-hidden="true" /><text class="menu-label">切换账号</text><text class="menu-arrow">›</text>
       </view>
     </view>
   </view>
 
-  <text class="version">OnlyNail v1.0.0</text>
   <view class="logout-btn" bindtap="logout" role="button" aria-label="退出登录">退出登录</view>
+  <text class="version">OnlyNail v1.0.0</text>
+</view>
+
+<view wx:if="{{showSwitchAccountDialog}}" class="account-dialog-mask" bindtap="closeSwitchAccountDialog">
+  <view class="account-dialog" catchtap="preventBubble" role="dialog" aria-label="切换账号确认">
+    <text class="account-dialog-title">切换账号</text>
+    <text class="account-dialog-copy">退出当前账号后，将返回登录页。确定继续吗？</text>
+    <view class="account-dialog-actions">
+      <view class="account-dialog-button account-dialog-cancel" bindtap="closeSwitchAccountDialog" role="button">取消</view>
+      <view class="account-dialog-button account-dialog-confirm" bindtap="confirmSwitchAccount" role="button">继续切换</view>
+    </view>
+  </view>
 </view>
 
 <view wx:if="{{showCapacityModal}}" class="ws-overlay" bindtap="closeCapacityModal">

@@ -747,26 +747,6 @@ page {
   flex-shrink: 0;
 }
 
-/* 版本行 */
-.version-row {
-  display: flex;
-  align-items: center;
-  padding: 18rpx 28rpx;
-  gap: 16rpx;
-  border-top: 0;
-}
-
-.version-label {
-  font-size: var(--font-sm);
-  color: var(--text-muted);
-  font-weight: var(--weight-normal);
-}
-
-.version-text {
-  font-size: var(--font-sm);
-  color: var(--text-muted);
-}
-
 /* ===== 退出登录 ===== */
 .logout-btn {
   margin-top: 32rpx;
@@ -785,6 +765,14 @@ page {
 }
 
 .logout-btn:active { opacity: 0.85; }
+
+.version {
+  display: block;
+  margin-top: var(--space-md);
+  text-align: center;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
 
 .hero-name-row { display:flex; align-items:center; gap:12rpx; min-width:0; }
 .menu-value { flex-shrink:0; color:var(--nb-muted); font-size:var(--font-xs); }
@@ -1470,12 +1458,6 @@ page {
   color: var(--text-secondary);
 }
 .menu-arrow { font-size: var(--font-md); }
-.version-row {
-  min-height: 88rpx;
-  box-sizing: border-box;
-  padding: 8rpx 24rpx;
-  gap: 14rpx;
-}
 .tech-card-default { background: var(--bg-card); }
 
 .logout-btn { color: var(--nb-danger); }

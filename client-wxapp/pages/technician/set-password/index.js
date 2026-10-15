@@ -60,7 +60,7 @@ Page({
 
     const phoneCode = e.detail && e.detail.code;
     if (!phoneCode) {
-      this.setData({ error: '已取消微信手机号授权，请重试' });
+      this.setData({ error: '已取消手机号验证，请重试' });
       return;
     }
 

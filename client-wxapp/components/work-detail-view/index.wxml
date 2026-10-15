@@ -119,10 +119,10 @@
       <button class="visitor-bar-btn visitor-bar-btn-outline booking-action" open-type="share" hover-class="visitor-bar-pressed">分享给好友</button>
       <button class="visitor-bar-btn visitor-bar-btn-primary booking-action" bindtap="bookSame" disabled="{{!isOwnerView && visitorInfo.acceptingBookings === false}}" hover-class="visitor-bar-pressed" aria-label="{{isOwnerView ? '编辑作品' : (visitorInfo.acceptingBookings === false ? '暂未接单' : '预约同款')}}">{{isOwnerView ? '编辑作品' : (visitorInfo.acceptingBookings === false ? '暂未接单' : '预约同款')}}</button>
     </view>
-    <!-- 未登录：联系美甲师 + 查看更多作品 -->
+    <!-- 未登录：先浏览公开内容，发起预约时再登录并自动关联美甲师 -->
     <view wx:elif="{{visitorInfo && !isLoggedIn}}" class="visitor-booking-bar">
       <view class="visitor-bar-btn visitor-bar-btn-outline" data-event="contact" bindtap="emit" hover-class="visitor-bar-pressed">联系该美甲师</view>
-      <view class="visitor-bar-btn visitor-bar-btn-primary" data-event="viewworks" bindtap="emit" hover-class="visitor-bar-pressed">查看更多作品</view>
+      <view class="visitor-bar-btn visitor-bar-btn-primary" data-event="book" bindtap="emit" hover-class="visitor-bar-pressed">预约同款</view>
     </view>
   </block>
 </view>

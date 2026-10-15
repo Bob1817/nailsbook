@@ -61,6 +61,37 @@
       <view class="data-row" bindtap="openReferrals"><view><text>有效推荐收入</text><text>基金发放 {{overview.fundsIssued}} · 抵扣 {{overview.fundsRedeemed}}</text></view><text>{{overview.referralRevenue}} ›</text></view>
     </view>
 
+    <view wx:if="{{overview.homepageConversion}}" class="section-card">
+      <text class="section-title">主页获客路径</text>
+      <text class="share-note">公开主页访问 → 关注或预约意向 → 创建预约</text>
+      <view class="share-metrics">
+        <view><text>{{overview.homepageConversion.views}}</text><text>主页访问</text></view>
+        <view><text>{{overview.homepageConversion.uniqueVisitors}}</text><text>独立访客</text></view>
+        <view><text>{{overview.homepageConversion.shares || 0}}</text><text>分享发起</text></view>
+        <view><text>{{overview.homepageConversion.follows}}</text><text>新增关注</text></view>
+        <view><text>{{overview.homepageConversion.bookingIntents}}</text><text>预约意向</text></view>
+        <view><text>{{overview.homepageConversion.orders}}</text><text>创建预约</text></view>
+      </view>
+      <view class="conversion-rates"><text>关注率 {{overview.homepageConversion.followRateText}}</text><text>预约意向率 {{overview.homepageConversion.bookingRateText}}</text><text>成单率 {{overview.homepageConversion.orderRateText}}</text></view>
+      <text wx:if="{{!overview.homepageConversion.sufficientData}}" class="share-note">至少累计 {{overview.homepageConversion.minimumViews}} 次主页访问后显示转化率，当前仅展示真实次数。</text>
+    </view>
+
+    <view wx:if="{{overview.worksConversion}}" class="section-card">
+      <text class="section-title">作品传播路径</text>
+      <text class="share-note">作品访问 → 分享发起或预约意向 → 创建预约</text>
+      <view class="share-metrics">
+        <view><text>{{overview.worksConversion.views}}</text><text>作品访问</text></view>
+        <view><text>{{overview.worksConversion.shares}}</text><text>分享发起</text></view>
+        <view><text>{{overview.worksConversion.bookingIntents}}</text><text>预约意向</text></view>
+        <view><text>{{overview.worksConversion.orders}}</text><text>创建预约</text></view>
+      </view>
+      <view class="conversion-rates"><text>分享发起率 {{overview.worksConversion.shareRateText}}</text><text>预约意向率 {{overview.worksConversion.bookingRateText}}</text><text>成单率 {{overview.worksConversion.orderRateText}}</text></view>
+      <view wx:if="{{overview.worksConversion.items.length}}" class="work-conversion-list">
+        <view wx:for="{{overview.worksConversion.items}}" wx:key="workId" class="work-conversion-row"><text>{{item.title}}</text><text>{{item.views}} 访问 · {{item.shares}} 分享发起 · {{item.bookingIntents}} 意向 · {{item.orders}} 预约</text></view>
+      </view>
+      <text wx:if="{{!overview.worksConversion.sufficientData}}" class="share-note">至少累计 {{overview.worksConversion.minimumViews}} 次作品访问后显示转化率；“分享发起”不代表对方已收到或朋友圈已发布。</text>
+    </view>
+
     <view wx:if="{{overview.workShare}}" class="section-card">
       <text class="section-title">作品分享获客</text>
       <text class="share-note">所选月份 · 各阶段独立统计</text>

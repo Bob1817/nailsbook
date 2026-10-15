@@ -10,6 +10,8 @@
 .wc-status-icons { position:absolute; z-index:2; left:12rpx; top:12rpx; right:100rpx; display:flex; flex-direction:column; align-items:flex-start; gap:3rpx; }
 .wc-status-pill { min-height:38rpx; padding:0 10rpx; display:flex; align-items:center; gap:5rpx; color:var(--nb-surface); background:rgba(0, 0, 0, .92); border:0; border-radius:999rpx; font-size:17rpx; font-weight:600; box-shadow:0 3rpx 10rpx rgba(0, 0, 0, .18); }
 .wc-status-icon { width:21rpx; height:21rpx; }
+.wc-curated-badge { position:absolute; z-index:2; left:14rpx; top:14rpx; min-height:44rpx; padding:0 14rpx; display:flex; align-items:center; gap:7rpx; border-radius:999rpx; background:rgba(0,0,0,.78); color:var(--text-inverse); font-size:19rpx; font-weight:600; }
+.wc-curated-badge image { width:22rpx; height:22rpx; filter:brightness(0) invert(1); }
 .wc-manage { position:absolute; z-index:3; right:0; top:0; width:88rpx; height:88rpx; padding:17rpx 12rpx 0 0; display:flex; align-items:flex-start; justify-content:flex-end; background:transparent; border:0; box-sizing:border-box; }
 .wc-manage-icon { width:28rpx; height:28rpx; filter:drop-shadow(0 2rpx 5rpx rgba(255,255,255,.9)); }
 .wc-manage:active { opacity:.72; transform:scale(.96); }

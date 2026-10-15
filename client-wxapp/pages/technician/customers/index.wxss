@@ -16,6 +16,14 @@ page {
   overflow: hidden;
 }
 
+.customer-flow-card { margin-bottom:24rpx; padding:28rpx; border-radius:var(--radius-lg); background:var(--nb-surface); box-shadow:var(--shadow-sm); }
+.customer-flow-title,.customer-flow-desc,.customer-flow-note { display:block; }
+.customer-flow-title { font-size:var(--font-md); font-weight:var(--weight-semibold); color:var(--nb-ink); }
+.customer-flow-desc { margin-top:10rpx; font-size:var(--font-xs); line-height:1.6; color:var(--nb-secondary); }
+.customer-flow-steps { display:grid; grid-template-columns:1fr 1fr; gap:12rpx; margin-top:20rpx; }
+.customer-flow-steps text { padding:14rpx 16rpx; border-radius:var(--radius-md); background:var(--nb-page); font-size:var(--font-xs); color:var(--nb-ink); }
+.customer-flow-note { margin-top:16rpx; font-size:var(--font-xs); color:var(--nb-muted); }
+
 /* ===== 固定头部 ===== */
 .header {
   flex-shrink: 0;

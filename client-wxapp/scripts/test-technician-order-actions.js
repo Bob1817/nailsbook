@@ -10,7 +10,7 @@ const cardJs = fs.readFileSync(path.join(root, 'components/technician-booking-ca
 const cardWxml = fs.readFileSync(path.join(root, 'components/technician-booking-card/index.wxml'), 'utf8');
 const ordersJs = fs.readFileSync(path.join(root, 'pages/technician/orders/index.js'), 'utf8');
 const ordersWxml = fs.readFileSync(path.join(root, 'pages/technician/orders/index.wxml'), 'utf8');
-const sharedActionsJs = fs.readFileSync(path.join(root, 'utils/technician-booking-actions.js'), 'utf8');
+const sharedActionsJs = fs.readFileSync(path.join(root, 'pages/technician/utils/technician-booking-actions.js'), 'utf8');
 const apiJs = fs.readFileSync(path.join(root, 'services/api.js'), 'utf8');
 
 assert.match(js, /case 'pending_agree':\s+return \[EDIT_QUOTE, WITHDRAW_QUOTE\]/, '待客户确认时必须显示编辑报价和取消报价');
@@ -26,7 +26,11 @@ assert.match(wxml, /order\.depositPaid \? '已支付' : '未支付'/, '最终报
 assert.match(wxml, /bindchange="onQuoteDepositStatusChange"/, '发送报价必须用选择器编辑定金支付状态');
 assert.match(wxml, /bindchange="onEditDepositStatusChange"/, '调整报价必须用选择器编辑定金支付状态');
 assert(!wxml.includes('bindchange="onQuoteDepositPaidChange"'), '发送报价不得继续使用定金支付开关');
-assert.match(wxml, /quote-summary[^]*deposit-editor[^]*备注（选填）/, '定金编辑必须位于最终报价摘要下方、备注上方');
+assert.match(wxml, /最终报价（元）[^]*deposit-editor[^]*备注（选填）/, '定金编辑必须位于最终报价下方、备注上方');
+assert.match(wxml, /quote-sheet-footer[^]*报价明细[^]*原价[^]*最终价格[^]*定金[^]*depositStatusOptions\[quoteDepositStatusIndex\][^]*确认方案/, '固定操作区必须实时展示报价、原价、最终价格、定金及支付状态');
+assert.match(wxml, /quote-fixed-summary[^]*quoteSubtotalFen[^]*quoteCorePrice[^]*quoteExtraFen[^]*quoteFinalFen[^]*quoteDepositAmount/, '固定报价信息必须直接绑定当前报价和定金数据');
+assert.match(wxml, /class="form-textarea quote-remark-textarea"/, '报价备注必须使用紧凑输入框');
+assert.match(wxss, /\.quote-remark-textarea\s*\{[^}]*height:\s*104rpx/, '报价备注输入框高度必须适当压缩');
 assert.match(js, /raw\.isDepositPaid[\s\S]*depositAmount > 0[\s\S]*'定金已支付'/, '已支付开关为真且金额为零时仍必须回显定金已支付');
 assert.match(js, /depositAmount > 0 \? `待支付定金/, '未支付但已设置金额时必须展示待支付状态和金额');
 assert.match(js, /quoteDepositPaid && depositAmount <= 0/, '发送报价时，已支付定金必须填写大于 0 的金额');

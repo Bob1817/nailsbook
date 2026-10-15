@@ -9,6 +9,7 @@
     "tab-bar": { "layer": "navigation", "status": "stable", "purpose": "统一客户端与美甲师端底部导航" },
     "collection-overview": { "layer": "pattern", "status": "stable", "purpose": "统一集合页顶部主层级" },
     "secondary-page-header": { "layer": "pattern", "status": "stable", "purpose": "统一二三级页面全宽主信息区" },
+    "subscription-onboarding": { "layer": "pattern", "status": "stable", "purpose": "统一首次进入时的订阅提醒引导" },
     "booking-time-picker": { "layer": "business", "status": "stable", "purpose": "预约日期与时段选择" },
     "booking-confirm": { "layer": "business", "status": "stable", "purpose": "确认排期、最终总价及定金收款状态" },
     "rest-day-calendar": { "layer": "business", "status": "stable", "purpose": "休息日选择弹层" },

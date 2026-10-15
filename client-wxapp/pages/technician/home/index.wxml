@@ -12,7 +12,7 @@
   </view>
 
   <view
-    wx:if="{{!isTourist && reminderStatus && reminderStatus.configuredTemplates > 0 && reminderStatus.status !== 'normal'}}"
+    wx:if="{{!isTourist && bookingReminderNeeded}}"
     class="reminder-card"
   >
     <view class="reminder-copy">
@@ -142,3 +142,10 @@
 <tab-bar selected="home" />
 
 <booking-confirm wx:if="{{confirmationOrder}}" order="{{confirmationOrder}}" bindclose="closeConfirmation" bindsaved="confirmationSaved" />
+<subscription-onboarding
+  visible="{{showSubscriptionOnboarding}}"
+  role="technician"
+  loading="{{reminderRequesting}}"
+  bindclose="closeSubscriptionOnboarding"
+  bindenable="enableFirstSubscription"
+/>

@@ -132,3 +132,10 @@
 </view>
 
 <tab-bar selected="home" />
+<subscription-onboarding
+  visible="{{showSubscriptionOnboarding}}"
+  role="client"
+  loading="{{subscriptionRequesting}}"
+  bindclose="closeSubscriptionOnboarding"
+  bindenable="enableFirstSubscription"
+/>

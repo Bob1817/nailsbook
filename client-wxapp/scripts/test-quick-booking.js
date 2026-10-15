@@ -11,7 +11,12 @@ const bookingJs = fs.readFileSync(path.join(__dirname, '..', 'pages/client/creat
 const timePickerWxml = fs.readFileSync(path.join(__dirname, '..', 'components/booking-time-picker/index.wxml'), 'utf8');
 const timePickerWxss = fs.readFileSync(path.join(__dirname, '..', 'components/booking-time-picker/index.wxss'), 'utf8');
 
-assert.match(bookingWxml, /quick-time-head[\s\S]*?<booking-time-picker\s+horizontal/, '主页快捷预约应使用纵向标题和紧凑横向时间组件');
+assert.match(bookingWxml, /section-head section-head-inline quick-time-head[\s\S]*?先选时间，确认后生效[\s\S]*?<booking-time-picker\s+horizontal/, '快捷预约说明应缩短并与标题同行');
+assert.doesNotMatch(timePickerWxml, /btp-date-heading|选择日期/, '横向日期组件不应重复展示选择日期标题');
+assert.doesNotMatch(timePickerWxml, /btp-empty-slots|当前日期暂无可预约时段/, '不可约日期下方不应展示时间段空状态');
+assert.match(timePickerWxml, /timeSlotStatuses\.length > 0[^>]*class="btp-slot-title"/, '仅有可用时间数据时展示时间段标题');
+assert.match(timePickerWxml, /btp-date-unavailable-selected/, '不可约日期应保留独立选中态');
+assert.match(timePickerWxss, /\.btp-date-active \.btp-day-label\s*\{[^}]*color:\s*var\(--nb-inverse\)/, '选中日期的余量文案应与日期文字使用相同反色');
 assert.doesNotMatch(bookingWxml, /使用完整预约|bindtap="useFullBooking"/, '快捷预约不应展示重复的完整预约入口');
 assert.doesNotMatch(bookingJs, /useFullBooking\s*:/, '移除完整预约入口后不应遗留处理函数');
 assert.match(bookingWxml, /service-option-check-active/, '服务形式应使用明确的勾选状态');
@@ -19,6 +24,10 @@ assert.doesNotMatch(bookingWxml, /service-option-radio/, '服务形式不再使�
 assert.match(bookingWxss, /\.service-option-check-active\s*\{[^}]*background:\s*var\(--nb-action\)/, '服务形式选中态应使用设计令牌的实心勾选标识');
 assert.match(timePickerWxml, /horizontal && timeSlotStatuses\.length > 0[\s\S]*?class="btp-time-strip"[^>]*scroll-x/, '紧凑时间组件应单行横向展示可预约时段');
 assert.match(timePickerWxss, /\.btp-time-item-horizontal\s*\{[^}]*min-height:\s*44px/, '紧凑时间按钮应保留 44px 触控高度');
+assert.match(bookingWxml, /class="quick-ref-trigger"[\s\S]*?aria-expanded="\{\{showQuickRef\}\}"[\s\S]*?自定义需求或选择预约同款/, '款式参考应使用可访问的页内抽屉入口');
+assert.match(bookingWxml, /class="booking-summary"[\s\S]*?美甲师[\s\S]*?serviceDate && startTime[\s\S]*?selectedShopName[\s\S]*?serviceType[\s\S]*?booking-summary-address/, '固定提交栏应按已填写内容汇总预约关键信息');
+assert.doesNotMatch(bookingWxml.match(/<view class="booking-summary">[\s\S]*?<\/view>\s*<view class="submit-action-row">/)[0], /customTitle|sourceWork\.customTitle|款式/, '固定预约汇总不应展示款式参考');
+assert.match(bookingWxss, /\.submit-bar\s*\{[^}]*flex-direction:\s*column[^}]*gap:\s*20rpx/s, '预约汇总和提交操作应在固定栏中上下排列');
 
 const storage = { role: 'client', client_token: 'test-token' };
 const toasts = [], requests = [], modals = [];
@@ -34,7 +43,13 @@ global.wx = wx;
 global.getApp = () => ({ globalData: {} });
 const api = {
   public: { bookingSettings: async () => ({ quickBookingEnabled: enabled, days: [] }) },
-  client: { orders: { create: async data => { requests.push(data); return { id: 1 }; } } },
+  client: { orders: {
+    create: async data => { requests.push(data); return { id: 1 }; },
+    list: async () => ({ list: [{
+      status: 'completed', startTime: '2098-12-01T10:00:00', technician: { id: 8 },
+      serviceLines: [{ nameSnapshot: '基础护理' }]
+    }] })
+  } },
   technician: { bookingDays: { list: async () => ({ days: [] }) }, orders: { quote: async (id, data) => requests.push({ id, ...data }) } }
 };
 function page(relative) {
@@ -73,6 +88,21 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   assert.equal(requests[0].shopAddress.name, '测试店');
   assert.equal(requests[0].selectedServiceIds, undefined);
   assert.equal(modals.length, 0, '同城无需弹出城市确认');
+
+  const pricedBooking = page('pages/client/create-order/index.js');
+  pricedBooking.loadTechWorks = () => {};
+  pricedBooking.data.technicians = [{
+    id: 8, name: '测试美甲师', status: 'active', shopService: true,
+    shopAddresses: [{ name: '测试店' }],
+    serviceItems: [{ id: 80, name: '基础护理', category: '护理', isActive: true, price: 198, durationMinutes: 60 }]
+  }];
+  pricedBooking.selectTechById(8);
+  await flush();
+  await flush();
+  assert.equal(pricedBooking.data.quickMode, true);
+  assert.equal(pricedBooking.data.selectedServiceCount, 1, '老客服务仍可作为快速预约参考');
+  assert.equal(pricedBooking.data.hasPriceContent, false, '快速预约不应因预填服务误触发价格分栏并把提交按钮挤到右侧');
+  assert.match(bookingWxss, /\.submit-bar\s*\{[^}]*box-sizing:\s*border-box/s, '底部提交栏应把安全区内边距计入页面宽度');
 
   enabled = false; booking.selectTechById(7); await flush();
   assert.equal(booking.data.quickMode, false, '未开放美甲师保留原模式');

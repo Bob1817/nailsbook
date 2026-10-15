@@ -7,6 +7,12 @@ page { background:var(--nb-page); }
 .share-metrics text:first-child { margin-bottom: 8rpx; font-size: 32rpx; font-weight: 600; color: var(--nb-ink); }
 .share-note { display: block; margin-top: 16rpx; font-size: 22rpx; line-height: 1.6; color: var(--nb-muted); }
 .share-channel { display: flex; justify-content: space-between; margin-top: 12rpx; font-size: 24rpx; color: var(--nb-secondary); }
+.conversion-rates { display:flex; flex-wrap:wrap; gap:12rpx 20rpx; padding:20rpx 0 4rpx; border-top:1rpx solid var(--nb-border); }
+.conversion-rates text { font-size:24rpx; color:var(--nb-secondary); }
+.work-conversion-list { margin-top:20rpx; }
+.work-conversion-row { min-height:88rpx; display:flex; align-items:center; justify-content:space-between; gap:20rpx; border-top:1rpx solid var(--nb-border); }
+.work-conversion-row text:first-child { max-width:42%; font-size:26rpx; color:var(--nb-ink); overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.work-conversion-row text:last-child { flex:1; font-size:22rpx; line-height:1.45; text-align:right; color:var(--nb-muted); }
 .page { min-height:100vh; padding: var(--space-md) 40rpx calc(48rpx + env(safe-area-inset-bottom)); box-sizing:border-box; }
 .loading-card,.section-card { margin-bottom: var(--space-md); padding:32rpx; border: 0; border-radius: var(--radius-lg); background: var(--bg-card); box-shadow:0 10rpx 26rpx rgba(0, 0, 0, .05); }
 .loading-card { color: var(--text-muted); text-align:center; }

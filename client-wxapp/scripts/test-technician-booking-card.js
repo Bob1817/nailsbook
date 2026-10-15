@@ -51,7 +51,7 @@ assert(/\.hero-action-icon\s*\{[^}]*width:\s*14px;\s*height:\s*14px/.test(compon
 assert(!component.includes('hero-action-surface semantic-link'), '查看详情主按钮不能被全局链接样式覆盖背景');
 assert(/\.hero-action-primary \.hero-action-surface\s*\{[^}]*background:\s*var\(--nb-action\)[^}]*color:\s*var\(--nb-inverse\)/.test(componentStyle), '查看详情必须显示黑底白字主按钮');
 assert(component.includes('<text>发送消息</text>') && component.includes('<text>拨打电话</text>') && component.includes('<view class="hero-action-surface">查看详情</view>'), '首页下一单三个操作按钮必须统一使用四字文案');
-assert(componentStyle.includes('padding: var(--space-xl) var(--space-xl) var(--space-sm);') && componentStyle.includes('margin-bottom: var(--space-sm);'), '首页下一单正文与底部操作区必须使用均衡的纵向间距');
+assert(componentStyle.includes('.hero-card-content { padding: var(--space-lg); }') && /\.hero-card-body\s*\{[^}]*margin-bottom:\s*0/.test(componentStyle) && /\.hero-card-actions\s*\{[^}]*margin-top:\s*var\(--space-lg\)/.test(componentStyle), '首页下一单上下留白及正文与操作区间距必须统一');
 assert(!componentStyle.includes('flex:0 0 auto'), '行程卡片操作按钮必须等宽对齐，不能挤在卡片右侧');
 assert(componentStyle.includes('.booking-card-compact .address-row'), '行程卡片地址必须使用独立信息区域');
 

@@ -1,5 +1,7 @@
 const api = require('../../../services/api');
 const {
+  isSubscriptionCategoryMissing,
+  prepareBookingReminderStatus,
   requestConsultationReply,
   shouldShowConsultationReminder
 } = require('../../../utils/wechat-subscription');
@@ -45,7 +47,7 @@ Page({
       this.setData({ clientName: name });
     }
     this.prepareConversation();
-    this.setData({ showReplyReminder: shouldShowConsultationReminder('technician') });
+    this.loadReplyReminderStatus();
 
     /* 横竖屏 / 分屏适配 */
     this._resizeHandler = () => {
@@ -73,6 +75,21 @@ Page({
     if (this._resizeHandler) wx.offWindowResize(this._resizeHandler);
   },
 
+  async loadReplyReminderStatus() {
+    try {
+      const result = await api.technician.wechatSubscriptions.status();
+      const status = await prepareBookingReminderStatus(
+        'technician',
+        result.data || result
+      );
+      this.setData({
+        showReplyReminder: isSubscriptionCategoryMissing(status, ['consultationReply'])
+      });
+    } catch (_) {
+      this.setData({ showReplyReminder: shouldShowConsultationReminder('technician') });
+    }
+  },
+
   /* ===== 轮询 ===== */
   startPolling() {
     this.stopPolling();
@@ -94,8 +111,8 @@ Page({
       wx.showToast({ title: '开启失败，请稍后重试', icon: 'none' });
       return;
     }
-    this.setData({ showReplyReminder: false });
     const accepted = Object.values(result).includes('accept');
+    if (accepted) this.setData({ showReplyReminder: false });
     wx.showToast({ title: accepted ? '回复提醒已开启' : '可稍后再次开启', icon: 'none' });
   },
 

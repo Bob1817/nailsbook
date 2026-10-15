@@ -2,7 +2,7 @@ const { consumePostAuthRedirect, rememberPostAuthRedirect, normalizeInternalPath
 const { needsClientProfile, completionUrl } = require('../../utils/client-profile-completion');
 /**
  * OnlyNail 统一登录页
- * 流程：微信授权（默认）→ 手机号 + 密码登录
+ * 流程：快捷登录（默认）→ 手机号 + 密码登录
  */
 const api = require('../../services/api');
 const privacy = require('../../utils/privacy');
@@ -28,6 +28,10 @@ Page({
       wx.showModal({ title: '登录已过期', content: '长时间未登录已退出账号，请重新登录', showCancel: false, confirmText: '知道了' });
     }
     this.redirect = normalizeInternalPath(options.redirect ? decodeURIComponent(options.redirect) : '');
+    const phone = String(options.phone || '').replace(/\s/g, '');
+    if (/^1[3-9]\d{9}$/.test(phone)) {
+      this.setData({ phone, phoneValid: true });
+    }
     if (this.redirect) rememberPostAuthRedirect(this.redirect);
     this.inviteCode = options.invite ? decodeURIComponent(options.invite) : '';
     this.setData({ invitationRegistration: !!this.inviteCode });
@@ -82,7 +86,7 @@ Page({
       await privacy.requireWechatPrivacyAuthorization();
       // 先获取微信 session
       const wxSession = await this._getWechatSession();
-      if (!wxSession) throw new Error('微信授权失败');
+      if (!wxSession) throw new Error('快捷登录验证失败');
 
       // 完成微信登录
       const res = await api.auth.completeWechatClient({
@@ -116,25 +120,6 @@ Page({
         return;
       }
 
-      // ★ 需要选择角色 → 跳转角色选择页
-      if (res.needsRoleSelection) {
-        wx.hideLoading();
-        this.setData({ wechatLoading: false });
-        // 保存临时 token，role-select 的 selectRole 需要 JWT 认证
-        if (res.accessToken) {
-          const app = getApp();
-          app.globalData.token = res.accessToken;
-          wx.setStorageSync('token', res.accessToken);
-          wx.setStorageSync('role', 'client');
-          if (res.refreshToken) wx.setStorageSync('client_refreshToken', res.refreshToken);
-        }
-        wx.redirectTo({
-          url: '/pages/role-select/index?wechatSessionToken=' + encodeURIComponent(res.wechatSessionToken || '') +
-               '&phone=' + encodeURIComponent(res.phone || '')
-        });
-        return;
-      }
-
       // ★ 需要设置密码 → 跳转设置密码页
       if (res.needsSetupPassword) {
         wx.hideLoading();
@@ -146,11 +131,11 @@ Page({
         return;
       }
 
-      await this._afterAuth(res);
+      await this._afterAuth(res, res.role);
     } catch (err) {
       wx.hideLoading();
       this.setData({ wechatLoading: false });
-      wx.showToast({ title: err.message || '微信登录失败', icon: 'none' });
+      wx.showToast({ title: err.message || '快捷登录失败', icon: 'none' });
     }
   },
 
@@ -207,11 +192,8 @@ Page({
     }
     let role = 'client';
     try {
-      const checks = await Promise.all([
-        api.auth.checkPhone(phone, 'client'),
-        api.auth.checkPhone(phone, 'technician')
-      ]);
-      if (!checks[0].exists && checks[1].exists) role = 'technician';
+      const account = await api.auth.accountStatus(phone);
+      role = account.role || 'client';
     } catch (e) {
       // 识别失败时按客户处理，与手机号登录的默认角色一致
     }
@@ -238,13 +220,14 @@ Page({
     wx.showLoading({ title: '登录中...', mask: true });
 
     try {
-      const accountChecks = await Promise.all([
-        api.auth.checkPhone(phone, 'client'),
-        api.auth.checkPhone(phone, 'technician')
-      ]);
-      const hasClientAccount = !!accountChecks[0].exists;
-      const hasTechnicianAccount = !!accountChecks[1].exists;
-      const loginRole = !hasClientAccount && hasTechnicianAccount ? 'technician' : 'client';
+      const account = await api.auth.accountStatus(phone);
+      if (!account.exists) {
+        wx.hideLoading();
+        this.setData({ phoneLoading: false });
+        this.goRegister();
+        return;
+      }
+      const loginRole = account.role;
       const res = await api.auth.login(phone, password, loginRole);
 
       // 2. 使用实际完成登录的角色。roles 仅表示账号能力，不能改变本次 JWT 的类型。
@@ -258,8 +241,8 @@ Page({
       if (err.message && err.message.includes('未设置密码')) {
         wx.showModal({
           title: '账号未设置密码',
-          content: '该手机号通过微信注册，尚未设置登录密码。您可以使用微信登录，或通过微信手机号授权设置密码。',
-          confirmText: '微信登录',
+          content: '该手机号尚未设置登录密码。您可以使用快捷登录，或验证手机号后设置密码。',
+          confirmText: '快捷登录',
           cancelText: '设置密码',
           success: (modalRes) => {
             if (modalRes.confirm) {
@@ -293,8 +276,9 @@ Page({
   async _afterAuth(res, role) {
     const app = getApp();
     const roles = res.roles || [role || 'client'];
-    // 微信统一入口完成的是客户端登录；拥有技师角色不等于拿到了技师 JWT。
-    const activeRole = role || 'client';
+    // 使用后端实际签发令牌的角色，不推测或切换身份。
+    const activeRole = res.role || role || (res.technician && !res.client ? 'technician' : 'client');
+    if (!['client', 'technician'].includes(activeRole)) throw new Error('登录身份无效，请重试');
 
     // 根据角色选择对应的 token 和 userInfo
     const token = res.accessToken || res.token;
@@ -344,7 +328,7 @@ Page({
     const homePage = activeRole === 'technician'
       ? '/pages/technician/home/index'
       : '/pages/client/home/index';
-    const nextPage = activeRole === 'client' ? consumePostAuthRedirect(this.redirect || homePage) : homePage;
+    const nextPage = require('../../utils/account-navigation').postLoginPath(activeRole, consumePostAuthRedirect(this.redirect || homePage));
     wx.reLaunch({
       url: activeRole === 'client' && needsClientProfile(userInfo)
         ? completionUrl(nextPage)

@@ -22,19 +22,19 @@
   <view class="list-area">
 
     <view
-      wx:if="{{reminderStatus && reminderStatus.configuredTemplates > 0 && reminderStatus.status !== 'normal'}}"
+      wx:if="{{bookingReminderNeeded}}"
       class="booking-reminder-card"
     >
       <view class="booking-reminder-copy">
-        <text class="booking-reminder-title">{{reminderStatus.status === 'needs_top_up' ? '补充预约提醒' : '开启预约提醒'}}</text>
-        <text class="booking-reminder-desc">美甲师报价、改期或预约状态变化时，通过微信提醒你</text>
+        <text class="booking-reminder-title">预约有进展，微信通知你</text>
+        <text class="booking-reminder-desc">美甲师报价或改期后，不用反复打开小程序查看。点击后选“允许”，可接收一条提醒。</text>
       </view>
       <button
         class="booking-reminder-action"
         loading="{{reminderRequesting}}"
         disabled="{{reminderRequesting}}"
         bindtap="enableBookingReminders"
-      >{{reminderStatus.status === 'needs_top_up' ? '补充提醒' : '立即开启'}}</button>
+      >接收提醒</button>
     </view>
 
     <!-- 骨架屏 -->

@@ -4,6 +4,15 @@
     <view slot="action" class="preview-link semantic-link" bindtap="preview">预览主页</view>
   </secondary-page-header>
   <view class="page-content">
+    <view class="section-card completion-card">
+      <view class="completion-head"><view><text class="section-title">主页完善度</text><text class="section-sub">补全关键信息，让客户更快建立信任并发起预约</text></view><text class="completion-percent">{{completionPercent}}%</text></view>
+      <view class="completion-track"><view class="completion-progress" style="width:{{completionPercent}}%"></view></view>
+      <view class="completion-list">
+        <view wx:for="{{completionItems}}" wx:key="key" class="completion-item" bindtap="openCompletionItem" data-key="{{item.key}}" role="button">
+          <view class="completion-mark {{item.done ? 'done' : ''}}">{{item.done ? '✓' : index + 1}}</view><view class="completion-copy"><text>{{item.label}}</text><text>{{item.hint}}</text></view><text class="completion-action">{{item.done ? '查看' : '去完善'}} ›</text>
+        </view>
+      </view>
+    </view>
     <view class="section-card status-card">
       <view class="row-copy"><view class="title-line"><text class="row-title">公开展示主页</text><text class="status-label {{publicationStatus === 'published' ? 'published' : ''}}">{{publicationStatus === 'published' ? '已公开' : '草稿'}}</text></view><text class="row-desc">{{publicationStatus === 'published' ? '客户可以查看当前主页内容' : '当前仅自己可以预览和编辑'}}</text></view>
       <nb-switch checked="{{publicationStatus === 'published'}}" bindchange="togglePublication" label="公开展示主页"/>

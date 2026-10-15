@@ -45,6 +45,9 @@ function buildClientLoginUrl(path, options) {
   if (options && options.inviteCode) {
     params.push(`invite=${encodeURIComponent(options.inviteCode)}`);
   }
+  if (options && Number.isInteger(Number(options.quickBookingTechId)) && Number(options.quickBookingTechId) > 0) {
+    params.push(`quickBookingTechId=${Number(options.quickBookingTechId)}`);
+  }
   params.push(`source=${encodeURIComponent(normalizeSource(options && options.source))}`);
   return `/pages/login/index?${params.join('&')}`;
 }

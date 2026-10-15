@@ -46,6 +46,8 @@ Page({
     sortTabs: SORT_TABS,
     selectedTech: '全部',
     techFilters: ['全部'],
+    selectedCategory: '全部风格',
+    categoryFilters: ['全部风格'],
     totalCount: 0,
     keyword: '',
     targetTechId: '',
@@ -57,6 +59,9 @@ Page({
   },
 
   onLoad: function (options) {
+    this.entrySource = options.source || (options.techId ? 'artist_home' : 'works');
+    this.inviteCode = options.invite ? decodeURIComponent(options.invite) : '';
+    if (wx.showShareMenu) wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
     this.setData({
       keyword: options.keyword ? decodeURIComponent(options.keyword) : '',
       targetTechId: options.techId ? String(options.techId) : ''
@@ -73,10 +78,11 @@ Page({
     self.setData({ loading: true, loadFailed: false, businessPage: true });
     Promise.all([
       api.public.artists.detail(self.data.targetTechId),
-      api.client.works.list({ techId: self.data.targetTechId })
+      api.public.brands.works(self.data.targetTechId, { page: 1, pageSize: 50, imageSize: 'medium' })
     ]).then(function (results) {
       var res = results[0];
       var artist = res.artist || {};
+      self.inviteCode = self.inviteCode || artist.invitationCode || '';
       artist.initial = (artist.name || '美').charAt(0);
       var techSnapshot = {
         id: artist.id,
@@ -90,9 +96,15 @@ Page({
         styleTags: artist.styleTags || []
       };
       var worksData = results[1];
-      var works = (worksData.list || worksData.data || worksData || []).map(function (work, index) {
+      var works = (worksData.items || worksData.list || worksData.data || (Array.isArray(worksData) ? worksData : [])).map(function (work, index) {
         return normalizeWork(work, techSnapshot, { index: index, styleTags: techSnapshot.styleTags });
       });
+      works.sort(function (a, b) {
+        return Number(!!b.heroSlot) - Number(!!a.heroSlot)
+          || Number(!!b.isFeatured) - Number(!!a.isFeatured)
+          || new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      });
+      var categoryFilters = ['全部风格'].concat(Array.from(new Set([].concat.apply([], works.map(function (work) { return work.tags || []; })))));
       self.setData({
         artist: artist,
         serviceItems: (artist.serviceItems || []).slice(0, 6),
@@ -101,6 +113,7 @@ Page({
         }),
         availabilityText: formatSchedule(artist.serviceSchedule),
         works: works,
+        categoryFilters: categoryFilters,
         totalCount: works.length,
         loading: false,
         loadFailed: false
@@ -151,11 +164,12 @@ Page({
         var techSet = {};
         works.forEach(function (w) { if (w.technicianName) techSet[w.technicianName] = true; });
         var techFilters = ['全部'].concat(Object.keys(techSet));
+        var categoryFilters = ['全部风格'].concat(Array.from(new Set([].concat.apply([], works.map(function (work) { return work.tags || []; })))));
 
         var targetWork = self.data.targetTechId
           ? works.find(function (w) { return String(w.technicianId) === self.data.targetTechId; })
           : null;
-        self.setData({ works: works, techFilters: techFilters, totalCount: works.length, loading: false, loadFailed: false, selectedTech: targetWork ? targetWork.technicianName : self.data.selectedTech });
+        self.setData({ works: works, techFilters: techFilters, categoryFilters: categoryFilters, totalCount: works.length, loading: false, loadFailed: false, selectedTech: targetWork ? targetWork.technicianName : self.data.selectedTech });
         self.applyFilter();
       })
       .catch(function (err) {
@@ -177,6 +191,10 @@ Page({
       filtered = filtered.filter(function (w) {
         return w.title.indexOf(keyword) >= 0 || (w.tags || []).some(function (tag) { return String(tag).indexOf(keyword) >= 0; });
       });
+    }
+    if (this.data.selectedCategory !== '全部风格') {
+      var selectedCategory = this.data.selectedCategory;
+      filtered = filtered.filter(function (w) { return (w.tags || []).indexOf(selectedCategory) >= 0; });
     }
 
     var leftCol = [], rightCol = [];
@@ -224,6 +242,11 @@ Page({
     this.applyFilter();
   },
 
+  switchCategory: function (e) {
+    this.setData({ selectedCategory: e.currentTarget.dataset.name });
+    this.applyFilter();
+  },
+
   onAvatarError: function (e) {
     var id = e.currentTarget.dataset.id;
     var works = this.data.works.map(function (w) {
@@ -239,19 +262,29 @@ Page({
   viewWork: function (e) {
     var id = (e.detail && e.detail.id) || e.currentTarget.dataset.id;
     var path = this.data.businessPage ? '/pages/client/public-work/index?id=' : '/pages/client/work-detail/index?id=';
-    wx.navigateTo({ url: path + id });
+    var invite = this.inviteCode ? '&invite=' + encodeURIComponent(this.inviteCode) : '';
+    var source = this.entrySource || (this.data.businessPage ? 'artist_home' : 'works');
+    wx.navigateTo({ url: path + id + invite + '&source=' + encodeURIComponent(source) + '&channel=wechat_share' });
   },
 
   viewArtist: function (e) {
     var id = (e.detail && e.detail.id) || e.currentTarget.dataset.id;
-    if (id) wx.navigateTo({ url: '/pages/client/artist-home/index?id=' + id });
+    if (id) {
+      var invite = this.inviteCode ? '&invite=' + encodeURIComponent(this.inviteCode) : '';
+      wx.navigateTo({ url: '/pages/client/artist-home/index?id=' + id + invite + '&source=' + encodeURIComponent(this.entrySource || 'works') });
+    }
   },
 
   bookArtist: function () {
     var artist = this.data.artist;
     if (!artist) return;
+    if (artist.acceptingBookings === false) {
+      wx.showToast({ title: '这位美甲师暂未接单', icon: 'none' });
+      return;
+    }
     var app = getApp();
-    var target = '/pages/client/works/index?techId=' + artist.id + '&source=card';
+    var source = this.entrySource || 'card';
+    var target = '/pages/client/works/index?techId=' + artist.id + '&source=' + encodeURIComponent(source) + (artist.invitationCode ? '&invite=' + encodeURIComponent(artist.invitationCode) : '');
     if (!app.globalData.token || wx.getStorageSync('role') !== 'client') {
       var invite = artist.invitationCode ? '&invite=' + encodeURIComponent(artist.invitationCode) : '';
       wx.navigateTo({ url: '/pages/client/login/index?redirect=' + encodeURIComponent(target) + invite + '&source=card' });
@@ -262,7 +295,7 @@ Page({
       return String((binding.technician && binding.technician.id) || binding.id) === String(artist.id);
     });
     if (bound) {
-      wx.navigateTo({ url: '/pages/client/create-order/index?techId=' + artist.id });
+      wx.navigateTo({ url: '/pages/client/create-order/index?techId=' + artist.id + '&source=' + encodeURIComponent(source) });
       return;
     }
     if (!artist.invitationCode) {
@@ -275,13 +308,8 @@ Page({
       confirmText: '绑定并预约',
       success: function (result) {
         if (!result.confirm) return;
-        api.client.profile.bindTechnician(artist.id, artist.invitationCode, '来自经营名片', 'card').then(function () {
-          wx.showModal({
-            title: '绑定申请已提交',
-            content: '美甲师通过后，即可从此主页查看可约时间并预约。',
-            showCancel: false,
-            confirmText: '知道了'
-          });
+        api.client.profile.bindQuickBooking(Number(artist.id), artist.invitationCode).then(function () {
+          wx.navigateTo({ url: '/pages/client/create-order/index?techId=' + artist.id + '&invite=' + encodeURIComponent(artist.invitationCode) + '&source=' + encodeURIComponent(source) });
         }).catch(function (err) {
           wx.showToast({ title: err.message || '绑定失败，请稍后重试', icon: 'none' });
         });
@@ -318,8 +346,18 @@ Page({
     var artist = this.data.artist;
     if (!artist) return { title: '美甲作品', path: '/pages/client/works/index' };
     return {
-      title: (artist.name || '美甲师') + '的美甲服务与作品',
-      path: '/pages/client/works/index?techId=' + artist.id + '&source=card',
+      title: require('../../../utils/share-copy').buildArtistShareTitle(artist),
+      path: '/pages/client/artist-home/index?id=' + artist.id + '&source=card' + (artist.invitationCode ? '&invite=' + encodeURIComponent(artist.invitationCode) : ''),
+      imageUrl: artist.avatarUrl || (this.data.works[0] && this.data.works[0].coverUrl) || ''
+    };
+  },
+
+  onShareTimeline: function () {
+    var artist = this.data.artist;
+    if (!artist) return { title: '美甲作品', query: '' };
+    return {
+      title: require('../../../utils/share-copy').buildArtistShareTitle(artist),
+      query: 'techId=' + encodeURIComponent(artist.id) + '&source=card' + (artist.invitationCode ? '&invite=' + encodeURIComponent(artist.invitationCode) : ''),
       imageUrl: artist.avatarUrl || (this.data.works[0] && this.data.works[0].coverUrl) || ''
     };
   },

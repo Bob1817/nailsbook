@@ -38,12 +38,20 @@ Page({
     priceDifferenceFen: 0,
     coverUrl: '',
     images: [],
+    photoCount: 0,
     isVisible: true,
     visibilityScope: 'public',
     accessOptions: [],
     customerNames: [],
     selectedCustomerIndex: -1,
     accessGrants: [],
+    displayLevel: 'public',
+    displayOptions: [
+      { key: 'public', title: '公开展示', desc: '展示在作品列表' },
+      { key: 'featured', title: '主页精选', desc: '优先展示在个人主页' },
+      { key: 'hero', title: '首页主推', desc: '推荐到客户首页' }
+    ],
+    moreExpanded: false,
     uploading: false,
     submitting: false
   },
@@ -116,9 +124,11 @@ Page({
       selectedServiceIds: intent.selectedServiceIds || [],
       coverUrl: intent.coverUrl || '',
       images: intent.images || [],
+      photoCount: new Set([intent.coverUrl].concat(intent.images || []).filter(Boolean)).size,
       isVisible: intent.isVisible !== false,
       visibilityScope: intent.visibilityScope || 'public',
-      accessGrants: intent.accessGrants || []
+      accessGrants: intent.accessGrants || [],
+      displayLevel: intent.displayLevel || 'public'
     });
     this.syncSelectedWorkTags();
     this.recalculatePricing();
@@ -143,6 +153,7 @@ Page({
       isVisible: this.data.isVisible,
       visibilityScope: this.data.visibilityScope,
       accessGrants: this.data.accessGrants,
+      displayLevel: this.data.displayLevel,
       payload
     });
   },
@@ -254,9 +265,14 @@ Page({
         selectedServiceIds: expandServiceIds(work.serviceLines || []),
         coverUrl: work.coverUrl || '',
         images,
+        photoCount: new Set([work.coverUrl].concat(images).filter(Boolean)).size,
         isVisible: work.isVisible !== false,
-        visibilityScope: work.visibilityScope || 'public'
+        visibilityScope: work.visibilityScope || 'public',
+        displayLevel: work.heroSlot ? 'hero' : (work.isFeatured ? 'featured' : 'public'),
+        moreExpanded: !!(work.description || work.designIdea || work.suitableScene || work.visibilityScope === 'authorized_clients')
       });
+      this._originalFeatured = !!work.isFeatured;
+      this._originalHero = !!work.heroSlot;
       this.syncSelectedWorkTags();
       this.recalculatePricing();
       if (work.clientAccesses && work.clientAccesses.length) this.applyExistingGrants(work.clientAccesses);
@@ -353,7 +369,27 @@ Page({
     this.setData({ isVisible: e.detail.value });
   },
 
-  onScopeChange(e) { this.setData({ visibilityScope: e.detail.value ? 'authorized_clients' : 'public' }); },
+  setDisplayLevel(e) {
+    const displayLevel = e.currentTarget.dataset.key;
+    this.setData({ displayLevel, isVisible: true, visibilityScope: 'public' });
+  },
+
+  toggleMoreSettings() {
+    this.setData({ moreExpanded: !this.data.moreExpanded });
+  },
+
+  saveDraft() {
+    this._createRequestId = this._createRequestId || createRequestId();
+    this.persistCreateIntent(null);
+    wx.showToast({ title: '草稿已保存在本机', icon: 'success' });
+  },
+
+  onScopeChange(e) {
+    this.setData({
+      visibilityScope: e.detail.value ? 'authorized_clients' : 'public',
+      displayLevel: 'public'
+    });
+  },
 
   onCustomerChange(e) {
     const index = Number(e.detail.value);
@@ -424,7 +460,10 @@ Page({
         try {
           const result = await api.upload.image(filePath, 'technician');
           if (!this._pageActive) { this._asyncFinishedWhileHidden = true; return; }
-          this.setData({ coverUrl: result.url });
+          this.setData({
+            coverUrl: result.url,
+            photoCount: new Set([result.url].concat(this.data.images).filter(Boolean)).size
+          });
         } catch (err) {
           if (!this._pageActive) { this._asyncFinishedWhileHidden = true; return; }
           wx.showToast({ title: err.message || '封面上传失败', icon: 'none' });
@@ -438,7 +477,7 @@ Page({
 
   addImage() {
     if (this.data.uploading) return;
-    const remaining = 9 - this.data.images.length;
+    const remaining = Math.min(9, 10 - this.data.photoCount);
     if (remaining <= 0) {
       wx.showToast({ title: '最多9张图片', icon: 'none' });
       return;
@@ -455,7 +494,13 @@ Page({
             urls.push(result.url);
           }
           if (!this._pageActive) { this._asyncFinishedWhileHidden = true; return; }
-          this.setData({ images: [...this.data.images, ...urls] });
+          const coverUrl = this.data.coverUrl || urls.shift() || '';
+          const images = [...this.data.images, ...urls];
+          this.setData({
+            coverUrl,
+            images,
+            photoCount: new Set([coverUrl].concat(images).filter(Boolean)).size
+          });
         } catch (err) {
           if (!this._pageActive) { this._asyncFinishedWhileHidden = true; return; }
           wx.showToast({ title: err.message || '相册图片上传失败', icon: 'none' });
@@ -483,7 +528,10 @@ Page({
   removeImage(e) {
     const index = e.currentTarget.dataset.index;
     const images = this.data.images.filter((_, i) => i !== index);
-    this.setData({ images });
+    this.setData({
+      images,
+      photoCount: new Set([this.data.coverUrl].concat(images).filter(Boolean)).size
+    });
   },
 
   validate() {
@@ -535,6 +583,29 @@ Page({
         canLike: grant.canLike, canComment: grant.canComment
       };
     });
+  },
+
+  async syncDisplayPlacement(savedId) {
+    const desiredFeatured = this.data.displayLevel === 'featured' || this.data.displayLevel === 'hero';
+    if (desiredFeatured !== !!this._originalFeatured && api.technician.works.toggleFeatured) {
+      await api.technician.works.toggleFeatured(savedId);
+      this._originalFeatured = desiredFeatured;
+    }
+    if (this.data.displayLevel !== 'hero' && !this._originalHero) return;
+    if (!api.technician.works.heroRecommendations || !api.technician.works.saveHeroRecommendations) return;
+    const current = await api.technician.works.heroRecommendations();
+    const expectedIds = (current.works || []).map(item => Number(item.id));
+    const numericId = Number(savedId);
+    let desiredIds = expectedIds.filter(id => id !== numericId);
+    if (this.data.displayLevel === 'hero' && !expectedIds.includes(numericId) && expectedIds.length >= 3) {
+      this._heroNeedsSelection = numericId;
+      return;
+    }
+    if (this.data.displayLevel === 'hero') desiredIds = [numericId].concat(desiredIds).slice(0, 3);
+    if (desiredIds.join(',') !== expectedIds.join(',')) {
+      await api.technician.works.saveHeroRecommendations(desiredIds, expectedIds);
+    }
+    this._originalHero = this.data.displayLevel === 'hero';
   },
 
   async handleSubmit() {
@@ -598,11 +669,30 @@ Page({
       if (!isEdit && desiredVisible) {
         await api.technician.works.update(savedId, { isVisible: true });
       }
+      await this.syncDisplayPlacement(savedId);
       wx.hideLoading();
       if (!isEdit) this.clearCreateIntent();
       if (!this._pageActive) { this._savedWhileHidden = true; return; }
-      wx.showToast({ title: '保存成功', icon: 'success' });
-      this._navTimer = setTimeout(() => { if (this._pageActive) wx.navigateBack(); }, 800);
+      if (this._heroNeedsSelection) {
+        const targetId = this._heroNeedsSelection;
+        this._heroNeedsSelection = null;
+        wx.showToast({ title: '请选择要替换的首页主推', icon: 'none' });
+        this._navTimer = setTimeout(() => wx.redirectTo({ url: '/pages/technician/hero-recommendations/index?workId=' + targetId }), 500);
+        return;
+      }
+      wx.showModal({
+        title: isEdit ? '作品已更新' : '作品已提交审核',
+        content: '审核通过后，可在作品详情分享给微信好友或朋友圈。',
+        confirmText: '查看作品',
+        cancelText: '返回管理',
+        success: (result) => {
+          if (!this._pageActive) return;
+          const url = result.confirm
+            ? '/pages/technician/work-detail/index?id=' + savedId
+            : '/pages/technician/works/index';
+          wx.redirectTo({ url });
+        }
+      });
     } catch (err) {
       wx.hideLoading();
       if (!this._pageActive) { this._asyncFinishedWhileHidden = true; return; }

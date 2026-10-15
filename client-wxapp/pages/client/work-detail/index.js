@@ -149,7 +149,7 @@ Page({
     if (!this.data.sharePath) return { title: '美甲作品', path: '/pages/client/works/index' };
     if (work.id) api.client.works.recordShare(work.id, 'wechat_friend').catch(function () {});
     return {
-      title: '我的美甲灵感｜' + (work.title || 'OnlyNail 私人美甲'),
+      title: require('../../../utils/share-copy').buildWorkShareTitle(work),
       path: this.data.sharePath,
       imageUrl: this.data.imageUrls[0] || ''
     };

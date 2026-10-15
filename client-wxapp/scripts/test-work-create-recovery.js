@@ -24,7 +24,8 @@ vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../pages/technician/wor
     setStorageSync: (key, value) => { storage[key] = value; },
     removeStorageSync: key => { delete storage[key]; },
     showLoading() {}, hideLoading() {}, showToast() {},
-    showModal: ({ success }) => success({ confirm: true })
+    showModal: ({ success }) => success({ confirm: true }),
+    redirectTo() {}
   },
   setTimeout: () => 0
 });

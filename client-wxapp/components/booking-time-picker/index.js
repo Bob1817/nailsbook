@@ -70,6 +70,8 @@ Component({
     timeSlotStatuses: [],
     blockedSlots: [],
     closedDates: [],
+    dailyBookingLimit: 2,
+    bookingCounts: {},
     techInfo: null,
     shopAddresses: [],
     paused: false,
@@ -155,7 +157,10 @@ Component({
       }
       tasks.push(
         (role === 'technician'
-          ? api.technician.orders.blockedSlots()
+          ? api.technician.bookingDays.list().then(function (settings) {
+              bookingSettings = settings;
+              return settings.blockedSlots;
+            })
           : api.public.bookingSettings(techId).then(function (settings) {
               bookingSettings = settings;
               return settings.blockedSlots;
@@ -178,7 +183,9 @@ Component({
           techInfo: tech,
           paused: role !== 'technician' && (tech.acceptingBookings === false || (tech.status && tech.status !== 'active') || false),
           blockedSlots: blocked,
-          closedDates: role === 'technician' ? [] : ((bookingSettings && bookingSettings.days) || []).filter(function (day) { return !day.accepting; }).map(function (day) { return day.serviceDate; }),
+          closedDates: ((bookingSettings && bookingSettings.days) || []).filter(function (day) { return !day.accepting; }).map(function (day) { return day.serviceDate; }),
+          dailyBookingLimit: Number(bookingSettings && bookingSettings.dailyBookingLimit) || 2,
+          bookingCounts: (bookingSettings && bookingSettings.bookingCounts) || {},
           shopAddresses: shopAddrs,
           _ready: true
         });
@@ -197,36 +204,41 @@ Component({
     // ── 日历 ──────────────────────────────
     _updateCalendar: function () {
       var self = this;
-      var days = buildCalendar(this.data.calendarYear, this.data.calendarMonth, this.data.serviceDate);
+      var selectedDate = this.data.serviceDate;
+      var days = buildCalendar(this.data.calendarYear, this.data.calendarMonth, selectedDate);
       if (this.data.horizontal) {
         var today = new Date();
+        if (!selectedDate) selectedDate = dateStr(today.getFullYear(), today.getMonth(), today.getDate());
         days = Array.from({ length: this.data.visibleDayCount }, function (_, offset) {
           var date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offset);
           var ds = dateStr(date.getFullYear(), date.getMonth(), date.getDate());
-          return { day: date.getDate(), dateStr: ds, shortDate: (date.getMonth() + 1) + '/' + date.getDate(), weekday: offset === 0 ? '今天' : '周' + ['日','一','二','三','四','五','六'][date.getDay()], isToday: offset === 0, isPast: false, isSelected: ds === self.data.serviceDate };
+          return { day: date.getDate(), dateStr: ds, shortDate: (date.getMonth() + 1) + '/' + date.getDate(), weekday: offset === 0 ? '今天' : '周' + ['日','一','二','三','四','五','六'][date.getDay()], isToday: offset === 0, isPast: false, isSelected: ds === selectedDate };
         });
       }
       days.forEach(function (day) {
         if (day.empty) return;
         var slots = self.data._ready && !self.data.paused ? self._slotsForDate(day.dateStr) : [];
+        var bookingCount = Number(self.data.bookingCounts[day.dateStr] || 0);
+        var remainingCapacity = Math.max(0, self.data.dailyBookingLimit - bookingCount);
         day.disabled = !self.data._ready || self.data.paused || day.isPast ||
-          Boolean(self.data.minDate && day.dateStr < self.data.minDate) || !slots.some(function (slot) { return !slot.occupied; });
+          Boolean(self.data.minDate && day.dateStr < self.data.minDate) || remainingCapacity === 0 || !slots.some(function (slot) { return !slot.occupied; });
         day.label = day.disabled && !day.isPast && self.data._ready && !self.data.paused
-          ? (self.data.closedDates.indexOf(day.dateStr) >= 0 ? '已停单' : (slots.some(function (slot) { return slot.reason === 'occupied'; }) ? '已约满' : '不可约')) : '';
+          ? (self.data.closedDates.indexOf(day.dateStr) >= 0 ? '已停单' : (remainingCapacity === 0 || slots.some(function (slot) { return slot.reason === 'occupied'; }) ? '已约满' : '不可约')) : '';
         if (self.data.horizontal && day.disabled && self.data._ready && !self.data.paused) {
           var tech = self.data.techInfo;
           var shop = self._selectedShop();
           var isShop = self.data.serviceType === 'shop' || self.data.serviceType === '到店美甲';
           var rest = self.data.closedDates.indexOf(day.dateStr) >= 0 || !bookingEngine.activeScheduleForDate(tech && tech.serviceSchedule, day.dateStr) || (isShop && shop && !bookingEngine.shopHoursForDate(shop, day.dateStr));
           day.label = rest ? '休息日' : (isShop && !shop ? '先选门店' : '已约满');
+        } else if (!day.disabled && self.data._ready && !self.data.paused) {
+          day.label = remainingCapacity === 1 ? '仅余1席' : (bookingCount > 0 ? '少量可约' : '');
         }
-        if (day.disabled) day.isSelected = false;
       });
-      this.setData({ calendarDays: days, todayOption: this.data.horizontal ? days[0] : null, futureDays: this.data.horizontal ? days.slice(1) : [] });
-      var selectedDay = days.find(function (day) { return day.dateStr === self.data.serviceDate; });
+      this.setData({ calendarDays: days, todayOption: this.data.horizontal ? days[0] : null, futureDays: this.data.horizontal ? days.slice(1) : [], serviceDate: selectedDate });
+      var selectedDay = days.find(function (day) { return day.dateStr === selectedDate; });
       if (this.data.horizontal && this.data._ready && selectedDay && selectedDay.disabled) {
-        this.setData({ serviceDate: '', startTime: '', timeSlotStatuses: [] });
-        this._emitChange('', '', false);
+        this.setData({ startTime: '', timeSlotStatuses: [] });
+        this._emitChange(selectedDate, '', false);
       }
     },
 
@@ -255,14 +267,15 @@ Component({
       var ds = e.currentTarget.dataset.date;
       if (!ds) return;
       var day = this.data.calendarDays.find(function (d) { return d.dateStr === ds; });
-      if (!day || day.disabled) return;
+      if (!day || (day.disabled && !this.data.horizontal)) return;
       this.setData({
         serviceDate: ds,
         startTime: '',
         calendarDays: buildCalendar(this.data.calendarYear, this.data.calendarMonth, ds)
       });
       this._updateCalendar();
-      this._refreshTimeSlots();
+      if (day.disabled) this.setData({ timeSlotStatuses: [] });
+      else this._refreshTimeSlots();
       this._emitChange(ds, '', false);
     },
 
@@ -291,6 +304,7 @@ Component({
 
     _slotsForDate: function (serviceDate) {
       if (this.data.closedDates.indexOf(serviceDate) >= 0 && !this.data.excludeOrderId) return [];
+      if (!this.data.excludeOrderId && Number(this.data.bookingCounts[serviceDate] || 0) >= this.data.dailyBookingLimit) return [];
       var tech = this.data.techInfo;
       return bookingEngine.buildSlotStatuses({
         blockedSlots: this.data.blockedSlots,

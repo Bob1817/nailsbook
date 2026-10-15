@@ -77,6 +77,22 @@
       </view>
     </view>
 
+    <view class="section-block availability-section" wx:if="{{availabilityDays.length}}">
+      <view class="section-header">
+        <view class="section-bar"></view>
+        <view class="availability-title-wrap"><text class="section-title">近期档期</text><text class="availability-headline">{{availabilityHeadline}}</text></view>
+      </view>
+      <scroll-view scroll-x class="availability-scroll" enhanced show-scrollbar="{{false}}">
+        <view class="availability-days">
+          <view wx:for="{{availabilityDays}}" wx:key="serviceDate" class="availability-day {{item.full ? 'is-full' : ''}}">
+            <text class="availability-weekday">{{item.weekday}}</text>
+            <text class="availability-date">{{item.day}}</text>
+            <text class="availability-status">{{item.status}}</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+
     <!-- ===== 自我描述与定位（常驻，首屏可见） ===== -->
     <view class="section-block" wx:if="{{brandTagline || artist.bio || aestheticPhilosophy || artist.servicePhilosophy}}">
       <view class="section-header">
@@ -369,7 +385,6 @@
     <view style="height: 160rpx;"></view>
   </block>
 </view>
-
 <!-- ===== 9. 底部操作栏 ===== -->
 <view wx:if="{{!loading && !loadFailed}}" class="bottom-bar">
   <view class="bottom-bar-inner">
@@ -387,14 +402,12 @@
         <text class="count-label">{{commentCount || 0}}</text>
       </view>
     </view>
-    <button class="btn-book-main booking-action" style="flex:1 1 0%;width:0;min-width:0;height:44px;min-height:44px;padding:0 16px;box-sizing:border-box;" bindtap="bookArtist">
+    <button class="btn-book-main booking-action {{!isOwner && artist.acceptingBookings === false ? 'is-disabled' : ''}}" style="flex:1 1 0%;width:0;min-width:0;height:44px;min-height:44px;padding:0 16px;box-sizing:border-box;" bindtap="bookArtist" disabled="{{!isOwner && artist.acceptingBookings === false}}">
       <image class="btn-icon-svg" src="/static/icons/calendar.svg" mode="aspectFit"/>
-      <text class="btn-text">发起预约</text>
+      <text class="btn-text">{{isOwner ? '查看客户预约入口' : (artist.acceptingBookings === false ? '暂未接单' : '发起预约')}}</text>
     </button>
   </view>
-  <view class="safe-area-bottom"></view>
 </view>
-
 <view wx:if="{{showOwnerMenuSheet}}" class="modal-mask" bindtap="closeOwnerMenu">
   <view class="owner-action-panel" catchtap="">
     <view class="owner-action-item" data-action="edit" catchtap="handleOwnerMenuAction" role="button">编辑主页</view>
@@ -429,27 +442,6 @@
     <view class="modal-actions">
       <view class="modal-cancel booking-action" bindtap="closeComments" role="button">取消</view>
       <view class="modal-confirm booking-action {{!commentDraft || commentSubmitting ? 'is-disabled' : ''}}" bindtap="submitHomepageComment" role="button">{{commentSubmitting ? '发布中' : '发布评论'}}</view>
-    </view>
-  </view>
-</view>
-
-<!-- 绑定弹窗 -->
-<view wx:if="{{showBindModal}}" class="modal-mask" bindtap="closeBindModal">
-  <view class="modal-panel" catchtap="">
-    <view class="modal-handle"></view>
-    <text class="modal-title">绑定 {{artist.name}}</text>
-    <text class="modal-desc">请输入美甲师提供的邀请码。申请通过后，你的预约会默认归属给这位美甲师。</text>
-    <view class="modal-input-row">
-      <input class="modal-input" value="{{bindInviteCode}}" bindinput="onBindInviteInput" placeholder="邀请码或邀请链接" placeholder-class="modal-placeholder" aria-label="美甲师邀请码或邀请链接" disabled="{{bindChecking}}" confirm-type="done" />
-      <view class="modal-verify-btn booking-action" bindtap="verifyInviteCode" role="button" aria-disabled="{{bindChecking}}">{{bindChecking ? '验证中' : '验证'}}</view>
-    </view>
-    <view wx:if="{{bindCandidate}}" class="modal-success">
-      <text>✓ 已确认：{{bindCandidate.name}}</text>
-    </view>
-    <text wx:if="{{bindError}}" class="modal-error">{{bindError}}</text>
-    <view class="modal-actions">
-      <view class="modal-cancel booking-action" bindtap="closeBindModal" role="button">取消</view>
-      <view class="modal-confirm booking-action {{!bindCandidate || bindChecking ? 'is-disabled' : ''}}" bindtap="submitBinding" role="button" aria-disabled="{{!bindCandidate || bindChecking}}">提交绑定申请</view>
     </view>
   </view>
 </view>

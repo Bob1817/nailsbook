@@ -1,6 +1,16 @@
 const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
 const { normalizeWorkDetail } = require('../../../utils/normalize-work');
+const { trackConversion } = require('../../../utils/conversion-tracking');
+
+function canShareWork(work) {
+  return work.publicationStatus === 'approved'
+    && work.isVisible !== false
+    && work.visibilityScope === 'public'
+    && work.assetStatus === 'public'
+    && work.publicAuthorizationStatus === 'authorized'
+    && !work.archivedAt;
+}
 
 function formatTime(dateStr) {
   if (!dateStr) return '';
@@ -29,6 +39,7 @@ function processComment(c) {
 Page({
   data: {
     sharePath: '',
+    shareEligible: false,
     work: {},
     imageUrls: [],
     comments: [],
@@ -82,7 +93,7 @@ Page({
       const imageUrls = work.images ? (typeof work.images === 'string' ? JSON.parse(work.images) : work.images) : [];
       if (imageUrls.length === 0 && work.coverUrl) imageUrls.push(work.coverUrl);
 
-      this.setData({ work, imageUrls, loading: false, loadFailed: false });
+      this.setData({ work, imageUrls, shareEligible: canShareWork(work), loading: false, loadFailed: false });
       this.prepareSharePath();
       this.loadComments();
     } catch (err) {
@@ -107,10 +118,7 @@ Page({
   async prepareSharePath() {
     if (this._sharePreparing) return;
     const work = this.data.work || {};
-    const canSharePublicly = work.publicationStatus === 'approved'
-      && work.isVisible !== false
-      && work.visibilityScope === 'public'
-      && !work.archivedAt;
+    const canSharePublicly = canShareWork(work);
     if (!canSharePublicly) {
       this.setData({ sharePath: '' });
       wx.hideShareMenu();
@@ -120,8 +128,11 @@ Page({
     try {
       // 服务端确认该作品当前可公开访问，不能把私密作品按普通 ID 分享。
       await api.public.works.detail(this.workId);
-      this.setData({ sharePath: '/pages/client/public-work/index?id=' + this.workId });
-      wx.showShareMenu({ menus: ['shareAppMessage'] });
+      const profile = wx.getStorageSync('userInfo') || wx.getStorageSync('technician_userInfo') || {};
+      const inviteCode = profile.invitationCode || profile.inviteCode || '';
+      const invite = inviteCode ? '&invite=' + encodeURIComponent(inviteCode) : '';
+      this.setData({ sharePath: '/pages/client/public-work/index?id=' + this.workId + invite });
+      wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
     } catch (err) {
       this.setData({ sharePath: '' });
     } finally {
@@ -131,9 +142,20 @@ Page({
 
   onShareAppMessage() {
     if (!this.data.sharePath) return { title: '美甲作品', path: '/pages/client/works/index' };
+    trackConversion({ eventType:'work_share_intent', workId:this.data.work.id || this.workId, technicianId:this.data.work.technicianId || (this.data.work.technician || {}).id, channel:'wechat_share', touchpoint:'work_share' });
     return {
-      title: this.data.work.title || '美甲作品',
+      title: require('../../../utils/share-copy').buildWorkShareTitle(this.data.work),
       path: this.data.sharePath,
+      imageUrl: this.data.imageUrls[0] || ''
+    };
+  },
+
+  onShareTimeline() {
+    if (!this.data.sharePath) return { title: '美甲作品', query: '' };
+    trackConversion({ eventType:'work_share_intent', workId:this.data.work.id || this.workId, technicianId:this.data.work.technicianId || (this.data.work.technician || {}).id, channel:'wechat_moments', touchpoint:'work_share' });
+    return {
+      title: require('../../../utils/share-copy').buildWorkShareTitle(this.data.work),
+      query: this.data.sharePath.split('?')[1] + '&channel=wechat_moments',
       imageUrl: this.data.imageUrls[0] || ''
     };
   },

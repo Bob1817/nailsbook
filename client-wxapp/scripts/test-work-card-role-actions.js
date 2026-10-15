@@ -88,13 +88,14 @@ const sharedDetailJs = fs.readFileSync(path.join(root, 'components/work-detail-v
 const sharedDetailWxss = fs.readFileSync(path.join(root, 'components/work-detail-view/index.wxss'), 'utf8');
 expect(technicianDetailWxml, /<work-detail-view[^>]*isAuthor[^>]*bind:manage="showWorkActions"/, '美甲师作品详情页应以作者权限接入共享管理菜单');
 expect(technicianDetailWxml, /showBookSame="\{\{false\}\}"/, '美甲师作品详情页不得展示预约同款操作');
-expect(technicianDetailWxml, /canRetryShare="\{\{work\.publicationStatus === 'approved'\}\}"/, '只有审核通过的作品才能重试生成公开分享入口');
-expect(technicianDetailJs, /work\.publicationStatus === 'approved'[\s\S]*work\.visibilityScope === 'public'[\s\S]*!work\.archivedAt/, '待审核、非公开或已归档作品不得请求公开详情接口探测分享状态');
+expect(technicianDetailWxml, /canRetryShare="\{\{shareEligible\}\}"/, '只有满足完整公开条件的作品才能重试生成分享入口');
+expect(technicianDetailJs, /work\.publicationStatus === 'approved'[\s\S]*work\.visibilityScope === 'public'[\s\S]*work\.assetStatus === 'public'[\s\S]*work\.publicAuthorizationStatus === 'authorized'[\s\S]*!work\.archivedAt/, '待审核、非公开、未授权或已归档作品不得请求公开详情接口探测分享状态');
 expect(clientDetailWxml, /<work-detail-view[^>]*bind:like="toggleLike"/, '客户端作品详情页应复用共享组件');
 expect(publicDetailWxml, /<work-detail-view[^>]*canComment="\{\{false\}\}"/, '公开作品详情页应复用共享组件并关闭登录态评论权限');
 expect(publicDetailJs, /api\.public\.works\.detail\(this\.workId\)/, '分享落地普通 ID 应使用公开接口，不被登录用户已有绑定范围限制');
 expect(publicDetailJs, /this\.shareToken[\s\S]*api\.public\.works\.shared\(this\.shareToken\)/, '限时分享令牌仍应使用公开分享接口');
-expect(publicDetailJs, /if \(!token\)[\s\S]*buildClientLoginUrl\(returnPath/, '未登录访问作品分享时应先登录并保留返回路径');
+expect(publicDetailJs, /contactArtist\(\)[\s\S]*buildClientLoginUrl\(returnPath/, '游客浏览公开作品后，联系美甲师时才应登录并保留返回路径');
+expect(publicDetailJs, /viewMoreWorks\(\)[\s\S]*\/pages\/client\/artist-home\/index\?id=/, '游客应可从作品继续浏览美甲师公开主页');
 expect(publicDetailWxml, /isOwnerView="\{\{isOwnerView\}\}"/, '公开作品详情应把本人查看状态传给共享详情组件');
 expect(publicDetailJs, /role === 'technician'[\s\S]*String\(currentTechnicianId\) === String\(techId\)/, '美甲师只能在作品属于本人时进入本人查看状态');
 expect(publicDetailJs, /bookSameStyle\(\)[\s\S]*this\.data\.isOwnerView[\s\S]*this\.editWork\(\)/, '本人点击右下角主操作时应进入作品编辑流程');

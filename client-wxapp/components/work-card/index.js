@@ -116,6 +116,7 @@ Component({
       }
 
       function publicationStatusText(w) {
+        if (w.shareStatusText) return w.shareStatusText;
         var statusText = {
           draft: '草稿',
           pending: '待审核',

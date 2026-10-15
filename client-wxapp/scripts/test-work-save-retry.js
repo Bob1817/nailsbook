@@ -21,7 +21,7 @@ const api = { technician: { tagTemplates: { create: async () => ({}) }, works: {
 } } };
 vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../pages/technician/work-edit/index.js'), 'utf8'), {
   require: () => api, Page: value => { definition = value; },
-  wx: { showLoading() {}, hideLoading() {}, showToast() {} }, setTimeout: () => 0
+  wx: { showLoading() {}, hideLoading() {}, showToast() {}, showModal: ({ success }) => success({ confirm: true }), redirectTo() {} }, setTimeout: () => 0
 });
 function page(scope = 'authorized_clients') {
   return { ...definition, _pageActive: true,

@@ -1,0 +1,10 @@
+<view wx:if="{{visible}}" class="subscription-mask" bindtap="close">
+  <view class="subscription-dialog" catchtap="preventBubble">
+    <text class="subscription-title">开启微信提醒</text>
+    <text class="subscription-desc">{{role === 'technician' ? '及时接收新预约、客户消息和预约变更' : '及时接收美甲师报价、回复和预约变更'}}</text>
+    <view class="subscription-actions">
+      <button class="subscription-button subscription-button-secondary" disabled="{{loading}}" bindtap="close">暂不开启</button>
+      <button class="subscription-button subscription-button-primary" loading="{{loading}}" disabled="{{loading}}" bindtap="enable">开启提醒</button>
+    </view>
+  </view>
+</view>

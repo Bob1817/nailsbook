@@ -6,7 +6,9 @@
       <view wx:if="{{!work.isVisible}}" class="wc-status-pill"><image src="/static/icons/eye-closed.svg" class="wc-status-icon"/><text>已隐藏</text></view>
       <view wx:if="{{work.isPinned}}" class="wc-status-pill"><image src="/static/icons/status-pin.svg" class="wc-status-icon"/><text>已置顶</text></view>
       <view wx:if="{{work.isFeatured}}" class="wc-status-pill"><image src="/static/icons/status-featured.svg" class="wc-status-icon"/><text>主页精选</text></view>
+      <view wx:if="{{work.heroSlot}}" class="wc-status-pill"><image src="/static/icons/crown.svg" class="wc-status-icon"/><text>首页主推</text></view>
     </view>
+    <view wx:if="{{!manageable && work.heroSlot}}" class="wc-curated-badge"><image src="/static/icons/crown.svg"/><text>美甲师主推</text></view>
     <view wx:if="{{manageable}}" class="wc-manage" catchtap="onActionTap" role="button" aria-label="管理作品"><image src="/static/icons/more-horizontal.svg" class="wc-manage-icon"/></view>
     <text wx:if="{{displayPrice}}" class="wc-price-pill">{{displayPrice}}</text>
   </view>

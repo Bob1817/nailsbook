@@ -35,21 +35,6 @@
  padding:0 18rpx; background: var(--nb-soft-surface); border: 0; border-radius: var(--radius-sm); box-sizing:border-box;}
 .input:focus { border-color: var(--brand-primary); background: var(--bg-card); }
 
-.location-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 96rpx;
-}
-.location-label {
-  font-size: var(--font-md);
-  color: var(--text-primary);
-}
-.location-hint {
-  font-size: var(--font-sm);
-  color: var(--nb-text-link);
-}
-
 .default-row {
   display: flex;
   align-items: center;
@@ -89,13 +74,3 @@
   justify-content: center;
 }
 .btn-save[disabled] { opacity: 0.5; }
-
-.menu-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  vertical-align: middle;
-}
-.icon-location {
-  width: 24rpx; height: 28rpx;
-}

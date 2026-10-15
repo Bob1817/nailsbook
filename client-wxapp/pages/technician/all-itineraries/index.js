@@ -2,7 +2,7 @@ const api = require('../../../services/api');
 const {
   decorateTechnicianOrder
 } = require('../../../utils/order');
-const { technicianBookingCardHandlers = {} } = require('../../../utils/technician-booking-actions');
+const { technicianBookingCardHandlers = {} } = require('../utils/technician-booking-actions');
 
 const TRIP_STATUSES = ['pending_shop', 'in_progress'];
 

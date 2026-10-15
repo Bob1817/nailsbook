@@ -20,12 +20,13 @@ Page({
     shareTitle:'', shareDescription:'', shareCoverUrl:'', transportationNotes:'', hygieneStandards:'',
     materialStandards:'', allergyNotice:'', latePolicy:'', cancellationPolicy:'', aftercarePolicy:'',
     featuredReviewIds:[], reviews:[], services:[], featuredServiceIds:[], works:[], worksLoading:true, heroUploading:false,
-    defaultSelectionApplied:false
+    defaultSelectionApplied:false, completionPercent:0, completionItems:[]
   },
   async onLoad(options) {
     this._targetSection=(options && options.section) || 'profile';
     const user = wx.getStorageSync('technician_userInfo') || wx.getStorageSync('userInfo') || {};
     this.setData({ technicianId:user.id || '', name:user.name || '', avatarUrl:user.avatarUrl || '', bio:user.bio || '', city:user.city || '', serviceArea:user.serviceArea || '' });
+    this.refreshCompletion();
     try {
       const results = await Promise.all([
         api.technician.works.list(),
@@ -112,6 +113,7 @@ Page({
         defaultSelectionApplied:homepageDefaultsPending && !!(featuredServiceIds.length || featuredShopKey || works.some((item) => item.selected)),
         reviews:(results[2].items || []).map((review) => ({ ...review, selected:featuredReviewIds.indexOf(String(review.id)) !== -1 }))
       });
+      this.refreshCompletion();
     } catch (err) {
       wx.showToast({ title: err.message || '作品加载失败', icon: 'none' });
     } finally {
@@ -120,7 +122,25 @@ Page({
       setTimeout(()=>wx.pageScrollTo({scrollTop:topMap[this._targetSection] || 0,duration:280}),180);
     }
   },
-  onInput(e) { this.setData({ [e.currentTarget.dataset.field]: e.detail.value }); },
+  refreshCompletion() {
+    const items = [
+      { key:'identity', label:'主页形象', hint:'头像与主页名称', done:!!(this.data.avatarUrl && String(this.data.name || '').trim()), target:330 },
+      { key:'profile', label:'专业介绍', hint:'自我介绍与服务区域', done:!!(String(this.data.artistIntroduction || '').trim() && this.data.city && this.data.serviceArea), target:650 },
+      { key:'service', label:'服务项目', hint:'至少展示一项可预约服务', done:(this.data.featuredServiceIds || []).length > 0, url:'/pages/technician/services/index' },
+      { key:'shop', label:'服务地点', hint:'选择主页展示店铺', done:!!this.data.featuredShopKey, url:'/pages/technician/shop-management/index' },
+      { key:'works', label:'精选作品', hint:'至少展示一个公开作品', done:(this.data.works || []).some((item) => item.selected), url:'/pages/technician/works/index' },
+      { key:'publish', label:'公开主页', hint:'完成后开启公开展示', done:this.data.publicationStatus === 'published', target:0 }
+    ];
+    const doneCount = items.filter((item) => item.done).length;
+    this.setData({ completionItems:items, completionPercent:Math.round(doneCount / items.length * 100) });
+  },
+  openCompletionItem(e) {
+    const item = this.data.completionItems.find((entry) => entry.key === e.currentTarget.dataset.key);
+    if (!item) return;
+    if (item.url) return wx.navigateTo({ url:item.url });
+    wx.pageScrollTo({ scrollTop:item.target || 0, duration:280 });
+  },
+  onInput(e) { this.setData({ [e.currentTarget.dataset.field]: e.detail.value }); this.refreshCompletion(); },
   applyRuleTemplate() {
     const updates={};
     Object.keys(RULE_TEMPLATE).forEach((field) => {
@@ -137,6 +157,7 @@ Page({
       featuredShopKey: shop ? shop.key : '',
       featuredShopName: shop ? shop.name : ''
     });
+    this.refreshCompletion();
   },
   onStoryListInput(e) {
     const { list, index, field } = e.currentTarget.dataset;
@@ -167,8 +188,8 @@ Page({
       .map((item, i) => list === 'process' ? { ...item, step: i + 1 } : item);
     this.setData({ [key]: items });
   },
-  onCityChange(e) { const v=e.detail.value; this.setData({ city:v[0]===v[1]?v[1]:v[0]+' '+v[1] }); },
-  onServiceAreaChange(e) { const v=e.detail.value; this.setData({ serviceArea:v[0]===v[1]?v[1]+' '+v[2]:v.join(' ') }); },
+  onCityChange(e) { const v=e.detail.value; this.setData({ city:v[0]===v[1]?v[1]:v[0]+' '+v[1] }); this.refreshCompletion(); },
+  onServiceAreaChange(e) { const v=e.detail.value; this.setData({ serviceArea:v[0]===v[1]?v[1]+' '+v[2]:v.join(' ') }); this.refreshCompletion(); },
   onExperienceInput(e) {
     const digits=String(e.detail.value || '').replace(/\D/g,'');
     const value=digits ? Math.max(1,Math.min(30,Number(digits))) : '';
@@ -187,7 +208,7 @@ Page({
   chooseAvatar() {
     wx.chooseMedia({ count:1, mediaType:['image'], success:async(res) => {
       wx.showLoading({ title:'上传中' });
-      try { const uploaded=await api.upload.image(res.tempFiles[0].tempFilePath,'technician'); this.setData({ avatarUrl:uploaded.url }); }
+      try { const uploaded=await api.upload.image(res.tempFiles[0].tempFilePath,'technician'); this.setData({ avatarUrl:uploaded.url }); this.refreshCompletion(); }
       catch (err) { wx.showToast({ title:err.message || '上传失败', icon:'none' }); }
       finally { wx.hideLoading(); }
     }});
@@ -238,9 +259,10 @@ Page({
       featuredServiceIds:ids,
       services:this.data.services.map((item)=>({ ...item, selected:ids.indexOf(item.id)!==-1 }))
     });
+    this.refreshCompletion();
   },
   openSection(e) { const url=e.currentTarget.dataset.url; if(url) wx.navigateTo({url}); },
-  togglePublication() { this.setData({ publicationStatus:this.data.publicationStatus === 'published' ? 'draft' : 'published' }); },
+  togglePublication() { this.setData({ publicationStatus:this.data.publicationStatus === 'published' ? 'draft' : 'published' }); this.refreshCompletion(); },
   preview() { if(this.data.technicianId) wx.navigateTo({url:'/pages/client/artist-home/index?id='+this.data.technicianId+'&preview=1&owner=1'}); },
   async toggleHomepageWork(e) {
     const id = e.currentTarget.dataset.id;
@@ -251,11 +273,13 @@ Page({
     const nextSelected = !item.selected;
     if (nextSelected === item.persistedSelected) {
       this.setData({ works: this.data.works.map((work) => String(work.id) === String(id) ? { ...work, selected:nextSelected } : work) });
+      this.refreshCompletion();
       return;
     }
     try {
       await api.technician.works.toggleFeatured(id);
       this.setData({ works: this.data.works.map((work) => String(work.id) === String(id) ? { ...work, selected:nextSelected, persistedSelected:nextSelected } : work) });
+      this.refreshCompletion();
     } catch (err) { wx.showToast({ title:err.message || '设置失败', icon:'none' }); }
   },
   goHeroRecommendations() { wx.navigateTo({ url:'/pages/technician/hero-recommendations/index' }); },

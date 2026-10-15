@@ -7,22 +7,22 @@
   </view>
 
   <view wx:if="{{wechatFeatureVisible}}" class="login-tabs">
-    <view class="login-tab {{loginMethod === 'wechat' ? 'login-tab-active' : ''}}" data-method="wechat" bindtap="selectLoginMethod">微信授权登录</view>
-    <view class="login-tab {{loginMethod === 'phone' ? 'login-tab-active' : ''}}" data-method="phone" bindtap="selectLoginMethod">手机号登录</view>
+    <view class="login-tab {{loginMethod === 'wechat' ? 'login-tab-active' : ''}}" data-method="wechat" bindtap="selectLoginMethod">手机号快捷登录</view>
+    <view class="login-tab {{loginMethod === 'phone' ? 'login-tab-active' : ''}}" data-method="phone" bindtap="selectLoginMethod">账号密码登录</view>
   </view>
 
   <view wx:if="{{wechatFeatureVisible && loginMethod === 'wechat'}}" class="form">
-    <text class="wechat-hint">微信仅用于识别登录身份；首次绑定时需主动授权手机号，美甲师入驻仍需邀请码。</text>
+    <text class="wechat-hint">首次快捷登录时需主动授权手机号，美甲师入驻仍需邀请码。</text>
     <button wx:if="{{wechatLinked}}" class="btn-primary booking-action" bindtap="handleWechatLogin" disabled="{{loading || wechatChecking}}">
-      {{loading ? '登录中...' : '微信授权登录'}}
+      {{loading ? '登录中...' : '手机号快捷登录'}}
     </button>
     <button wx:elif="{{wechatReady}}" class="btn-primary booking-action" open-type="getPhoneNumber" bindgetphonenumber="handleWechatPhone" disabled="{{loading}}">
-      授权手机号并登录
+      手机号快捷登录
     </button>
     <button wx:else class="btn-primary booking-action" bindtap="handleWechatLogin" disabled="{{wechatChecking}}">
-      {{wechatChecking ? '正在检查微信登录...' : '重新获取微信登录状态'}}
+      {{wechatChecking ? '正在准备快捷登录...' : '重新获取登录状态'}}
     </button>
-    <view class="link-row"><text class="link" data-method="phone" bindtap="selectLoginMethod">改用手机号登录</text></view>
+    <view class="link-row"><text class="link" data-method="phone" bindtap="selectLoginMethod">改用账号密码登录</text></view>
   </view>
 
   <!-- Step 1: 输入手机号 -->
@@ -103,7 +103,7 @@
       {{loading ? '注册中...' : '注册并登录'}}
     </button>
     <button wx:if="{{wechatReady}}" class="btn-secondary booking-action" open-type="getPhoneNumber" bindgetphonenumber="handleWechatPhone" disabled="{{loading}}">
-      授权微信手机号并注册
+      验证手机号并注册
     </button>
     <view class="register-links">
       <navigator url="/pages/login/index" class="back-link">返回选择身份</navigator>

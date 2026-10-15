@@ -502,6 +502,11 @@ page { background: var(--bg-gradient-entry); }
   color: var(--text-primary);
   box-sizing: border-box;
 }
+.quote-remark-textarea {
+  min-height: 104rpx;
+  height: 104rpx;
+  padding: 16rpx 24rpx;
+}
 
 .form-hint {
   display: block;
@@ -553,8 +558,61 @@ page { background: var(--bg-gradient-entry); }
 .quote-service-name { color:var(--nb-ink); font-size:27rpx; font-weight:600; }
 .quote-service-meta { margin-top:5rpx; color:var(--nb-secondary); font-size:23rpx; }
 .quote-service-check { width:42rpx; height:42rpx; border-radius:50%; background:var(--nb-pressed); color:var(--nb-surface); display:flex; align-items:center; justify-content:center; }
-.quote-summary { margin-top:18rpx; padding:20rpx; border-radius:16rpx; background:var(--nb-page); display:flex; flex-direction:column; gap:8rpx; color:var(--nb-secondary); font-size:24rpx; word-break:break-all; }
-.quote-final { color:var(--nb-ink); font-size:30rpx; font-weight:700; }
+.quote-sheet-footer {
+  background: var(--bg-card);
+  box-shadow: 0 -12rpx 28rpx rgba(0, 0, 0, 0.06);
+}
+.quote-fixed-summary {
+  margin-bottom: 14rpx;
+  padding: 16rpx 20rpx;
+  border-radius: var(--radius-sm);
+  background: var(--nb-page);
+}
+.quote-fixed-summary-head,
+.quote-fixed-totals,
+.quote-fixed-total,
+.quote-fixed-deposit {
+  display: flex;
+  align-items: center;
+}
+.quote-fixed-summary-head,
+.quote-fixed-totals { justify-content: space-between; }
+.quote-fixed-summary-title {
+  color: var(--nb-ink);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-semibold);
+}
+.quote-fixed-summary-duration,
+.quote-fixed-breakdown,
+.quote-fixed-label {
+  color: var(--nb-secondary);
+  font-size: var(--font-xs);
+}
+.quote-fixed-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4rpx 18rpx;
+  margin-top: 8rpx;
+}
+.quote-fixed-totals {
+  margin-top: 10rpx;
+  padding-top: 10rpx;
+  border-top: 1rpx solid var(--nb-border);
+}
+.quote-fixed-total,
+.quote-fixed-deposit { gap: 8rpx; }
+.quote-fixed-price {
+  color: var(--nb-ink);
+  font-size: var(--font-lg);
+  font-weight: var(--weight-bold);
+}
+.quote-fixed-status {
+  padding: 4rpx 10rpx;
+  border-radius: var(--radius-xs);
+  background: var(--nb-surface);
+  color: var(--nb-secondary);
+  font-size: var(--font-xs);
+}
 .price-invalid { color:var(--nb-muted); text-decoration:line-through; }
 
 /* ===== 服务项目编辑（加减步进器）===== */

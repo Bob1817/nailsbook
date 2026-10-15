@@ -76,9 +76,9 @@ Page({
       if (seq !== this._inviteLookupSeq) return;
       if (!tech || !tech.name) throw new Error('invalid invite');
       this.setData({ inviteChecking: false, inviteValid: true, inviteTechName: tech.name, modeHint: `注册后将自动绑定 ${tech.name}` });
-    } catch (_) {
+    } catch (error) {
       if (seq !== this._inviteLookupSeq) return;
-      this.setData({ inviteChecking: false, inviteValid: false, inviteTechName: '', inviteError: '邀请码无效，请联系美甲师重新获取', modeHint: '客户注册必须使用有效的美甲师邀请码' });
+      this.setData({ inviteChecking: false, inviteValid: false, inviteTechName: '', inviteError: error.message || '美甲师账号异常，无法进行关联注册，请联系美甲师', modeHint: '客户注册必须使用有效的美甲师邀请码' });
     }
     this._updateCanSubmit();
   },
@@ -107,6 +107,8 @@ Page({
     this.setData({ loading: true });
     wx.showLoading({ title: '注册中...', mask: true });
     try {
+      const account = await api.auth.accountStatus(phone);
+      if (account.exists) throw new Error('该手机号码已注册，无法再次注册');
       const result = inviteType === 'activationKey'
         ? await api.auth.registerTechnician(inviteParsedValue, name.trim(), phone, password)
         : await api.auth.registerClient(phone, password, inviteParsedValue, this.registrationSource);
@@ -129,7 +131,7 @@ Page({
     }
     wx.hideLoading(); this.setData({ loading: false });
     const home = role === 'technician' ? '/pages/technician/home/index' : '/pages/client/home/index';
-    const nextPage = role === 'client' ? consumePostAuthRedirect(this.redirect || home) : home;
+    const nextPage = require('../../utils/account-navigation').postLoginPath(role, consumePostAuthRedirect(this.redirect || home));
     wx.reLaunch({
       url: role === 'client' && needsClientProfile(userInfo)
         ? completionUrl(nextPage)

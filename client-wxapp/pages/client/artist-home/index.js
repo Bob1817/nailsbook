@@ -1,5 +1,9 @@
 const api = require('../../../services/api');
 const { normalizeWork } = require('../../../utils/normalize-work');
+const bookingEngine = require('../../../utils/booking-time-engine');
+const { buildArtistShareTitle } = require('../../../utils/share-copy');
+const { buildClientLoginUrl } = require('../../../utils/artist-navigation');
+const { trackConversion } = require('../../../utils/conversion-tracking');
 
 const DEFAULT_SERVICE_ICONS = ['/static/icons/svc-handcare.svg', '/static/icons/svc-palette.svg', '/static/icons/svc-extend.svg', '/static/icons/svc-remove.svg'];
 const QUALIFICATION_TYPE_LABEL = {
@@ -56,14 +60,11 @@ Page({
     navBarHeight: 88,
     loading: true,
     loadFailed: false,
-    showBindModal: false,
-    bindInviteCode: '',
-    bindChecking: false,
-    bindCandidate: null,
-    bindError: '',
     stylePhotoCards: [],
     styleTextTags: [],
-    showOwnerMenuSheet: false
+    showOwnerMenuSheet: false,
+    availabilityDays: [],
+    availabilityHeadline: ''
   },
 
   onLoad(options) {
@@ -80,13 +81,22 @@ Page({
     const user = wx.getStorageSync('technician_userInfo') || {};
     const isOwner = options.owner === '1' || (role === 'technician' && user.id && String(user.id) === String(artistId));
     const entrySource = options.source || '';
+    this.inviteCode = options.invite ? decodeURIComponent(options.invite) : '';
+    this.resumeBooking = options.book === '1';
+    if (wx.showShareMenu) {
+      wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
+    }
     this.setData({
       artistId,
       previewMode: options.preview === '1' || isOwner,
       isOwner,
       entrySource
     });
-    this.loadHome();
+    this.loadHome().then(() => {
+      if (!this.resumeBooking) return;
+      this.resumeBooking = false;
+      this.bookArtist();
+    });
   },
 
   showOwnerMenu() {
@@ -137,7 +147,7 @@ Page({
     } else if (!getApp().globalData.token) {
       entryGuide = '浏览作品与环境无需登录；预约或咨询时登录即可。';
     } else if (this.data.isBindingPending) {
-      entryGuide = '绑定申请已提交，美甲师通过后即可预约。可先收藏作品，通过后我们会保留入口。';
+      entryGuide = '点击预约将使用当前美甲师的邀请码直接完成关联。';
     } else if (!this.data.isBound) {
       entryGuide = '预约将绑定 TA 为你的专属美甲师（一对一工作室）。';
     } else if (this.data.isReturningClient) {
@@ -150,11 +160,16 @@ Page({
 
   viewWork(e) {
     const id = (e.detail && e.detail.id) || e.currentTarget.dataset.id;
-    if (id) wx.navigateTo({ url: '/pages/client/public-work/index?id=' + id });
+    if (!id) return;
+    const source = this.data.entrySource || 'artist_home';
+    const invite = this.inviteCode ? '&invite=' + encodeURIComponent(this.inviteCode) : '';
+    wx.navigateTo({ url: '/pages/client/public-work/index?id=' + id + invite + '&source=' + encodeURIComponent(source) + '&channel=wechat_share' });
   },
 
   viewAllWorks() {
-    wx.navigateTo({ url: '/pages/client/works/index?techId=' + this.data.artistId });
+    const source = this.data.entrySource || 'artist_home';
+    const invite = this.inviteCode ? '&invite=' + encodeURIComponent(this.inviteCode) : '';
+    wx.navigateTo({ url: '/pages/client/works/index?techId=' + this.data.artistId + invite + '&source=' + encodeURIComponent(source) });
   },
 
   async loadHome() {
@@ -176,15 +191,41 @@ Page({
           ? { content: `owner_preview_${Date.now()}` }
           : undefined).catch(() => null),
         api.public.brands.services(this.data.artistId, { page: 1, pageSize: 20 }).catch(() => null),
-        api.public.brands.comments(this.data.artistId, { page: 1, pageSize: 20 }).catch(() => null)
+        api.public.brands.comments(this.data.artistId, { page: 1, pageSize: 20 }).catch(() => null),
+        api.public.bookingSettings(this.data.artistId).catch(() => null)
       ]);
       const res = results[0];
       const worksRes = results[1];
       const brandRes = results[2];
       const servicesRes = results[3];
       const commentsRes = results[4];
+      const bookingSettings = results[5];
       const artist = res.artist || res.technician || res || {};
+      this.inviteCode = this.inviteCode || artist.invitationCode || '';
       const brand = (brandRes && (brandRes.brand || brandRes)) || {};
+      const dailyBookingLimit = Number(bookingSettings && bookingSettings.dailyBookingLimit) || 2;
+      const bookingCounts = (bookingSettings && bookingSettings.bookingCounts) || {};
+      const closedDates = ((bookingSettings && bookingSettings.days) || []).filter((day) => !day.accepting).map((day) => day.serviceDate);
+      const availabilityDays = Array.from({ length: 7 }, (_, index) => {
+        const date = new Date();
+        date.setDate(date.getDate() + index);
+        const serviceDate = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+        const count = Number(bookingCounts[serviceDate] || 0);
+        const remaining = Math.max(0, dailyBookingLimit - count);
+        const rest = closedDates.indexOf(serviceDate) >= 0 || !bookingEngine.activeScheduleForDate(artist.serviceSchedule, serviceDate);
+        return {
+          serviceDate,
+          weekday: index === 0 ? '今天' : '周' + ['日', '一', '二', '三', '四', '五', '六'][date.getDay()],
+          day: date.getDate(),
+          status: rest ? '休息' : (remaining === 0 ? '已约满' : (remaining === 1 ? '仅剩1个' : (count > 0 ? '少量可约' : '可预约'))),
+          full: !rest && remaining === 0,
+          available: !rest && remaining > 0
+        };
+      });
+      const availableCount = availabilityDays.filter((day) => day.available).length;
+      const availabilityHeadline = availableCount <= 2
+        ? '近期档期较满，建议提前预约'
+        : (availabilityDays.some((day) => day.full) ? '本周部分日期已约满' : '本周尚有少量预约名额');
 
       // 基础信息
       artist.initial = (artist.name || '美').charAt(0);
@@ -405,6 +446,8 @@ Page({
         environmentHeroIndex: 0,
         stylePhotoCards,
         styleTextTags,
+        availabilityDays,
+        availabilityHeadline,
         standards,
         policies,
         studioPolicyItems,
@@ -427,6 +470,10 @@ Page({
         homepageComments,
         loading: false
       });
+      if (!this.data.isOwner && !this._viewTracked) {
+        this._viewTracked = true;
+        trackConversion({ eventType:'artist_view', technicianId:Number(artist.id || this.data.artistId), channel:this.data.entrySource || 'direct', touchpoint:'artist_home' });
+      }
     } catch (err) {
       console.error('load artist home error:', err);
       this.setData({ loading: false, loadFailed: true });
@@ -520,7 +567,12 @@ Page({
     const role = app.globalData.role || wx.getStorageSync('role');
     if (app.globalData.token && role === 'client') return true;
     const target = '/pages/client/artist-home/index?id=' + this.data.artistId;
-    wx.navigateTo({ url: '/pages/login/index?redirect=' + encodeURIComponent(target) });
+    wx.navigateTo({
+      url: buildClientLoginUrl(target, {
+        source: this.data.entrySource || 'artist_home',
+        inviteCode: this.inviteCode
+      })
+    });
     return false;
   },
 
@@ -529,41 +581,74 @@ Page({
       wx.showToast({ title: '客户访问主页后可从这里发起预约', icon: 'none' });
       return;
     }
-    if (api.public && api.public.bookingSettings) {
-      try {
-        const settings = await api.public.bookingSettings(this.data.artistId);
-        if (settings.quickBookingEnabled) {
-          wx.navigateTo({
-            url: '/pages/client/create-order/index?techId=' + this.data.artistId + '&mode=quick&source=' + (this.data.entrySource || 'artist_home')
-          });
-          return;
-        }
-      } catch (_) {}
+    if (this._bookingOpening) return;
+    if (this.data.artist && this.data.artist.acceptingBookings === false) {
+      wx.showToast({ title: '这位美甲师暂未接单', icon: 'none' });
+      return;
     }
     const app = getApp();
-    const token = app.globalData.token;
+    const token = app.globalData.token || wx.getStorageSync('token');
     const role = app.globalData.role || wx.getStorageSync('role');
-    // 1. 未登录 → 跳转登录（回跳主页，保留来源）
+    if (role === 'technician') {
+      wx.showToast({ title: '美甲师账号不能以客户身份预约', icon: 'none' });
+      return;
+    }
+    const source = this.data.entrySource || 'artist_home';
     if (!token || role !== 'client') {
-      const target = '/pages/client/artist-home/index?id=' + this.data.artistId +
-        (this.data.entrySource ? '&source=' + this.data.entrySource : '');
-      wx.navigateTo({ url: '/pages/login/index?redirect=' + encodeURIComponent(target) });
+      const target = this.artistSharePath(true, source);
+      wx.navigateTo({
+        url: buildClientLoginUrl(target, {
+          source,
+          inviteCode: this.inviteCode,
+          quickBookingTechId: this.data.artistId
+        })
+      });
       return;
     }
-    // 2. 已登录但未绑定 → 绑定中给状态提示，否则打开绑定弹窗
-    if (!this.data.isBound) {
-      if (this.data.isBindingPending) {
-        wx.showToast({ title: '绑定审核中，美甲师通过后即可预约', icon: 'none' });
-        return;
+    this._bookingOpening = true;
+    wx.showLoading({ title: '正在准备预约', mask: true });
+    try {
+      await this.loadRelationship();
+      if (!this.data.isBound) {
+        const inviteCode = this.inviteCode || (this.data.artist || {}).invitationCode || '';
+        if (!inviteCode) throw new Error('该美甲师邀请信息暂不可用');
+        await api.client.profile.bindQuickBooking(Number(this.data.artistId), inviteCode);
+        const pendingMap = wx.getStorageSync('client_binding_pending') || {};
+        delete pendingMap[String(this.data.artistId)];
+        wx.setStorageSync('client_binding_pending', pendingMap);
+        this.setData({ isBound: true, isBindingPending: false });
+        this.updateEntryGuide();
       }
-      this.setData({ showBindModal: true });
-      return;
+      let quickMode = false;
+      if (api.public && api.public.bookingSettings) {
+        try {
+          const settings = await api.public.bookingSettings(this.data.artistId);
+          quickMode = !!settings.quickBookingEnabled;
+        } catch (_) {}
+      }
+      wx.hideLoading();
+      wx.navigateTo({
+        url: '/pages/client/create-order/index?techId=' + this.data.artistId +
+          (quickMode ? '&mode=quick' : '') +
+          (this.inviteCode ? '&invite=' + encodeURIComponent(this.inviteCode) : '') +
+          '&source=' + encodeURIComponent(source)
+      });
+    } catch (err) {
+      wx.hideLoading();
+      wx.showToast({ title: err.message || '暂时无法发起预约', icon: 'none' });
+    } finally {
+      this._bookingOpening = false;
     }
-    // 3. 已绑定（新客/老客同一预约链路；老客在预约页可少填字段）
-    wx.navigateTo({
-      url: '/pages/client/create-order/index?techId=' + this.data.artistId +
-        (this.data.entrySource ? '&source=' + this.data.entrySource : '')
-    });
+  },
+
+  artistSharePath(book, source) {
+    const params = [
+      'id=' + encodeURIComponent(this.data.artistId),
+      'source=' + encodeURIComponent(source || 'artist_share')
+    ];
+    if (this.inviteCode) params.push('invite=' + encodeURIComponent(this.inviteCode));
+    if (book) params.push('book=1');
+    return '/pages/client/artist-home/index?' + params.join('&');
   },
 
   openNavigation() {
@@ -621,71 +706,25 @@ Page({
     this.setData({ showStudioPolicyModal: false });
   },
 
-  closeBindModal() {
-    if (this.data.bindChecking) return;
-    this.setData({ showBindModal: false, bindInviteCode: '', bindCandidate: null, bindError: '' });
-  },
-
-  onBindInviteInput(e) {
-    let raw = String(e.detail.value || '').trim();
-    const match = raw.match(/[?&/](?:invite|code|referral)[=/#]([A-Za-z0-9_-]+)/i);
-    if (match) raw = match[1];
-    this.setData({ bindInviteCode: raw, bindCandidate: null, bindError: '' });
-  },
-
-  async verifyInviteCode() {
-    const code = this.data.bindInviteCode.trim();
-    if (!code) return this.setData({ bindError: '请输入邀请码或邀请链接' });
-    this.setData({ bindChecking: true, bindError: '', bindCandidate: null });
-    try {
-      const technician = await api.client.profile.findTechByInviteCode(code);
-      if (!technician || String(technician.id) !== String(this.data.artistId)) {
-        this.setData({ bindError: '该邀请码不属于当前美甲师' });
-        return;
-      }
-      this.setData({ bindCandidate: technician });
-    } catch (err) {
-      this.setData({ bindError: err.message || '邀请码无效，请向美甲师获取最新邀请码' });
-    } finally {
-      this.setData({ bindChecking: false });
-    }
-  },
-
-  async submitBinding() {
-    if (!this.data.bindCandidate || this.data.bindChecking) return;
-    this.setData({ bindChecking: true });
-    try {
-      const result = await api.client.profile.bindTechnician(this.data.artistId, this.data.bindInviteCode.trim(), '从美甲师主页申请绑定', 'artist_home');
-      const pendingMap = wx.getStorageSync('client_binding_pending') || {};
-      pendingMap[String(this.data.artistId)] = Date.now();
-      wx.setStorageSync('client_binding_pending', pendingMap);
-      this.setData({
-        showBindModal: false,
-        bindCandidate: null,
-        bindInviteCode: '',
-        isBindingPending: true
-      });
-      this.updateEntryGuide();
-      wx.showModal({
-        title: '绑定申请已提交',
-        content: '美甲师通过后，主页会开放可约日期和预约入口。你仍可先浏览作品，通过后再来预约。',
-        showCancel: false,
-        confirmText: '知道了'
-      });
-    } catch (err) {
-      this.setData({ bindError: err.message || '绑定申请失败，请重试' });
-    } finally {
-      this.setData({ bindChecking: false });
-    }
-  },
-
   onShareAppMessage() {
     const artist = this.data.artist || {};
     const share = this.data.brandShare || {};
-    const title = share.title || [artist.name, artist.specialtiesText].filter(Boolean).join(' · ') || '美甲师主页';
+    const title = buildArtistShareTitle(artist, share.title);
+    trackConversion({ eventType:'artist_share_intent', technicianId:Number(artist.id || this.data.artistId), channel:'wechat_share', touchpoint:'artist_home' });
     return {
       title,
-      path: '/pages/client/artist-home/index?id=' + this.data.artistId + (this.data.entrySource ? '&source=' + this.data.entrySource : ''),
+      path: this.artistSharePath(false, 'artist_share'),
+      imageUrl: share.coverUrl || artist.avatarUrl || (this.data.bannerImages && this.data.bannerImages[0]) || ''
+    };
+  },
+
+  onShareTimeline() {
+    const artist = this.data.artist || {};
+    const share = this.data.brandShare || {};
+    trackConversion({ eventType:'artist_share_intent', technicianId:Number(artist.id || this.data.artistId), channel:'wechat_moments', touchpoint:'artist_home' });
+    return {
+      title: buildArtistShareTitle(artist, share.title),
+      query: this.artistSharePath(false, 'artist_share').split('?')[1] + '&channel=wechat_moments',
       imageUrl: share.coverUrl || artist.avatarUrl || (this.data.bannerImages && this.data.bannerImages[0]) || ''
     };
   }

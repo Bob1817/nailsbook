@@ -53,6 +53,7 @@ assert(loginJs.includes('client_bindings') && loginJs.includes('removeStorageSyn
         needsClientProfile: (user) => !user.avatarUrl || !user.nickname || user.nickname === user.phone,
         completionUrl: (next) => `/pages/client/profile-completion/index?next=${encodeURIComponent(next)}`
       };
+      if (name.includes('account-navigation')) return { postLoginPath: (_role, path) => path };
       return {};
     },
     getApp: () => ({ setLogin() {}, globalData: {}, loadCapabilities: async () => ({}) }),

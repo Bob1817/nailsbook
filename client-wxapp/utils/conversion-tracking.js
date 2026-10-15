@@ -1,7 +1,7 @@
 const api = require('../services/api');
 
 const VISITOR_KEY = 'conversion_visitor_id';
-const EVENT_TYPES = ['homepage_view', 'work_view', 'price_view', 'consult_click', 'consult_submit', 'booking_click', 'booking_submit', 'artist_view', 'booking_intent', 'poster_saved', 'poster_generated'];
+const EVENT_TYPES = ['homepage_view', 'work_view', 'price_view', 'consult_click', 'consult_submit', 'booking_click', 'booking_submit', 'artist_view', 'booking_intent', 'artist_share_intent', 'work_share_intent', 'poster_saved', 'poster_generated'];
 const CHANNELS = ['direct', 'xiaohongshu', 'douyin', 'wechat_moments', 'wechat_share', 'repeat_customer', 'customer_referral', 'offline_qr', 'organic', 'unknown'];
 const ALIASES = { xhs:'xiaohongshu', red:'xiaohongshu', tiktok_cn:'douyin', moments:'wechat_moments', share_card:'wechat_share', wechat_friend:'wechat_share', repurchase:'repeat_customer', referral:'customer_referral', qr:'offline_qr' };
 

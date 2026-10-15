@@ -1,10 +1,9 @@
 {
   "pages": [
     "pages/login/index",
+    "pages/booking/index",
     "pages/register/index",
     "pages/setup-password/index",
-    "pages/onboarding/index",
-    "pages/role-select/index",
     "pages/account-deletion/index"
   ],
   "subPackages": [
@@ -24,7 +23,7 @@
       "root": "pages/technician",
       "pages": [
         "login/index", "set-password/index", "forgot-password/index", "home/index", "business-data/index",
-        "orders/index", "order-detail/index", "complete-service/index", "customers/index", "customer-detail/index",
+        "orders/index", "create-order/index", "order-detail/index", "complete-service/index", "customers/index", "customer-detail/index",
         "works/index", "hero-recommendations/index", "work-edit/index", "work-detail/index", "design-requests/index", "services/index",
         "schedule/index", "all-itineraries/index", "all-bookings/index", "chat/index", "chat-detail/index",
         "artist-interactions/index", "binding-applications/index", "profile/index", "profile-settings/index", "homepage-settings/index",

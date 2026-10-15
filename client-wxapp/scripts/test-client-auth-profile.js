@@ -25,7 +25,6 @@ assert(wxml.includes('type="nickname"'), '昵称必须使用微信原生昵称�
   'pages/login/index.js',
   'pages/register/index.js',
   'pages/setup-password/index.js',
-  'pages/role-select/index.js',
   'pages/client/login/index.js',
   'pages/client/register/index.js'
 ].forEach(file => {

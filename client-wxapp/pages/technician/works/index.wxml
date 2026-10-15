@@ -1,48 +1,21 @@
-<nav-bar title="作品" showBack>
-</nav-bar>
+<nav-bar title="作品管理" showBack></nav-bar>
 <view class="container">
-  <!-- 加载中 -->
-  <view wx:if="{{loading}}" class="loading-wrap">
-    <view class="spinner"></view>
-  </view>
-
-  <view wx:elif="{{loadFailed}}" class="empty" aria-live="polite">
-    <text class="empty-title">作品列表加载失败</text>
-    <text class="empty-sub">请检查网络后重试</text>
-    <button class="btn-add-first booking-action" bindtap="loadWorks">重新加载</button>
-  </view>
-
-  <!-- 空状态 -->
-  <view wx:elif="{{works.length === 0}}" class="empty">
-    <view class="empty-icon-wrap">
-      <view class="icon-placeholder-circle">
-        <view class="icon-placeholder-inner"></view>
-      </view>
-    </view>
-    <text class="empty-title">还没有作品</text>
-    <text class="empty-sub">上传你的美甲作品，吸引更多客户</text>
-    <button class="btn-add-first booking-action" bindtap="goCreate">上传第一个作品</button>
-  </view>
-
-  <!-- 瀑布流 -->
-  <view wx:else class="waterfall">
-    <!-- 左列 -->
-    <view class="col">
-      <view wx:for="{{leftCol}}" wx:key="id" class="work-item">
-        <work-card work="{{item}}" manageable bind:cardtap="goDetail" bind:artisttap="openArtistHome" bind:actiontap="showActions" />
-      </view>
+  <view wx:if="{{loading}}" class="loading-wrap"><view class="spinner"></view></view>
+  <view wx:elif="{{loadFailed}}" class="empty"><text class="empty-title">作品列表加载失败</text><text class="empty-sub">请检查网络后重试</text><button class="btn-add-first booking-action" bindtap="loadWorks">重新加载</button></view>
+  <view wx:elif="{{works.length === 0}}" class="empty"><image class="empty-work-icon" src="/static/icons/image.svg" mode="aspectFit"/><text class="empty-title">还没有作品</text><text class="empty-sub">从照片开始，几步就能完成发布</text><button class="btn-add-first booking-action" bindtap="goCreate">上传第一个作品</button></view>
+  <block wx:else>
+    <view class="manage-tools">
+      <view class="search-row"><image src="/static/icons/search.svg" mode="aspectFit"/><input placeholder="搜索作品标题或分类" value="{{keyword}}" bindinput="onKeywordInput"/><view wx:if="{{keyword}}" class="search-clear" bindtap="clearKeyword">×</view></view>
+      <scroll-view scroll-x enhanced show-scrollbar="{{false}}" class="filter-scroll"><view class="filter-list"><view wx:for="{{categoryFilters}}" wx:key="*this" class="filter-chip {{selectedCategory === item ? 'selected' : ''}}" data-name="{{item}}" bindtap="selectCategory">{{item}}</view></view></scroll-view>
+      <view class="status-row"><scroll-view scroll-x enhanced show-scrollbar="{{false}}" class="status-scroll"><view class="filter-list"><view wx:for="{{statusFilters}}" wx:key="key" class="status-chip {{selectedStatus === item.key ? 'selected' : ''}}" data-key="{{item.key}}" bindtap="selectStatus">{{item.label}}</view></view></scroll-view><view class="sort-action" bindtap="chooseSort">{{sortLabel}}⌄</view></view>
     </view>
 
-    <!-- 右列 -->
-    <view class="col">
-      <view wx:for="{{rightCol}}" wx:key="id" class="work-item">
-        <work-card work="{{item}}" manageable bind:cardtap="goDetail" bind:artisttap="openArtistHome" bind:actiontap="showActions" />
-      </view>
+    <view class="result-head"><text>{{filteredWorks.length}} 个作品</text><text>点击作品可查看详情</text></view>
+    <view wx:if="{{filteredWorks.length === 0}}" class="empty filter-empty"><text class="empty-title">没有匹配的作品</text><text class="empty-sub">换个关键词或筛选条件试试</text></view>
+    <view wx:else class="waterfall">
+      <view class="col"><view wx:for="{{leftCol}}" wx:key="id" class="work-item"><work-card work="{{item}}" manageable bind:cardtap="goDetail" bind:artisttap="openArtistHome" bind:actiontap="showActions"/><view class="work-quick-actions"><button wx:if="{{item.isShareReady}}" open-type="share" data-id="{{item.id}}"><image src="/static/icons/share.svg" mode="aspectFit"/>分享</button><button wx:else data-reason="{{item.shareBlockReason}}" bindtap="showShareBlockReason"><image src="/static/icons/share.svg" mode="aspectFit"/>{{item.shareStatusText}}</button><button data-id="{{item.id}}" data-hero="{{item.heroSlot ? true : false}}" bindtap="manageHero"><image src="/static/icons/crown.svg" mode="aspectFit"/>{{item.heroSlot ? '已主推' : '设为主推'}}</button></view></view></view>
+      <view class="col"><view wx:for="{{rightCol}}" wx:key="id" class="work-item"><work-card work="{{item}}" manageable bind:cardtap="goDetail" bind:artisttap="openArtistHome" bind:actiontap="showActions"/><view class="work-quick-actions"><button wx:if="{{item.isShareReady}}" open-type="share" data-id="{{item.id}}"><image src="/static/icons/share.svg" mode="aspectFit"/>分享</button><button wx:else data-reason="{{item.shareBlockReason}}" bindtap="showShareBlockReason"><image src="/static/icons/share.svg" mode="aspectFit"/>{{item.shareStatusText}}</button><button data-id="{{item.id}}" data-hero="{{item.heroSlot ? true : false}}" bindtap="manageHero"><image src="/static/icons/crown.svg" mode="aspectFit"/>{{item.heroSlot ? '已主推' : '设为主推'}}</button></view></view></view>
     </view>
-  </view>
+  </block>
 </view>
-
-<!-- 固定底部发布按钮 -->
-<view wx:if="{{works.length > 0}}" class="fixed-bottom">
-  <button class="btn-publish booking-action" bindtap="goCreate">+ 上传作品</button>
-</view>
+<view wx:if="{{works.length > 0}}" class="fixed-bottom"><button class="btn-publish booking-action" bindtap="goCreate">上传新作品</button></view>

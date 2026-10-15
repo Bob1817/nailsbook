@@ -17,6 +17,7 @@ require('./utils/work-share-scene');
 require('./utils/work-share-registration');
 require('./utils/avatar');
 require('./utils/booking-location');
+require('./utils/share-copy');
 
 App({
   globalData: {
@@ -51,7 +52,7 @@ App({
         technician: '/pages/technician/home/index'
       };
       const homePage = homePages[role] || homePages.client;
-      const preserveSharePage = (options.path === 'pages/login/index' && options.query && options.query.invite) || options.path === 'pages/client/quick-booking/index' || options.path === 'pages/client/public-work/index' || options.path === 'pages/client/create-order/index';
+      const preserveSharePage = (options.path === 'pages/login/index' && options.query && options.query.invite) || options.path === 'pages/client/quick-booking/index' || options.path === 'pages/client/public-work/index' || options.path === 'pages/client/artist-home/index' || options.path === 'pages/client/create-order/index';
 
       // 先校验 token 是否有效，避免带失效 token 跳首页导致 401
       this.verifyToken(token, role)
@@ -65,7 +66,7 @@ App({
           if (!preserveSharePage) setTimeout(() => wx.reLaunch({ url: homePage }), 300);
         });
     }
-    // 无 token 时停留在登录页；作品与客户首页均要求有效会话。
+    // 无 token 时保留当前入口；公开作品与美甲师主页允许游客浏览。
   },
 
   onShow() {
@@ -248,14 +249,11 @@ App({
     wx.setStorageSync(`${role}_userInfo`, userInfo);
     wx.setStorageSync('isTourist', !!isTourist);
 
-    // 保存用户所有可用角色
-    if (roles && roles.length > 0) {
-      this.globalData.roles = roles;
-      wx.setStorageSync('roles', roles);
-    } else {
-      this.globalData.roles = [role];
-      wx.setStorageSync('roles', [role]);
-    }
+    this.globalData.roles = [role];
+    wx.setStorageSync('roles', [role]);
+    const other = role === 'client' ? 'technician' : 'client';
+    ['token', 'refreshToken', 'userInfo'].forEach(key => wx.removeStorageSync(`${other}_${key}`));
+
   },
 
   logout() {
@@ -270,26 +268,6 @@ App({
       'client_token', 'client_refreshToken', 'client_userInfo', 'client_bindings',
       'technician_token', 'technician_refreshToken', 'technician_userInfo'
     ].forEach((key) => wx.removeStorageSync(key));
-  },
-
-  switchRole(role) {
-    const token = wx.getStorageSync(`${role}_token`);
-    const userInfo = wx.getStorageSync(`${role}_userInfo`);
-    const isTourist = wx.getStorageSync('isTourist') || false;
-
-    if (token) {
-      this.globalData.role = role;
-      this.globalData.token = token;
-      this.globalData.userInfo = userInfo;
-      this.globalData.isTourist = !!isTourist;
-
-      wx.setStorageSync('role', role);
-      wx.setStorageSync('token', token);
-      wx.setStorageSync('userInfo', userInfo);
-
-      return true;
-    }
-    return false;
   },
 
   /**

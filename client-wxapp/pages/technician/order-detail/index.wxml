@@ -253,7 +253,6 @@
       <text class="quote-helper">方案无变化直接排期；价格、定金、服务或时间有变动，发送客户确认。</text>
       <text class="form-label">最终报价（元） *</text>
       <input placeholder-class="form-placeholder" class="form-input" type="digit" placeholder="请输入最终报价" value="{{quotePrice}}" bindinput="onQuoteFinalPriceInput" confirm-type="done" />
-      <view class="quote-summary"><text>服务合计 ¥{{quoteSubtotalFen / 100}}</text><text>预计 {{quoteTotalDuration}} 分钟</text><text wx:if="{{quoteFinalFen > quoteSubtotalFen}}">其他 +¥{{(quoteFinalFen - quoteSubtotalFen) / 100}}</text><text wx:elif="{{quoteFinalFen < quoteSubtotalFen}}">优惠 -¥{{(quoteSubtotalFen - quoteFinalFen) / 100}}</text><text class="quote-final">最终报价 ¥{{quoteFinalFen / 100}}</text></view>
       <view class="deposit-editor">
         <text class="deposit-editor-title">定金</text>
         <view class="deposit-editor-fields">
@@ -271,7 +270,7 @@
     <view class="form-item">
       <text class="form-label">备注（选填）</text>
       <textarea placeholder-class="form-placeholder"
-        class="form-textarea"
+        class="form-textarea quote-remark-textarea"
         placeholder="给客户的备注"
         value="{{quoteRemark}}"
         bindinput="onQuoteRemarkInput"
@@ -280,7 +279,30 @@
 
   </scroll-view>
 
-  <view class="sheet-footer">
+  <view class="sheet-footer quote-sheet-footer">
+    <view class="quote-fixed-summary">
+      <view class="quote-fixed-summary-head">
+        <text class="quote-fixed-summary-title">报价明细</text>
+        <text class="quote-fixed-summary-duration">预计 {{quoteTotalDuration}} 分钟</text>
+      </view>
+      <view class="quote-fixed-breakdown">
+        <text>原价 ¥{{quoteSubtotalFen / 100}}</text>
+        <text>基础 ¥{{quoteCorePrice || 0}}</text>
+        <text>附加 ¥{{quoteExtraFen / 100}}</text>
+        <text wx:if="{{quoteFinalFen > quoteSubtotalFen}}">其他 +¥{{(quoteFinalFen - quoteSubtotalFen) / 100}}</text>
+        <text wx:elif="{{quoteFinalFen < quoteSubtotalFen}}">优惠 -¥{{(quoteSubtotalFen - quoteFinalFen) / 100}}</text>
+      </view>
+      <view class="quote-fixed-totals">
+        <view class="quote-fixed-total">
+          <text class="quote-fixed-label">最终价格</text>
+          <text class="quote-fixed-price">¥{{quoteFinalFen / 100}}</text>
+        </view>
+        <view class="quote-fixed-deposit">
+          <text class="quote-fixed-label">定金 ¥{{quoteDepositAmount || 0}}</text>
+          <text class="quote-fixed-status">{{depositStatusOptions[quoteDepositStatusIndex]}}</text>
+        </view>
+      </view>
+    </view>
     <view class="booking-action action-btn action-primary {{submitting ? 'is-disabled' : ''}}" bindtap="submitQuote">
       {{submitting ? '提交中...' : '确认方案'}}
     </view>

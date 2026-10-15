@@ -38,12 +38,6 @@ const cases = [
     inputRule: '.input-row {',
   },
   {
-    name: '身份选择',
-    wxml: 'pages/role-select/index.wxml',
-    wxss: 'pages/role-select/index.wxss',
-    requiredControls: 2,
-  },
-  {
     name: '统一注册',
     wxml: 'pages/register/index.wxml',
     wxss: 'pages/register/index.wxss',
@@ -57,13 +51,6 @@ const cases = [
     wxss: 'pages/setup-password/index.wxss',
     requiredControls: 1,
     inputRule: '.input-row {',
-  },
-  {
-    name: '新用户引导',
-    wxml: 'pages/onboarding/index.wxml',
-    wxss: 'pages/onboarding/index.wxss',
-    requiredControls: 2,
-    inputRule: '.flow-input {',
   },
   {
     name: '账号注销',

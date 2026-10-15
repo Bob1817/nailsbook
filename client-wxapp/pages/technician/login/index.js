@@ -1,6 +1,7 @@
 const api = require('../../../services/api');
 const { validatePhone } = require('../../../utils/util');
 const { silentWechatLogin } = require('../../../utils/wechat-auth');
+const { postLoginPath } = require('../../../utils/account-navigation');
 const privacy = require('../../../utils/privacy');
 
 function validatePassword(pwd) {
@@ -68,15 +69,15 @@ Page({
   async handleWechatLogin() {
     if (this.data.loading || this.data.wechatChecking) return;
     this.setData({ loading: true });
-    wx.showLoading({ title: '微信登录中...' });
+    wx.showLoading({ title: '登录中...' });
     try {
       const res = await silentWechatLogin('technician');
-      if (!res.authenticated) throw new Error('该微信尚未绑定美甲师账号');
+      if (!res.authenticated) throw new Error('该登录方式尚未绑定美甲师账号');
       this._afterAuth(res);
     } catch (err) {
       wx.hideLoading();
       this.setData({ loading: false });
-      wx.showToast({ title: err.message || '微信登录失败', icon: 'none' });
+      wx.showToast({ title: err.message || '快捷登录失败', icon: 'none' });
     }
   },
 
@@ -90,7 +91,7 @@ Page({
     const wechatSessionToken = wx.getStorageSync('wechat_session_token');
     if (!wechatSessionToken) {
       await this.tryWechatLogin();
-      wx.showToast({ title: '请再次点击微信手机号登录', icon: 'none' });
+      wx.showToast({ title: '请再次点击手机号快捷登录', icon: 'none' });
       return;
     }
     const { step, inviteKey, name, password } = this.data;
@@ -110,7 +111,7 @@ Page({
       }
     }
     this.setData({ loading: true });
-    wx.showLoading({ title: '微信登录中...' });
+    wx.showLoading({ title: '登录中...' });
     try {
       await privacy.requireWechatPrivacyAuthorization();
       const res = await api.auth.completeWechatTechnician({
@@ -123,7 +124,7 @@ Page({
       this._afterAuth(res);
     } catch (err) {
       wx.hideLoading();
-      this.setData({ loading: false, phoneError: err.message || '微信登录失败' });
+      this.setData({ loading: false, phoneError: err.message || '快捷登录失败' });
     }
   },
 
@@ -157,13 +158,15 @@ Page({
     this.setData({ loading: true, phoneError: '' });
     wx.showLoading({ title: '检查中...' });
     try {
-      const res = await api.auth.checkPhone(phone, 'technician');
+      const res = await api.auth.accountStatus(phone);
       wx.hideLoading();
       if (!res.exists) {
-        // 首期仅允许已由运营方预先开通的美甲师登录。
         this.setData({ loading: false });
-        wx.showToast({ title: '该手机号未开通美甲师账号', icon: 'none' });
-      } else if (!res.activated) {
+        wx.navigateTo({ url: `/pages/register/index?phone=${phone}` });
+      } else if (res.role !== 'technician') {
+        this.setData({ loading: false });
+        wx.reLaunch({ url: `/pages/login/index?phone=${phone}` });
+      } else if (res.activated === false) {
         // (3) 已注册但未设置密码 → 设置密码页（设置后自动登录）
         this.setData({ loading: false });
         wx.navigateTo({ url: `/pages/technician/set-password/index?phone=${phone}` });
@@ -251,10 +254,12 @@ Page({
 
   _afterAuth(res) {
     const app = getApp();
-    app.setLogin('technician', res.accessToken, res.technician);
-    if (res.refreshToken) wx.setStorageSync('technician_refreshToken', res.refreshToken);
+    const role = res.role || (res.client && !res.technician ? 'client' : 'technician');
+    const userInfo = role === 'client' ? res.client : res.technician;
+    app.setLogin(role, res.accessToken, userInfo, [role]);
+    if (res.refreshToken) wx.setStorageSync(`${role}_refreshToken`, res.refreshToken);
     wx.removeStorageSync('wechat_session_token');
     wx.hideLoading();
-    wx.reLaunch({ url: '/pages/technician/home/index' });
+    wx.reLaunch({ url: postLoginPath(role) });
   }
 });

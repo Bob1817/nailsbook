@@ -1,5 +1,12 @@
 const api = require('../../../services/api');
 const { normalizeWork } = require('../../../utils/normalize-work');
+const {
+  claimFirstSubscriptionPrompt,
+  getBookingReminderResultState,
+  isSubscriptionCategoryMissing,
+  prepareBookingReminderStatus,
+  requestBookingReminder
+} = require('../../../utils/wechat-subscription');
 
 const STATUS_LABELS = {
   pending_quote: '待报价',
@@ -39,7 +46,10 @@ Page({
     orderShopName: '',
     worksPage: 1,
     worksHasMore: true,
-    worksLoading: false
+    worksLoading: false,
+    showSubscriptionOnboarding: false,
+    subscriptionRequesting: false,
+    onboardingReminderStatus: null
   },
 
   onLoad() {},
@@ -63,6 +73,7 @@ Page({
       var loggedIn = currentRole === 'client' && !!(app.globalData.token || wx.getStorageSync('client_token'));
       this._clientLoggedIn = loggedIn;
       this.setData({ clientLoggedIn: loggedIn });
+      if (loggedIn) this.loadSubscriptionOnboarding(userInfo);
       var ordersData = loggedIn
         ? await api.client.orders.list({ limit: 10 }).catch(function () { return null; })
         : null;
@@ -175,6 +186,60 @@ Page({
       this.loadMoreWorks(true);
     } catch (err) {
       console.error('loadData error:', err);
+    }
+  },
+
+  async loadSubscriptionOnboarding(userInfo) {
+    try {
+      const result = await api.client.wechatSubscriptions.status();
+      const status = await prepareBookingReminderStatus('client', result.data || result);
+      const isFirstEntry = claimFirstSubscriptionPrompt('client', userInfo);
+      const needsReminder = isSubscriptionCategoryMissing(status, [
+        'bookingEvent',
+        'bookingStatus',
+        'dayBefore',
+        'hourBefore',
+        'consultationReply'
+      ]);
+      this.setData({
+        onboardingReminderStatus: status,
+        showSubscriptionOnboarding: isFirstEntry && needsReminder
+      });
+    } catch (_) {}
+  },
+
+  closeSubscriptionOnboarding() {
+    this.setData({ showSubscriptionOnboarding: false });
+  },
+
+  async enableFirstSubscription() {
+    if (this.data.subscriptionRequesting) return;
+    this.setData({ subscriptionRequesting: true });
+    try {
+      const result = await requestBookingReminder(
+        'client',
+        this.data.onboardingReminderStatus || {}
+      );
+      const state = getBookingReminderResultState(result);
+      if (state === 'accepted') {
+        wx.showToast({ title: '提醒设置已更新', icon: 'success' });
+      } else if (state === 'banned') {
+        wx.showModal({
+          title: '提醒权限已关闭',
+          content: '请在小程序右上角“···”的设置中开启订阅消息。',
+          showCancel: false,
+          confirmText: '我知道了'
+        });
+      } else if (state === 'rejected') {
+        wx.showToast({ title: '你暂未允许提醒', icon: 'none' });
+      } else {
+        wx.showToast({ title: '未能开启，请稍后重试', icon: 'none' });
+      }
+    } finally {
+      this.setData({
+        subscriptionRequesting: false,
+        showSubscriptionOnboarding: false
+      });
     }
   },
 
