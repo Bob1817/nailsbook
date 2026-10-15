@@ -1,5 +1,6 @@
 import {
   Body,
+  Delete,
   Controller,
   Get,
   Param,
@@ -162,6 +163,24 @@ export class TechnicianAuthController {
     @Body() dto: RegisterDeviceTokenDto,
   ) {
     await this.pushService.registerToken({
+      role: 'technician',
+      technicianId: request.user.technicianId,
+      token: dto.token,
+      platform: dto.platform,
+    });
+    return { success: true };
+  }
+
+  @Delete('device-token')
+  @UseGuards(TechnicianJwtAuthGuard, TouristGuard)
+  @ApiOperation({ summary: '解绑当前账号的设备推送 token' })
+  @ApiResponse({ status: 200, description: 'token 已解绑' })
+  @ApiResponse({ status: 401, description: '未授权' })
+  async unregisterDeviceToken(
+    @Req() request: { user: { technicianId: number } },
+    @Body() dto: RegisterDeviceTokenDto,
+  ) {
+    await this.pushService.unregisterToken({
       role: 'technician',
       technicianId: request.user.technicianId,
       token: dto.token,

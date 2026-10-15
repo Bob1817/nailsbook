@@ -113,6 +113,21 @@ export class WechatSubscribeMessagesService {
     const availableTemplates = templateIds.filter(
       (templateId) => (byTemplate.get(templateId)?.availableCount ?? 0) > 0,
     ).length;
+    const templateStatuses = Object.fromEntries(
+      Object.entries(templates).map(([key, templateId]) => {
+        const authorization = templateId ? byTemplate.get(templateId) : null;
+        const availableCount = authorization?.availableCount ?? 0;
+        return [
+          key,
+          {
+            configured: Boolean(templateId),
+            enabled: Boolean(templateId) && availableCount > 0,
+            availableCount,
+            status: authorization?.status ?? 'missing',
+          },
+        ];
+      }),
+    );
     const recentDeliveries = await this.prisma.notificationDelivery.findMany({
       where: {
         notificationEvent: {
@@ -142,6 +157,7 @@ export class WechatSubscribeMessagesService {
       availableTemplates,
       banned: authorizations.some((item) => item.status === 'ban'),
       templates,
+      templateStatuses,
       recentDeliveries: recentDeliveries.map((delivery) => ({
         eventType: delivery.notificationEvent.eventType,
         status: delivery.status,

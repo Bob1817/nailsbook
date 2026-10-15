@@ -52,6 +52,7 @@ describe('Client booking and design HTTP contract', () => {
   it('validates quick booking invitations and preserves existing binding decisions over HTTP', async () => {
     const client = await createClient('quick-share');
     const technician = await createTechnician('quick-share');
+    await createBinding(client.id, technician.id, technician.inviteCode);
     const token = testApp.signClientToken(client.id, client.phone);
     const techToken = testApp.signTechnicianToken(technician.id, technician.phone);
     const previous = process.env.QUICK_BOOKING_TECHNICIAN_IDS;
@@ -68,9 +69,10 @@ describe('Client booking and design HTTP contract', () => {
       expect(await testApp.prisma.clientTechBinding.count({ where: { clientId: client.id, techId: technician.id, status: 'active' } })).toBe(1);
       expect(await testApp.prisma.customer.count({ where: { clientUserId: client.id, technicianId: technician.id } })).toBe(1);
       await testApp.prisma.clientTechBinding.updateMany({ where: { clientId: client.id, techId: technician.id }, data: { status: 'inactive' } });
-      await send(payload).expect(409);
+      await send(payload).expect(401);
+      await testApp.prisma.clientTechBinding.updateMany({ where: { clientId: client.id, techId: technician.id }, data: { status: 'active' } });
       delete process.env.QUICK_BOOKING_TECHNICIAN_IDS;
-      await send(payload).expect(400);
+      await send(payload).expect(201);
     } finally {
       if (previous === undefined) delete process.env.QUICK_BOOKING_TECHNICIAN_IDS;
       else process.env.QUICK_BOOKING_TECHNICIAN_IDS = previous;

@@ -8,6 +8,8 @@ export const CONVERSION_EVENT_TYPES = [
   'consult_submit',
   'artist_view',
   'booking_intent',
+  'artist_share_intent',
+  'work_share_intent',
 ] as const;
 
 export const ATTRIBUTION_CHANNELS = [

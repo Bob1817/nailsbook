@@ -13,7 +13,7 @@ describe('AdminWorksService publication review', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('审核通过后记录发布人与发布时间', async () => {
-    prisma.nailWork.findUnique.mockResolvedValue({ id: 1 });
+    prisma.nailWork.findUnique.mockResolvedValue({ id: 1, visibilityScope: 'public' });
     prisma.nailWork.update.mockImplementation(({ data }: any) => ({
       id: 1,
       ...data,
@@ -27,9 +27,33 @@ describe('AdminWorksService publication review', () => {
         publicationStatus: 'approved',
         reviewedBy: 9,
         publishedAt: expect.any(Date),
+        assetStatus: 'public',
+        publicAuthorizationStatus: 'authorized',
       }),
     });
     expect(result.publicationStatus).toBe('approved');
+  });
+
+  it('客户专属作品审核通过后仍保持非公开素材状态', async () => {
+    prisma.nailWork.findUnique.mockResolvedValue({
+      id: 2,
+      visibilityScope: 'authorized_clients',
+    });
+    prisma.nailWork.update.mockImplementation(({ data }: any) => ({
+      id: 2,
+      ...data,
+    }));
+
+    await service.review(2, 9, 'approved');
+
+    expect(prisma.nailWork.update).toHaveBeenCalledWith({
+      where: { id: 2 },
+      data: expect.objectContaining({
+        publicationStatus: 'approved',
+        assetStatus: 'internal',
+        publicAuthorizationStatus: 'pending',
+      }),
+    });
   });
 
   it('驳回必须填写原因并取消精选', async () => {
@@ -47,6 +71,8 @@ describe('AdminWorksService publication review', () => {
       where: { id: 1 },
       data: expect.objectContaining({
         publicationStatus: 'rejected',
+        assetStatus: 'draft',
+        publicAuthorizationStatus: 'pending',
         isHomepageFeatured: false,
         isFeatured: false,
       }),

@@ -20,6 +20,8 @@ describe('TechnicianWorksService draft publication flow', () => {
       isFeatured: false,
       sortOrder: 0,
       publicationStatus: 'draft',
+      assetStatus: 'draft',
+      publicAuthorizationStatus: 'pending',
       reviewNote: null,
       publishedAt: null,
       createdAt: new Date(),
@@ -55,6 +57,23 @@ describe('TechnicianWorksService draft publication flow', () => {
         }),
       }),
     );
+  });
+
+  it('作品详情返回公开分享所需的素材与授权状态', async () => {
+    const { service, prisma, baseWork } = setup();
+    prisma.nailWork.findFirst.mockResolvedValueOnce({
+      ...baseWork,
+      assetStatus: 'public',
+      publicAuthorizationStatus: 'authorized',
+      clientAccesses: [],
+    });
+
+    const result = await service.findOne(7, 11);
+
+    expect(result).toEqual(expect.objectContaining({
+      assetStatus: 'public',
+      publicAuthorizationStatus: 'authorized',
+    }));
   });
 
   it('保存草稿会撤回审核状态并清理旧审核结论', async () => {

@@ -1165,6 +1165,8 @@ export class TechnicianWorksService {
       technician?: { name: string | null };
       visibilityScope?: string;
       publicationStatus?: string;
+      assetStatus?: string;
+      publicAuthorizationStatus?: string;
       reviewNote?: string | null;
       publishedAt?: Date | null;
       clientAccesses?: any[];
@@ -1234,6 +1236,9 @@ export class TechnicianWorksService {
       archivedAt: work.archivedAt ?? null,
       visibilityScope: work.visibilityScope ?? 'public',
       publicationStatus: work.publicationStatus ?? 'pending',
+      assetStatus: work.assetStatus ?? 'draft',
+      publicAuthorizationStatus:
+        work.publicAuthorizationStatus ?? 'pending',
       reviewNote: work.reviewNote ?? null,
       publishedAt: work.publishedAt ?? null,
       clientAccesses: work.clientAccesses ?? [],

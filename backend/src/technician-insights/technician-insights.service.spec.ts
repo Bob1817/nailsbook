@@ -21,6 +21,7 @@ describe('TechnicianInsightsService', () => {
     },
     nailWork: {
       count: jest.fn(),
+      findMany: jest.fn(),
     },
     workPromotion: {
       count: jest.fn(),
@@ -56,6 +57,7 @@ describe('TechnicianInsightsService', () => {
     prisma.customer.findMany.mockResolvedValue([]);
     prisma.conversionEvent.findMany.mockResolvedValue([]);
     prisma.nailWorkShareEvent.findMany.mockResolvedValue([]);
+    prisma.nailWork.findMany.mockResolvedValue([]);
     prisma.workPromotion.count.mockResolvedValue(0);
     prisma.order.aggregate.mockResolvedValue({ _sum: { discountAmountFen: null } });
     service = new TechnicianInsightsService(prisma as never);

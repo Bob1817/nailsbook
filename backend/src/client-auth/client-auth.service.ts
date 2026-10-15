@@ -1,6 +1,5 @@
 import { assertPhoneAvailable, assertClientBinding, resolvePhoneRole, ROLE_SWITCH_DISABLED, INVALID_ARTIST_INVITE } from '../common/account-role-policy';
 import { recordWorkShareRegistration } from '../common/work-share-registration';
-import { quickBookingEnabled } from '../orders/booking-days.service';
 import { BindSharedWorkDto } from './dto/bind-shared-work.dto';
 import {
   Injectable,
@@ -1077,31 +1076,59 @@ export class ClientAuthService {
   }
 
   async validateQuickBookingInvite(techId: number, inviteCode?: string) {
-    if (!inviteCode) throw new BadRequestException('一键预约暂未开放');
+    if (!inviteCode) throw new BadRequestException('预约邀请已失效');
     const technician = await this.findActiveTechnicianByInviteCode(inviteCode, '预约邀请已失效');
     if (technician.id !== techId) throw new BadRequestException('邀请码与美甲师不匹配');
-    if (!quickBookingEnabled(techId, technician.quickBookingEnabled)) throw new BadRequestException('一键预约暂未开放');
     return technician;
   }
 
   async bindQuickBookingInvite(clientId: number, techId: number, inviteCode: string) {
     await this.validateQuickBookingInvite(techId, inviteCode);
+    return this.activateInvitedBinding(clientId, techId, inviteCode, 'card');
+  }
+
+  private async activateInvitedBinding(
+    clientId: number,
+    techId: number,
+    inviteCode: string,
+    bindSource: string,
+    note: string | null = null,
+  ) {
     return this.prisma.$transaction(async (tx) => {
       const client = await tx.clientUser.findUnique({ where: { id: clientId } });
       if (!client || client.status !== 'active') throw new UnauthorizedException('请重新登录');
       const existing = await tx.clientTechBinding.findUnique({ where: { clientId_techId: { clientId, techId } } });
-      if (existing?.status === 'active') return { status: 'active', techId };
-      // 既有审核/解绑状态仍由原流程处理，分享邀请不能覆盖它们。
-      if (existing) throw new ConflictException('请联系美甲师确认已有绑定申请或重新绑定');
+      if (existing?.status === 'active') {
+        await tx.customer.upsert({
+          where: { technicianId_clientUserId: { technicianId: techId, clientUserId: clientId } },
+          update: {},
+          create: { technicianId: techId, clientUserId: clientId, name: client.nickname || client.phone,
+            phone: client.phone, sourceType: bindSource, sourceRef: inviteCode },
+        });
+        return { status: 'active', techId };
+      }
       const currentDefault = await tx.clientTechBinding.findFirst({ where: { clientId, status: 'active', isDefault: true } });
-      await tx.clientTechBinding.create({ data: {
-        clientId, techId, inviteCode, bindSource: 'card', status: 'active', isDefault: !currentDefault,
-      } });
+      if (existing) {
+        await tx.clientTechBinding.update({
+          where: { id: existing.id },
+          data: {
+            inviteCode,
+            bindSource,
+            status: 'active',
+            note,
+            isDefault: existing.isDefault || !currentDefault,
+          },
+        });
+      } else {
+        await tx.clientTechBinding.create({ data: {
+          clientId, techId, inviteCode, bindSource, status: 'active', note, isDefault: !currentDefault,
+        } });
+      }
       await tx.customer.upsert({
         where: { technicianId_clientUserId: { technicianId: techId, clientUserId: clientId } },
         update: {},
         create: { technicianId: techId, clientUserId: clientId, name: client.nickname || client.phone,
-          phone: client.phone, sourceType: 'card', sourceRef: inviteCode },
+          phone: client.phone, sourceType: bindSource, sourceRef: inviteCode },
       });
       return { status: 'active', techId };
     }, { isolationLevel: 'Serializable' });
@@ -1116,7 +1143,7 @@ export class ClientAuthService {
           const work = await tx.nailWork.findFirst({
             where: { id: dto.workId, isVisible: true, archivedAt: null, publicationStatus: 'approved' },
             select: { id: true, visibilityScope: true, technician: {
-              select: { id: true, status: true },
+              select: { id: true, status: true, invitationCode: true },
             } },
           });
           if (!work || !isLaunchTechnician(work.technician.id)) {
@@ -1140,17 +1167,29 @@ export class ClientAuthService {
             where: { clientId_techId: { clientId, techId } },
           });
           if (existing?.status === 'active') return { status: 'active', techId, workId: work.id };
-          if (existing) throw new ConflictException('请联系美甲师确认已有绑定申请或重新绑定');
           const currentDefault = await tx.clientTechBinding.findFirst({
             where: { clientId, status: 'active', isDefault: true },
           });
-          const data = { status: 'active', bindSource: 'work_share', isDefault: !currentDefault };
-          await tx.clientTechBinding.create({ data: { clientId, techId, ...data } });
-          const customer = await tx.customer.findFirst({ where: { technicianId: techId, clientUserId: clientId } });
-          if (!customer) await tx.customer.create({ data: {
-            technicianId: techId, clientUserId: clientId, name: client.nickname || client.phone,
-            phone: client.phone, sourceType: 'work_share', sourceRef: String(work.id),
-          } });
+          const bindingData = {
+            inviteCode: work.technician.invitationCode,
+            status: 'active',
+            bindSource: 'work_share',
+            note: null,
+            isDefault: existing?.isDefault || !currentDefault,
+          };
+          if (existing) {
+            await tx.clientTechBinding.update({ where: { id: existing.id }, data: bindingData });
+          } else {
+            await tx.clientTechBinding.create({ data: { clientId, techId, ...bindingData } });
+          }
+          await tx.customer.upsert({
+            where: { technicianId_clientUserId: { technicianId: techId, clientUserId: clientId } },
+            update: {},
+            create: {
+              technicianId: techId, clientUserId: clientId, name: client.nickname || client.phone,
+              phone: client.phone, sourceType: 'work_share', sourceRef: String(work.id),
+            },
+          });
           await tx.conversionEvent.create({ data: {
             eventId: `work-bind-${clientId}-${techId}-${Date.now()}`,
             technicianId: techId, workId: work.id, clientUserId: clientId,
@@ -1185,12 +1224,12 @@ export class ClientAuthService {
     ) {
       throw new UnauthorizedException('邀请码无效');
     }
-    return this.applyBindingPending(
+    return this.activateInvitedBinding(
       clientUserId,
       dto.techId,
       normalizedCode,
-      dto.note?.trim() || null,
       dto.source || 'manual',
+      dto.note?.trim() || null,
     );
   }
 
@@ -1223,7 +1262,7 @@ export class ClientAuthService {
       }));
   }
 
-  /// 已关注或有历史绑定关系的客户，无需邀请码再次申请绑定。
+  /// 已关注或有历史绑定关系的客户，可直接恢复绑定。
   async requestRebind(clientUserId: number, techId: number, note?: string) {
     const technician = await this.prisma.technician.findUnique({
       where: { id: techId },
@@ -1242,12 +1281,14 @@ export class ClientAuthService {
     if (!existing && !followed) {
       throw new BadRequestException('请先关注该美甲师或使用邀请码绑定');
     }
-    return this.applyBindingPending(
+    const inviteCode = existing?.inviteCode || technician.invitationCode;
+    if (!inviteCode) throw new BadRequestException('美甲师邀请码不可用，请联系美甲师');
+    return this.activateInvitedBinding(
       clientUserId,
       techId,
-      existing?.inviteCode || null,
-      note?.trim() || null,
+      inviteCode,
       followed ? 'follow' : 'rebind',
+      note?.trim() || null,
     );
   }
 

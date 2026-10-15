@@ -24,7 +24,8 @@ describe('客户端核心路径静态契约', () => {
     expect(createOrder).toContain('expectedPriceFen: this.expectedPriceFen()');
     expect(createOrder).toContain("draft.depositMode !== this.data.depositMode");
     expect(createOrder).toContain('价格或定金设置已更新，请核对后提交');
-    expect(createOrder).toContain("inviteCode = this.inviteCode || (this.data.selectedTech || {}).invitationCode");
+    expect(createOrder).toContain('bindQuickBooking(Number(tech.id), this.inviteCode)');
+    expect(createOrder).toContain('请返回主页重新发起预约');
   });
 
   it('公开作品预约同款在登录后保留目标页面', () => {

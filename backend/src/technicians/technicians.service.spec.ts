@@ -6,8 +6,10 @@ import { TechniciansService } from './technicians.service';
 describe('TechniciansService', () => {
   let service: TechniciansService;
   let prisma: {
+    clientUser: { findFirst: jest.Mock };
     technician: {
       findUnique: jest.Mock;
+      findFirst: jest.Mock;
       create: jest.Mock;
       update: jest.Mock;
     };
@@ -15,8 +17,10 @@ describe('TechniciansService', () => {
 
   beforeEach(() => {
     prisma = {
+      clientUser: { findFirst: jest.fn().mockResolvedValue(null) },
       technician: {
         findUnique: jest.fn(),
+        findFirst: jest.fn().mockResolvedValue(null),
         create: jest.fn(),
         update: jest.fn(),
       },
@@ -66,9 +70,10 @@ describe('TechniciansService', () => {
   });
 
   it('rejects duplicate technician phone numbers', async () => {
-    prisma.technician.findUnique.mockResolvedValueOnce({
+    prisma.technician.findFirst.mockResolvedValueOnce({
       id: 7,
       phone: '+8613800000000',
+      passwordHash: 'configured',
     });
 
     await expect(
@@ -76,9 +81,7 @@ describe('TechniciansService', () => {
         name: 'Anna',
         phone: '+8613800000000',
       }),
-    ).rejects.toThrow(
-      new ConflictException('Technician with this phone number already exists'),
-    );
+    ).rejects.toThrow(new ConflictException('该手机号码已注册，无法再次注册'));
   });
 
   it('resets an active technician to a random password and invalidates tokens', async () => {

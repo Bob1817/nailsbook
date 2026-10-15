@@ -412,6 +412,7 @@ export class TechnicianInsightsService {
         (item) => item.eventType === type && (!predicate || predicate(item)),
       ).length;
     const artistViews = countEvents('artist_view');
+    const artistShareIntents = countEvents('artist_share_intent');
     const artistBookingIntents = countEvents(
       'booking_intent',
       (item) => !item.workId,
@@ -422,12 +423,30 @@ export class TechnicianInsightsService {
     );
     const follows = countEvents('follow');
     const workViews = countEvents('work_view');
+    const trackedWorkShareIntents = countEvents('work_share_intent');
+    const workShareIntents = trackedWorkShareIntents || shareEvents.length;
     const workBookingIntents = countEvents('booking_intent', (item) =>
       Boolean(item.workId),
     );
     const workOrders = countEvents('order_created', (item) =>
       Boolean(item.workId),
     );
+    const workIds = [...new Set(conversionEvents.map((item) => item.workId).filter((id): id is number => Number.isInteger(id)))];
+    const workNames = workIds.length
+      ? await this.prisma.nailWork.findMany({
+          where: { id: { in: workIds }, techId: technicianId },
+          select: { id: true, title: true },
+        })
+      : [];
+    const workTitleById = new Map(workNames.map((item) => [item.id, item.title]));
+    const workItems = workIds.map((workId) => ({
+      workId,
+      title: workTitleById.get(workId) || `作品 ${workId}`,
+      views: countEvents('work_view', (item) => item.workId === workId),
+      shares: countEvents('work_share_intent', (item) => item.workId === workId),
+      bookingIntents: countEvents('booking_intent', (item) => item.workId === workId),
+      orders: countEvents('order_created', (item) => item.workId === workId),
+    })).sort((a, b) => b.views - a.views || b.bookingIntents - a.bookingIntents).slice(0, 5);
     const homepageMinimum = 20;
     const worksMinimum = 30;
     const safeRate = (value: number, base: number) =>
@@ -510,6 +529,7 @@ export class TechnicianInsightsService {
               .map((item) => item.visitorId)
               .filter(Boolean),
           ).size,
+          shares: artistShareIntents,
           follows,
           bookingIntents: artistBookingIntents,
           orders: artistOrders,
@@ -529,14 +549,15 @@ export class TechnicianInsightsService {
           sufficientData: workViews >= worksMinimum,
           minimumViews: worksMinimum,
           views: workViews,
-          shares: shareEvents.length,
+          shares: workShareIntents,
           shareMetric: 'intent',
           bookingIntents: workBookingIntents,
           orders: workOrders,
+          items: workItems,
           rates:
             workViews >= worksMinimum
               ? {
-                  shareRate: safeRate(shareEvents.length, workViews),
+                  shareRate: safeRate(workShareIntents, workViews),
                   bookingIntentRate: safeRate(workBookingIntents, workViews),
                   orderRate: safeRate(workOrders, workViews),
                 }

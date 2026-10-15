@@ -212,6 +212,38 @@ describe('WechatSubscribeMessagesService', () => {
       hourBefore: 'hour-template',
       consultationReply: 'consultation-template',
     });
+    expect(result.templateStatuses).toEqual({
+      bookingEvent: {
+        configured: true,
+        enabled: true,
+        availableCount: 1,
+        status: 'accept',
+      },
+      bookingStatus: {
+        configured: true,
+        enabled: false,
+        availableCount: 0,
+        status: 'missing',
+      },
+      dayBefore: {
+        configured: true,
+        enabled: false,
+        availableCount: 0,
+        status: 'missing',
+      },
+      hourBefore: {
+        configured: true,
+        enabled: false,
+        availableCount: 0,
+        status: 'missing',
+      },
+      consultationReply: {
+        configured: true,
+        enabled: false,
+        availableCount: 0,
+        status: 'missing',
+      },
+    });
   });
 
   it('reserves and consumes one authorization only after a successful send', async () => {

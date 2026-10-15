@@ -18,7 +18,7 @@ describe('P0-14 booking application contract', () => {
   it('requires rules and opens a review modal', () => {
     expect(js).toContain('bookingRulesAgreed');
     expect(wxml).toContain('核对预约申请');
-    expect(wxml).toContain('美甲师确认后生效');
+    expect(wxml).toContain('最终以美甲师确认为准');
   });
   it('reserves the requested slot as soon as the application is created', () => {
     const service = fs.readFileSync(

@@ -28,7 +28,7 @@ export class RecordConversionEventDto {
   workId?: number;
 
   @IsString()
-  @IsIn(['artist_view', 'work_view', 'booking_intent', 'poster_saved', 'poster_generated'])
+  @IsIn(['artist_view', 'work_view', 'booking_intent', 'artist_share_intent', 'work_share_intent', 'poster_saved', 'poster_generated'])
   eventType: string;
 
   @IsOptional()

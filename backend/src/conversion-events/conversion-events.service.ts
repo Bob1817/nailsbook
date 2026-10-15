@@ -17,7 +17,7 @@ export class ConversionEventsService {
     });
     if (!technician) throw new NotFoundException('美甲师不存在或未启用');
 
-    if (['work_view', 'poster_saved', 'poster_generated'].includes(dto.eventType) && !dto.workId) {
+    if (['work_view', 'work_share_intent', 'poster_saved', 'poster_generated'].includes(dto.eventType) && !dto.workId) {
       throw new BadRequestException('作品浏览事件缺少作品');
     }
     if (dto.workId) {

@@ -112,7 +112,7 @@ describe('Account deletion lifecycle HTTP contract', () => {
     expect(await app.prisma.accountDeletionRequest.findUnique({ where: { id: row.body.id } })).toMatchObject({ status: 'pending' });
     expect(await app.prisma.wechatIdentity.findUnique({ where: { id: f.identity.id } })).toMatchObject({ clientUserId: f.client.id });
   });
-  it('deletes the technician identity, hides works, retains client and denies legacy deletion/status bypasses', async () => {
+  it('deletes the technician identity, hides works, and blocks a client whose sole artist is deleted', async () => {
     const f = await fixture();
     const work = await app.prisma.nailWork.create({ data: { techId: f.technician.id, title: '测试作品' } });
     await api().delete(`/api/admin/technicians/${f.technician.id}`).set('Authorization', 'Bearer ' + adminToken).expect(400);
@@ -124,7 +124,7 @@ describe('Account deletion lifecycle HTTP contract', () => {
     expect(await app.prisma.nailWork.findUnique({ where: { id: work.id } })).toMatchObject({ isVisible: false });
     expect(await app.prisma.wechatIdentity.findUnique({ where: { id: f.identity.id } })).toMatchObject({ clientUserId: f.client.id, technicianId: null });
     await api().get('/api/technician/account-deletion').set('Authorization', 'Bearer ' + f.techToken).expect(401);
-    await api().get('/api/client/account-deletion').set('Authorization', 'Bearer ' + f.token).expect(200);
+    await api().get('/api/client/account-deletion').set('Authorization', 'Bearer ' + f.token).expect(401);
     expect(await app.prisma.operationLog.count({ where: { module: 'account-deletion', action: 'complete', targetId: f.technician.id, targetType: 'technician' } })).toBe(1);
     await expect(app.prisma.$transaction(tx => assertBookingAccountState(tx, f.technician.id, f.client.id))).rejects.toThrow('美甲师账号不可预约');
   });

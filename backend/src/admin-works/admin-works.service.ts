@@ -114,6 +114,7 @@ export class AdminWorksService {
     if (decision === 'rejected' && !reviewNote) {
       throw new BadRequestException('驳回作品时必须填写原因');
     }
+    const isPublicWork = (work.visibilityScope || 'public') === 'public';
     const updated = await this.prisma.nailWork.update({
       where: { id },
       data: {
@@ -122,6 +123,14 @@ export class AdminWorksService {
         reviewedAt: new Date(),
         reviewedBy: adminUserId,
         publishedAt: decision === 'approved' ? new Date() : null,
+        assetStatus:
+          decision === 'approved'
+            ? (isPublicWork ? 'public' : 'internal')
+            : 'draft',
+        publicAuthorizationStatus:
+          decision === 'approved' && isPublicWork
+            ? 'authorized'
+            : 'pending',
         ...(decision === 'rejected'
           ? { isHomepageFeatured: false, isFeatured: false }
           : {}),
@@ -132,6 +141,8 @@ export class AdminWorksService {
       publicationStatus: updated.publicationStatus,
       reviewNote: updated.reviewNote,
       publishedAt: updated.publishedAt,
+      assetStatus: updated.assetStatus,
+      publicAuthorizationStatus: updated.publicAuthorizationStatus,
     };
   }
 

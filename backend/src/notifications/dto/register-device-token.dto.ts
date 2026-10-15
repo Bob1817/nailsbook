@@ -2,12 +2,12 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsOptional, IsString } from 'class-validator';
 
 export class RegisterDeviceTokenDto {
-  @ApiProperty({ description: 'FCM 设备 token' })
+  @ApiProperty({ description: 'FCM 或 APNs 设备 token' })
   @IsString()
   token: string;
 
   @ApiProperty({ description: '平台', example: 'ios' })
-  @IsIn(['ios', 'android'])
+  @IsIn(['ios', 'android', 'ios-apns', 'ios-apns-sandbox'])
   platform: string;
 
   @ApiPropertyOptional({ description: '角色（由后端按登录态决定，可忽略）' })

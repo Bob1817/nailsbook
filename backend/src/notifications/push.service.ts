@@ -1,3 +1,4 @@
+import { sendAPNs } from './apns';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import {
   applicationDefault,
@@ -57,11 +58,11 @@ export class PushService implements OnModuleInit {
         this.enabled = true;
       } else {
         this.logger.warn(
-          '未配置 Firebase 凭证（FIREBASE_SERVICE_ACCOUNT / GOOGLE_APPLICATION_CREDENTIALS），推送已禁用',
+          '未配置 Firebase 凭证（FIREBASE_SERVICE_ACCOUNT / GOOGLE_APPLICATION_CREDENTIALS），FCM 推送已禁用',
         );
       }
     } catch (e) {
-      this.logger.error('Firebase 初始化失败，推送已禁用', e as Error);
+      this.logger.error('Firebase 初始化失败，FCM 推送已禁用', e as Error);
     }
   }
 
@@ -88,30 +89,45 @@ export class PushService implements OnModuleInit {
     });
   }
 
+  async unregisterToken(input: RegisterTokenInput) {
+    await this.prisma.deviceToken.deleteMany({ where: {
+      token: input.token, role: input.role,
+      ...(input.role === 'client' ? { clientUserId: input.clientUserId } : { technicianId: input.technicianId }),
+    } });
+  }
+
   async sendToTechnician(technicianId: number, payload: PushPayload) {
     const tokens = await this.prisma.deviceToken.findMany({
       where: { technicianId, role: 'technician' },
-      select: { token: true },
+      select: { token: true, platform: true },
     });
     await this.send(
-      tokens.map((t) => t.token),
-      payload,
+      tokens,
+      { ...payload, data: { ...payload.data, role: 'technician' } },
     );
   }
 
   async sendToClient(clientUserId: number, payload: PushPayload) {
     const tokens = await this.prisma.deviceToken.findMany({
       where: { clientUserId, role: 'client' },
-      select: { token: true },
+      select: { token: true, platform: true },
     });
     await this.send(
-      tokens.map((t) => t.token),
-      payload,
+      tokens,
+      { ...payload, data: { ...payload.data, role: 'client' } },
     );
   }
 
   /** 发送并清理失效 token。best-effort，绝不抛出以免影响主流程。 */
-  private async send(tokens: string[], payload: PushPayload) {
+  private async send(devices: { token: string; platform: string }[], payload: PushPayload) {
+    for (const platform of ['ios-apns', 'ios-apns-sandbox']) {
+      try {
+        const { invalid, failures } = await sendAPNs(devices.filter(d => d.platform === platform).map(d => d.token), payload, platform === 'ios-apns-sandbox');
+        if (failures.length) this.logger.warn(`APNs ${failures.length} 个设备发送失败：${[...new Set(failures)].join(', ')}`);
+        if (invalid.length) await this.prisma.deviceToken.deleteMany({ where: { token: { in: invalid }, platform } });
+      } catch (error) { this.logger.error('APNs 推送发送失败', error as Error); }
+    }
+    const tokens = devices.filter(d => !d.platform?.startsWith('ios-apns')).map(d => d.token);
     if (!this.enabled || tokens.length === 0) return;
     try {
       const res = await getMessaging().sendEachForMulticast({

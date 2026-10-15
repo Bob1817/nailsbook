@@ -256,6 +256,23 @@ export class ClientAuthController {
     return { success: true };
   }
 
+  @Delete('device-token')
+  @UseGuards(ClientJwtAuthGuard)
+  @ApiOperation({ summary: '解绑当前账号的设备推送 token' })
+  @ApiResponse({ status: 200, description: 'token 已解绑' })
+  async unregisterDeviceToken(
+    @Req() request: { user: { clientUserId: number } },
+    @Body() dto: RegisterDeviceTokenDto,
+  ) {
+    await this.pushService.unregisterToken({
+      role: 'client',
+      clientUserId: request.user.clientUserId,
+      token: dto.token,
+      platform: dto.platform,
+    });
+    return { success: true };
+  }
+
   @Post('bind-technician')
   @UseGuards(ClientJwtAuthGuard)
   @ApiOperation({ summary: '绑定美甲师' })
