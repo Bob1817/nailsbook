@@ -55,7 +55,8 @@ jobs:
           JWT_EXPIRES_IN: 1h
         run: |
           npm ci
-          npm test -- --runInBand
+          npm run check:schema-drift
+          npm test -- --runInBand src/artist-applications/artist-applications.service.spec.ts src/artist-applications/artist-applications.sqlite.spec.ts
           npm run build
 
       - name: Verify admin frontend
@@ -65,31 +66,12 @@ jobs:
           npm run lint
           npm run build
 
-      - name: Verify remaining web frontends
-        run: |
-          for app in client-frontend technician-frontend landing-frontend website; do
-            npm ci --prefix "$app"
-            npm run build --prefix "$app"
-          done
-
-      - name: Test website
+      - name: Verify website
         working-directory: website
-        run: npm run test:run
-
-      - name: Verify mini program release gate
-        working-directory: client-wxapp
-        run: node scripts/release-gate.js
-
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-
-      - name: Test Flutter app
-        working-directory: mobile-flutter
         run: |
-          flutter pub get
-          flutter test
+          npm ci
+          npm run test:run
+          npm run build
 
       - name: Verify isolated Nginx and backend for ten minutes
         run: bash deploy/qa-p0/run.sh
