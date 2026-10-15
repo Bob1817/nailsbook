@@ -27,6 +27,19 @@
   --color-surface: var(--seed-surface);
   --color-accent-warm: var(--seed-accent);
   --color-soft-pink: var(--nb-muted);
+  --color-action: var(--nb-action);
+  --color-action-pressed: var(--nb-action-pressed);
+  --color-inverse: var(--nb-inverse);
+  --color-success: var(--nb-secondary);
+  --color-success-surface: var(--nb-page);
+  --color-danger: var(--nb-secondary);
+  --color-danger-surface: var(--nb-page);
+  --color-text-link: var(--nb-secondary);
+  --color-soft-surface: var(--nb-page);
+  --color-favorite: var(--nb-secondary);
+  --color-work-featured: var(--nb-secondary);
+  --color-work-pinned: var(--nb-secondary);
+  --color-active-surface: var(--nb-active-surface);
 }
 
 :root {
@@ -55,7 +68,7 @@
   body,
   #root {
     width: 100%;
-    min-width: 320px;
+    min-width: 0;
   }
 
   #root {

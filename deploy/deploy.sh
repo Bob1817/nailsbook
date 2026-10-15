@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# NailBook 一键部署脚本（在 ECS 服务器上运行）
+# OnlyNail 一键部署脚本（在 ECS 服务器上运行）
 #
 # 用法:
 #   ./deploy/deploy.sh              # 自动检测变更，按需构建
@@ -9,6 +9,7 @@
 #   ./deploy/deploy.sh client-web   # 仅重建用户端
 #   ./deploy/deploy.sh admin-web    # 仅重建管理后台
 #   ./deploy/deploy.sh tech-web     # 仅重建美甲师端
+#   ./deploy/deploy.sh website      # 仅拉取并更新官网
 #   ./deploy/deploy.sh nginx        # 仅重启 nginx（配置变更）
 # ============================================================
 set -e
@@ -102,6 +103,12 @@ for SVC in $SERVICES; do
             echo "ADMIN_WEB_IMAGE=nailbook-admin-web:$COMMIT_SHORT" >> .env
         fi
         log "$SVC 构建完成 ✓ (tag: $COMMIT_SHORT)"
+        continue
+    fi
+    if [ "$SVC" = "website" ]; then
+        log "拉取 $SVC 镜像 ..."
+        docker compose pull "$SVC" 2>&1 || err "$SVC 镜像拉取失败"
+        log "$SVC 镜像拉取完成 ✓"
         continue
     fi
     log "构建 $SVC ..."

@@ -7,6 +7,7 @@ import ArtistApplicationPage from './pages/ArtistApplicationPage'
 import WorksGalleryPage from './pages/WorksGalleryPage'
 import FAQPage from './pages/FAQPage'
 import ContactPage from './pages/ContactPage'
+import ApplicationInfoPage from './pages/ApplicationInfoPage'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -26,6 +27,7 @@ function AppRouter() {
         <Route path="/gallery" element={<WorksGalleryPage />} />
         <Route path="/faq" element={<FAQPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/application-info" element={<ApplicationInfoPage />} />
       </Routes>
     </BrowserRouter>
   )

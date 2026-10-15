@@ -57,9 +57,8 @@ services:
 
   # 官网（静态 SPA，内部 nginx 提供服务）
   website:
-    build:
-      context: ./website
-      dockerfile: Dockerfile
+    # 镜像由 GitHub Actions 构建；生产机只拉取，不在 ECS 上执行 npm ci/build。
+    image: ${WEBSITE_IMAGE:-ghcr.io/bob1817/nailsbook-website:latest}
     restart: always
     mem_limit: 48m
     memswap_limit: 48m

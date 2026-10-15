@@ -90,25 +90,10 @@ export interface ArtistApplicationPayload {
   experience?: string
   specialty?: string
   note?: string
+  followedMp?: boolean
 }
 
-export type ApplicationStatus = 'none' | 'pending' | 'approved'
-
-export interface CheckPhoneResult {
-  status: ApplicationStatus
-  message?: string
-}
-
-export async function checkPhoneStatus(phone: string): Promise<CheckPhoneResult> {
-  const res = await fetch(`${API_BASE}/artist-applications/check-phone?phone=${encodeURIComponent(phone)}`)
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.message || 'check phone status failed')
-  }
-  return res.json() as Promise<CheckPhoneResult>
-}
-
-export async function submitArtistApplication(data: ArtistApplicationPayload): Promise<{ id: number }> {
+export async function submitArtistApplication(data: ArtistApplicationPayload): Promise<unknown> {
   const body = {
     name: data.name,
     phone: data.phone,
@@ -118,18 +103,21 @@ export async function submitArtistApplication(data: ArtistApplicationPayload): P
     experience: data.experience || undefined,
     specialty: data.specialty || undefined,
     note: data.note || undefined,
+    followedMp: data.followedMp || undefined,
   }
 
-  const res = await fetch(`${API_BASE}/artist-applications`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.message || 'submit application failed')
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 15000)
+  try {
+    const res = await fetch(`${API_BASE}/artist-applications`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    })
+    if (!res.ok) throw new Error('submit application failed')
+    return await res.json() as unknown
+  } finally {
+    clearTimeout(timeout)
   }
-
-  return res.json() as Promise<{ id: number }>
 }

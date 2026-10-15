@@ -1,370 +1,237 @@
-import { useState } from 'react'
-import { ArrowLeft, CheckCircle, XCircle, Loader2, AlertCircle } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Check, ArrowUpRight, Loader2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import NavBar from '../components/NavBar'
+import SiteFooter from '../components/SiteFooter'
+import ScanQrModal from '../components/ScanQrModal'
 import { Meta } from '../components/Meta'
 import { useLang } from '../i18n/LanguageContext'
-import { submitArtistApplication, checkPhoneStatus, type ApplicationStatus } from '../services/api'
-
-const createSchema = (t: any) => z.object({
-  name: z.string().min(1, t.apply.validation?.nameRequired || '请输入姓名'),
-  phone: z.string().min(1, t.apply.validation?.phoneRequired || '请输入手机号'),
-  city: z.string().min(1, t.apply.validation?.cityRequired || '请输入城市'),
-  wechat: z.string().min(1, t.apply.validation?.wechatRequired || '请输入微信号'),
-  serviceMode: z.string().optional(),
-  experience: z.string().optional(),
-  specialty: z.string().optional(),
-  note: z.string().optional(),
-})
-
-type FormData = z.infer<ReturnType<typeof createSchema>>
+import { recruitment } from '../content/recruitment'
+import { submitArtistApplication } from '../services/api'
 
 export default function ArtistApplicationPage() {
-  const { t } = useLang()
-  const navigate = useNavigate()
-  const [status, setStatus] = useState<'idle' | 'checking' | 'submitting' | 'success' | 'error' | 'phone_exists'>('idle')
-  const [errorMsg, setErrorMsg] = useState('')
-  const [phoneStatus, setPhoneStatus] = useState<ApplicationStatus>('none')
-
-  const schema = createSchema(t)
+  const { lang } = useLang()
+  const c = recruitment[lang]
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [follow, setFollow] = useState(false)
+  const submitting = useRef(false)
+  const schema = z.object({
+    name: z.string().trim().min(1, c.required).max(50, c.tooLong),
+    phone: z
+      .string()
+      .trim()
+      .regex(/^1[3-9]\d{9}$/, c.invalidPhone),
+    city: z.string().trim().min(1, c.required).max(50, c.tooLong),
+    wechat: z.string().trim().min(1, c.required).max(100, c.tooLong),
+    serviceMode: z.enum(['shop', 'home', 'both'], { error: c.modeError }),
+    experience: z.string().trim().max(200, c.tooLong),
+    specialty: z.string().trim().max(200, c.tooLong),
+    note: z.string().trim().max(1000, c.tooLong),
+  })
+  type Values = z.infer<typeof schema>
   const {
     register,
     handleSubmit,
-    formState: { errors, isValid },
-  } = useForm<FormData>({
+    formState: { errors },
+  } = useForm<Values>({
     resolver: zodResolver(schema),
-    mode: 'onTouched',
     defaultValues: {
       name: '',
       phone: '',
       city: '',
       wechat: '',
-      serviceMode: '',
       experience: '',
       specialty: '',
       note: '',
     },
   })
-
-  const onSubmit = async (data: FormData) => {
-    setStatus('checking')
-    setErrorMsg('')
-    
+  const onSubmit = async (values: Values) => {
+    if (submitting.current) return
+    submitting.current = true
+    setStatus('submitting')
     try {
-      // 先检查手机号状态
-      const checkResult = await checkPhoneStatus(data.phone)
-      
-      if (checkResult.status === 'pending') {
-        setPhoneStatus('pending')
-        setStatus('phone_exists')
-        return
-      }
-      
-      if (checkResult.status === 'approved') {
-        setPhoneStatus('approved')
-        setStatus('phone_exists')
-        return
-      }
-      
-      // 手机号未被注册，继续提交申请
-      setStatus('submitting')
-      await submitArtistApplication(data)
+      await submitArtistApplication(values)
       setStatus('success')
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Unknown error')
+    } catch {
       setStatus('error')
+    } finally {
+      submitting.current = false
     }
   }
-
-  const required = (label: string) => (
-    <span className="text-[12px] font-bold text-ink sm:text-[13px]">
-      {label} <span className="text-brand">*</span>
-    </span>
-  )
-
-  const optional = (label: string) => (
-    <span className="text-[12px] font-bold text-ink sm:text-[13px]">
-      {label} <span className="text-ink-soft text-[10px] sm:text-[11px]">({t.apply.optional})</span>
-    </span>
-  )
-
-  const inputClass = (error?: boolean) =>
-    `w-full rounded-2xl border ${error ? 'border-[var(--nb-control)]' : 'border-line'} bg-brand-bg px-3 py-2.5 text-[13px] text-ink placeholder:text-ink-soft/60 outline-none transition focus:border-brand/50 focus:ring-2 focus:ring-brand/10 sm:px-4 sm:py-3 sm:text-[14px]`
-
-  if (status === 'success') {
-    return (
-      <>
-        <Meta title={t.apply.title} />
-        <div className="flex min-h-screen flex-col items-center justify-center bg-brand-bg px-4">
-          <div className="mx-auto w-full max-w-md rounded-[24px] border border-line bg-surface p-6 text-center shadow-lg sm:rounded-[32px] sm:p-8">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--nb-page)] sm:h-16 sm:w-16">
-              <CheckCircle className="h-7 w-7 text-[var(--nb-secondary)] sm:h-8 sm:w-8" />
-            </div>
-            <h2 className="mt-5 text-lg font-black text-ink sm:mt-6 sm:text-xl">{t.apply.success}</h2>
-            <p className="mt-2 text-[13px] leading-relaxed text-ink-muted sm:mt-3 sm:text-[14px]">{t.apply.successDesc}</p>
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-gradient-to-r from-brand to-brand-deep px-6 text-[14px] font-bold text-white shadow-lg shadow-black/50 transition hover:-translate-y-0.5 active:scale-[0.98] sm:mt-8 sm:min-h-12 sm:text-[15px]"
-            >
-              {t.apply.backHome}
-            </button>
-          </div>
-        </div>
-      </>
-    )
-  }
-
-  if (status === 'phone_exists') {
-    return (
-      <>
-        <Meta title={t.apply.title} />
-        <div className="flex min-h-screen flex-col items-center justify-center bg-brand-bg px-4">
-          <div className="mx-auto w-full max-w-md rounded-[24px] border border-line bg-surface p-6 text-center shadow-lg sm:rounded-[32px] sm:p-8">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--nb-page)] sm:h-16 sm:w-16">
-              <AlertCircle className="h-7 w-7 text-[var(--nb-secondary)] sm:h-8 sm:w-8" />
-            </div>
-            <h2 className="mt-5 text-lg font-black text-ink sm:mt-6 sm:text-xl">{t.apply.phoneExists}</h2>
-            <p className="mt-2 text-[13px] leading-relaxed text-ink-muted sm:mt-3 sm:text-[14px]">
-              {phoneStatus === 'pending' ? t.apply.phonePending : t.apply.phoneApproved}
-            </p>
-            {phoneStatus === 'approved' && (
-              <a
-                href="https://tech.lunails.cn"
-                className="mt-3 inline-block text-[13px] font-bold text-brand underline hover:text-brand-deep sm:mt-4 sm:text-sm"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {t.apply.clickToLogin}
-              </a>
-            )}
-            <div className="mt-6 flex gap-3 sm:mt-8">
-              <button
-                type="button"
-                onClick={() => setStatus('idle')}
-                className="inline-flex min-h-11 flex-1 items-center justify-center rounded-full bg-gradient-to-r from-brand to-brand-deep px-6 text-[14px] font-bold text-white shadow-lg transition active:scale-[0.98] sm:min-h-12 sm:text-[15px]"
-              >
-                {t.apply.submit}
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/')}
-                className="inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-surface px-6 text-[14px] font-bold text-ink transition active:scale-[0.98] sm:min-h-12 sm:text-[15px]"
-              >
-                {t.apply.backHome}
-              </button>
-            </div>
-          </div>
-        </div>
-      </>
-    )
-  }
-
-  if (status === 'error') {
-    return (
-      <>
-        <Meta title={t.apply.title} />
-        <div className="flex min-h-screen flex-col items-center justify-center bg-brand-bg px-4">
-          <div className="mx-auto w-full max-w-md rounded-[24px] border border-line bg-surface p-6 text-center shadow-lg sm:rounded-[32px] sm:p-8">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--nb-page)] sm:h-16 sm:w-16">
-              <XCircle className="h-7 w-7 text-[var(--nb-secondary)] sm:h-8 sm:w-8" />
-            </div>
-            <h2 className="mt-5 text-lg font-black text-ink sm:mt-6 sm:text-xl">{t.apply.error}</h2>
-            <p className="mt-2 text-[13px] leading-relaxed text-ink-muted sm:mt-3 sm:text-[14px]">{t.apply.errorDesc}</p>
-            {errorMsg && (
-              <p className="mt-2 rounded-xl bg-[var(--nb-page)] px-4 py-2 text-[11px] text-[var(--nb-secondary)] sm:text-[12px]">{errorMsg}</p>
-            )}
-            <div className="mt-6 flex gap-3 sm:mt-8">
-              <button
-                type="button"
-                onClick={() => setStatus('idle')}
-                className="inline-flex min-h-11 flex-1 items-center justify-center rounded-full bg-gradient-to-r from-brand to-brand-deep px-6 text-[14px] font-bold text-white shadow-lg transition active:scale-[0.98] sm:min-h-12 sm:text-[15px]"
-              >
-                {t.apply.submit}
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/')}
-                className="inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-surface px-6 text-[14px] font-bold text-ink transition active:scale-[0.98] sm:min-h-12 sm:text-[15px]"
-              >
-                {t.apply.backHome}
-              </button>
-            </div>
-          </div>
-        </div>
-      </>
-    )
-  }
-
+  const fields = [
+    { key: 'name', label: c.name, autoComplete: 'name', type: 'text', maxLength: 50 },
+    { key: 'phone', label: c.phone, autoComplete: 'tel-national', type: 'tel', maxLength: 11 },
+    { key: 'city', label: c.city, autoComplete: 'address-level2', type: 'text', maxLength: 50 },
+    { key: 'wechat', label: c.wechat, autoComplete: 'off', type: 'text', maxLength: 100 },
+  ] as const
   return (
-    <>
-      <Meta title={t.apply.title} />
-      <div className="min-h-screen bg-brand-bg px-4 py-6 sm:py-8">
-      <div className="mx-auto w-full max-w-lg">
-        {/* Back button */}
-        <button
-          type="button"
-          onClick={() => navigate('/')}
-          className="mb-4 inline-flex items-center gap-2 rounded-full bg-surface/80 px-3 py-1.5 text-[12px] font-medium text-ink-muted backdrop-blur-sm transition hover:text-brand sm:mb-6 sm:px-4 sm:py-2 sm:text-[13px]"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {t.apply.backHome}
-        </button>
-
-        {/* Form card */}
-        <div className="rounded-[24px] border border-line bg-surface p-6 shadow-lg sm:rounded-[32px] sm:p-8 md:p-10">
-          <div className="mb-6 sm:mb-8">
-            <h1 className="text-xl font-black tracking-tight text-ink sm:text-2xl">{t.apply.title}</h1>
-            <p className="mt-2 text-[13px] leading-relaxed text-ink-muted sm:text-[14px]">{t.apply.subtitle}</p>
-          </div>
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-5">
-            {/* Name */}
-            <div>
-              <label htmlFor="apply-name" className="mb-1.5 block">{required(t.apply.name)}</label>
-              <input
-                id="apply-name"
-                type="text"
-                placeholder={t.apply.namePlaceholder}
-                className={inputClass(!!errors.name)}
-                aria-describedby={errors.name ? 'apply-name-error' : undefined}
-                {...register('name')}
-              />
-              {errors.name && (
-                <p id="apply-name-error" className="mt-1 text-xs text-[var(--nb-secondary)]" role="alert">
-                  {errors.name.message as string}
+    <div className="recruitment-site">
+      <Meta title={c.apply} />
+      <NavBar />
+      <main className="site-container application-layout">
+        <aside className="application-intro">
+          <Link to="/" className="text-button">
+            ← {c.back}
+          </Link>
+          <p className="eyebrow">{c.invite}</p>
+          <h1>{c.formTitle}</h1>
+          <p className="section-intro">{c.formIntro}</p>
+          <ol className="application-steps">
+            {c.steps.map((step, i) => (
+              <li key={step}>
+                <span>0{i + 1}</span>
+                {step}
+              </li>
+            ))}
+          </ol>
+        </aside>
+        <div className="application-card">
+          {status === 'success' ? (
+            <section className="application-success" role="status">
+              <span className="success-icon">
+                <Check size={28} />
+              </span>
+              <h2>{c.successTitle}</h2>
+              <p>{c.successDesc}</p>
+              <p className="contact-note">{c.successNext}</p>
+              <Link to="/" className="site-button">
+                {c.back}
+                <ArrowUpRight size={18} />
+              </Link>
+              <p className="fine-print">{c.followOptional}</p>
+              <button className="text-button" onClick={() => setFollow(true)}>
+                {c.follow}
+              </button>
+            </section>
+          ) : (
+            <form onSubmit={handleSubmit(onSubmit)} noValidate aria-busy={status === 'submitting'}>
+              <div className="form-grid">
+                {fields.map((field) => (
+                  <div className="form-field" key={field.key}>
+                    <label htmlFor={`apply-${field.key}`}>
+                      {field.label}
+                      <span aria-hidden="true"> *</span>
+                    </label>
+                    <input
+                      id={`apply-${field.key}`}
+                      type={field.type}
+                      autoComplete={field.autoComplete}
+                      maxLength={field.maxLength}
+                      required
+                      aria-invalid={!!errors[field.key]}
+                      aria-describedby={errors[field.key] ? `error-${field.key}` : undefined}
+                      {...register(field.key)}
+                    />
+                    {errors[field.key] && (
+                      <p id={`error-${field.key}`} className="field-error" role="alert">
+                        {errors[field.key]?.message}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="form-field">
+                <label htmlFor="apply-service-mode">
+                  {c.serviceMode}
+                  <span aria-hidden="true"> *</span>
+                </label>
+                <select
+                  id="apply-service-mode"
+                  defaultValue=""
+                  required
+                  aria-invalid={!!errors.serviceMode}
+                  aria-describedby={errors.serviceMode ? 'error-mode' : undefined}
+                  {...register('serviceMode')}
+                >
+                  <option value="" disabled>
+                    {c.chooseMode}
+                  </option>
+                  {['shop', 'home', 'both'].map((value, i) => (
+                    <option key={value} value={value}>
+                      {c.modes[i]}
+                    </option>
+                  ))}
+                </select>
+                {errors.serviceMode && (
+                  <p id="error-mode" className="field-error" role="alert">
+                    {errors.serviceMode.message}
+                  </p>
+                )}
+              </div>
+              <details className="optional-fields">
+                <summary>
+                  {c.optional}
+                  <span aria-hidden="true">+</span>
+                </summary>
+                <div>
+                  {(['experience', 'specialty', 'note'] as const).map((key) => (
+                    <div className="form-field" key={key}>
+                      <label htmlFor={`apply-${key}`}>{c[key]}</label>
+                      {key === 'note' ? (
+                        <textarea
+                          id={`apply-${key}`}
+                          rows={4}
+                          maxLength={1000}
+                          aria-invalid={!!errors[key]}
+                          aria-describedby={errors[key] ? `error-${key}` : undefined}
+                          {...register(key)}
+                        />
+                      ) : (
+                        <input
+                          id={`apply-${key}`}
+                          maxLength={200}
+                          aria-invalid={!!errors[key]}
+                          aria-describedby={errors[key] ? `error-${key}` : undefined}
+                          {...register(key)}
+                        />
+                      )}
+                      {errors[key] && (
+                        <p id={`error-${key}`} className="field-error" role="alert">
+                          {errors[key]?.message}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </details>
+              <p className="form-purpose">
+                {c.purpose}{' '}
+                <Link to="/application-info" target="_blank" rel="noopener noreferrer">
+                  {c.info} ↗
+                </Link>
+              </p>
+              {status === 'error' && (
+                <p role="alert" className="submit-error">
+                  {c.error}
                 </p>
               )}
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label htmlFor="apply-phone" className="mb-1.5 block">{required(t.apply.phone)}</label>
-              <input
-                id="apply-phone"
-                type="tel"
-                placeholder={t.apply.phonePlaceholder}
-                className={inputClass(!!errors.phone)}
-                aria-describedby={errors.phone ? 'apply-phone-error' : undefined}
-                {...register('phone')}
-              />
-              {errors.phone && (
-                <p id="apply-phone-error" className="mt-1 text-xs text-[var(--nb-secondary)]" role="alert">
-                  {errors.phone.message as string}
-                </p>
-              )}
-            </div>
-
-            {/* City */}
-            <div>
-              <label htmlFor="apply-city" className="mb-1.5 block">{required(t.apply.city)}</label>
-              <input
-                id="apply-city"
-                type="text"
-                placeholder={t.apply.cityPlaceholder}
-                className={inputClass(!!errors.city)}
-                aria-describedby={errors.city ? 'apply-city-error' : undefined}
-                {...register('city')}
-              />
-              {errors.city && (
-                <p id="apply-city-error" className="mt-1 text-xs text-[var(--nb-secondary)]" role="alert">
-                  {errors.city.message as string}
-                </p>
-              )}
-            </div>
-
-            {/* WeChat */}
-            <div>
-              <label htmlFor="apply-wechat" className="mb-1.5 block">{required(t.apply.wechat)}</label>
-              <input
-                id="apply-wechat"
-                type="text"
-                placeholder={t.apply.wechatPlaceholder}
-                className={inputClass(!!errors.wechat)}
-                aria-describedby={errors.wechat ? 'apply-wechat-error' : undefined}
-                {...register('wechat')}
-              />
-              {errors.wechat && (
-                <p id="apply-wechat-error" className="mt-1 text-xs text-[var(--nb-secondary)]" role="alert">
-                  {errors.wechat.message as string}
-                </p>
-              )}
-            </div>
-
-            {/* Service Mode */}
-            <div>
-              <label htmlFor="apply-service-mode" className="mb-1.5 block">{optional(t.apply.serviceMode)}</label>
-              <input
-                id="apply-service-mode"
-                type="text"
-                placeholder={t.apply.serviceModePlaceholder}
-                className={inputClass()}
-                {...register('serviceMode')}
-              />
-            </div>
-
-            {/* Experience */}
-            <div>
-              <label htmlFor="apply-experience" className="mb-1.5 block">{optional(t.apply.experience)}</label>
-              <input
-                id="apply-experience"
-                type="text"
-                placeholder={t.apply.experiencePlaceholder}
-                className={inputClass()}
-                {...register('experience')}
-              />
-            </div>
-
-            {/* Specialty */}
-            <div>
-              <label htmlFor="apply-specialty" className="mb-1.5 block">{optional(t.apply.specialty)}</label>
-              <input
-                id="apply-specialty"
-                type="text"
-                placeholder={t.apply.specialtyPlaceholder}
-                className={inputClass()}
-                {...register('specialty')}
-              />
-            </div>
-
-            {/* Note */}
-            <div>
-              <label htmlFor="apply-note" className="mb-1.5 block">{optional(t.apply.note)}</label>
-              <textarea
-                id="apply-note"
-                placeholder={t.apply.notePlaceholder}
-                rows={3}
-                className={inputClass() + ' resize-none'}
-                {...register('note')}
-              />
-            </div>
-
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={status === 'checking' || status === 'submitting' || !isValid}
-              className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-deep px-6 text-[14px] font-bold text-white shadow-lg shadow-black/50 transition hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed sm:min-h-12 sm:text-[15px]"
-            >
-              {status === 'checking' ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t.apply.checking || '检查中...'}
-                </>
-              ) : status === 'submitting' ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t.apply.submitting}
-                </>
-              ) : (
-                t.apply.submit
-              )}
-            </button>
-          </form>
+              <button
+                type="submit"
+                className="site-button form-submit"
+                disabled={status === 'submitting'}
+              >
+                {status === 'submitting' ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    {c.submitting}
+                  </>
+                ) : (
+                  <>
+                    {c.submit}
+                    <ArrowUpRight size={18} />
+                  </>
+                )}
+              </button>
+              <p className="fine-print form-note">{c.flowNote}</p>
+            </form>
+          )}
         </div>
-      </div>
+      </main>
+      <SiteFooter />
+      {follow && <ScanQrModal type="follow" onClose={() => setFollow(false)} />}
     </div>
-    </>
   )
 }

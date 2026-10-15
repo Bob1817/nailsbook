@@ -10,6 +10,7 @@ export interface ArtistApplication {
   experience?: string | null;
   specialty?: string | null;
   note?: string | null;
+  followedMp?: boolean;
   status: 'pending' | 'approved' | 'rejected';
   reviewedAt?: string | null;
   createdAt: string;

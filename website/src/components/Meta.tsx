@@ -10,8 +10,8 @@ interface MetaProps {
 export function Meta({ title, description, image }: MetaProps) {
   const { t } = useLang()
 
-  const siteTitle = t.meta?.siteTitle || '贝美甲 - 独立美甲师工具'
-  const defaultDescription = t.meta?.description || '给独立上门美甲师的客户预约与私域经营系统'
+  const siteTitle = t.meta?.siteTitle || 'OnlyNail - 独立美甲师工具'
+  const defaultDescription = t.meta?.description || 'OnlyNail 为独立美甲师提供客户预约与私域经营工具'
 
   const pageTitle = title ? `${title} | ${siteTitle}` : siteTitle
   const pageDescription = description || defaultDescription

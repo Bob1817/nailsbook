@@ -1,290 +1,251 @@
-import {
-  Calendar,
-  MessageSquare,
-  MapPin,
-  Users,
-  TrendingUp,
-  Palette,
-  MessageCircle,
-  Clock,
-  FileText,
-  Navigation,
-  Calculator,
-  Sparkles,
-  Smartphone,
-  QrCode,
-} from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { ArrowRight, ArrowUpRight, CalendarDays, Flower2, NotebookPen } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import NavBar from '../components/NavBar'
+import SiteFooter from '../components/SiteFooter'
 import AppPreview from '../components/AppPreview'
-import FeaturedWorksSection from '../components/FeaturedWorksSection'
+import ScanQrModal from '../components/ScanQrModal'
 import { Meta } from '../components/Meta'
 import { useLang } from '../i18n/LanguageContext'
+import { recruitment } from '../content/recruitment'
 
-const H5_URL = 'https://tech.lunails.cn'
-const QR_CODE_URL = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(H5_URL)}`
-
-const featureIcons = [Calendar, MessageSquare, MapPin, Users, TrendingUp, Palette]
-const painIcons = [MessageCircle, Clock, FileText, Navigation, Calculator]
+const icons = [Flower2, CalendarDays, NotebookPen]
 
 export default function HomePage() {
-  const { t, isZh } = useLang()
+  const { lang, isZh } = useLang()
+  const c = recruitment[lang]
+  const [scan, setScan] = useState<'try' | 'follow' | null>(null)
+  const [showMobileApply, setShowMobileApply] = useState(false)
+  const hero = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const target = hero.current
+    if (!target) return
+
+    if (!('IntersectionObserver' in window)) {
+      setShowMobileApply(true)
+      return
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      setShowMobileApply(!entry.isIntersecting)
+    })
+    observer.observe(target)
+    return () => observer.disconnect()
+  }, [])
 
   return (
-    <>
+    <div className="recruitment-site has-mobile-cta">
       <Meta />
-      <main id="top" className="min-h-screen bg-brand-bg text-ink">
-      {/* ── Hero ── */}
-      <section className="relative overflow-hidden px-4 pb-0 pt-5 md:px-10 lg:px-16">
-        {/* Animated gradient blobs */}
-        <div className="pointer-events-none absolute -left-40 -top-40 h-[600px] w-[600px] rounded-full bg-gradient-to-br from-brand/30 via-brand-soft/20 to-accent-warm/15 opacity-80 blur-3xl animate-drift" aria-hidden="true" />
-        <div className="pointer-events-none absolute -right-32 top-20 h-[500px] w-[500px] rounded-full bg-gradient-to-bl from-accent-warm/25 via-brand-soft/15 to-brand/10 opacity-70 blur-3xl animate-drift" style={{ animationDelay: '-7s' }} aria-hidden="true" />
-        <div className="pointer-events-none absolute left-1/3 top-1/2 h-[350px] w-[350px] rounded-full bg-gradient-to-tr from-brand-soft/15 via-accent-warm/10 to-transparent opacity-50 blur-3xl animate-glow-pulse" aria-hidden="true" />
-
-        {/* Nav */}
-        <div className="sticky top-4 z-40">
-          <NavBar />
-        </div>
-
-        {/* Hero content */}
-        <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 py-16 lg:grid-cols-[1.15fr_0.85fr] lg:py-24">
-          <div className="animate-fade-in-up">
-            {/* Badge */}
-            <div className="inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-soft/60 bg-surface/80 px-4 py-2 text-[13px] font-bold text-brand backdrop-blur-sm">
-              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-              {t.hero.badge}
-            </div>
-
-            {/* Headline */}
-            <h1 className="mt-6 max-w-[600px] text-[clamp(2.25rem,5vw,4rem)] font-black leading-[1.05] tracking-tight text-ink">
-              {t.hero.headline1}
+      <a className="skip-link" href="#main">
+        {isZh ? '跳到主要内容' : 'Skip to content'}
+      </a>
+      <NavBar />
+      <main id="main">
+        <section ref={hero} className="site-container hero-section">
+          <div className="hero-copy">
+            <p className="eyebrow">{c.eyebrow}</p>
+            <h1>
+              {c.title[0]}
               <br />
-              <span className="text-gradient-brand">{t.hero.headline2}</span>
-              {isZh ? '' : ' '}
-              {t.hero.headline3}
+              <span>{c.title[1]}</span>
             </h1>
-
-            <p className="mt-6 max-w-[500px] text-[15px] leading-[1.7] text-ink-muted sm:text-base">
-              {t.hero.desc}
-            </p>
-
-            {/* QR Code CTA */}
-            <div className="mt-8 flex max-w-[500px] items-center gap-4 rounded-2xl border border-line bg-surface/80 p-4 backdrop-blur-sm sm:p-5">
-              <img
-                src={QR_CODE_URL}
-                alt={t.footer.scanQr}
-                width={100}
-                height={100}
-                className="rounded-lg"
-                loading="lazy"
-              />
+            <p className="hero-intro">{c.intro}</p>
+            <div className="button-row">
+              <Link to="/apply" className="site-button">
+                {c.apply}
+                <ArrowUpRight size={18} />
+              </Link>
+              <a href="#demo" className="site-button secondary">
+                {c.demo}
+                <ArrowRight size={18} />
+              </a>
+            </div>
+            <div className="invitation-note">
+              <span className="status-dot" />
               <div>
-                <p className="text-[14px] font-bold text-ink sm:text-[15px]">{t.footer.scanQr}</p>
-                <p className="mt-1 text-[12px] text-ink-muted sm:text-[13px]">{t.footer.scanHint}</p>
+                <strong>{c.invite}</strong>
+                <p>{c.inviteNote}</p>
               </div>
             </div>
-
-            {/* Trust chips */}
-            <div className="mt-6 flex flex-wrap gap-2 sm:mt-9 sm:gap-3">
-              {t.hero.trust.map((item) => (
-                <div
-                  key={item}
-                  className="rounded-xl bg-surface/80 px-3 py-2 text-[12px] font-bold text-ink-muted shadow-sm backdrop-blur-sm sm:px-4 sm:py-2.5 sm:text-[13px]"
-                >
-                  {item}
-                </div>
+          </div>
+          <div className="hero-visual">
+            <p className="visual-overline">YOUR WORK. YOUR RHYTHM.</p>
+            <AppPreview />
+          </div>
+        </section>
+        <section id="audience" className="site-section audience-section">
+          <div className="site-container">
+            <p className="eyebrow">01 / {isZh ? '为这样的你' : 'MADE FOR YOU'}</p>
+            <h2>{c.audienceTitle}</h2>
+            <p className="section-intro">{c.audienceIntro}</p>
+            <div className="audience-grid">
+              {c.audiences.map((item, i) => (
+                <article key={item.title}>
+                  <span className="section-number">0{i + 1}</span>
+                  <h3>{item.title}</h3>
+                  <p>{item.desc}</p>
+                </article>
               ))}
             </div>
           </div>
-
-          {/* Phone mockup */}
-          <div className="flex justify-center lg:justify-end">
-            <AppPreview />
-          </div>
-        </div>
-      </section>
-
-      {/* ── Product Stats Bar ── */}
-      <section className="px-4 py-8 md:px-10 md:py-10 lg:px-16">
-        <div className="mx-auto max-w-6xl">
-          <div className="grid grid-cols-2 gap-3 rounded-[24px] border border-line bg-surface p-4 shadow-sm sm:gap-4 sm:rounded-[28px] sm:p-6 md:grid-cols-4 md:gap-0 md:p-0 md:bg-transparent md:border-0 md:shadow-none">
-            {t.stats.items.map((stat, i) => (
-              <div
-                key={stat.label}
-                className={`flex flex-col items-center justify-center rounded-2xl bg-surface p-4 shadow-sm sm:p-5 md:shadow-none md:bg-transparent md:py-6 ${
-                  i < t.stats.items.length - 1 ? 'md:border-r md:border-line' : ''
-                }`}
-              >
-                <div className={`text-2xl font-black tracking-tight animate-count-up sm:text-3xl`} style={{ animationDelay: `${i * 100}ms` }}>
-                  <span className="text-gradient-brand">{stat.value}</span>
-                  {stat.suffix && <span className="text-base text-ink-muted sm:text-lg">{stat.suffix}</span>}
-                </div>
-                <p className="mt-1 text-[12px] font-medium text-ink-muted sm:text-[13px]">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Why NailBook ── */}
-      <section
-        id="audience"
-        className="px-4 py-12 md:px-10 md:py-16 lg:px-16"
-        style={{ scrollMarginTop: '5rem' }}
-      >
-        <div className="mx-auto max-w-6xl rounded-[28px] border border-line bg-surface p-6 shadow-sm sm:rounded-[36px] sm:p-8 md:p-14">
-          <p className="text-xs font-black tracking-[0.1em] text-brand uppercase">{t.why.tag}</p>
-          <h2 className="mt-4 text-[clamp(1.5rem,3.5vw,2.75rem)] font-black leading-[1.1] tracking-tight text-ink">
-            {t.why.title}
-          </h2>
-          <p className="mt-4 max-w-[65ch] text-[14px] leading-[1.7] text-ink-muted sm:text-[15px]">
-            {t.why.desc}
-          </p>
-          <div className="mt-8 grid gap-2 sm:gap-3 sm:grid-cols-2 md:mt-10 md:grid-cols-3 lg:grid-cols-5">
-            {t.why.pains.map((pain, i) => {
-              const Icon = painIcons[i] || MessageCircle
+        </section>
+        <section id="features" className="site-section site-container">
+          <p className="eyebrow">02 / {isZh ? '你的经营日常' : 'YOUR WORKING DAY'}</p>
+          <h2>{c.scenarioTitle}</h2>
+          <p className="section-intro">{c.scenarioIntro}</p>
+          <div className="scenario-grid">
+            {c.scenarios.map((item, i) => {
+              const Icon = icons[i]
               return (
-                <div key={pain.label} className="flex items-center gap-3 rounded-2xl border border-line bg-brand-bg p-4 transition hover:-translate-y-0.5 hover:shadow-md sm:p-5">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-soft-pink to-brand-mist sm:h-10 sm:w-10" aria-hidden="true">
-                    <Icon className="h-4 w-4 text-brand sm:h-5 sm:w-5" />
+                <article key={item.title} className="scenario-card">
+                  <div className="scenario-icon">
+                    <Icon size={30} strokeWidth={1.3} />
                   </div>
-                  <p className="text-[14px] font-bold text-ink sm:text-[15px]">{pain.label}</p>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Features ── */}
-      <section
-        id="features"
-        className="px-4 py-12 md:px-10 md:py-16 lg:px-16"
-        style={{ scrollMarginTop: '5rem' }}
-      >
-        <div className="mx-auto max-w-6xl">
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end md:gap-5">
-            <div>
-              <p className="text-xs font-black tracking-[0.1em] text-brand uppercase">{t.features.tag}</p>
-              <h2 className="mt-4 text-[clamp(1.5rem,3.5vw,2.75rem)] font-black tracking-tight text-ink">
-                {t.features.title}
-              </h2>
-            </div>
-            <p className="max-w-xs text-[14px] leading-relaxed text-ink-muted sm:text-sm">
-              {t.features.desc}
-            </p>
-          </div>
-
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 sm:gap-4 md:mt-10 lg:grid-cols-3">
-            {t.features.items.map((feature, i) => {
-              const Icon = featureIcons[i] || Calendar
-              return (
-                <article
-                  key={feature.title}
-                  className="group rounded-[20px] border border-line bg-surface p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:shadow-black/30 sm:rounded-[24px] sm:p-7"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-soft-pink to-brand-mist transition group-hover:from-brand/20 group-hover:to-accent-warm/15 sm:h-12 sm:w-12" aria-hidden="true">
-                      <Icon className="h-4 w-4 text-brand sm:h-5 sm:w-5" />
-                    </div>
-                    <h3 className="text-base font-black tracking-tight text-ink sm:text-lg">{feature.title}</h3>
+                  <span className="scenario-index">0{i + 1}</span>
+                  <h3>{item.title}</h3>
+                  <p>{item.desc}</p>
+                  <div className="scenario-tags">
+                    {item.tags.map((tag) => (
+                      <span key={tag}>{tag}</span>
+                    ))}
                   </div>
-                  <p className="mt-3 text-[13px] leading-[1.7] text-ink-muted sm:mt-4 sm:text-[14px]">{feature.desc}</p>
                 </article>
               )
             })}
           </div>
-        </div>
-      </section>
-
-      {/* ─── Featured Works (live from API) ── */}
-      <FeaturedWorksSection />
-
-      {/* ── Booking Flow ── */}
-      <section
-        id="flow"
-        className="px-4 py-12 md:px-10 md:py-16 lg:px-16"
-        style={{ scrollMarginTop: '5rem' }}
-      >
-        <div className="mx-auto max-w-6xl overflow-hidden rounded-[28px] border border-line bg-surface p-6 shadow-sm sm:rounded-[36px] sm:p-8 md:p-14">
-          <p className="text-xs font-black tracking-[0.1em] text-brand uppercase">{t.flow.tag}</p>
-          <h2 className="mt-4 text-[clamp(1.5rem,3.5vw,2.75rem)] font-black tracking-tight text-ink">{t.flow.title}</h2>
-          <p className="mt-3 max-w-[440px] text-[14px] leading-relaxed text-ink-muted sm:mt-4 sm:text-sm">
-            {t.flow.desc}
-          </p>
-          <div className="mt-8 grid gap-2 sm:gap-3 sm:grid-cols-2 md:mt-10 md:grid-cols-3 lg:grid-cols-6">
-            {t.flow.steps.map((step, index) => (
-              <div key={step} className="relative rounded-2xl border border-line bg-brand-bg p-4 transition hover:-translate-y-0.5 hover:shadow-md sm:p-5">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-deep text-[12px] font-black text-white sm:h-8 sm:w-8 sm:text-[13px]">
-                  {index + 1}
-                </div>
-                <p className="mt-3 text-[12px] font-bold leading-relaxed text-ink sm:mt-4 sm:text-[13px]">{step}</p>
-                {index < t.flow.steps.length - 1 && (
-                  <div className="absolute -right-2 top-7 hidden h-[2px] w-4 bg-gradient-to-r from-brand/40 to-transparent lg:block sm:top-8" aria-hidden="true" />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Pricing — 邀请体验期间暂时隐藏 ── */}
-
-      {/* ── Final CTA ── */}
-      <section className="px-4 pb-16 pt-6 md:px-10 md:pb-20 lg:px-16">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 overflow-hidden rounded-[28px] bg-gradient-to-r from-brand via-brand-deep to-accent-warm p-6 text-white sm:rounded-[36px] sm:p-8 md:flex-row md:gap-8 md:p-14">
-          <div>
-            <div className="flex items-center gap-2 text-sm font-medium opacity-90">
-              <Smartphone className="h-4 w-4" aria-hidden="true" />
-              {t.finalCta.subtitle}
+        </section>
+        <section id="demo" className="site-section demo-section">
+          <div className="site-container demo-layout">
+            <div>
+              <p className="eyebrow">03 / {isZh ? '从客户到美甲师' : 'BOTH SIDES OF A SERVICE'}</p>
+              <h2>{c.demoTitle}</h2>
+              <p className="section-intro">{c.demoIntro}</p>
+              <p className="demo-explanation">
+                {isZh
+                  ? '客户从你的主页了解服务、选择时间。你在小程序里查看预约，完成服务后保留记录。经营不必从一段新的聊天重新开始。'
+                  : 'Clients explore services and request a time from your page. You review appointments and keep notes after each visit. Pick up where you left off.'}
+              </p>
+              <button className="text-button" onClick={() => setScan('try')}>
+                {isZh ? '查看小程序入口' : 'Find the mini program'}
+                <ArrowUpRight size={18} />
+              </button>
             </div>
-            <h2 className="mt-3 text-[clamp(1.5rem,3.5vw,2.75rem)] font-black tracking-tight sm:mt-4">
-              {t.finalCta.title}
-            </h2>
+            <AppPreview />
           </div>
-          <div className="flex shrink-0 flex-col items-center gap-3">
-            <div className="rounded-2xl bg-white p-3 shadow-lg">
+        </section>
+        <section id="mini-program" className="site-section site-container mini-guide-section">
+          <div className="mini-guide-copy">
+            <p className="eyebrow">04 / {isZh ? '打开微信小程序' : 'OPEN IN WECHAT'}</p>
+            <h2>{c.miniTitle}</h2>
+            <p className="section-intro">{c.miniIntro}</p>
+            <ol className="mini-guide-steps">
+              {c.miniSteps.map((step, i) => (
+                <li key={step.title}>
+                  <span>0{i + 1}</span>
+                  <div>
+                    <h3>{step.title}</h3>
+                    <p>{step.desc}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+          <div className="mini-code-card">
+            <div className="mini-code-image">
               <img
-                src={QR_CODE_URL}
-                alt={t.footer.scanQr}
-                width={120}
-                height={120}
-                className="rounded-lg"
-                loading="lazy"
+                src="/miniprogram-code.jpg"
+                alt={isZh ? 'OnlyNail 小程序码' : 'OnlyNail mini program code'}
               />
             </div>
-            <p className="text-[13px] font-medium opacity-90">{t.footer.scanHint}</p>
+            <strong>OnlyNail</strong>
+            <p>{isZh ? '微信扫码或搜索 OnlyNail' : 'Scan or search OnlyNail in WeChat'}</p>
+            <button className="site-button" onClick={() => setScan('try')}>
+              {c.miniAction}
+              <ArrowUpRight size={18} />
+            </button>
+            <small>{c.miniApplyNote}</small>
           </div>
-        </div>
-      </section>
-
-      {/* ── Footer ── */}
-      <footer className="border-t border-line px-5 py-10 text-center">
-        <div className="mx-auto max-w-6xl">
-          <div className="flex items-center justify-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-accent-warm text-white select-none">
-              <QrCode className="h-4 w-4" aria-hidden="true" />
+        </section>
+        <section id="join" className="site-section site-container">
+          <div className="policy-heading">
+            <div>
+              <p className="eyebrow">
+                05 / {isZh ? '邀请同行，一起打磨' : 'BUILDING WITH ARTISTS'}
+              </p>
+              <h2>{c.policyTitle}</h2>
             </div>
-            <span className="text-sm font-black tracking-[0.12em] text-ink">贝美甲</span>
+            <p className="section-intro">{c.policyIntro}</p>
           </div>
-          <p className="mt-4 text-[13px] text-ink-soft">
-            {t.footer.copyright}
-          </p>
-          <p className="mt-1.5 text-[12px] text-ink-soft/70">
-            {t.footer.tagline}
-          </p>
-          <p className="mt-4 text-[12px] text-ink-soft/60">
-            <a
-              href="https://beian.miit.gov.cn/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition hover:text-brand"
-            >
-              {t.footer.icp}
-            </a>
-          </p>
+          <div className="policy-grid">
+            {c.policies.map((item) => (
+              <article key={item.title}>
+                <h3>{item.title}</h3>
+                <p>{item.desc}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+        <section id="flow" className="site-container flow-section">
+          <h2>{c.flowTitle}</h2>
+          <ol>
+            {c.steps.map((step, i) => (
+              <li key={step}>
+                <span>0{i + 1}</span>
+                <h3>{step}</h3>
+              </li>
+            ))}
+          </ol>
+          <p className="fine-print">{c.flowNote}</p>
+        </section>
+        <section className="site-section site-container faq-section">
+          <div>
+            <p className="eyebrow">FAQ</p>
+            <h2>{c.faqTitle}</h2>
+            <Link to="/faq" className="text-button">
+              {c.allFaq}
+              <ArrowRight size={18} />
+            </Link>
+          </div>
+          <div>
+            {c.faqs.slice(0, 4).map((item) => (
+              <details key={item.q} className="faq-item">
+                <summary>
+                  {item.q}
+                  <span aria-hidden="true">+</span>
+                </summary>
+                <p>{item.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+        <section className="final-invite">
+          <div className="site-container">
+            <p className="eyebrow">LET’S MAKE ROOM FOR GOOD WORK.</p>
+            <h2>{c.finalTitle}</h2>
+            <p>{c.finalIntro}</p>
+            <Link to="/apply" className="site-button light">
+              {c.apply}
+              <ArrowUpRight size={18} />
+            </Link>
+            <button className="text-button" onClick={() => setScan('follow')}>
+              {c.follow}
+              <ArrowRight size={16} />
+            </button>
+          </div>
+        </section>
+      </main>
+      <SiteFooter />
+      {showMobileApply && !scan && (
+        <div className="mobile-apply">
+          <span>{c.invite}</span>
+          <Link className="site-button" to="/apply">
+            {c.apply}
+            <ArrowUpRight size={16} />
+          </Link>
         </div>
-      </footer>
-    </main>
-    </>
+      )}
+      {scan && <ScanQrModal type={scan} onClose={() => setScan(null)} />}
+    </div>
   )
 }

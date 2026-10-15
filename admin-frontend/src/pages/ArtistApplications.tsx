@@ -108,6 +108,13 @@ const ArtistApplications: React.FC = () => {
       render: (value: string | null) => value || '—',
     },
     {
+      title: '关注公众号',
+      dataIndex: 'followedMp',
+      key: 'followedMp',
+      render: (value: boolean | undefined) =>
+        value ? <Tag color="success">已关注</Tag> : <Tag>未关注</Tag>,
+    },
+    {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
@@ -189,6 +196,9 @@ const ArtistApplications: React.FC = () => {
             <Descriptions.Item label="经验">{selected.experience ?? '—'}</Descriptions.Item>
             <Descriptions.Item label="专长">{selected.specialty ?? '—'}</Descriptions.Item>
             <Descriptions.Item label="备注">{selected.note ?? '—'}</Descriptions.Item>
+            <Descriptions.Item label="关注公众号">
+              {selected.followedMp ? <Tag color="success">已关注</Tag> : <Tag>未关注</Tag>}
+            </Descriptions.Item>
             <Descriptions.Item label="状态">{renderStatusTag(selected.status)}</Descriptions.Item>
           </Descriptions>
         )}

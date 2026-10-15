@@ -41,9 +41,9 @@ export class ArtistApplicationsController {
   }
 
   @Get('artist-applications/check-phone')
-  @ApiOperation({ summary: '检查手机号申请状态（公开）' })
+  @ApiOperation({ summary: '兼容旧客户端预检查（不公开申请状态）' })
   @ApiQuery({ name: 'phone', type: String, description: '手机号', required: true })
-  @ApiResponse({ status: 200, description: '返回手机号申请状态' })
+  @ApiResponse({ status: 200, description: '统一返回 none，重复申请由提交接口处理' })
   checkPhone(@Query('phone') phone: string) {
     return this.service.checkPhone(phone);
   }

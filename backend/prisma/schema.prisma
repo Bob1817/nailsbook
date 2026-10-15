@@ -1360,6 +1360,7 @@ model ArtistApplication {
   specialty   String? // specialties
   wechat      String? // 微信号，用于发放激活码
   note        String?
+  followedMp  Boolean   @default(false) // 是否已关注 NailBook 公众号（可选填写）
   status      String    @default("pending") // pending, approved, rejected
   reviewedBy  Int?
   reviewedAt  DateTime?

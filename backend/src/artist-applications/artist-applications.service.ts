@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CreateArtistApplicationDto } from './dto/create-artist-application.dto';
@@ -8,31 +8,27 @@ export class ArtistApplicationsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateArtistApplicationDto) {
-    return this.prisma.artistApplication.create({
-      data: {
-        name: dto.name,
-        phone: dto.phone,
-        city: dto.city,
-        serviceMode: dto.serviceMode ?? null,
-        experience: dto.experience ?? null,
-        specialty: dto.specialty ?? null,
-        wechat: dto.wechat ?? null,
-        note: dto.note ?? null,
-      },
-    });
+    // One SQLite write statement keeps the duplicate check atomic across workers.
+    // Public responses never expose an existing applicant's id or review status.
+    const now = new Date();
+    await this.prisma.$executeRaw`
+      INSERT INTO "ArtistApplication"
+        ("name", "phone", "city", "serviceMode", "experience", "specialty",
+         "wechat", "note", "followedMp", "status", "createdAt", "updatedAt")
+      SELECT ${dto.name}, ${dto.phone}, ${dto.city}, ${dto.serviceMode ?? null},
+        ${dto.experience ?? null}, ${dto.specialty ?? null}, ${dto.wechat ?? null},
+        ${dto.note ?? null}, ${dto.followedMp ?? false}, 'pending', ${now}, ${now}
+      WHERE NOT EXISTS (
+        SELECT 1 FROM "ArtistApplication"
+        WHERE "phone" = ${dto.phone} AND "status" IN ('pending', 'approved')
+      )
+    `;
+    return { received: true };
   }
 
-  async checkPhone(
-    phone: string,
-  ): Promise<{ status: 'none' | 'pending' | 'approved' }> {
-    const application = await this.prisma.artistApplication.findFirst({
-      where: { phone },
-      orderBy: { createdAt: 'desc' },
-    });
-    if (!application) return { status: 'none' };
-    if (application.status === 'approved') return { status: 'approved' };
-    if (application.status === 'pending') return { status: 'pending' };
-    // rejected → 允许重新申请
+  async checkPhone(_phone: string): Promise<{ status: 'none' }> {
+    // Legacy clients can proceed to create(), which handles duplicates atomically.
+    // Never disclose registration or review status by unauthenticated phone lookup.
     return { status: 'none' };
   }
 
@@ -65,10 +61,17 @@ export class ArtistApplicationsService {
       throw new NotFoundException('申请不存在');
     }
 
-    const homeService =
-      application.serviceMode === 'home' || application.serviceMode === 'both';
-    const shopService =
-      application.serviceMode === 'shop' || application.serviceMode === 'both';
+    // Recognize known legacy labels; never silently approve unknown service modes.
+    const legacyModes: Record<string, string> = {
+      '到店服务': 'shop', '上门服务': 'home', '两者皆可': 'both',
+    };
+    const rawMode = application.serviceMode?.trim() || '';
+    const mode = legacyModes[rawMode] || rawMode;
+    if (!['home', 'shop', 'both'].includes(mode)) {
+      throw new BadRequestException('服务方式不明确，请联系申请人确认；可拒绝此申请后请其重新选择到店、上门或两者均可');
+    }
+    const homeService = mode === 'home' || mode === 'both';
+    const shopService = mode === 'shop' || mode === 'both';
 
     // 事务：标记通过 + 按需创建美甲师账号（按手机号去重，幂等）
     return this.prisma.$transaction(async (tx) => {

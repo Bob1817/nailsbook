@@ -8,7 +8,9 @@ RUN npm ci
 COPY . .
 # The site calls the backend via the relative "/api" path, which the edge nginx
 # (lunails.cn vhost) proxies to the backend (same-origin, no CORS).
-RUN npm run build
+# Color checks run before the image build in CI. --ignore-scripts skips the
+# prebuild hook here because the image context intentionally excludes ../scripts.
+RUN npm run build --ignore-scripts
 
 # ---- production stage ----
 FROM nginx:alpine AS runner
