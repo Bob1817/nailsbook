@@ -9,6 +9,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import { ChatGateway } from '../chat/chat.gateway';
 import * as crypto from 'crypto';
 import { CreateTechnicianOrderDto } from './dto/create-technician-order.dto';
@@ -101,9 +102,6 @@ export class OrdersService {
       throw new ForbiddenException('该美甲师不在小程序首期开放范围内');
     }
     assertLaunchShopService(dto.serviceType);
-    if (this.subscriptions) {
-      await this.subscriptions.assertCanCreateBooking(technicianId);
-    }
     // Resolve Customer record: accept either customerId or clientUserId
     let customerId: number;
     let resolvedClientUserId: number | null = null;
@@ -125,6 +123,27 @@ export class OrdersService {
       resolvedClientUserId = dto.clientUserId;
     } else {
       throw new BadRequestException('customerId 或 clientUserId 必须提供一个');
+    }
+
+    if (dto.applicationKey) {
+      const existing = await this.prisma.order.findUnique({
+        where: { applicationKey: dto.applicationKey },
+        include: {
+          technician: { select: { id: true, name: true, phone: true } },
+          customer: { select: { id: true, name: true, phone: true, avatarUrl: true } },
+          review: { select: { rating: true } },
+          revenue: { select: { amount: true, recognizedAt: true } },
+        },
+      });
+      if (existing) {
+        if (existing.technicianId !== technicianId || existing.customerId !== customerId) {
+          throw new BadRequestException('预约申请标识已被使用');
+        }
+        return existing;
+      }
+    }
+    if (this.subscriptions) {
+      await this.subscriptions.assertCanCreateBooking(technicianId);
     }
 
     if (dto.submitQuote) {
@@ -200,6 +219,7 @@ export class OrdersService {
         const order = await tx.order.create({
           data: {
             orderNo: this.generateOrderNo(),
+            applicationKey: dto.applicationKey ?? null,
             technicianId,
             customerId,
             clientUserId: dto.clientUserId ?? resolvedClientUserId ?? null,
@@ -295,6 +315,24 @@ export class OrdersService {
         ? await this.bookingMutex.runExclusive(technicianId, createOrder)
         : await createOrder();
     } catch (error) {
+      if (
+        dto.applicationKey &&
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        const existing = await this.prisma.order.findUnique({
+          where: { applicationKey: dto.applicationKey },
+          include: {
+            technician: { select: { id: true, name: true, phone: true } },
+            customer: { select: { id: true, name: true, phone: true, avatarUrl: true } },
+            review: { select: { rating: true } },
+            revenue: { select: { amount: true, recognizedAt: true } },
+          },
+        });
+        if (existing?.technicianId === technicianId && existing.customerId === customerId) {
+          return existing;
+        }
+      }
       throwIfBookingSlotConflict(error);
     }
 

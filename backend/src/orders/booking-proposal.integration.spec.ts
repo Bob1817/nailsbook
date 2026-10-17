@@ -39,6 +39,25 @@ describe('预约报价与排期数据库集成', () => {
   }
   const quote = (extra: any = {}) => ({ services: [{ servicePublicId: 'base' }], serviceDate: '2099-01-05', startTime: '10:00', ...extra });
 
+  it('代客预约使用同一幂等键重试时只创建一个订单和一个占用时段', async () => {
+    const applicationKey = `technician-booking-${Date.now()}`;
+    const payload = {
+      applicationKey,
+      customerId: customer,
+      serviceName: '代客预约',
+      serviceType: '到店美甲',
+      startTime: '2099-02-01T02:00:00.000Z',
+      endTime: '2099-02-01T04:00:00.000Z',
+      address: '测试地址',
+      price: 198,
+    };
+    const first = await orders.createForTechnician(tech, payload);
+    const retried = await orders.createForTechnician(tech, payload);
+    expect(retried.id).toBe(first.id);
+    expect(await prisma.order.count({ where: { applicationKey } })).toBe(1);
+    expect(await prisma.blockedTimeSlot.count({ where: { orderId: first.id } })).toBe(1);
+  });
+
   it('原生普通订单沿用服务报价，不能误走手工报价', async () => {
     const order = await application(true);
     await expect(orders.review(order.id, tech, quote({ quoteMode: 'manual', amountFen: 18000, durationMinutes: 60, services: [] }))).rejects.toThrow('手工报价仅用于极简预约');

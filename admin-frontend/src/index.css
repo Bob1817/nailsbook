@@ -9,6 +9,8 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: var(--nb-page);
+  color: var(--nb-ink);
 }
 
 #root {
@@ -21,6 +23,398 @@ body {
 
 .ant-menu-dark {
   background: transparent !important;
+}
+
+.admin-shell {
+  min-height: 100vh;
+  background: var(--nb-page);
+}
+
+.admin-sidebar {
+  position: fixed !important;
+  inset: 0 auto 0 0;
+  z-index: 20;
+  height: 100vh;
+  overflow: auto;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--nb-action) !important;
+}
+
+.admin-brand {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  color: var(--nb-inverse);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+
+.admin-main {
+  min-width: 0;
+  min-height: 100vh;
+  transition: margin-left 0.2s ease;
+}
+
+.admin-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: 64px;
+  padding: 0 24px !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--nb-surface) !important;
+  box-shadow: inset 0 -1px 0 var(--nb-line);
+}
+
+.admin-topbar .ant-btn {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.admin-user-menu {
+  min-height: 44px;
+  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--nb-secondary);
+  cursor: pointer;
+}
+
+.admin-user-menu:hover,
+.admin-user-menu:focus-visible {
+  background: var(--nb-pressed);
+  outline: none;
+}
+
+.admin-content {
+  width: calc(100% - 48px);
+  max-width: 1440px;
+  min-height: calc(100vh - 112px);
+  margin: 24px auto;
+}
+
+.admin-page-header {
+  min-height: 72px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.admin-page-header .ant-typography {
+  margin: 0;
+}
+
+.admin-page-header h3.ant-typography {
+  margin-bottom: 6px;
+  font-size: 26px;
+  line-height: 1.25;
+  letter-spacing: -0.4px;
+}
+
+.admin-page-header__extra {
+  flex: none;
+}
+
+.admin-loading {
+  min-height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-metric-card,
+.admin-dashboard-card,
+.admin-list-card {
+  border-color: var(--nb-line);
+  box-shadow: none;
+}
+
+.admin-metric-card {
+  height: 100%;
+}
+
+.admin-metric-card .ant-statistic {
+  margin-bottom: 8px;
+}
+
+.admin-metric-card .ant-statistic-content {
+  font-size: 28px;
+  font-weight: 650;
+  letter-spacing: -0.5px;
+}
+
+.admin-section {
+  margin-top: 24px;
+}
+
+.admin-section-heading {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.admin-section-heading .ant-typography {
+  margin: 0;
+}
+
+.admin-task-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.admin-task-card {
+  min-height: 88px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--nb-surface);
+  color: var(--nb-ink);
+  box-shadow: inset 0 0 0 1px var(--nb-line);
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-task-card:hover,
+.admin-task-card:focus-visible {
+  background: var(--nb-active-surface);
+  outline: none;
+}
+
+.admin-task-card__icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 10px;
+  background: var(--nb-active-surface);
+  color: var(--nb-link);
+  font-size: 19px;
+}
+
+.admin-task-card strong,
+.admin-task-card small {
+  display: block;
+}
+
+.admin-task-card strong {
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.admin-task-card small {
+  margin-top: 5px;
+  color: var(--nb-secondary);
+  font-size: 14px;
+}
+
+.admin-task-card__arrow {
+  margin-left: auto;
+  color: var(--nb-link);
+  font-size: 22px;
+}
+
+.admin-chart {
+  width: 100%;
+  height: 300px;
+}
+
+.admin-clickable-row {
+  cursor: pointer;
+}
+
+.admin-ranking-list {
+  min-height: 280px;
+}
+
+.admin-ranking-item {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: inset 0 -1px 0 var(--nb-line);
+}
+
+.admin-ranking-item:last-child {
+  box-shadow: none;
+}
+
+.admin-ranking-item__number {
+  width: 28px;
+  color: var(--nb-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-ranking-item__name {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.admin-ranking-item__value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-ranking-item__value small {
+  display: block;
+  margin-top: 2px;
+  color: var(--nb-muted);
+}
+
+.admin-filter-bar {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.admin-search-input {
+  width: 320px;
+}
+
+.admin-status-select {
+  width: 190px;
+}
+
+.admin-order-list {
+  min-height: 120px;
+}
+
+.admin-order-mobile {
+  width: 100%;
+  min-height: 172px;
+  margin-bottom: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  border: 0;
+  border-radius: 12px;
+  background: var(--nb-page);
+  color: var(--nb-ink);
+  text-align: left;
+}
+
+.admin-order-mobile:active,
+.admin-order-mobile:focus-visible {
+  background: var(--nb-pressed);
+  outline: none;
+}
+
+.admin-order-mobile__top,
+.admin-order-mobile__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-order-mobile__top strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-order-mobile__time {
+  margin-top: 15px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.admin-order-mobile__people {
+  margin-top: 6px;
+  color: var(--nb-secondary);
+}
+
+.admin-order-mobile__bottom {
+  min-height: 44px;
+  margin-top: auto;
+  color: var(--nb-link);
+}
+
+.admin-mobile-pagination {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 767px) {
+  .admin-topbar {
+    padding: 0 12px !important;
+  }
+
+  .admin-content {
+    width: calc(100% - 24px);
+    margin: 16px auto calc(16px + env(safe-area-inset-bottom));
+  }
+
+  .admin-page-header {
+    min-height: 0;
+    margin-bottom: 18px;
+    flex-direction: column;
+  }
+
+  .admin-page-header h3.ant-typography {
+    font-size: 23px;
+  }
+
+  .admin-metric-card .ant-card-body {
+    padding: 16px 14px;
+  }
+
+  .admin-metric-card .ant-statistic-content {
+    font-size: 22px;
+  }
+
+  .admin-metric-card .ant-typography-secondary {
+    display: block;
+    min-height: 42px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .admin-task-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .admin-section-heading {
+    display: block;
+  }
+
+  .admin-section-heading .ant-typography-secondary {
+    display: block;
+    margin-top: 4px;
+  }
+
+  .admin-search-input,
+  .admin-status-select {
+    width: 100%;
+  }
+
+  .admin-list-card .ant-card-body {
+    padding: 16px 12px;
+  }
 }
 
 .role-permission-tree .ant-tree-treenode {

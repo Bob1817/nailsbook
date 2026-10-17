@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Card, Descriptions, Drawer, Input, Select, Space, Table, Tag, Typography, message } from 'antd';
+import { Card, Descriptions, Drawer, Empty, Grid, Input, Pagination, Select, Space, Spin, Table, Tag, Typography, message } from 'antd';
+import { useSearchParams } from 'react-router-dom';
+import AdminPageHeader from '../components/AdminPageHeader';
 import { orderService } from '../services/order';
 import type { AdminOrder } from '../services/order';
 import type { PaginatedResponse } from '../services/technician';
@@ -15,11 +17,19 @@ const money = (fen?: number | null) => fen == null ? '待报价' : `¥${(fen / 1
 const dateTime = (value: string) => new Date(value).toLocaleString('zh-CN');
 
 const Orders: React.FC = () => {
+  const screens = Grid.useBreakpoint();
+  const mobile = !screens.md;
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<PaginatedResponse<AdminOrder> | null>(null);
   const [detail, setDetail] = useState<AdminOrder | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [filters, setFilters] = useState({ page: 1, limit: 20, status: undefined as string | undefined, search: '' });
+  const [filters, setFilters] = useState({
+    page: 1,
+    limit: 20,
+    status: searchParams.get('status') || undefined as string | undefined,
+    search: '',
+  });
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -36,6 +46,22 @@ const Orders: React.FC = () => {
     finally { setDetailLoading(false); }
   };
 
+  useEffect(() => {
+    const orderId = Number(searchParams.get('order'));
+    if (Number.isInteger(orderId) && orderId > 0) openDetail(orderId);
+    // The shared dashboard link is resolved once when the page opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const updateStatus = (status?: string) => {
+    setFilters(current => ({ ...current, page: 1, status }));
+    const next = new URLSearchParams(searchParams);
+    if (status) next.set('status', status);
+    else next.delete('status');
+    next.delete('order');
+    setSearchParams(next, { replace: true });
+  };
+
   const columns = [
     { title: '预约编号', dataIndex: 'orderNo', key: 'orderNo' },
     { title: '客户', dataIndex: ['customer', 'name'], key: 'customer' },
@@ -48,17 +74,57 @@ const Orders: React.FC = () => {
   ];
 
   return <div>
-    <Card title="预约管理">
-      <Space wrap style={{ marginBottom: 16 }}>
-        <Input.Search allowClear placeholder="预约编号、客户或美甲师" style={{ width: 280 }} onSearch={search => setFilters(current => ({ ...current, page: 1, search }))} />
-        <Select allowClear placeholder="全部状态" style={{ width: 180 }} onChange={status => setFilters(current => ({ ...current, page: 1, status }))}
+    <AdminPageHeader title="预约管理" description="查询平台预约，核对报价、履约进度和款项状态。" />
+    <Card className="admin-list-card">
+      <Space wrap className="admin-filter-bar">
+        <Input.Search allowClear placeholder="预约编号、客户或美甲师" className="admin-search-input" onSearch={search => setFilters(current => ({ ...current, page: 1, search }))} />
+        <Select allowClear placeholder="全部状态" value={filters.status} className="admin-status-select" onChange={updateStatus}
           options={Object.entries(statusLabels).map(([value, label]) => ({ value, label }))} />
       </Space>
-      <Table rowKey="id" columns={columns} dataSource={data?.data || []} loading={loading} scroll={{ x: 1050 }}
-        pagination={{ current: filters.page, pageSize: filters.limit, total: data?.meta.total || 0, showSizeChanger: true,
-          showTotal: total => `共 ${total} 条`, onChange: (page, limit) => setFilters(current => ({ ...current, page, limit })) }} />
+      {mobile ? (
+        <>
+          <Spin spinning={loading}>
+            <div className="admin-order-list">
+              {(data?.data || []).map(order => (
+                <button key={order.id} type="button" className="admin-order-mobile" onClick={() => openDetail(order.id)}>
+                  <span className="admin-order-mobile__top">
+                    <strong>{order.orderNo}</strong>
+                    <Tag>{statusLabels[order.status] || order.status}</Tag>
+                  </span>
+                  <span className="admin-order-mobile__time">{dateTime(order.startTime)}</span>
+                  <span className="admin-order-mobile__people">{order.customer.name} · {order.technician.name}</span>
+                  <span className="admin-order-mobile__bottom">
+                    <Text strong>{money(order.finalPriceFen)}</Text>
+                    <span>查看详情 ›</span>
+                  </span>
+                </button>
+              ))}
+              {!loading && !data?.data.length ? <Empty description="暂无符合条件的预约" /> : null}
+            </div>
+          </Spin>
+          <div className="admin-mobile-pagination">
+            <Pagination
+              simple
+              current={filters.page}
+              pageSize={filters.limit}
+              total={data?.meta.total || 0}
+              hideOnSinglePage
+              onChange={page => setFilters(current => ({ ...current, page }))}
+            />
+          </div>
+        </>
+      ) : (
+        <Table rowKey="id" columns={columns} dataSource={data?.data || []} loading={loading} scroll={{ x: 1050 }}
+          pagination={{ current: filters.page, pageSize: filters.limit, total: data?.meta.total || 0, showSizeChanger: true,
+            showTotal: total => `共 ${total} 条`, onChange: (page, limit) => setFilters(current => ({ ...current, page, limit })) }} />
+      )}
     </Card>
-    <Drawer title="预约与报价详情" width={720} open={!!detail || detailLoading} loading={detailLoading} onClose={() => setDetail(null)}>
+    <Drawer title="预约与报价详情" size={mobile ? '100%' : 720} open={!!detail || detailLoading} loading={detailLoading} onClose={() => {
+      setDetail(null);
+      const next = new URLSearchParams(searchParams);
+      next.delete('order');
+      setSearchParams(next, { replace: true });
+    }}>
       {detail && <>
         <Descriptions column={2} bordered size="small">
           <Descriptions.Item label="预约编号">{detail.orderNo}</Descriptions.Item>

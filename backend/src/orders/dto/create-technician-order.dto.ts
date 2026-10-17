@@ -1,9 +1,15 @@
 import {
-  IsInt, IsString, IsOptional, IsDateString, IsBoolean, IsNumber, Min, Max,
+  IsInt, IsString, IsOptional, IsDateString, IsBoolean, IsNumber, Min, Max, MaxLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateTechnicianOrderDto {
+  @ApiPropertyOptional({ description: '客户端生成的代客预约幂等键' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  applicationKey?: string;
+
   @IsOptional()
   @IsBoolean()
   submitQuote?: boolean;
