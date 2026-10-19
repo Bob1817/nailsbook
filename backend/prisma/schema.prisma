@@ -144,6 +144,7 @@ model Technician {
   homepageLikes              ArtistHomepageLike[]
   homepageFavorites          ArtistHomepageFavorite[]
   homepageComments           ArtistHomepageComment[]
+  bookingQuotes              BookingQuote[]
   brandProfile               BrandProfile?
   services                   Service[]
   leads                      Lead[]
@@ -321,6 +322,7 @@ model Customer {
   leads                  Lead[]
   serviceRecords         ServiceRecord[]
   publicationConsents    PublicationConsent[]
+  bookingQuotes          BookingQuote[]
   completedServiceCount  Int                        @default(0)
   lifetimePaidAmount     Float                      @default(0)
   lastServiceAt          DateTime?
@@ -476,6 +478,7 @@ model Order {
   finalPriceFen          Int?
   totalDurationMinutes   Int?
   serviceLines           OrderServiceLine[]
+  bookingQuote           BookingQuote?
 
   @@index([technicianId])
   @@index([customerId])
@@ -551,6 +554,7 @@ model ClientUser {
   conversionEvents          ConversionEvent[]
   leads                     Lead[]
   publicationConsents       PublicationConsent[]
+  bookingQuotes             BookingQuote[]
 }
 
 model TechnicianFollow {
@@ -717,6 +721,75 @@ model ClientTechBinding {
   @@unique([clientId, techId])
   @@index([techId])
   @@index([clientId, status])
+}
+
+model BookingQuote {
+  id                       Int                @id @default(autoincrement())
+  quoteNo                  String             @unique
+  publicToken              String             @unique
+  technicianId             Int
+  clientUserId             Int?
+  customerId               Int?
+  orderId                  Int?               @unique
+  status                   String             @default("issued")
+  version                  Int                @default(1)
+  clientName               String?
+  requirement              String?
+  referenceImages          String?
+  serviceType              String             @default("到店美甲")
+  technicianNameSnapshot   String
+  technicianAvatarSnapshot String?
+  invitationCodeSnapshot   String?
+  shopNameSnapshot         String?
+  shopAddressSnapshot      String?
+  shopLatitudeSnapshot     Float?
+  shopLongitudeSnapshot    Float?
+  bookingRulesSnapshot     String?
+  serviceSubtotalFen       Int                @default(0)
+  materialSubtotalFen      Int                @default(0)
+  surchargeSubtotalFen     Int                @default(0)
+  discountAmountFen        Int                @default(0)
+  finalPriceFen            Int
+  totalDurationMinutes     Int
+  expiresAt                DateTime
+  issuedAt                 DateTime           @default(now())
+  viewedAt                 DateTime?
+  acceptedAt               DateTime?
+  bookedAt                 DateTime?
+  declinedAt               DateTime?
+  declineReason            String?
+  withdrawnAt              DateTime?
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @default(now()) @updatedAt
+  technician               Technician         @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  clientUser               ClientUser?        @relation(fields: [clientUserId], references: [id], onDelete: SetNull)
+  customer                 Customer?          @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  order                    Order?             @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  lines                    BookingQuoteLine[]
+
+  @@index([technicianId, status, createdAt])
+  @@index([clientUserId, status])
+  @@index([expiresAt])
+}
+
+model BookingQuoteLine {
+  id                      Int          @id @default(autoincrement())
+  bookingQuoteId          Int
+  lineType                String
+  serviceId               Int?
+  servicePublicIdSnapshot String?
+  nameSnapshot            String
+  unitPriceFen            Int
+  durationMinutes         Int          @default(0)
+  quantity                Int          @default(1)
+  subtotalFen             Int
+  sortOrder               Int          @default(0)
+  createdAt               DateTime     @default(now())
+  bookingQuote            BookingQuote @relation(fields: [bookingQuoteId], references: [id], onDelete: Cascade)
+  service                 Service?     @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  @@index([bookingQuoteId, sortOrder])
+  @@index([serviceId])
 }
 
 model ClientAddress {
@@ -1541,6 +1614,7 @@ model Service {
   works                NailWork[]
   workServiceLines     NailWorkServiceLine[]
   orderServiceLines    OrderServiceLine[]
+  bookingQuoteLines    BookingQuoteLine[]
   maintenanceCycleDays Int                   @default(21)
   depositMode          String                @default("none") // none, fixed, percentage
   depositValue         Int                   @default(0) // fixed: fen, percentage: basis points (10000=100%)

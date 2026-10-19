@@ -58,10 +58,12 @@ import { ConversionEventsModule } from './conversion-events/conversion-events.mo
 import { WechatSubscribeMessagesModule } from './wechat-subscribe-messages/wechat-subscribe-messages.module';
 import { WechatOfficialModule } from './wechat-official/wechat-official.module';
 import { BrandProfilesModule } from './brand-profiles/brand-profiles.module';
+import { BookingQuotesModule } from './booking-quotes/booking-quotes.module';
 
 @Module({
   imports: [
     AccountDeletionModule,
+    BookingQuotesModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',

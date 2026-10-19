@@ -96,7 +96,26 @@ export class ClientOrdersService {
     });
   }
 
-  async create(clientUserId: number, dto: CreateClientOrderDto) {
+  async create(
+    clientUserId: number,
+    dto: CreateClientOrderDto,
+    quoteOverride?: {
+      serviceLines: Array<{
+        serviceId: number | null;
+        servicePublicIdSnapshot: string | null;
+        nameSnapshot: string;
+        unitPriceFen: number;
+        durationMinutes: number;
+        quantity: number;
+        subtotalFen: number;
+        sortOrder: number;
+      }>;
+      serviceSubtotalFen: number;
+      finalPriceFen: number;
+      totalDurationMinutes: number;
+      quoteNo: string;
+    },
+  ) {
     assertLaunchShopService(dto.serviceType);
     if (!isLaunchTechnician(dto.techId)) {
       throw new NotFoundException('该美甲师暂未开放预约');
@@ -217,7 +236,9 @@ export class ClientOrdersService {
       throw new BadRequestException('请选择至少一项服务内容或填写自定义需求');
     }
 
-    const bookingType = sourceWork && !dto.referenceOnly
+    const bookingType = quoteOverride
+      ? 'quote'
+      : sourceWork && !dto.referenceOnly
       ? 'work'
       : isCustom || dto.chatMode || dto.quickBooking
         ? 'custom'
@@ -275,18 +296,22 @@ export class ClientOrdersService {
       selectedServices = services;
       serviceLines = buildServiceSnapshotLines(services, requested);
     }
+    if (quoteOverride) serviceLines = quoteOverride.serviceLines;
     const summary = summarizeSnapshotLines(serviceLines);
     const totalDurationMinutes =
-      bookingType === 'custom' ? 0 : summary.totalDurationMinutes;
+      quoteOverride?.totalDurationMinutes ??
+      (bookingType === 'custom' ? 0 : summary.totalDurationMinutes);
     const availabilityDuration =
       totalDurationMinutes || DEFAULT_BOOKING_DURATION_MINUTES;
-    const serviceSubtotalFen = summary.serviceSubtotalFen;
+    const serviceSubtotalFen =
+      quoteOverride?.serviceSubtotalFen ?? summary.serviceSubtotalFen;
     const finalPriceFen =
-      bookingType === 'work'
+      quoteOverride?.finalPriceFen ??
+      (bookingType === 'work'
         ? sourceWork!.standardPriceFen
         : bookingType === 'standard'
           ? serviceSubtotalFen
-          : null;
+          : null);
     // Calculate deposit from per-service deposit settings
     let defaultDepositFen = 0;
     let depositModeSnapshot = 'none';
@@ -394,7 +419,9 @@ export class ClientOrdersService {
             address: orderAddress,
             serviceType: dto.serviceType,
             remark: dto.remark ?? null,
-            customTitle: isCustom
+            customTitle: quoteOverride
+              ? `专属报价 ${quoteOverride.quoteNo}`
+              : isCustom
               ? (dto.customTitle ?? null)
               : serviceLines.map((line) => line.nameSnapshot).join('、'),
             customDescription: dto.customDescription ?? null,
