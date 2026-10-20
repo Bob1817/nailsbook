@@ -15,6 +15,7 @@ for (const markup of [clientWxml, technicianWxml]) {
   assert(markup.includes('empty-avatar-image'), '空状态应展示对话对象头像');
   assert(markup.includes('empty-action-icon'), '空状态操作应使用项目图标');
   assert(!markup.includes('empty-icon-dot'), '不应保留粗糙的空状态圆点');
+  assert(markup.includes('wx:if="{{ownAvatar}}"'), '自己发送的消息应优先展示真实头像');
 }
 
 assert(clientWxml.includes('bindtap="onPickImage"'), '客户端应保留发送图片入口');
@@ -29,6 +30,9 @@ for (const styles of [clientWxss, technicianWxss]) {
   assert(/\.avatar-img, \.avatar-placeholder, \.avatar-self\s*\{[^}]*width:\s*64rpx;[^}]*height:\s*64rpx/s.test(styles), '两端消息头像规格应一致');
   assert(/\.bubble-right\s*\{[^}]*background:\s*var\(--nb-action\);[^}]*box-shadow:\s*none/s.test(styles), '发送气泡应使用统一主操作样式');
   assert(!/^\+$/m.test(styles), 'WXSS 不应包含无效字符');
+  assert(/\.msg-row\s*\{[^}]*align-items:\s*flex-start/s.test(styles), '头像应与消息内容顶部对齐');
+  assert(/\.row-right\s*\{[^}]*flex-direction:\s*row;[^}]*justify-content:\s*flex-end/s.test(styles), '自己头像应固定在消息右侧');
+  assert(/\.row-left\s*\{[^}]*flex-direction:\s*row;[^}]*justify-content:\s*flex-start/s.test(styles), '对方头像应固定在消息左侧');
 }
 
 console.log('对话页一致性检查通过');

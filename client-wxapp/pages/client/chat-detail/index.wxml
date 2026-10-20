@@ -15,7 +15,7 @@
 
   <!-- 消息列表 -->
   <scroll-view wx:if="{{!loading}}" scroll-y class="msg-list" scroll-into-view="{{scrollToId}}" scroll-with-animation enhanced show-scrollbar="{{false}}" bindscroll="onScroll">
-    <view wx:if="{{groupedMessages.length === 0}}" class="empty-chat">
+    <view wx:if="{{groupedMessages.length === 0 && pendingImages.length === 0}}" class="empty-chat">
       <view class="empty-chat-card">
         <view class="empty-avatar" bindtap="viewArtist" role="button" aria-label="查看{{techName || '美甲师'}}主页">
           <image wx:if="{{techAvatar}}" src="{{techAvatar}}" mode="aspectFill" class="empty-avatar-image" />
@@ -80,10 +80,18 @@
 
         <!-- 自己头像 -->
         <view wx:if="{{item.isClient}}" class="msg-avatar">
-          <view class="avatar-self"><text>我</text></view>
+          <image wx:if="{{ownAvatar}}" class="avatar-img" src="{{ownAvatar}}" mode="aspectFill" lazy-load aria-label="我的头像" />
+          <view wx:else class="avatar-self"><text>我</text></view>
         </view>
       </view>
     </block>
+
+    <view wx:for="{{pendingImages}}" wx:key="id" id="{{item.id}}" class="image-outbox">
+      <image src="{{item.url || item.path}}" mode="widthFix" class="msg-image" bindtap="previewImage" data-url="{{item.url || item.path}}" aria-label="待发送的图片" />
+      <text class="image-send-status">{{item.status === 'failed' ? item.error : item.status === 'sending' ? '正在发送…' : '等待发送…'}}</text>
+      <button wx:if="{{item.status === 'failed'}}" class="image-retry" hover-class="image-retry-pressed" bindtap="retryImage" data-id="{{item.id}}" disabled="{{sending}}">重新发送</button>
+      <button wx:if="{{item.status === 'failed'}}" class="image-retry" hover-class="image-retry-pressed" bindtap="discardImage" data-id="{{item.id}}" disabled="{{sending}}">移除待发图片</button>
+    </view>
 
     <view class="list-bottom" style="height: {{24 + keyboardHeight}}px;"></view>
   </scroll-view>

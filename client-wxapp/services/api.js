@@ -486,18 +486,7 @@ const chat = {
         : params;
       return api.get(`${T}/messages`, query, opts);
     },
-    sendMessage: (data) => {
-      const body = { ...data };
-      if (body.conversationId != null) {
-        body.conversation_id = body.conversationId;
-        delete body.conversationId;
-      }
-      if (body.clientId != null) {
-        body.client_id = body.clientId;
-        delete body.clientId;
-      }
-      return api.post(`${T}/messages`, body);
-    },
+    sendMessage: (data) => api.post(`${T}/messages`, data),
     markRead: (conversationId) => api.patch(`${T}/messages/read`, { conversation_id: conversationId })
   },
   conversations: (role = 'client', opts = {}) => {
@@ -512,23 +501,10 @@ const chat = {
       : params;
     return api.get(`${base}/messages`, query, opts);
   },
-  // body 字段也用蛇形
+  // 消息 body 使用后端 DTO 的驼峰字段；查询参数仍使用 conversation_id。
   sendMessage: (data, role = 'client') => {
     const base = role === 'technician' ? T : C;
-    const body = { ...data };
-    if (body.conversationId != null) {
-      body.conversation_id = body.conversationId;
-      delete body.conversationId;
-    }
-    if (body.techId != null) {
-      body.tech_id = body.techId;
-      delete body.techId;
-    }
-    if (body.clientId != null) {
-      body.client_id = body.clientId;
-      delete body.clientId;
-    }
-    return api.post(`${base}/messages`, body);
+    return api.post(`${base}/messages`, data);
   },
   markRead: (conversationId, role = 'client') => {
     const base = role === 'technician' ? T : C;

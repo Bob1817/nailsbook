@@ -1,4 +1,5 @@
 const api = require('../../../services/api');
+const { imageMethods } = require('../utils/chat-images');
 const {
   isSubscriptionCategoryMissing,
   prepareBookingReminderStatus,
@@ -7,12 +8,15 @@ const {
 } = require('../../../utils/wechat-subscription');
 
 Page({
+  ...imageMethods('technician'),
   data: {
     conversationId: null,
     clientName: '',
     clientAvatar: '',
+    ownAvatar: '',
     clientAvatarFailed: false,
     messages: [],
+    pendingImages: [],
     groupedMessages: [],
     inputText: '',
     loading: true,
@@ -33,13 +37,15 @@ Page({
   onLoad(options) {
     this._pageActive = true;
     this.calcNavHeight();
+    const ownUser = wx.getStorageSync('technician_userInfo') || wx.getStorageSync('userInfo') || {};
     const { conversationId, clientName, clientId, clientAvatar } = options;
     const parsedConversationId = parsePositiveId(conversationId);
     const parsedClientId = parsePositiveId(clientId);
     this.setData({
       conversationId: parsedConversationId,
       clientId: parsedClientId,
-      clientAvatar: clientAvatar ? decodeURIComponent(clientAvatar) : ''
+      clientAvatar: clientAvatar ? decodeURIComponent(clientAvatar) : '',
+      ownAvatar: ownUser.avatarUrl || ownUser.avatar || ''
     });
     if (clientName) {
       const name = decodeURIComponent(clientName);
@@ -61,6 +67,7 @@ Page({
 
   onShow() {
     this._pageActive = true;
+    if (!this._imageBusy) this.restoreImageOutbox();
     if (this._sendFinishedWhileHidden) {
       this.setData({ sending: false, inputText: this._failedDraft || this.data.inputText });
       this._sendFinishedWhileHidden = false;
@@ -70,6 +77,7 @@ Page({
   },
   onHide() { this._pageActive = false; this.stopPolling(); },
   onUnload() {
+    this._imagesUnloaded = true;
     this._pageActive = false;
     this.stopPolling();
     if (this._resizeHandler) wx.offWindowResize(this._resizeHandler);
@@ -144,6 +152,8 @@ Page({
   },
 
   async loadMessages(showLoading = true, isPolling = false) {
+    if (this._imageBusy) return;
+    const imageSendVersion = this._imageSendVersion;
     if (!this.data.conversationId) {
       if (showLoading) this.setData({ loading: false });
       return;
@@ -152,11 +162,13 @@ Page({
     try {
       const reqOpts = isPolling ? { timeout: 10000, silent: true } : {};
       const res = await api.chat.technician.messages({ conversationId: this.data.conversationId }, reqOpts);
+      if (this._imagesUnloaded || this._imageBusy || imageSendVersion !== this._imageSendVersion) return;
       const messages = this.formatMessages(res.messages || res.data || res || []);
       const client = res.client;
       if (client) {
         wx.setNavigationBarTitle({ title: client.nickname || client.phone || '客户' });
         this.setData({
+          clientId: client.id || this.data.clientId,
           clientName: client.nickname || client.phone || '客户',
           clientAvatar: client.avatarUrl || '',
           clientAvatarFailed: false
@@ -164,6 +176,7 @@ Page({
       }
       const isFirst = this.data.messages.length === 0;
       this.setData({ messages, loading: false });
+      this.restoreImageOutbox();
       this.groupByDate();
       api.chat.technician.markRead(this.data.conversationId).catch(() => {});
       if (isFirst || this.data.isAtBottom) {
@@ -285,48 +298,9 @@ Page({
     }
   },
 
-  async sendImage() {
-    if (this.data.sending || (!this.data.conversationId && !this.data.clientId)) return;
-    wx.chooseMedia({
-      count: 1,
-      mediaType: ['image'],
-      success: async (res) => {
-        this.setData({ sending: true });
-        try {
-          var uploadRes = await api.upload.image(res.tempFiles[0].tempFilePath, 'technician');
-          var payload = { messageType: 'image', imageUrl: uploadRes.url };
-          if (this.data.conversationId) payload.conversationId = this.data.conversationId;
-          else payload.clientId = this.data.clientId;
-          var msgRes = await api.chat.technician.sendMessage(payload);
-          if (!this._pageActive) { this._sendFinishedWhileHidden = true; return; }
-          const conversationId = parsePositiveId(msgRes.conversationId || (msgRes.message && msgRes.message.conversationId));
-          if (conversationId && !this.data.conversationId) this.setData({ conversationId });
-          if (msgRes.message) {
-            var msgs = [...this.data.messages, {
-              ...msgRes.message,
-              timeStr: formatTime(msgRes.message.createdAt),
-              isMe: true,
-              isSystem: false,
-              isOrderCard: false
-            }];
-            this.setData({ messages: msgs });
-            this.groupByDate();
-            this.scrollToBottom(true);
-          }
-        } catch {
-          if (this._pageActive) wx.showToast({ title: '图片发送失败', icon: 'none' });
-          else this._sendFinishedWhileHidden = true;
-        } finally {
-          if (this._pageActive) this.setData({ sending: false });
-          else this._sendFinishedWhileHidden = true;
-        }
-      }
-    });
-  },
+  sendImage() { this.pickChatImages(); },
 
-  previewImage(e) {
-    wx.previewImage({ urls: [e.currentTarget.dataset.url], current: e.currentTarget.dataset.url });
-  },
+
 
   onClientAvatarError() {
     this.setData({ clientAvatarFailed: true });

@@ -1,4 +1,5 @@
 const api = require('../../../services/api');
+const { imageMethods } = require('../utils/chat-images');
 const {
   isSubscriptionCategoryMissing,
   prepareBookingReminderStatus,
@@ -6,18 +7,16 @@ const {
   shouldShowConsultationReminder
 } = require('../../../utils/wechat-subscription');
 
-// 图片上传约束：类型 / 单张大小 / 数量
-var IMAGE_MAX_COUNT = 9;
-var IMAGE_MAX_SIZE = 10 * 1024 * 1024; // 10MB
-var IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
-
 Page({
+  ...imageMethods('client'),
   data: {
     conversationId: null,
     techId: null,
     techName: '',
     techAvatar: '',
+    ownAvatar: '',
     messages: [],
+    pendingImages: [],
     groupedMessages: [],
     inputText: '',
     loading: true,
@@ -39,10 +38,12 @@ Page({
   onLoad(options) {
     this._pageActive = true;
     this.calcNavHeight();
+    const ownUser = wx.getStorageSync('client_userInfo') || wx.getStorageSync('userInfo') || {};
     var { conversationId, techId, techName } = options;
     this.setData({
       conversationId: conversationId ? parseInt(conversationId) : null,
-      techId: techId ? parseInt(techId) : null
+      techId: techId ? parseInt(techId) : null,
+      ownAvatar: ownUser.avatarUrl || ownUser.avatar || ''
     });
     if (techName) {
       wx.setNavigationBarTitle({ title: decodeURIComponent(techName) });
@@ -63,6 +64,7 @@ Page({
 
   onShow() {
     this._pageActive = true;
+    if (!this._imageBusy) this.restoreImageOutbox();
     if (this._sendFinishedWhileHidden) {
       this.setData({ sending: false, inputText: this._failedDraft || this.data.inputText });
       this._sendFinishedWhileHidden = false;
@@ -72,6 +74,7 @@ Page({
   },
   onHide() { this._pageActive = false; this.stopPolling(); },
   onUnload() {
+    this._imagesUnloaded = true;
     this._pageActive = false;
     this.stopPolling();
     if (this._resizeHandler) wx.offWindowResize(this._resizeHandler);
@@ -103,11 +106,14 @@ Page({
 
   /* ===== 消息加载 ===== */
   async loadMessages(showLoading = true, isPolling = false) {
+    if (this._imageBusy) return;
+    const imageSendVersion = this._imageSendVersion;
     if (showLoading) this.setData({ loading: true });
     try {
       const reqOpts = isPolling ? { timeout: 10000, silent: true } : {};
       if (this.data.conversationId) {
         var res = await api.chat.messages({ conversationId: this.data.conversationId }, 'client', reqOpts);
+        if (this._imagesUnloaded || this._imageBusy || imageSendVersion !== this._imageSendVersion) return;
         var messages = this.formatMessages(res.messages || res.data || res || []);
         var tech = res.technician;
         if (tech) {
@@ -117,6 +123,7 @@ Page({
         }
         var isFirst = this.data.messages.length === 0;
         this.setData({ messages, loading: false });
+        this.restoreImageOutbox();
         this.groupByDate();
         api.chat.markRead(this.data.conversationId, 'client').catch(() => {});
         if (isFirst || this.data.isAtBottom) {
@@ -254,59 +261,9 @@ Page({
     this.openBookingSheet();
   },
 
-  /* ===== 菜单项：上传图片（约束类型 / 大小 / 数量）===== */
   onPickImage() {
     this.setData({ showAddMenu: false });
-    if (this.data.sending) return;
-    wx.chooseMedia({
-      count: IMAGE_MAX_COUNT,
-      mediaType: ['image'],
-      sourceType: ['album', 'camera'],
-      sizeType: ['compressed', 'original'],
-      success: (res) => {
-        var files = res.tempFiles || [];
-        var paths = [];
-        var rejected = false;
-        for (var i = 0; i < files.length; i++) {
-          var f = files[i];
-          var path = f.tempFilePath || '';
-          var ext = (path.split('?')[0].split('.').pop() || '').toLowerCase();
-          if (IMAGE_EXTS.indexOf(ext) === -1) { rejected = true; continue; }      // 类型约束
-          if (f.size && f.size > IMAGE_MAX_SIZE) { rejected = true; continue; }    // 大小约束
-          paths.push(path);
-        }
-        if (rejected) {
-          wx.showToast({ title: '仅支持 10MB 内的 JPG/PNG 图片', icon: 'none' });
-        }
-        if (paths.length === 0) return;
-        this.uploadAndSendImages(paths);
-      }
-    });
-  },
-
-  async uploadAndSendImages(paths) {
-    this.setData({ sending: true });
-    try {
-      for (var i = 0; i < paths.length; i++) {
-        var uploadRes = await api.upload.image(paths[i], 'client');
-        var payload = { messageType: 'image', imageUrl: uploadRes.url };
-        if (this.data.conversationId) payload.conversationId = this.data.conversationId;
-        else payload.techId = this.data.techId;
-        var msgRes = await api.chat.sendMessage(payload, 'client');
-        if (!this._pageActive) { this._sendFinishedWhileHidden = true; continue; }
-        if (msgRes.conversationId && !this.data.conversationId) this.setData({ conversationId: msgRes.conversationId });
-        if (msgRes.message) {
-          var msgs = this.data.messages.concat([{ ...msgRes.message, timeStr: formatTime(msgRes.message.createdAt), isClient: true, isSystem: false, isOrderCard: false }]);
-          this.setData({ messages: msgs }); this.groupByDate(); this.scrollToBottom(true);
-        }
-      }
-    } catch (err) {
-      if (this._pageActive) wx.showToast({ title: '图片发送失败', icon: 'none' });
-      else this._sendFinishedWhileHidden = true;
-    } finally {
-      if (this._pageActive) this.setData({ sending: false });
-      else this._sendFinishedWhileHidden = true;
-    }
+    this.pickChatImages();
   },
 
   /* ===== 快速发起预约（美甲师固定为对话对象，复用创建预约页）===== */
@@ -318,10 +275,7 @@ Page({
     wx.navigateTo({ url: '/pages/client/create-order/index?techId=' + this.data.techId });
   },
 
-  previewImage(e) {
-    var url = e.currentTarget.dataset.url;
-    wx.previewImage({ urls: [url], current: url });
-  },
+
 
   viewArtist() {
     if (this.data.techId) wx.navigateTo({ url: '/pages/client/artist-home/index?id=' + this.data.techId });
