@@ -177,6 +177,9 @@ export class TechnicianMessagesService {
 
   async create(technicianId: number, dto: CreateTechnicianMessageDto) {
     this.assertMessageType(dto.messageType);
+    if (dto.messageType === 'image' && !dto.imageUrl?.trim()) {
+      throw new BadRequestException('图片地址不能为空');
+    }
 
     let conversation;
 
@@ -207,10 +210,7 @@ export class TechnicianMessagesService {
             techId: technicianId,
           },
         },
-        update: {
-          lastMessage: preview,
-          lastMessageAt: new Date(),
-        },
+        update: {},
         create: {
           clientId: dto.clientId,
           techId: technicianId,
@@ -222,7 +222,18 @@ export class TechnicianMessagesService {
       throw new BadRequestException('需要提供 conversationId 或 clientId');
     }
 
+    let reusedImage = false;
     const message = await this.prisma.$transaction(async (tx) => {
+      // Reuse the uploaded image on retry, including after a lost HTTP response.
+      if (dto.messageType === 'image' && dto.imageUrl) {
+        const existing = await tx.message.findFirst({
+          where: { conversationId: conversation.id, senderType: 'technician', senderId: technicianId, messageType: 'image', imageUrl: dto.imageUrl },
+        });
+        if (existing) {
+          reusedImage = true;
+          return existing;
+        }
+      }
       const message = await tx.message.create({
         data: {
           conversationId: conversation.id,
@@ -257,7 +268,7 @@ export class TechnicianMessagesService {
       },
     });
 
-    this.chat.broadcastMessage(message, conversation);
+    if (!reusedImage) this.chat.broadcastMessage(message, conversation);
     return {
       client,
       message: this.mapMessage(message),

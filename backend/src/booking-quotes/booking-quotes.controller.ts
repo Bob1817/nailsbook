@@ -36,6 +36,12 @@ export class TechnicianBookingQuotesController {
   ) {
     return this.quotes.detail(req.user.technicianId, id);
   }
+  @Get(':id/image') renderImage(
+    @Req() req: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.quotes.renderImage(req.user.technicianId, id);
+  }
   @Patch(':id/withdraw') withdraw(
     @Req() req: { user: { technicianId: number } },
     @Param('id', ParseIntPipe) id: number,
@@ -49,6 +55,9 @@ export class PublicBookingQuotesController {
   constructor(private readonly quotes: BookingQuotesService) {}
   @Get(':token') detail(@Param('token') token: string) {
     return this.quotes.publicDetail(token);
+  }
+  @Get(':token/invitation') invitationImage(@Param('token') token: string) {
+    return this.quotes.renderInvitationImage(token);
   }
   @Post(':token/decline') decline(
     @Param('token') token: string,

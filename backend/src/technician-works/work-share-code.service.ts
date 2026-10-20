@@ -28,14 +28,23 @@ export class WorkShareCodeService {
   // 调用方必须先校验作品和授权；缓存图片不代表授权仍有效。
   async generate(workId: number, shareToken?: string) {
     const scene = shareToken ? Buffer.from(shareToken, 'hex').toString('base64url') : `w${workId}`;
+    return this.generateForScene(scene, 'pages/client/public-work/index');
+  }
+
+  // 报价单下载图内嵌的小程序码，扫码直达报价确认页。调用方必须先校验报价归属。
+  async generateForQuote(publicToken: string) {
+    return this.generateForScene(Buffer.from(publicToken, 'hex').toString('base64url'), 'pages/client/quote-confirm/index');
+  }
+
+  private async generateForScene(scene: string, page: string) {
     const configured = process.env.WECHAT_SHARE_CODE_ENV;
     const envVersion = configured === 'trial' || configured === 'develop' ? configured : 'release';
-    const key = `${envVersion}:${scene}`;
+    const key = `${envVersion}:${page}:${scene}`;
     const cached = this.codes.get(key);
     if (cached) return { imageBase64: cached };
     const pending = this.pendingCodes.get(key);
     if (pending) return pending;
-    const request = this.generateCode(scene, key, envVersion).finally(() => this.pendingCodes.delete(key));
+    const request = this.generateCode(scene, key, envVersion, page).finally(() => this.pendingCodes.delete(key));
     this.pendingCodes.set(key, request);
     return request;
   }
@@ -58,13 +67,13 @@ export class WorkShareCodeService {
     }
   }
 
-  private async generateCode(scene: string, key: string, envVersion: string) {
+  private async generateCode(scene: string, key: string, envVersion: string, page: string) {
     try {
       const token = await this.accessToken();
       const response = await fetch(`https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=${encodeURIComponent(token)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scene, page: 'pages/client/public-work/index', width: 430, check_path: envVersion === 'release', env_version: envVersion }),
+        body: JSON.stringify({ scene, page, width: 430, check_path: envVersion === 'release', env_version: envVersion }),
         signal: AbortSignal.timeout(8000),
       });
       const buffer = Buffer.from(await response.arrayBuffer());

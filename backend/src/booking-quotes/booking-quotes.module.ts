@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../common/prisma/prisma.module';
 import { OrdersModule } from '../orders/orders.module';
+import { TechnicianWorksModule } from '../technician-works/technician-works.module';
 import {
   ClientBookingQuotesController,
   PublicBookingQuotesController,
@@ -9,7 +10,7 @@ import {
 import { BookingQuotesService } from './booking-quotes.service';
 
 @Module({
-  imports: [PrismaModule, OrdersModule],
+  imports: [PrismaModule, OrdersModule, TechnicianWorksModule],
   controllers: [
     TechnicianBookingQuotesController,
     PublicBookingQuotesController,

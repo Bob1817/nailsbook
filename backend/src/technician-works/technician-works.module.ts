@@ -30,5 +30,6 @@ import { ClientArtistHomepageInteractionsController } from './client-artist-home
     PublicBrandController,
   ],
   providers: [TechnicianWorksService, WorkShareCodeService, PublicBrandService],
+  exports: [WorkShareCodeService],
 })
 export class TechnicianWorksModule {}

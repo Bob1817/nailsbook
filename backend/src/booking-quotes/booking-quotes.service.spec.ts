@@ -37,7 +37,7 @@ describe('BookingQuotesService', () => {
         })),
       },
     };
-    const service = new BookingQuotesService(prisma, {} as never);
+    const service = new BookingQuotesService(prisma, {} as never, {} as never);
     const result = await service.create(7, {
       lines: [
         { lineType: 'service', servicePublicId: 'svc-1', unitPriceFen: 1 },
@@ -77,7 +77,7 @@ describe('BookingQuotesService', () => {
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
     };
-    const service = new BookingQuotesService(prisma, {} as never);
+    const service = new BookingQuotesService(prisma, {} as never, {} as never);
     await expect(service.decline('c'.repeat(48), '最近没空')).resolves.toEqual({
       saved: true,
     });
@@ -125,7 +125,7 @@ describe('BookingQuotesService', () => {
       clientTechBinding: { count: jest.fn().mockResolvedValue(0) },
       $transaction: jest.fn((fn) => fn(tx)),
     };
-    const service = new BookingQuotesService(prisma, {} as never);
+    const service = new BookingQuotesService(prisma, {} as never, {} as never);
     const result = await service.accept(8, 'd'.repeat(48));
     expect(tx.clientTechBinding.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -153,7 +153,7 @@ describe('BookingQuotesService', () => {
         }),
       },
     };
-    const service = new BookingQuotesService(prisma, {} as never);
+    const service = new BookingQuotesService(prisma, {} as never, {} as never);
     await expect(service.accept(9, 'a'.repeat(48))).rejects.toThrow('其他客户');
   });
 
@@ -221,7 +221,7 @@ describe('BookingQuotesService', () => {
     const clientOrders: any = {
       create: jest.fn().mockResolvedValue({ id: 33 }),
     };
-    const service = new BookingQuotesService(prisma, clientOrders);
+    const service = new BookingQuotesService(prisma, clientOrders, {} as never);
     await service.book(8, 'b'.repeat(48), {
       version: 1,
       serviceDate: '2099-01-01',

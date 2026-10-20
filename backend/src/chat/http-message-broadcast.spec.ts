@@ -14,7 +14,7 @@ describe.each(['client', 'technician'] as const)('%s HTTP broadcasts', (role) =>
     prisma = {
       $transaction: jest.fn().mockImplementation((work) => work(prisma)),
       conversation: { update: jest.fn().mockResolvedValue(conversation), findFirst: jest.fn().mockResolvedValue(conversation), upsert: jest.fn().mockResolvedValue(conversation) },
-      message: { create: jest.fn().mockResolvedValue({ id: 23, conversationId: 9 }), updateMany: jest.fn().mockResolvedValue({ count: 2 }) },
+      message: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ id: 23, conversationId: 9 }), updateMany: jest.fn().mockResolvedValue({ count: 2 }) },
       clientTechBinding: { findFirst: jest.fn().mockResolvedValue({ id: 1 }) },
       clientUser: { findUnique: jest.fn().mockResolvedValue({ id: 11 }) },
       technician: { findUnique: jest.fn().mockResolvedValue({ id: 7 }) },
@@ -34,6 +34,19 @@ describe.each(['client', 'technician'] as const)('%s HTTP broadcasts', (role) =>
     await service.create(userId, { messageType: 'image', imageUrl: '/test.jpg', ...(role === 'client' ? { techId: 7 } : { clientId: 11 }) });
     expect(prisma.conversation.upsert).toHaveBeenCalled();
     expect(chat.broadcastMessage).toHaveBeenCalledTimes(1);
+  });
+  it('reuses an image after a lost response without a second write or notification', async () => {
+    prisma.message.findFirst.mockResolvedValue({ id: 23, conversationId: 9, imageUrl: '/test.jpg' });
+    const result = await service.create(userId, { conversationId: 9, messageType: 'image', imageUrl: '/test.jpg' });
+    expect(result.message.id).toBe(23);
+    expect(prisma.message.findFirst).toHaveBeenCalledWith({ where: { conversationId: 9, senderType: role, senderId: userId, messageType: 'image', imageUrl: '/test.jpg' } });
+    expect(prisma.message.create).not.toHaveBeenCalled();
+    expect(prisma.conversation.update).not.toHaveBeenCalled();
+    expect(chat.broadcastMessage).not.toHaveBeenCalled();
+  });
+  it('rejects empty image messages before writing', async () => {
+    await expect(service.create(userId, { conversationId: 9, messageType: 'image', imageUrl: ' ' })).rejects.toThrow('图片地址不能为空');
+    expect(prisma.message.create).not.toHaveBeenCalled();
   });
   it('does not broadcast failed writes', async () => {
     prisma.message.create.mockRejectedValue(new Error('database unavailable'));
