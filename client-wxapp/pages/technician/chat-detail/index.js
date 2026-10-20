@@ -1,5 +1,6 @@
 const api = require('../../../services/api');
 const { imageMethods } = require('../utils/chat-images');
+const technicianImageMethods = imageMethods('technician');
 const {
   isSubscriptionCategoryMissing,
   prepareBookingReminderStatus,
@@ -8,7 +9,7 @@ const {
 } = require('../../../utils/wechat-subscription');
 
 Page({
-  ...imageMethods('technician'),
+  ...technicianImageMethods,
   data: {
     conversationId: null,
     clientName: '',
@@ -299,6 +300,10 @@ Page({
   },
 
   sendImage() { this.pickChatImages(); },
+
+  previewImage(e) { return technicianImageMethods.previewImage.call(this, e); },
+  retryImage(e) { return technicianImageMethods.retryImage.call(this, e); },
+  discardImage(e) { return technicianImageMethods.discardImage.call(this, e); },
 
 
 

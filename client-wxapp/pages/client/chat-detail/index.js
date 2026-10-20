@@ -1,5 +1,6 @@
 const api = require('../../../services/api');
 const { imageMethods } = require('../utils/chat-images');
+const clientImageMethods = imageMethods('client');
 const {
   isSubscriptionCategoryMissing,
   prepareBookingReminderStatus,
@@ -8,7 +9,7 @@ const {
 } = require('../../../utils/wechat-subscription');
 
 Page({
-  ...imageMethods('client'),
+  ...clientImageMethods,
   data: {
     conversationId: null,
     techId: null,
@@ -265,6 +266,10 @@ Page({
     this.setData({ showAddMenu: false });
     this.pickChatImages();
   },
+
+  previewImage(e) { return clientImageMethods.previewImage.call(this, e); },
+  retryImage(e) { return clientImageMethods.retryImage.call(this, e); },
+  discardImage(e) { return clientImageMethods.discardImage.call(this, e); },
 
   /* ===== 快速发起预约（美甲师固定为对话对象，复用创建预约页）===== */
   goCreateBooking() {
