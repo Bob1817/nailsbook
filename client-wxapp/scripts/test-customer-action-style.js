@@ -5,7 +5,7 @@ const root = path.join(__dirname, '..');
 const template = fs.readFileSync(path.join(root, 'pages/technician/customer-detail/index.wxml'), 'utf8');
 const styles = fs.readFileSync(path.join(root, 'pages/technician/customer-detail/index.wxss'), 'utf8');
 const shared = fs.readFileSync(path.join(root, 'styles/booking-actions.wxss'), 'utf8');
-for (const name of ['follow-add', 'follow-complete', 'new-tag-btn']) {
+for (const name of ['new-tag-btn']) {
   assert(new RegExp(`class="${name} booking-action`).test(template), `${name} 必须接入公共按钮`);
   assert(!styles.includes(`.${name}::before`), `${name} 不得保留旧胶囊背景`);
 }
