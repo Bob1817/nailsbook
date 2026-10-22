@@ -20,3 +20,17 @@
 .success-desc { font-size: var(--font-sm); color: var(--nb-secondary); margin: 8rpx 0 24rpx; overflow-wrap: anywhere; }
 .success-tip { font-size: var(--font-sm); color: var(--nb-muted); margin-bottom: 32rpx; text-align: center; line-height: 1.5; }
 .success-card .primary { margin-bottom: 20rpx; }
+.record-status { display:flex; justify-content:space-between; gap:16rpx; padding:18rpx 24rpx; margin-bottom:20rpx; border-radius:var(--radius-md); background:var(--bg-input); color:var(--nb-secondary); font-size:var(--font-xs); }
+.section-hint { display:block; margin-top:8rpx; color:var(--nb-muted); font-size:var(--font-xs); line-height:1.5; }
+.photo-section { margin-top:24rpx; }
+.photo-head { min-height:44px; display:flex; align-items:center; justify-content:space-between; font-weight:var(--weight-medium); }
+.photo-add { min-height:44px; margin:0; padding:0 24rpx; background:var(--bg-input); color:var(--nb-secondary); font-size:var(--font-xs); }
+.photo-strip { width:100%; }
+.photo-list { display:flex; align-items:center; gap:12rpx; min-height:150rpx; }
+.photo-wrap { position:relative; flex:0 0 150rpx; width:150rpx; height:150rpx; }
+.record-photo { width:150rpx; height:150rpx; border-radius:var(--radius-md); background:var(--nb-line); }
+.photo-remove { position:absolute; top:6rpx; right:6rpx; width:44rpx; height:44rpx; display:flex; align-items:center; justify-content:center; border-radius:50%; background:rgba(0,0,0,.72); color:#fff; }
+.photo-empty { color:var(--nb-muted); font-size:var(--font-xs); }
+.record-actions { display:flex; gap:16rpx; }
+.record-actions button { flex:1; min-height:88rpx; }
+.completion-tip { display:block; margin:18rpx 12rpx 0; color:var(--nb-muted); font-size:var(--font-xs); line-height:1.5; text-align:center; }

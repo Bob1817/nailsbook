@@ -318,6 +318,8 @@ const technician = {
     trips: () => api.get(`${T}/orders/trips`),
     incomeCalendar: () => api.get(`${T}/orders/income-calendar`),
     detail: (id) => api.get(`${T}/orders/${id}`),
+    serviceRecord: (id) => api.get(`${T}/orders/${id}/service-record`),
+    saveServiceRecord: (id, data) => api.patch(`${T}/orders/${id}/service-record`, data),
     // 兼容尚未部署 blocked-slots 专用路由的线上后端：从现有订单列表派生美甲师占用。
     blockedSlots: () => api.get(`${T}/orders`).then((result) => {
       const orders = Array.isArray(result) ? result : (result.data || []);
@@ -353,6 +355,7 @@ const technician = {
     createFollowUp: (id, data) => api.post(`${T}/customers/${id}/follow-ups`, data),
     completeFollowUp: (id, followUpId) => api.patch(`${T}/customers/${id}/follow-ups/${followUpId}/complete`, {}),
     updateName: (id, name) => api.patch(`${T}/customers/${id}/name`, { name }),
+    updateNotes: (id, notes) => api.patch(`${T}/customers/${id}/notes`, { notes }),
     archive: (id) => api.patch(`${T}/customers/${id}/archive`, {}),
     updateTags: (id, tags) => api.patch(`${T}/customers/${id}/tags`, { tags })
   },

@@ -658,3 +658,10 @@
 .confirm-ok-text {
   color: var(--text-inverse);
 }
+.preparation-card { margin:24rpx; padding:28rpx; border-radius:var(--radius-md); background:var(--nb-surface); color:var(--nb-ink); }
+.preparation-head { display:flex; justify-content:space-between; gap:16rpx; }
+.preparation-title { font-size:var(--font-md); font-weight:var(--weight-semibold); }
+.preparation-private { color:var(--nb-muted); font-size:var(--font-xs); }
+.preparation-row { display:grid; grid-template-columns:120rpx 1fr; gap:16rpx; padding:18rpx 0; border-top:1rpx solid var(--nb-line); font-size:var(--font-sm); line-height:1.5; }
+.preparation-row:first-of-type { margin-top:18rpx; }
+.preparation-row text:first-child { color:var(--nb-muted); font-size:var(--font-xs); }

@@ -22,8 +22,19 @@
     <text wx:if="{{order._statusDesc}}" class="hero-desc">{{order._statusDesc}}</text>
   </view>
 
+  <view wx:if="{{order._customerAlerts.length || order._customerPreferences.length}}" class="card context-card">
+    <view class="context-head"><text class="card-title">客户注意事项</text><text class="context-private">仅美甲师可见</text></view>
+    <view wx:if="{{order._customerAlerts.length}}" class="alert-list">
+      <view wx:for="{{order._customerAlerts}}" wx:key="*this" class="alert-row"><text class="alert-mark">!</text><text>{{item}}</text></view>
+    </view>
+    <view wx:if="{{order._customerPreferences.length}}" class="preference-list">
+      <text class="context-label">偏好与沟通习惯</text>
+      <text wx:for="{{order._customerPreferences}}" wx:key="*this" class="context-line">{{item}}</text>
+    </view>
+  </view>
+
   <!-- ============ 客户卡片 ============ -->
-  <view class="card customer-card card-overlap">
+  <view class="card customer-card">
     <view class="customer-row">
       <view class="cu-avatar">
         <image wx:if="{{order.customerAvatar}}" src="{{order.customerAvatar}}" mode="aspectFill" class="cu-avatar-img" aria-label="{{order.customerName}}的头像" />
@@ -50,6 +61,29 @@
       <view wx:if="{{order.promotion}}" class="source-work-promotion"><text>{{order.promotion.title || '作品分享优惠'}}</text><text>报价时立减 ¥{{order.promotion.discountAmountFen / 100}}</text></view>
     </view>
     <text class="source-work-arrow">›</text>
+  </view>
+
+  <view wx:if="{{order._preparation}}" class="card context-card">
+    <text class="card-title">同款制作准备</text>
+    <view wx:if="{{order._preparation.tools}}" class="context-block"><text class="context-label">工具</text><text>{{order._preparation.tools}}</text></view>
+    <view wx:if="{{order._preparation.materials}}" class="context-block"><text class="context-label">材料</text><text>{{order._preparation.materials}}</text></view>
+    <view wx:if="{{order._preparation.preparation}}" class="context-block"><text class="context-label">前置准备</text><text>{{order._preparation.preparation}}</text></view>
+    <view wx:if="{{order._preparation.steps}}" class="context-block"><text class="context-label">关键步骤</text><text>{{order._preparation.steps}}</text></view>
+    <view wx:if="{{order._preparation.riskNotes}}" class="context-block"><text class="context-label">注意事项</text><text>{{order._preparation.riskNotes}}</text></view>
+    <text wx:if="{{order._preparation.estimatedMinutes}}" class="context-meta">历史制作约 {{order._preparation.estimatedMinutes}} 分钟</text>
+  </view>
+
+  <view class="card record-entry" bindtap="openServiceRecord" role="button" aria-label="查看或编辑美甲记录">
+    <view><text class="card-title">美甲记录</text><text class="record-entry-desc">{{order._serviceRecordStatus === 'complete' ? '本次记录已完善' : (order._serviceRecordStatus === 'draft' ? '草稿待补全' : '可从服务前开始记录')}}</text></view>
+    <text class="record-entry-action">{{order._serviceRecordStatus === 'none' ? '开始记录' : '查看编辑'}} ›</text>
+  </view>
+
+  <view wx:if="{{order._recentRecords.length}}" class="card context-card">
+    <text class="card-title">最近美甲记录</text>
+    <view wx:for="{{order._recentRecords}}" wx:key="id" class="history-row">
+      <view><text class="history-title">{{item.nailCondition || '历史服务记录'}}</text><text class="history-desc">{{item.preferenceNotes || item.customerFeedback || '暂无补充说明'}}</text></view>
+      <text class="history-status">{{item.status === 'complete' ? '已完善' : '草稿'}}</text>
+    </view>
   </view>
 
   <!-- ============ 服务信息 ============ -->

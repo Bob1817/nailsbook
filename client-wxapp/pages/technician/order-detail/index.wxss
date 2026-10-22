@@ -692,6 +692,23 @@ page { background: var(--bg-gradient-entry); }
 .review-photo:active { opacity: 0.8; }
 .review-privacy { display: block; margin-top: 20rpx; font-size: 24rpx; line-height: 1.5; color: var(--nb-muted); }
 
+.context-card { font-size:var(--font-sm); }
+.context-head,.record-entry { display:flex; align-items:center; justify-content:space-between; gap:20rpx; }
+.context-private,.context-meta,.record-entry-desc { display:block; margin-top:8rpx; color:var(--nb-muted); font-size:var(--font-xs); }
+.alert-list { margin-top:18rpx; }
+.alert-row { display:flex; align-items:flex-start; gap:12rpx; padding:14rpx 0; color:var(--nb-ink); line-height:1.5; }
+.alert-mark { flex:0 0 40rpx; width:40rpx; height:40rpx; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--bg-input); font-weight:var(--weight-bold); }
+.preference-list,.context-block { margin-top:20rpx; }
+.context-label { display:block; margin-bottom:8rpx; color:var(--nb-muted); font-size:var(--font-xs); font-weight:var(--weight-semibold); }
+.context-line { display:block; margin-top:8rpx; line-height:1.5; }
+.record-entry { min-height:44px; }
+.record-entry-action { flex-shrink:0; color:var(--nb-text-link); font-size:var(--font-sm); }
+.history-row { display:flex; justify-content:space-between; gap:18rpx; padding:20rpx 0; border-bottom:1rpx solid var(--nb-line); }
+.history-row:last-child { border-bottom:0; }
+.history-title,.history-desc { display:block; line-height:1.5; }
+.history-desc,.history-status { margin-top:6rpx; color:var(--nb-muted); font-size:var(--font-xs); }
+.history-status { flex-shrink:0; }
+
 @import '../../../styles/booking-form.wxss';
 @import '../../../styles/booking-actions.wxss';
 .retry-btn.booking-action { min-height:44px; height:44px; margin-top:44rpx; padding:0 24rpx; border-radius:8px; font-size:var(--font-sm); line-height:1.4; }

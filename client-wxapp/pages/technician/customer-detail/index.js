@@ -1,7 +1,5 @@
 const api = require('../../../services/api');
 const { formatMoney, formatBookingDate, parseDate } = require('../../../utils/format');
-const { decorateTechnicianOrder } = require('../../../utils/order');
-const { technicianBookingCardHandlers = {} } = require('../utils/technician-booking-actions');
 
 const LIFECYCLE_LABELS = {
   new: '新客',
@@ -23,6 +21,37 @@ function todayDateValue() {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+function parseJsonArray(raw) {
+  if (Array.isArray(raw)) return raw.filter(Boolean);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function orderLabel(order) {
+  const name = order.customTitle
+    || (order.service && order.service.name)
+    || (order.sourceWork && order.sourceWork.title)
+    || '预约服务';
+  return `${name} · ${formatBookingDate(order.startTime)}`;
+}
+
+function emptyFuDraft() {
+  return {
+    content: '',
+    plannedDate: todayDateValue(),
+    beforePhoto: '',
+    afterPhoto: '',
+    nailProjects: '',
+    materials: '',
+    tools: ''
+  };
 }
 
 function parseTags(raw) {
@@ -76,14 +105,6 @@ function findConversationClient(response, clientUserId) {
 }
 
 Page({
-  onBookingCardOpen: technicianBookingCardHandlers.onBookingCardOpen,
-  onBookingCardQuote: technicianBookingCardHandlers.onBookingCardQuote,
-  onBookingCardWithdrawQuote: technicianBookingCardHandlers.onBookingCardWithdrawQuote,
-  onBookingCardEditBooking: technicianBookingCardHandlers.onBookingCardEditBooking,
-  onBookingCardReject: technicianBookingCardHandlers.onBookingCardReject,
-  onBookingCardCancel: technicianBookingCardHandlers.onBookingCardCancel,
-  onBookingCardComplete: technicianBookingCardHandlers.onBookingCardComplete,
-  onBookingCardRebook: technicianBookingCardHandlers.onBookingCardRebook,
   data: {
     customer: null,
     customerId: '',
@@ -102,11 +123,19 @@ Page({
     showRemarkEdit: false,
     remarkDraft: '',
     savingRemark: false,
+    showNotesEdit: false,
+    notesDraft: '',
+    savingNotes: false,
     archiving: false,
-    followUpContent: '',
-    followUpDate: todayDateValue(),
     savingFollowUp: false,
-    completingFollowUpId: ''
+    completingFollowUpId: '',
+    showFollowUpSheet: false,
+    fuDraft: emptyFuDraft(),
+    fuBookingOptions: [],
+    fuWorkOptions: [],
+    fuBookingIndex: 0,
+    fuWorkIndex: 0,
+    uploadingFu: false
   },
 
   onLoad(options) {
@@ -139,10 +168,9 @@ Page({
     const requestId = this._detailRequestId = (this._detailRequestId || 0) + 1;
     this.setData({ loading: true, loadFailed: false, loadErrorText: '' });
     try {
-      const [detail, conversations, technicianProfile] = await Promise.all([
+      const [detail, conversations] = await Promise.all([
         api.technician.customers.detail(this.customerId),
-        api.chat.technician.conversations({ timeout: 10000, silent: true }).catch(() => []),
-        api.technician.auth && api.technician.auth.getUserInfo ? api.technician.auth.getUserInfo().catch(() => ({})) : Promise.resolve({})
+        api.chat.technician.conversations({ timeout: 10000, silent: true }).catch(() => [])
       ]);
       if (requestId !== this._detailRequestId) return;
       const conversationClient = findConversationClient(conversations, detail.clientUserId) || {};
@@ -152,16 +180,7 @@ Page({
         avatarUrl: detail.avatarUrl || conversationClient.avatarUrl || ''
       };
 
-      const shops = Array.isArray(technicianProfile.shopAddresses) ? technicianProfile.shopAddresses : [];
-      const orders = (raw.orders || []).map(item => decorateTechnicianOrder({
-        ...item,
-        customer: {
-          id: raw.id,
-          name: buildCustomerIdentity(raw).displayName || raw.name,
-          phone: raw.phone,
-          clientUserId: raw.clientUserId
-        }
-      }, shops)).filter(Boolean);
+      const orders = raw.orders || [];
 
       const revenues = raw.revenues || [];
       const summary = raw.businessSummary || {};
@@ -196,7 +215,6 @@ Page({
         _genderText: genderText(raw.gender),
         _birthdayText: raw.birthday ? String(raw.birthday).slice(0, 10) : '',
         _totalSpentText: totalSpent > 0 ? formatMoney(totalSpent) : '¥0',
-        _totalOrders: orders.length,
         _completedServices: Number(summary.completedServiceCount) || 0,
         _averageTicketText: summary.averageTicket != null
           ? formatMoney(summary.averageTicket)
@@ -219,11 +237,30 @@ Page({
         _lifecycleLabel: LIFECYCLE_LABELS[raw.lifecycle && raw.lifecycle.status] || '新客',
         _lifecycleReason: (raw.lifecycle && raw.lifecycle.reason) || '尚未完成首次服务',
         _sourceLabel: SOURCE_LABELS[raw.sourceType] || '其他来源',
-        _followUps: (raw.followUps || []).map(item => ({
+        _profileFacts: (raw.profileFacts || []).map(item => ({
           ...item,
-          _plannedText: formatBookingDate(item.plannedAt),
-          _statusText: item.status === 'completed' ? '已完成' : '待跟进'
+          _categoryText: ({ allergy: '过敏', contraindication: '禁忌', preference: '稳定偏好', communication: '沟通习惯', reminder: '特别提醒' })[item.category] || '客户信息',
+          _confirmedText: item.lastConfirmedAt ? formatBookingDate(item.lastConfirmedAt) : ''
         })),
+        _serviceRecords: (raw.serviceRecords || []).map(item => ({
+          ...item,
+          _dateText: item.actualEndTime ? formatBookingDate(item.actualEndTime) : '记录草稿',
+          _photoCount: (item.photos || []).length
+        })),
+        _followUps: (raw.followUps || []).map(item => {
+          const relatedWork = item.relatedWork || null;
+          return {
+            ...item,
+            _plannedText: formatBookingDate(item.plannedAt),
+            _statusText: item.status === 'completed' ? '已完成' : '待跟进',
+            _beforePhotos: parseJsonArray(item.beforePhotos),
+            _afterPhotos: parseJsonArray(item.afterPhotos),
+            _relatedOrderText: item.relatedOrder ? orderLabel(item.relatedOrder) : '',
+            _relatedWork: relatedWork
+              ? { id: relatedWork.id, title: relatedWork.title || '' }
+              : null
+          };
+        }),
         _recentLabel: summary.lastServiceAt
           ? (() => {
               const date = parseDate(summary.lastServiceAt);
@@ -255,6 +292,10 @@ Page({
       data: addr,
       success: () => wx.showToast({ title: '已复制', icon: 'success' })
     });
+  },
+  openServiceRecord(e) {
+    const orderId = e.currentTarget.dataset.orderId;
+    if (orderId) wx.navigateTo({ url: `/pages/technician/complete-service/index?id=${orderId}&mode=record` });
   },
 
   onAvatarError() {
@@ -294,6 +335,39 @@ Page({
       await this.loadCustomer();
     } catch (err) {
       this.setData({ savingRemark: false });
+      wx.showToast({ title: err.message || '备注更新失败', icon: 'none' });
+    }
+  },
+
+  openNotesEdit() {
+    if (this.data.savingNotes) return;
+    this.setData({
+      showNotesEdit: true,
+      notesDraft: this.data.customer.notes || ''
+    });
+  },
+
+  closeNotesEdit() {
+    if (this.data.savingNotes) return;
+    this.setData({ showNotesEdit: false, notesDraft: '' });
+  },
+
+  onNotesInput(e) {
+    if (this.data.savingNotes) return;
+    this.setData({ notesDraft: e.detail.value });
+  },
+
+  async saveNotes() {
+    if (this.data.savingNotes) return;
+    const notes = String(this.data.notesDraft || '').trim();
+    this.setData({ savingNotes: true });
+    try {
+      await api.technician.customers.updateNotes(this.customerId, notes);
+      this.setData({ showNotesEdit: false, notesDraft: '', savingNotes: false });
+      wx.showToast({ title: '备注已更新', icon: 'success' });
+      await this.loadCustomer();
+    } catch (err) {
+      this.setData({ savingNotes: false });
       wx.showToast({ title: err.message || '备注更新失败', icon: 'none' });
     }
   },
@@ -351,36 +425,147 @@ Page({
     if (this._archiveTimer) clearTimeout(this._archiveTimer);
   },
 
-  onFollowUpInput(e) {
-    this.setData({ followUpContent: e.detail.value });
+  openFollowUpSheet() {
+    const customer = this.data.customer;
+    if (!customer) return;
+    this.setData({
+      showFollowUpSheet: true,
+      fuBookingOptions: [{ id: 0, label: '不关联预约' }].concat(
+        (customer.orders || []).map((order) => ({ id: order.id, label: orderLabel(order) }))
+      ),
+      fuWorkOptions: [{ id: 0, label: '不关联作品' }].concat(
+        (customer.relatedWorks || []).map((work) => ({ id: work.id, label: work.title || '未命名作品' }))
+      ),
+      fuBookingIndex: 0,
+      fuWorkIndex: 0,
+      fuDraft: emptyFuDraft()
+    });
   },
 
-  onFollowUpDateChange(e) {
-    this.setData({ followUpDate: e.detail.value });
+  closeFollowUpSheet() {
+    if (this.data.savingFollowUp || this.data.uploadingFu) return;
+    this.setData({ showFollowUpSheet: false });
   },
 
-  async createFollowUp() {
-    const draft = this.data.followUpContent;
-    const plannedDate = this.data.followUpDate;
-    const content = (this.data.followUpContent || '').trim();
+  onFuContentInput(e) {
+    this.setData({ 'fuDraft.content': e.detail.value });
+  },
+
+  onFuDateChange(e) {
+    this.setData({ 'fuDraft.plannedDate': e.detail.value });
+  },
+
+  onFuBookingChange(e) {
+    this.setData({ fuBookingIndex: Number(e.detail.value) || 0 });
+  },
+
+  onFuWorkChange(e) {
+    this.setData({ fuWorkIndex: Number(e.detail.value) || 0 });
+  },
+
+  onFuFieldInput(e) {
+    const field = e.currentTarget.dataset.field;
+    if (field) this.setData({ [`fuDraft.${field}`]: e.detail.value });
+  },
+
+  chooseFuPhoto(e) {
+    const side = e.currentTarget.dataset.side;
+    if (!side || this.data.uploadingFu) return;
+    const onChooseFail = (err) => {
+      if (!String(err && err.errMsg || '').includes('cancel')) {
+        wx.showToast({ title: '无法打开图片选择器', icon: 'none' });
+      }
+    };
+    if (typeof wx.chooseMedia === 'function') {
+      wx.chooseMedia({
+        count: 1,
+        mediaType: ['image'],
+        sourceType: ['album', 'camera'],
+        sizeType: ['compressed'],
+        success: (res) => this.uploadFuPhoto(side, res.tempFiles && res.tempFiles[0]),
+        fail: onChooseFail
+      });
+      return;
+    }
+    wx.chooseImage({
+      count: 1,
+      sourceType: ['album', 'camera'],
+      sizeType: ['compressed'],
+      success: (res) => this.uploadFuPhoto(side, { tempFilePath: (res.tempFilePaths || [])[0] }),
+      fail: onChooseFail
+    });
+  },
+
+  async uploadFuPhoto(side, file) {
+    const filePath = file && (file.tempFilePath || file.path);
+    if (!filePath) {
+      wx.showToast({ title: '未能读取所选图片', icon: 'none' });
+      return;
+    }
+    this.setData({ uploadingFu: true });
+    wx.showLoading({ title: '上传中...' });
+    try {
+      const result = await api.upload.image(filePath, 'technician');
+      this.setData({ [`fuDraft.${side}Photo`]: result.url });
+    } catch (err) {
+      wx.showToast({ title: err.message || '照片上传失败', icon: 'none' });
+    } finally {
+      wx.hideLoading();
+      this.setData({ uploadingFu: false });
+    }
+  },
+
+  removeFuPhoto(e) {
+    const side = e.currentTarget.dataset.side;
+    if (!side || this.data.uploadingFu) return;
+    this.setData({ [`fuDraft.${side}Photo`]: '' });
+  },
+
+  previewFollowUpPhoto(e) {
+    const urls = e.currentTarget.dataset.urls || [];
+    if (!urls.length) return;
+    const current = e.currentTarget.dataset.url;
+    wx.previewImage({ urls, current: current || urls[0] });
+  },
+
+  async submitFollowUp() {
+    if (this.data.savingFollowUp || this.data.uploadingFu) return;
+    const draft = this.data.fuDraft || {};
+    const content = (draft.content || '').trim();
     if (!content) {
       wx.showToast({ title: '请输入跟进内容', icon: 'none' });
       return;
     }
-    if (this.data.savingFollowUp) return;
+    const payload = {
+      content,
+      plannedAt: `${draft.plannedDate || todayDateValue()}T09:00:00+08:00`
+    };
+    if (this.data.fuBookingIndex > 0) {
+      const orders = (this.data.customer && this.data.customer.orders) || [];
+      const order = orders[this.data.fuBookingIndex - 1];
+      if (order) payload.relatedOrderId = order.id;
+    }
+    if (this.data.fuWorkIndex > 0) {
+      const works = (this.data.customer && this.data.customer.relatedWorks) || [];
+      const work = works[this.data.fuWorkIndex - 1];
+      if (work) payload.relatedWorkId = work.id;
+    }
+    if (draft.beforePhoto) payload.beforePhotos = [draft.beforePhoto];
+    if (draft.afterPhoto) payload.afterPhotos = [draft.afterPhoto];
+    const nailProjects = (draft.nailProjects || '').trim();
+    const materials = (draft.materials || '').trim();
+    const tools = (draft.tools || '').trim();
+    if (nailProjects) payload.nailProjects = nailProjects;
+    if (materials) payload.materials = materials;
+    if (tools) payload.tools = tools;
     this.setData({ savingFollowUp: true });
     try {
-      await api.technician.customers.createFollowUp(this.customerId, {
-        content,
-        plannedAt: `${plannedDate}T09:00:00+08:00`
-      });
-      if (this.data.followUpContent === draft && this.data.followUpDate === plannedDate) {
-        this.setData({ followUpContent: '' });
-      }
-      wx.showToast({ title: '跟进计划已创建', icon: 'success' });
+      await api.technician.customers.createFollowUp(this.customerId, payload);
+      wx.showToast({ title: '跟进记录已保存', icon: 'success' });
+      this.setData({ showFollowUpSheet: false });
       await this.loadCustomer();
     } catch (err) {
-      wx.showToast({ title: err.message || '创建失败', icon: 'none' });
+      wx.showToast({ title: err.message || '保存失败', icon: 'none' });
     } finally {
       this.setData({ savingFollowUp: false });
     }

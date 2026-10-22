@@ -310,7 +310,29 @@ Page({
           ? (depositAmount > 0 ? `已支付定金 ¥${depositAmount}` : '定金已支付')
           : (depositAmount > 0 ? `待支付定金 ¥${depositAmount}` : '未支付定金'),
         bookingType: raw.bookingType || 'legacy',
-        sourceWork
+        sourceWork,
+        _customerAlerts: [
+          raw.customer && raw.customer.allergies ? `过敏：${raw.customer.allergies}` : '',
+          raw.customer && raw.customer.contraindications ? `禁忌：${raw.customer.contraindications}` : '',
+          raw.customer && raw.customer.specialReminders ? `提醒：${raw.customer.specialReminders}` : '',
+          ...(((raw.customer && raw.customer.profileFacts) || [])
+            .filter(fact => ['allergy', 'contraindication', 'reminder'].includes(fact.category))
+            .map(fact => fact.content))
+        ].filter((text, index, values) => text && values.indexOf(text) === index),
+        _customerPreferences: [
+          raw.customer && raw.customer.preferredStyles,
+          raw.customer && raw.customer.preferredColors,
+          raw.customer && raw.customer.preferredNailShapes,
+          raw.customer && raw.customer.preferredNailLengths,
+          ...(((raw.customer && raw.customer.profileFacts) || [])
+            .filter(fact => ['preference', 'communication'].includes(fact.category))
+            .map(fact => fact.content))
+        ].filter((text, index, values) => text && values.indexOf(text) === index),
+        _recentRecords: ((raw.customer && raw.customer.serviceRecords) || [])
+          .filter(record => !raw.serviceRecord || record.id !== raw.serviceRecord.id)
+          .slice(0, 3),
+        _preparation: sourceWork && sourceWork.preparation ? sourceWork.preparation : null,
+        _serviceRecordStatus: raw.serviceRecord ? raw.serviceRecord.status : 'none'
         ,promotion: raw.promotion || null
       };
       const normalizedAddress = String(decorated.address || '').replace(/\s+/g, '');
@@ -664,6 +686,9 @@ Page({
     wx.navigateTo({
       url: `/pages/technician/complete-service/index?id=${this.orderId}`
     });
+  },
+  openServiceRecord() {
+    wx.navigateTo({ url: `/pages/technician/complete-service/index?id=${this.orderId}&mode=record` });
   },
   openEditActualAmount() {
     const order = this.data.order;

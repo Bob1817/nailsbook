@@ -1,1 +1,9 @@
 <work-detail-view submittingComment="{{submittingComment}}" canRetryShare="{{shareEligible}}" bind:shareretry="prepareSharePath" sharePath="{{sharePath}}" canShare="{{!!sharePath}}" work="{{work}}" imageUrls="{{imageUrls}}" comments="{{visibleComments}}" hiddenComments="{{hiddenComments}}" loading="{{loading}}" loadFailed="{{loadFailed}}" loadErrorText="{{loadErrorText}}" canRetryLoad="{{canRetryLoad}}" isAuthor showBookSame="{{false}}" canComment commentText="{{commentText}}" replyingTo="{{replyingTo}}" bind:back="goBack" bind:retry="loadWork" bind:manage="showWorkActions" bind:commentmanage="manageComment" bind:like="toggleLike" bind:favorite="toggleFavorite" bind:commentfocus="focusComment" bind:commentinput="onSharedCommentInput" bind:commentsubmit="submitComment" bind:commentreply="onSharedCommentReply" bind:commentcancel="cancelReply" />
+<view wx:if="{{work.preparation}}" class="preparation-card">
+  <view class="preparation-head"><text class="preparation-title">内部制作方案</text><text class="preparation-private">仅美甲师可见</text></view>
+  <view wx:if="{{work.preparation.tools}}" class="preparation-row"><text>工具</text><text>{{work.preparation.tools}}</text></view>
+  <view wx:if="{{work.preparation.materials}}" class="preparation-row"><text>材料</text><text>{{work.preparation.materials}}</text></view>
+  <view wx:if="{{work.preparation.preparation}}" class="preparation-row"><text>前置准备</text><text>{{work.preparation.preparation}}</text></view>
+  <view wx:if="{{work.preparation.steps}}" class="preparation-row"><text>关键步骤</text><text>{{work.preparation.steps}}</text></view>
+  <view wx:if="{{work.preparation.riskNotes}}" class="preparation-row"><text>注意事项</text><text>{{work.preparation.riskNotes}}</text></view>
+</view>
