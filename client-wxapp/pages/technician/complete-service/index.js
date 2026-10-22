@@ -131,7 +131,7 @@ Page({
 
   async submit() {
     const d = this.data;
-    if (!d.loaded || d.submitting || d.uploading) return;
+    if (!d.loaded || d.submitting || d.uploading || d.saved) return;
     const completeRecord = Boolean(d.nailCondition.trim() && d.afterPhotos.length);
     if (d.orderStatus === 'completed') {
       this.setData({ submitting: true });
