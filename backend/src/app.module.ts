@@ -1,4 +1,5 @@
 import { AccountDeletionModule } from './account-deletion/account-deletion.module';
+import { ActionTasksModule } from './action-tasks/action-tasks.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -63,6 +64,7 @@ import { BookingQuotesModule } from './booking-quotes/booking-quotes.module';
 @Module({
   imports: [
     AccountDeletionModule,
+    ActionTasksModule,
     BookingQuotesModule,
     ConfigModule.forRoot({
       isGlobal: true,
