@@ -360,6 +360,11 @@ const technician = {
     updateTags: (id, tags) => api.patch(`${T}/customers/${id}/tags`, { tags })
   },
 
+  actionTasks: {
+    today: () => api.get(`${T}/action-tasks/today`),
+    update: (id, data) => api.patch(`${T}/action-tasks/${id}`, data)
+  },
+
   works: {
     list: (params) => api.get(`${T}/works`, params),
     detail: (id) => api.get(`${T}/works/${id}`),

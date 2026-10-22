@@ -35,6 +35,7 @@ Page({
     confirmationTodos: [],
     todoTotal: 0,
     todayFollowUps: [],
+    actionTasks: [],
     businessOverview: null,
 
     featuredWorks: [],
@@ -78,7 +79,7 @@ Page({
     this.setData({ loading: true });
 
     try {
-      const [tripsResult, ordersResult, convResult, worksResult, followUpsResult, insights, incomeCalendar, reminderResult] = await Promise.all([
+      const [tripsResult, ordersResult, convResult, worksResult, followUpsResult, insights, incomeCalendar, reminderResult, actionTasksResult] = await Promise.all([
         api.technician.orders.trips().catch(() => []),
         api.technician.orders.list().catch(() => []),
         api.chat.technician.conversations().catch(() => []),
@@ -88,8 +89,12 @@ Page({
         api.technician.orders.incomeCalendar().catch(() => null),
         isTouristTechnician()
           ? Promise.resolve(null)
-          : api.technician.wechatSubscriptions.status().catch(() => null)
+          : api.technician.wechatSubscriptions.status().catch(() => null),
+        isTouristTechnician() ? Promise.resolve([]) : api.technician.actionTasks.today().catch(() => [])
       ]);
+      const actionTasks = (Array.isArray(actionTasksResult) ? actionTasksResult : (actionTasksResult.data || []))
+        .filter(item => ['complete_service_record', 'booking_preparation', 'allergy_risk'].includes(item.type))
+        .slice(0, 8);
 
       const tripsRaw = Array.isArray(tripsResult) ? tripsResult : (tripsResult.data || []);
       const allOrdersRaw = Array.isArray(ordersResult) ? ordersResult : (ordersResult.data || []);
@@ -201,7 +206,7 @@ Page({
         { key: 'messages', count: unread,                  label: '条未读消息',       tone: 'tone-blue'   }
       ];
       const todoItems = todoItemsRaw.filter((t) => t.count > 0);
-      const todoTotal = confirmationTodos.length + todoItems.reduce((s, t) => s + t.count, 0);
+      const todoTotal = confirmationTodos.length + todoItems.reduce((s, t) => s + t.count, 0) + actionTasks.length;
 
       // 热门作品 top 6（照片墙，按热度排序）
       const featuredWorks = [...worksRaw]
@@ -279,6 +284,7 @@ Page({
         confirmationTodos,
         todoTotal,
         todayFollowUps,
+        actionTasks,
         businessOverview,
         featuredWorks,
         featuredLead: null,
@@ -617,5 +623,22 @@ Page({
   openFollowUpCustomer(e) {
     const id = e.currentTarget.dataset.id;
     if (id) wx.navigateTo({ url: `/pages/technician/customer-detail/index?id=${id}` });
+  }
+  ,openActionTask(e) {
+    const task = (this.data.actionTasks || []).find(item => item.id === Number(e.currentTarget.dataset.id));
+    if (task && task.actionPath) wx.navigateTo({ url: task.actionPath });
+  }
+  ,async completeActionTask(e) {
+    const id = Number(e.currentTarget.dataset.id);
+    if (!id) return;
+    try {
+      await api.technician.actionTasks.update(id, { status: 'completed' });
+      this.setData({
+        actionTasks: (this.data.actionTasks || []).filter(item => item.id !== id),
+        todoTotal: Math.max(0, this.data.todoTotal - 1)
+      });
+    } catch (err) {
+      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+    }
   }
 });

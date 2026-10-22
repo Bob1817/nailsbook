@@ -26,6 +26,7 @@ export const DYNAMIC_ACTION_TASK_TYPES = [
   'time_conflict',
   'address_risk',
   'allergy_risk',
+  'booking_preparation',
   'deposit_pending',
 ];
 @Injectable()
@@ -58,7 +59,22 @@ export class ActionTasksService {
             notIn: ['completed', 'cancelled', 'expired', 'rejected', 'no_show'],
           },
         },
-        include: { intentWorks: { include: { work: true } } },
+        include: {
+          intentWorks: { include: { work: true } },
+          sourceWork: { include: { preparation: true } },
+          customer: {
+            select: {
+              name: true,
+              allergies: true,
+              contraindications: true,
+              specialReminders: true,
+              profileFacts: {
+                where: { status: 'active', category: { in: ['allergy', 'contraindication'] } },
+                take: 10,
+              },
+            },
+          },
+        },
       }),
       this.prisma.customer.findMany({
         where: {
@@ -171,6 +187,9 @@ export class ActionTasksService {
       const text = [
         order.remark,
         order.customDescription,
+        order.customer?.allergies,
+        order.customer?.contraindications,
+        ...((order.customer?.profileFacts || []).map((fact) => fact.content)),
         ...order.intentWorks.map((x) => JSON.stringify(x.work)),
       ]
         .filter(Boolean)
@@ -186,6 +205,22 @@ export class ActionTasksService {
             path,
           ),
         );
+      if (
+        order.sourceWork?.preparation &&
+        ['pending_home', 'pending_shop', 'in_progress'].includes(order.status)
+      ) {
+        candidates.push(
+          this.orderTask(
+            technicianId,
+            order,
+            'booking_preparation',
+            '确认同款制作准备',
+            'high',
+            path,
+            new Date(order.startTime.getTime() - 24 * 60 * 60 * 1000),
+          ),
+        );
+      }
     }
     const confirmed = orders.filter((o) =>
       ['pending_home', 'pending_shop', 'in_progress'].includes(o.status),

@@ -229,6 +229,14 @@ page { background: var(--bg-gradient-entry); }
 .followup-name, .followup-content { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .followup-name { color: var(--text-primary); font-size: var(--font-sm); font-weight: var(--weight-bold); }
 .followup-content { margin-top: 5rpx; color: var(--text-muted); font-size: var(--font-xs); }
+.action-task-list { margin-top:12rpx; }
+.action-task-row { min-height:88rpx; display:flex; align-items:center; justify-content:space-between; gap:16rpx; padding:16rpx 0; border-top:1rpx solid var(--nb-line); }
+.action-task-copy { min-width:0; flex:1; }
+.action-task-title,.action-task-desc { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.action-task-title { color:var(--nb-ink); font-size:var(--font-sm); font-weight:var(--weight-semibold); }
+.action-task-desc { margin-top:6rpx; color:var(--nb-muted); font-size:var(--font-xs); }
+.action-task-actions { display:flex; align-items:center; gap:18rpx; flex-shrink:0; }
+.action-task-done { min-height:44px; display:flex; align-items:center; color:var(--nb-text-link); font-size:var(--font-xs); }
 
 /* Text navigation has no decorative pill. Keep existing hit-area sizing. */
 .business-hero-more, .card-more, .card-more.pink, .confirmation-action-detail { color: var(--nb-text-link, #245EA8); background: transparent; border-color: transparent; box-shadow: none; }

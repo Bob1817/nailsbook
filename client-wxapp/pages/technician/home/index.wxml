@@ -92,7 +92,14 @@
       </view>
     </view>
 
-    <view wx:if="{{confirmationTodos.length === 0 && todoItems.length === 0}}" class="empty-soft">今日待办已清空，可以专心服务客户。</view>
+    <view wx:if="{{actionTasks.length}}" class="action-task-list">
+      <view wx:for="{{actionTasks}}" wx:key="id" class="action-task-row" bindtap="openActionTask" data-id="{{item.id}}">
+        <view class="action-task-copy"><text class="action-task-title">{{item.title}}</text><text class="action-task-desc">{{item.description || '点击查看并处理'}}</text></view>
+        <view class="action-task-actions"><text class="action-task-done" data-id="{{item.id}}" catchtap="completeActionTask">完成</text><text class="todo-arrow">›</text></view>
+      </view>
+    </view>
+
+    <view wx:if="{{confirmationTodos.length === 0 && todoItems.length === 0 && actionTasks.length === 0}}" class="empty-soft">今日待办已清空，可以专心服务客户。</view>
 
     <view wx:if="{{todayFollowUps.length > 0}}" class="followup-today">
       <text class="followup-title">今日客户跟进</text>
