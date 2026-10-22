@@ -138,8 +138,7 @@ export class TechnicianCustomersController {
     return this.customersService.createFollowUp(
       parseInt(id, 10),
       request.user.technicianId,
-      body.content,
-      body.plannedAt,
+      body,
     );
   }
 
@@ -200,6 +199,20 @@ export class TechnicianCustomersController {
       parseInt(id, 10),
       request.user.technicianId,
       body.name,
+    );
+  }
+
+  @Patch(':id/notes')
+  @ApiOperation({ summary: '更新客户其他备注' })
+  updateNotes(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id') id: string,
+    @Body() body: { notes: string },
+  ) {
+    return this.customersService.updateNotes(
+      parseInt(id, 10),
+      request.user.technicianId,
+      body.notes,
     );
   }
 

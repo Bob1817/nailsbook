@@ -44,9 +44,17 @@ describe('OrdersService 流转成功路径', () => {
         upsert: jest.fn().mockResolvedValue({ id: 9, amount: 200 }),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
-      serviceRecord: { create: jest.fn().mockResolvedValue({ id: 1 }) },
+      serviceRecord: { upsert: jest.fn().mockResolvedValue({ id: 1 }) },
+      serviceRecordPhoto: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+        createMany: jest.fn().mockResolvedValue({ count: 0 }),
+      },
+      customerProfileFact: { upsert: jest.fn().mockResolvedValue({ id: 1 }) },
       contentPublicationTask: { upsert: jest.fn().mockResolvedValue({ id: 1 }) },
-      actionTask: { upsert: jest.fn().mockResolvedValue({ id: 1 }) },
+      actionTask: {
+        upsert: jest.fn().mockResolvedValue({ id: 1 }),
+        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      },
       customer: { update: jest.fn().mockResolvedValue({ id: 3 }) },
       technician: { findUnique: jest.fn().mockResolvedValue({ status: 'active' }) },
       clientUser: { findUnique: jest.fn().mockResolvedValue({ status: 'active' }) },
@@ -339,8 +347,8 @@ describe('OrdersService 流转成功路径', () => {
       expect(prisma.order.update).toHaveBeenCalledWith(expect.objectContaining({
         data: expect.objectContaining({ paidAmount: 280, materialCost: expectedCost }),
       }));
-      expect(prisma.serviceRecord.create).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.objectContaining({ materialCost: expectedCost }),
+      expect(prisma.serviceRecord.upsert).toHaveBeenCalledWith(expect.objectContaining({
+        create: expect.objectContaining({ materialCost: expectedCost }),
       }));
     },
   );

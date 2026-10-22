@@ -16,12 +16,10 @@ describe('CustomersService follow ups', () => {
     const service = new CustomersService(prisma as never);
 
     await expect(
-      service.createFollowUp(
-        12,
-        7,
-        ' 提醒客户确认下次款式 ',
-        '2026-07-31T09:00:00.000Z',
-      ),
+      service.createFollowUp(12, 7, {
+        content: ' 提醒客户确认下次款式 ',
+        plannedAt: '2026-07-31T09:00:00.000Z',
+      }),
     ).resolves.toEqual({ id: 21, status: 'pending' });
     expect(prisma.customerFollowUp.create).toHaveBeenCalledWith({
       data: {
@@ -29,6 +27,13 @@ describe('CustomersService follow ups', () => {
         technicianId: 7,
         content: '提醒客户确认下次款式',
         plannedAt: new Date('2026-07-31T09:00:00.000Z'),
+        relatedOrderId: null,
+        relatedWorkId: null,
+        beforePhotos: null,
+        afterPhotos: null,
+        nailProjects: null,
+        materials: null,
+        tools: null,
       },
     });
 
@@ -57,12 +62,10 @@ describe('CustomersService follow ups', () => {
     const service = new CustomersService(prisma as never);
 
     await expect(
-      service.createFollowUp(
-        12,
-        9,
-        '越权跟进',
-        '2026-07-31T09:00:00.000Z',
-      ),
+      service.createFollowUp(12, 9, {
+        content: '越权跟进',
+        plannedAt: '2026-07-31T09:00:00.000Z',
+      }),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
 

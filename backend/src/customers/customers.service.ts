@@ -13,6 +13,7 @@ import {
   decryptManagedPassword,
   encryptManagedPassword,
 } from '../common/auth/managed-password';
+import { CreateCustomerFollowUpDto } from './dto/create-customer-follow-up.dto';
 
 @Injectable()
 export class CustomersService {
@@ -271,7 +272,15 @@ export class CustomersService {
           take: 50,
         },
         leads: { orderBy: { createdAt: 'desc' }, take: 50 },
-        serviceRecords: { orderBy: { actualEndTime: 'desc' }, take: 50 },
+        serviceRecords: {
+          orderBy: { actualEndTime: 'desc' },
+          take: 50,
+          include: { photos: { orderBy: [{ stage: 'asc' }, { sortOrder: 'asc' }] } },
+        },
+        profileFacts: {
+          where: { status: 'active' },
+          orderBy: { lastConfirmedAt: 'desc' },
+        },
         lifecycleHistories: { orderBy: { createdAt: 'desc' }, take: 20 },
       },
     });
@@ -310,10 +319,72 @@ export class CustomersService {
       !customer.archivedAt &&
       interactionDates.every((date) => new Date(date) < activeSince);
 
+    const followUpOrderIds = [
+      ...new Set(
+        (customer.followUps ?? [])
+          .map((item) => item.relatedOrderId)
+          .filter((id): id is number => typeof id === 'number'),
+      ),
+    ];
+    const followUpWorkIds = [
+      ...new Set(
+        (customer.followUps ?? [])
+          .map((item) => item.relatedWorkId)
+          .filter((id): id is number => typeof id === 'number'),
+      ),
+    ];
+    let followUpOrders: Array<{
+      id: number;
+      orderNo: string;
+      startTime: Date;
+      status: string;
+      customTitle: string | null;
+      service: { name: string | null } | null;
+    }> = [];
+    let followUpWorks: Array<{
+      id: number;
+      title: string | null;
+      coverUrl: string | null;
+    }> = [];
+    if (followUpOrderIds.length) {
+      followUpOrders = await this.prisma.order.findMany({
+        where: { id: { in: followUpOrderIds } },
+        select: {
+          id: true,
+          orderNo: true,
+          startTime: true,
+          status: true,
+          customTitle: true,
+          service: { select: { name: true } },
+        },
+      });
+    }
+    if (followUpWorkIds.length) {
+      followUpWorks = await this.prisma.nailWork.findMany({
+        where: { id: { in: followUpWorkIds } },
+        select: { id: true, title: true, coverUrl: true },
+      });
+    }
+    const followUps = (customer.followUps ?? []).map((item) => {
+      const relatedOrder =
+        followUpOrders.find((order) => order.id === item.relatedOrderId) ||
+        null;
+      const relatedWork =
+        followUpWorks.find((work) => work.id === item.relatedWorkId) || null;
+      return {
+        ...item,
+        relatedOrder,
+        relatedWork: relatedWork
+          ? { ...relatedWork, coverUrl: this.absoluteUrl(relatedWork.coverUrl) }
+          : null,
+      };
+    });
+
     const { clientUser, ...safeCustomer } = customer;
 
     return {
       ...safeCustomer,
+      followUps,
       accountName: clientUser?.nickname || null,
       avatarUrl: this.absoluteUrl(
         clientUser?.avatarUrl || safeCustomer.avatarUrl,
@@ -356,7 +427,7 @@ export class CustomersService {
         })),
         ...(customer.serviceRecords ?? []).map((item) => ({
           type: 'service',
-          at: item.actualEndTime,
+          at: item.actualEndTime || item.updatedAt,
           id: item.id,
           amount: item.actualAmount,
         })),
@@ -376,6 +447,7 @@ export class CustomersService {
   ) {
     await this.assertOwned(id, technicianId);
     const allowed = [
+      'notes',
       'preferredStyles',
       'preferredColors',
       'preferredNailShapes',
@@ -640,24 +712,55 @@ export class CustomersService {
   async createFollowUp(
     customerId: number,
     technicianId: number,
-    content: string,
-    plannedAt: string,
+    body: CreateCustomerFollowUpDto,
   ) {
     await this.assertTechnicianCustomer(customerId, technicianId);
-    const normalizedContent = content.trim();
+    const normalizedContent = body.content.trim();
     if (!normalizedContent) {
       throw new BadRequestException('跟进内容不能为空');
     }
-    const plannedDate = new Date(plannedAt);
+    const plannedDate = new Date(body.plannedAt);
     if (Number.isNaN(plannedDate.getTime())) {
       throw new BadRequestException('计划跟进时间无效');
     }
+    if (body.relatedOrderId) {
+      const order = await this.prisma.order.findFirst({
+        where: { id: body.relatedOrderId, customerId, technicianId },
+        select: { id: true },
+      });
+      if (!order) {
+        throw new BadRequestException('关联预约不存在或不属于该客户');
+      }
+    }
+    if (body.relatedWorkId) {
+      const work = await this.prisma.nailWork.findFirst({
+        where: { id: body.relatedWorkId, techId: technicianId },
+        select: { id: true },
+      });
+      if (!work) {
+        throw new BadRequestException('关联作品不存在');
+      }
+    }
+    const nailProjects = body.nailProjects?.trim();
+    const materials = body.materials?.trim();
+    const tools = body.tools?.trim();
     return this.prisma.customerFollowUp.create({
       data: {
         customerId,
         technicianId,
         content: normalizedContent,
         plannedAt: plannedDate,
+        relatedOrderId: body.relatedOrderId || null,
+        relatedWorkId: body.relatedWorkId || null,
+        beforePhotos: body.beforePhotos?.length
+          ? JSON.stringify(body.beforePhotos)
+          : null,
+        afterPhotos: body.afterPhotos?.length
+          ? JSON.stringify(body.afterPhotos)
+          : null,
+        nailProjects: nailProjects || null,
+        materials: materials || null,
+        tools: tools || null,
       },
     });
   }
@@ -754,6 +857,19 @@ export class CustomersService {
       where: { id },
       data: { name: name.trim() },
       select: { id: true, name: true, tags: true },
+    });
+  }
+
+  async updateNotes(
+    id: number,
+    technicianId: number,
+    notes: string,
+  ) {
+    await this.assertOwned(id, technicianId);
+    return this.prisma.customer.update({
+      where: { id },
+      data: { notes: (notes || '').trim() || null },
+      select: { id: true, notes: true },
     });
   }
 

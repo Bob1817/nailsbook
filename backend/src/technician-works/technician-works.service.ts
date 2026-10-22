@@ -59,6 +59,7 @@ export class TechnicianWorksService {
         _count: { select: { shareEvents: true } },
         serviceLines: { orderBy: { sortOrder: 'asc' } },
         promotion: true,
+        preparation: true,
       },
     });
 
@@ -90,6 +91,7 @@ export class TechnicianWorksService {
         _count: { select: { shareEvents: true } },
         serviceLines: { orderBy: { sortOrder: 'asc' } },
         promotion: true,
+        preparation: true,
       },
     });
 
@@ -530,20 +532,87 @@ export class TechnicianWorksService {
     if (existing) {
       if (existing.techId !== technicianId)
         throw new NotFoundException('已完成订单不存在');
+      const record = await this.prisma.serviceRecord.findUnique({
+        where: { orderId },
+      });
+      if (record) {
+        await this.prisma.workPreparation.upsert({
+          where: { workId: existing.id },
+          create: {
+            workId: existing.id,
+            tools: record.tools,
+            materials: record.materials,
+            steps: record.techniques,
+            riskNotes: record.nailCondition,
+            preparation: record.nextServiceNotes,
+            estimatedMinutes:
+              record.actualStartTime && record.actualEndTime
+                ? Math.max(
+                    1,
+                    Math.round(
+                      (record.actualEndTime.getTime() -
+                        record.actualStartTime.getTime()) /
+                        60000,
+                    ),
+                  )
+                : null,
+            sourceRecordId: record.id,
+          },
+          update: {
+            tools: record.tools,
+            materials: record.materials,
+            steps: record.techniques,
+            riskNotes: record.nailCondition,
+            preparation: record.nextServiceNotes,
+            estimatedMinutes:
+              record.actualStartTime && record.actualEndTime
+                ? Math.max(
+                    1,
+                    Math.round(
+                      (record.actualEndTime.getTime() -
+                        record.actualStartTime.getTime()) /
+                        60000,
+                    ),
+                  )
+                : null,
+            sourceRecordId: record.id,
+          },
+        });
+      }
       return this.findOne(technicianId, existing.id);
     }
     const order = await this.prisma.order.findFirst({
       where: { id: orderId, technicianId, status: 'completed' },
       include: {
         service: { select: { name: true } },
-        serviceRecord: { select: { actualAmount: true } },
+        serviceRecord: {
+          select: {
+            id: true,
+            actualAmount: true,
+            tools: true,
+            materials: true,
+            techniques: true,
+            nailCondition: true,
+            nextServiceNotes: true,
+            actualStartTime: true,
+            actualEndTime: true,
+            photos: {
+              where: { stage: 'after' },
+              orderBy: { sortOrder: 'asc' },
+              select: { url: true },
+            },
+          },
+        },
         serviceLines: { orderBy: { sortOrder: 'asc' } },
       },
     });
     if (!order) throw new NotFoundException('已完成订单不存在');
+    const recordPhotos = (order.serviceRecord?.photos || []).map((photo) => photo.url);
     const clientPhotos = this.parseStoredImageUrls(order.clientPhotos);
-    const images = clientPhotos.length
-      ? clientPhotos
+    const images = recordPhotos.length
+      ? recordPhotos
+      : clientPhotos.length
+        ? clientPhotos
       : this.parseStoredImageUrls(order.customImages);
     const baseLines = (order.serviceLines || []).filter(line => line.source !== 'surcharge');
     const baseSummary = summarizeSnapshotLines(baseLines);
@@ -572,6 +641,31 @@ export class TechnicianWorksService {
           publicationStatus: 'draft',
           publicAuthorizationStatus: 'pending',
           isVisible: false,
+          ...(order.serviceRecord
+            ? {
+                preparation: {
+                  create: {
+                    tools: order.serviceRecord.tools,
+                    materials: order.serviceRecord.materials,
+                    steps: order.serviceRecord.techniques,
+                    riskNotes: order.serviceRecord.nailCondition,
+                    preparation: order.serviceRecord.nextServiceNotes,
+                    estimatedMinutes:
+                      order.serviceRecord.actualStartTime && order.serviceRecord.actualEndTime
+                        ? Math.max(
+                            1,
+                            Math.round(
+                              (order.serviceRecord.actualEndTime.getTime() -
+                                order.serviceRecord.actualStartTime.getTime()) /
+                                60000,
+                            ),
+                          )
+                        : null,
+                    sourceRecordId: order.serviceRecord.id,
+                  },
+                },
+              }
+            : {}),
         },
       });
       await tx.nailWorkClientAccess.create({
@@ -1176,6 +1270,7 @@ export class TechnicianWorksService {
       totalDurationMinutes?: number;
       serviceLines?: any[];
       promotion?: any;
+      preparation?: any;
     },
     currentTechnicianId?: number,
   ) {
@@ -1239,6 +1334,7 @@ export class TechnicianWorksService {
       assetStatus: work.assetStatus ?? 'draft',
       publicAuthorizationStatus:
         work.publicAuthorizationStatus ?? 'pending',
+      preparation: work.preparation ?? null,
       reviewNote: work.reviewNote ?? null,
       publishedAt: work.publishedAt ?? null,
       clientAccesses: work.clientAccesses ?? [],

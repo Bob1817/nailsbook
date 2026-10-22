@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -29,6 +30,7 @@ import { CancelOrderDto } from './dto/cancel-order.dto';
 import { CloseBookingDto } from './dto/close-booking.dto';
 import { RepeatBookingDto } from './dto/repeat-booking.dto';
 import { UpdateActualAmountDto } from './dto/update-actual-amount.dto';
+import { UpdateServiceRecordDto } from './dto/update-service-record.dto';
 
 @ApiTags('美甲师-订单')
 @ApiBearerAuth()
@@ -126,6 +128,27 @@ export class TechnicianOrdersController {
     return this.ordersService.findOneForTechnician(
       parseInt(id, 10),
       request.user.technicianId,
+    );
+  }
+
+  @Get(':id/service-record')
+  getServiceRecord(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.ordersService.findOneForTechnician(id, request.user.technicianId);
+  }
+
+  @Patch(':id/service-record')
+  saveServiceRecord(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: UpdateServiceRecordDto,
+  ) {
+    return this.ordersService.saveServiceRecord(
+      id,
+      request.user.technicianId,
+      body,
     );
   }
 

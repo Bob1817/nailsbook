@@ -38,6 +38,7 @@ import {
   summarizeSnapshotLines,
 } from './booking-pricing';
 import { WechatSubscribeMessagesService } from '../wechat-subscribe-messages/wechat-subscribe-messages.service';
+import { UpdateServiceRecordDto } from './dto/update-service-record.dto';
 
 export type OrderStatus =
   | 'pending_quote'
@@ -565,7 +566,29 @@ export class OrdersService {
           serviceLines: { select: { nameSnapshot: true }, orderBy: { sortOrder: 'asc' } },
           technician: { select: { id: true, name: true, phone: true } },
         customer: {
-          select: { id: true, name: true, phone: true, avatarUrl: true },
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            avatarUrl: true,
+            preferredStyles: true,
+            preferredColors: true,
+            preferredNailShapes: true,
+            preferredNailLengths: true,
+            allergies: true,
+            contraindications: true,
+            specialReminders: true,
+            profileFacts: {
+              where: { status: 'active' },
+              orderBy: { lastConfirmedAt: 'desc' },
+              take: 20,
+            },
+            serviceRecords: {
+              orderBy: { actualEndTime: 'desc' },
+              take: 3,
+              include: { photos: { orderBy: { sortOrder: 'asc' } } },
+            },
+          },
         },
       },
       orderBy: { startTime: 'asc' },
@@ -634,7 +657,11 @@ export class OrdersService {
             title: true,
             coverUrl: true,
             standardPriceFen: true,
+            preparation: true,
           },
+        },
+        serviceRecord: {
+          include: { photos: { orderBy: [{ stage: 'asc' }, { sortOrder: 'asc' }] } },
         },
         promotion: true,
         serviceLines: { orderBy: { sortOrder: 'asc' } },
@@ -656,6 +683,153 @@ export class OrdersService {
     }
 
     return order;
+  }
+
+  async saveServiceRecord(
+    orderId: number,
+    technicianId: number,
+    dto: UpdateServiceRecordDto,
+  ) {
+    const order = await this.findOneForTechnician(orderId, technicianId);
+    if (['cancelled', 'rejected', 'expired', 'no_show'].includes(order.status)) {
+      throw new BadRequestException('当前预约状态不能记录美甲服务');
+    }
+    if (dto.complete && order.status !== 'completed') {
+      throw new BadRequestException('订单完成后才能将美甲记录标记为已完善');
+    }
+
+    const text = (value?: string) => value?.trim() || null;
+    const photoGroups = [
+      ['before', dto.beforePhotos],
+      ['during', dto.duringPhotos],
+      ['after', dto.afterPhotos],
+    ] as const;
+    for (const [, urls] of photoGroups) {
+      if (urls && urls.length > 9) throw new BadRequestException('每个阶段最多上传 9 张照片');
+      if (urls?.some((url) => !url || url.length > 2048)) {
+        throw new BadRequestException('照片地址无效');
+      }
+    }
+
+    const allowedFactCategories = new Set([
+      'allergy',
+      'contraindication',
+      'preference',
+      'communication',
+      'reminder',
+    ]);
+    const facts = (dto.profileFacts || []).map((fact) => ({
+      category: String(fact?.category || '').trim(),
+      content: String(fact?.content || '').trim(),
+    }));
+    if (
+      facts.some(
+        (fact) =>
+          !allowedFactCategories.has(fact.category) ||
+          !fact.content ||
+          fact.content.length > 500,
+      )
+    ) {
+      throw new BadRequestException('客户档案信息格式不正确');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const record = await tx.serviceRecord.upsert({
+        where: { orderId },
+        create: {
+          orderId,
+          technicianId,
+          customerId: order.customerId,
+          status: dto.complete ? 'complete' : 'draft',
+          completedAt: dto.complete ? new Date() : null,
+          materials: text(dto.materials),
+          tools: text(dto.tools),
+          techniques: text(dto.techniques),
+          nailCondition: text(dto.nailCondition),
+          customerFeedback: text(dto.customerFeedback),
+          clientReaction: text(dto.clientReaction),
+          discomfortNotes: text(dto.discomfortNotes),
+          preferenceNotes: text(dto.preferenceNotes),
+          nextServiceNotes: text(dto.nextServiceNotes),
+          careAdvice: text(dto.careAdvice),
+        },
+        update: {
+          ...(dto.complete !== undefined
+            ? {
+                status: dto.complete ? 'complete' : 'draft',
+                completedAt: dto.complete ? new Date() : null,
+              }
+            : {}),
+          ...(dto.materials !== undefined ? { materials: text(dto.materials) } : {}),
+          ...(dto.tools !== undefined ? { tools: text(dto.tools) } : {}),
+          ...(dto.techniques !== undefined ? { techniques: text(dto.techniques) } : {}),
+          ...(dto.nailCondition !== undefined ? { nailCondition: text(dto.nailCondition) } : {}),
+          ...(dto.customerFeedback !== undefined ? { customerFeedback: text(dto.customerFeedback) } : {}),
+          ...(dto.clientReaction !== undefined ? { clientReaction: text(dto.clientReaction) } : {}),
+          ...(dto.discomfortNotes !== undefined ? { discomfortNotes: text(dto.discomfortNotes) } : {}),
+          ...(dto.preferenceNotes !== undefined ? { preferenceNotes: text(dto.preferenceNotes) } : {}),
+          ...(dto.nextServiceNotes !== undefined ? { nextServiceNotes: text(dto.nextServiceNotes) } : {}),
+          ...(dto.careAdvice !== undefined ? { careAdvice: text(dto.careAdvice) } : {}),
+        },
+      });
+
+      for (const [stage, urls] of photoGroups) {
+        if (urls === undefined) continue;
+        await tx.serviceRecordPhoto.deleteMany({ where: { serviceRecordId: record.id, stage } });
+        if (urls.length) {
+          await tx.serviceRecordPhoto.createMany({
+            data: urls.map((url, sortOrder) => ({
+              serviceRecordId: record.id,
+              stage,
+              url,
+              sortOrder,
+            })),
+          });
+        }
+      }
+
+      for (const fact of facts) {
+        await tx.customerProfileFact.upsert({
+          where: {
+            customerId_category_content: {
+              customerId: order.customerId,
+              category: fact.category,
+              content: fact.content,
+            },
+          },
+          create: {
+            customerId: order.customerId,
+            category: fact.category,
+            content: fact.content,
+            sourceRecordId: record.id,
+            confirmedById: technicianId,
+          },
+          update: {
+            status: 'active',
+            sourceRecordId: record.id,
+            confirmedById: technicianId,
+            lastConfirmedAt: new Date(),
+          },
+        });
+      }
+
+      if (dto.complete) {
+        await tx.actionTask.updateMany({
+          where: {
+            technicianId,
+            type: 'complete_service_record',
+            relatedType: 'order',
+            relatedId: orderId,
+          },
+          data: { status: 'completed', resolvedAt: new Date() },
+        });
+      }
+
+      return tx.serviceRecord.findUnique({
+        where: { orderId },
+        include: { photos: { orderBy: [{ stage: 'asc' }, { sortOrder: 'asc' }] } },
+      });
+    });
   }
 
   async updateForTechnician(
@@ -1525,8 +1699,9 @@ export class OrdersService {
           data: { loyaltyPoints: { increment: earnedPoints } },
         });
       }
-      await tx.serviceRecord.create({
-        data: {
+      const completedRecord = await tx.serviceRecord.upsert({
+        where: { orderId: id },
+        create: {
           orderId: id,
           technicianId: order.technicianId,
           customerId: order.customerId,
@@ -1535,14 +1710,96 @@ export class OrdersService {
           actualAmount,
           materialCost,
           materials: dto?.materials || null,
+          tools: dto?.tools || null,
           techniques: dto?.techniques || null,
           nailCondition: dto?.nailCondition || null,
           customerFeedback: dto?.customerFeedback || null,
+          clientReaction: dto?.clientReaction || null,
+          discomfortNotes: dto?.discomfortNotes || null,
+          preferenceNotes: dto?.preferenceNotes || null,
+          nextServiceNotes: dto?.nextServiceNotes || null,
           careAdvice: dto?.careAdvice || null,
+          status: dto?.recordComplete ? 'complete' : 'draft',
+          completedAt: dto?.recordComplete ? actualEnd : null,
+          aftercareDeadline,
+          suggestedMaintenanceAt,
+        },
+        update: {
+          actualStartTime: actualStart,
+          actualEndTime: actualEnd,
+          actualAmount,
+          materialCost,
+          materials: dto?.materials || undefined,
+          tools: dto?.tools || undefined,
+          techniques: dto?.techniques || undefined,
+          nailCondition: dto?.nailCondition || undefined,
+          customerFeedback: dto?.customerFeedback || undefined,
+          clientReaction: dto?.clientReaction || undefined,
+          discomfortNotes: dto?.discomfortNotes || undefined,
+          preferenceNotes: dto?.preferenceNotes || undefined,
+          nextServiceNotes: dto?.nextServiceNotes || undefined,
+          careAdvice: dto?.careAdvice || undefined,
+          status: dto?.recordComplete ? 'complete' : 'draft',
+          completedAt: dto?.recordComplete ? actualEnd : null,
           aftercareDeadline,
           suggestedMaintenanceAt,
         },
       });
+      const completionPhotos = [
+        ['before', dto?.beforePhotos],
+        ['during', dto?.duringPhotos],
+        ['after', dto?.afterPhotos],
+      ] as const;
+      for (const [stage, urls] of completionPhotos) {
+        if (urls === undefined) continue;
+        await tx.serviceRecordPhoto.deleteMany({ where: { serviceRecordId: completedRecord.id, stage } });
+        if (urls.length) {
+          await tx.serviceRecordPhoto.createMany({
+            data: urls.slice(0, 9).map((url: string, sortOrder: number) => ({
+              serviceRecordId: completedRecord.id,
+              stage,
+              url,
+              sortOrder,
+            })),
+          });
+        }
+      }
+      const allowedProfileFactCategories = new Set([
+        'allergy',
+        'contraindication',
+        'preference',
+        'communication',
+        'reminder',
+      ]);
+      for (const rawFact of dto?.profileFacts || []) {
+        const category = String(rawFact?.category || '').trim();
+        const content = String(rawFact?.content || '').trim();
+        if (!allowedProfileFactCategories.has(category) || !content || content.length > 500) {
+          throw new BadRequestException('客户档案信息格式不正确');
+        }
+        await tx.customerProfileFact.upsert({
+          where: {
+            customerId_category_content: {
+              customerId: order.customerId,
+              category,
+              content,
+            },
+          },
+          create: {
+            customerId: order.customerId,
+            category,
+            content,
+            sourceRecordId: completedRecord.id,
+            confirmedById: order.technicianId,
+          },
+          update: {
+            status: 'active',
+            sourceRecordId: completedRecord.id,
+            confirmedById: order.technicianId,
+            lastConfirmedAt: actualEnd,
+          },
+        });
+      }
       const contentTask = await tx.contentPublicationTask.upsert({
         where: { orderId: id },
         create: {
@@ -1586,14 +1843,22 @@ export class OrdersService {
             relatedType: 'order',
             relatedId: id,
             actionPath:
-              type === 'create_case'
+              type === 'complete_service_record'
+                ? `/pages/technician/complete-service/index?id=${id}&mode=record`
+                : type === 'create_case'
                 ? `/pages/technician/work-edit/index?orderId=${id}`
                 : type === 'publish_content'
                   ? `/pages/technician/content-publication/index?id=${contentTask.id}`
                   : `/pages/technician/order-detail/index?id=${id}`,
             dueAt,
+            ...(type === 'complete_service_record' && dto?.recordComplete
+              ? { status: 'completed', resolvedAt: actualEnd }
+              : {}),
           },
-          update: {},
+          update:
+            type === 'complete_service_record' && dto?.recordComplete
+              ? { status: 'completed', resolvedAt: actualEnd }
+              : {},
         });
       }
       await tx.customer.update({
