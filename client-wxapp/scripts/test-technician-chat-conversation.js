@@ -24,7 +24,7 @@ const wx = {
   getMenuButtonBoundingClientRect() { return { top: 24, height: 32 }; }
 };
 vm.runInNewContext(source, {
-  require: () => api,
+  require: (name) => name.includes('chat-images') ? { imageMethods: () => ({}) } : api,
   Page(definition) { page = definition; },
   wx, console, setTimeout, clearTimeout, setInterval, clearInterval, Date
 });
