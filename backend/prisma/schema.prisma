@@ -321,6 +321,7 @@ model Customer {
   followUps              CustomerFollowUp[]
   leads                  Lead[]
   serviceRecords         ServiceRecord[]
+  profileFacts           CustomerProfileFact[]
   publicationConsents    PublicationConsent[]
   bookingQuotes          BookingQuote[]
   completedServiceCount  Int                        @default(0)
@@ -350,17 +351,24 @@ model Customer {
 }
 
 model CustomerFollowUp {
-  id           Int        @id @default(autoincrement())
-  customerId   Int
-  technicianId Int
-  content      String
-  plannedAt    DateTime
-  status       String     @default("pending")
-  completedAt  DateTime?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @default(now()) @updatedAt
-  customer     Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  id             Int        @id @default(autoincrement())
+  customerId     Int
+  technicianId   Int
+  content        String
+  plannedAt      DateTime
+  status         String     @default("pending")
+  completedAt    DateTime?
+  relatedOrderId Int? // 关联预约
+  relatedWorkId  Int? // 关联作品
+  beforePhotos   String? // JSON 数组字符串：服务前照片 URL
+  afterPhotos    String? // JSON 数组字符串：服务后照片 URL
+  nailProjects   String? // 美甲项目
+  materials      String? // 使用材料
+  tools          String? // 工具
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @default(now()) @updatedAt
+  customer       Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  technician     Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
 
   @@index([customerId, plannedAt])
   @@index([technicianId, status, plannedAt])
@@ -881,6 +889,7 @@ model NailWork {
   totalDurationMinutes      Int                    @default(0)
   serviceLines              NailWorkServiceLine[]
   promotion                 WorkPromotion?
+  preparation               WorkPreparation?
 
   @@index([techId])
   @@index([isVisible])
@@ -1779,25 +1788,83 @@ model ServiceRecord {
   orderId                Int        @unique
   technicianId           Int
   customerId             Int
-  actualStartTime        DateTime
-  actualEndTime          DateTime
-  actualAmount           Float
+  actualStartTime        DateTime?
+  actualEndTime          DateTime?
+  actualAmount           Float?
   materialCost           Float      @default(0)
   materials              String?
   techniques             String?
   nailCondition          String?
   customerFeedback       String?
   careAdvice             String?
-  aftercareDeadline      DateTime
-  suggestedMaintenanceAt DateTime
-  createdAt              DateTime   @default(now())
-  updatedAt              DateTime   @default(now()) @updatedAt
-  order                  Order      @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  technician             Technician @relation(fields: [technicianId], references: [id], onDelete: Restrict)
-  customer               Customer   @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  tools                  String?
+  clientReaction         String?
+  discomfortNotes        String?
+  preferenceNotes        String?
+  nextServiceNotes       String?
+  status                 String      @default("draft")
+  completedAt            DateTime?
+  aftercareDeadline      DateTime?
+  suggestedMaintenanceAt DateTime?
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @default(now()) @updatedAt
+  order                  Order       @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  technician             Technician  @relation(fields: [technicianId], references: [id], onDelete: Restrict)
+  customer               Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  photos                 ServiceRecordPhoto[]
 
   @@index([technicianId, actualEndTime])
   @@index([customerId, actualEndTime])
+}
+
+model ServiceRecordPhoto {
+  id              Int           @id @default(autoincrement())
+  serviceRecordId Int
+  stage           String
+  url             String
+  sortOrder        Int           @default(0)
+  source           String        @default("technician")
+  capturedAt       DateTime?
+  createdAt        DateTime      @default(now())
+  serviceRecord    ServiceRecord @relation(fields: [serviceRecordId], references: [id], onDelete: Cascade)
+
+  @@index([serviceRecordId, stage, sortOrder])
+}
+
+model CustomerProfileFact {
+  id              Int      @id @default(autoincrement())
+  customerId      Int
+  category        String
+  content         String
+  sourceRecordId  Int?
+  status          String   @default("active")
+  confirmedById   Int
+  firstObservedAt DateTime @default(now())
+  lastConfirmedAt DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
+  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, category, content])
+  @@index([customerId, category, status])
+  @@index([sourceRecordId])
+}
+
+model WorkPreparation {
+  id               Int      @id @default(autoincrement())
+  workId           Int      @unique
+  tools            String?
+  materials        String?
+  preparation      String?
+  steps            String?
+  riskNotes        String?
+  estimatedMinutes Int?
+  sourceRecordId   Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+  work             NailWork @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  @@index([sourceRecordId])
 }
 
 model PublicationConsent {
