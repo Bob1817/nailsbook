@@ -635,7 +635,60 @@ export class OrdersService {
       include: {
         technician: { select: { id: true, name: true, phone: true } },
         customer: {
-          select: { id: true, name: true, phone: true, avatarUrl: true },
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            avatarUrl: true,
+            allergies: true,
+            contraindications: true,
+            specialReminders: true,
+            preferredStyles: true,
+            preferredColors: true,
+            preferredNailShapes: true,
+            preferredNailLengths: true,
+            profileFacts: {
+              where: { status: { in: ['active', 'pending'] } },
+              orderBy: { lastConfirmedAt: 'desc' },
+              select: {
+                id: true,
+                category: true,
+                content: true,
+                status: true,
+                sourceRecordId: true,
+                firstObservedAt: true,
+                lastConfirmedAt: true,
+              },
+            },
+            serviceRecords: {
+              orderBy: [{ actualEndTime: 'desc' }, { id: 'desc' }],
+              take: 3,
+              select: {
+                id: true,
+                orderId: true,
+                status: true,
+                actualStartTime: true,
+                actualEndTime: true,
+                reactionLevel: true,
+                careAdvice: true,
+                nextServiceNotes: true,
+                materials: true,
+                tools: true,
+                order: {
+                  select: {
+                    id: true,
+                    customTitle: true,
+                    service: { select: { name: true } },
+                    serviceLines: {
+                      select: { nameSnapshot: true },
+                      orderBy: { sortOrder: 'asc' },
+                    },
+                  },
+                },
+              },
+            },
+            _count: { select: { serviceRecords: true } },
+          },
         },
         revenue: true,
         review: { select: { rating: true, content: true, photos: true, updatedAt: true } },
@@ -660,6 +713,16 @@ export class OrdersService {
             preparation: true,
           },
         },
+        worksFromOrder: {
+          select: {
+            id: true,
+            title: true,
+            coverUrl: true,
+            assetStatus: true,
+            publicationStatus: true,
+          },
+          take: 1,
+        },
         serviceRecord: {
           include: { photos: { orderBy: [{ stage: 'asc' }, { sortOrder: 'asc' }] } },
         },
@@ -672,7 +735,29 @@ export class OrdersService {
       throw new NotFoundException('订单不存在');
     }
 
+    if (order.serviceRecord) {
+      (order.serviceRecord as { missing?: string[] }).missing =
+        this.serviceRecordMissing(order.serviceRecord);
+    }
+
     return order;
+  }
+
+  private serviceRecordMissing(record: {
+    photos?: Array<{ stage: string }> | null;
+    nailCondition?: string | null;
+    reactionLevel?: string | null;
+  } | null): string[] {
+    if (!record) {
+      return ['beforePhoto', 'afterPhoto', 'nailCondition', 'reactionLevel'];
+    }
+    const stages = new Set((record.photos || []).map((photo) => photo.stage));
+    const missing: string[] = [];
+    if (!stages.has('before')) missing.push('beforePhoto');
+    if (!stages.has('after')) missing.push('afterPhoto');
+    if (!String(record.nailCondition || '').trim()) missing.push('nailCondition');
+    if (!record.reactionLevel) missing.push('reactionLevel');
+    return missing;
   }
 
   async findOneForTechnician(id: number, technicianId: number) {
@@ -683,6 +768,61 @@ export class OrdersService {
     }
 
     return order;
+  }
+
+  async startService(orderId: number, technicianId: number) {
+    const order = await this.findOneForTechnician(orderId, technicianId);
+    if (
+      ['completed', 'cancelled', 'rejected', 'expired', 'no_show'].includes(
+        order.status,
+      )
+    ) {
+      throw new BadRequestException('当前预约状态不能开始服务');
+    }
+
+    const now = new Date();
+    await this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.order.updateMany({
+        where: {
+          id: orderId,
+          technicianId,
+          status: { in: ['pending_home', 'pending_shop'] },
+        },
+        data: { status: 'in_progress', tradeStatus: 'balance_pending' },
+      });
+      if (claimed.count === 0) {
+        const current = await tx.order.findUnique({
+          where: { id: orderId },
+          select: { status: true },
+        });
+        if (current?.status !== 'in_progress') {
+          throw new BadRequestException('当前预约状态不能开始服务');
+        }
+      }
+      await this.ensureServiceDraft(tx, order, now);
+    });
+
+    return this.findOneForTechnician(orderId, technicianId);
+  }
+
+  /** 开始服务时确保存在服务记录草稿，手动开始与定时任务共用。 */
+  async ensureServiceDraft(
+    tx: Prisma.TransactionClient,
+    order: { id: number; technicianId: number; customerId: number },
+    now: Date = new Date(),
+  ) {
+    return tx.serviceRecord.upsert({
+      where: { orderId: order.id },
+      create: {
+        orderId: order.id,
+        technicianId: order.technicianId,
+        customerId: order.customerId,
+        status: 'draft',
+        actualStartTime: now,
+      },
+      update: {},
+      select: { id: true },
+    });
   }
 
   async saveServiceRecord(
@@ -752,6 +892,11 @@ export class OrdersService {
           preferenceNotes: text(dto.preferenceNotes),
           nextServiceNotes: text(dto.nextServiceNotes),
           careAdvice: text(dto.careAdvice),
+          preServiceNotes: text(dto.preServiceNotes),
+          clientRequests: text(dto.clientRequests),
+          reactionLevel: text(dto.reactionLevel),
+          safetyConfirmedAt: dto.safetyConfirmed ? new Date() : null,
+          nailConditionConfirmedAt: dto.nailConditionConfirmed ? new Date() : null,
         },
         update: {
           ...(dto.complete !== undefined
@@ -770,6 +915,11 @@ export class OrdersService {
           ...(dto.preferenceNotes !== undefined ? { preferenceNotes: text(dto.preferenceNotes) } : {}),
           ...(dto.nextServiceNotes !== undefined ? { nextServiceNotes: text(dto.nextServiceNotes) } : {}),
           ...(dto.careAdvice !== undefined ? { careAdvice: text(dto.careAdvice) } : {}),
+          ...(dto.preServiceNotes !== undefined ? { preServiceNotes: text(dto.preServiceNotes) } : {}),
+          ...(dto.clientRequests !== undefined ? { clientRequests: text(dto.clientRequests) } : {}),
+          ...(dto.reactionLevel !== undefined ? { reactionLevel: text(dto.reactionLevel) } : {}),
+          ...(dto.safetyConfirmed === true ? { safetyConfirmedAt: new Date() } : {}),
+          ...(dto.nailConditionConfirmed === true ? { nailConditionConfirmedAt: new Date() } : {}),
         },
       });
 
@@ -813,7 +963,26 @@ export class OrdersService {
         });
       }
 
+      let recordIsComplete = false;
       if (dto.complete) {
+        const saved = await tx.serviceRecord.findUnique({
+          where: { id: record.id },
+          select: {
+            nailCondition: true,
+            reactionLevel: true,
+            photos: { select: { stage: true } },
+          },
+        });
+        recordIsComplete = this.serviceRecordMissing(saved).length === 0;
+        if (!recordIsComplete) {
+          await tx.serviceRecord.update({
+            where: { id: record.id },
+            data: { status: 'draft', completedAt: null },
+          });
+        }
+      }
+
+      if (recordIsComplete) {
         await tx.actionTask.updateMany({
           where: {
             technicianId,
@@ -825,10 +994,13 @@ export class OrdersService {
         });
       }
 
-      return tx.serviceRecord.findUnique({
+      const savedRecord = await tx.serviceRecord.findUnique({
         where: { orderId },
         include: { photos: { orderBy: [{ stage: 'asc' }, { sortOrder: 'asc' }] } },
       });
+      return savedRecord
+        ? { ...savedRecord, missing: this.serviceRecordMissing(savedRecord) }
+        : null;
     });
   }
 
@@ -1719,6 +1891,11 @@ export class OrdersService {
           preferenceNotes: dto?.preferenceNotes || null,
           nextServiceNotes: dto?.nextServiceNotes || null,
           careAdvice: dto?.careAdvice || null,
+          preServiceNotes: dto?.preServiceNotes || null,
+          clientRequests: dto?.clientRequests || null,
+          reactionLevel: dto?.reactionLevel || null,
+          safetyConfirmedAt: dto?.safetyConfirmed ? actualEnd : null,
+          nailConditionConfirmedAt: dto?.nailConditionConfirmed ? actualEnd : null,
           status: dto?.recordComplete ? 'complete' : 'draft',
           completedAt: dto?.recordComplete ? actualEnd : null,
           aftercareDeadline,
@@ -1739,6 +1916,11 @@ export class OrdersService {
           preferenceNotes: dto?.preferenceNotes || undefined,
           nextServiceNotes: dto?.nextServiceNotes || undefined,
           careAdvice: dto?.careAdvice || undefined,
+          preServiceNotes: dto?.preServiceNotes || undefined,
+          clientRequests: dto?.clientRequests || undefined,
+          reactionLevel: dto?.reactionLevel || undefined,
+          ...(dto?.safetyConfirmed ? { safetyConfirmedAt: actualEnd } : {}),
+          ...(dto?.nailConditionConfirmed ? { nailConditionConfirmedAt: actualEnd } : {}),
           status: dto?.recordComplete ? 'complete' : 'draft',
           completedAt: dto?.recordComplete ? actualEnd : null,
           aftercareDeadline,
@@ -1763,6 +1945,22 @@ export class OrdersService {
             })),
           });
         }
+      }
+      const savedRecord = await tx.serviceRecord.findUnique({
+        where: { id: completedRecord.id },
+        select: {
+          nailCondition: true,
+          reactionLevel: true,
+          photos: { select: { stage: true } },
+        },
+      });
+      const missing = this.serviceRecordMissing(savedRecord);
+      const recordIsComplete = Boolean(dto?.recordComplete) && missing.length === 0;
+      if (dto?.recordComplete && !recordIsComplete) {
+        await tx.serviceRecord.update({
+          where: { id: completedRecord.id },
+          data: { status: 'draft', completedAt: null },
+        });
       }
       const allowedProfileFactCategories = new Set([
         'allergy',
@@ -1844,19 +2042,19 @@ export class OrdersService {
             relatedId: id,
             actionPath:
               type === 'complete_service_record'
-                ? `/pages/technician/complete-service/index?id=${id}&mode=record`
+                ? `/pages/technician/complete-service/index?id=${id}`
                 : type === 'create_case'
                 ? `/pages/technician/work-edit/index?orderId=${id}`
                 : type === 'publish_content'
                   ? `/pages/technician/content-publication/index?id=${contentTask.id}`
                   : `/pages/technician/order-detail/index?id=${id}`,
             dueAt,
-            ...(type === 'complete_service_record' && dto?.recordComplete
+            ...(type === 'complete_service_record' && recordIsComplete
               ? { status: 'completed', resolvedAt: actualEnd }
               : {}),
           },
           update:
-            type === 'complete_service_record' && dto?.recordComplete
+            type === 'complete_service_record' && recordIsComplete
               ? { status: 'completed', resolvedAt: actualEnd }
               : {},
         });

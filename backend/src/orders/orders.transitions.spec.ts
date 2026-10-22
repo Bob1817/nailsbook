@@ -44,7 +44,16 @@ describe('OrdersService 流转成功路径', () => {
         upsert: jest.fn().mockResolvedValue({ id: 9, amount: 200 }),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
-      serviceRecord: { upsert: jest.fn().mockResolvedValue({ id: 1 }) },
+      serviceRecord: {
+        upsert: jest.fn().mockResolvedValue({ id: 1 }),
+        findUnique: jest.fn().mockResolvedValue({
+          id: 1,
+          nailCondition: '甲面偏薄',
+          reactionLevel: 'normal',
+          photos: [{ stage: 'before' }, { stage: 'after' }],
+        }),
+        update: jest.fn().mockResolvedValue({ id: 1 }),
+      },
       serviceRecordPhoto: {
         deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
         createMany: jest.fn().mockResolvedValue({ count: 0 }),

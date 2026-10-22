@@ -18,6 +18,13 @@ export class UpdateServiceRecordDto {
   @IsOptional() @IsString() @MaxLength(1000) preferenceNotes?: string;
   @IsOptional() @IsString() @MaxLength(1000) nextServiceNotes?: string;
   @IsOptional() @IsString() @MaxLength(1000) careAdvice?: string;
+  @IsOptional() @IsString() @MaxLength(1000) preServiceNotes?: string;
+  @IsOptional() @IsString() @MaxLength(1000) clientRequests?: string;
+  @IsOptional()
+  @IsIn(['normal', 'discomfort', 'pain', 'sensitive'])
+  reactionLevel?: string;
+  @IsOptional() @IsBoolean() safetyConfirmed?: boolean;
+  @IsOptional() @IsBoolean() nailConditionConfirmed?: boolean;
 
   @IsOptional() @IsArray() @IsString({ each: true }) beforePhotos?: string[];
   @IsOptional() @IsArray() @IsString({ each: true }) duringPhotos?: string[];

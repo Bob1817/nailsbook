@@ -1802,6 +1802,11 @@ model ServiceRecord {
   discomfortNotes        String?
   preferenceNotes        String?
   nextServiceNotes       String?
+  preServiceNotes        String?
+  clientRequests         String?
+  reactionLevel          String?
+  safetyConfirmedAt      DateTime?
+  nailConditionConfirmedAt DateTime?
   status                 String      @default("draft")
   completedAt            DateTime?
   aftercareDeadline      DateTime?
@@ -1859,7 +1864,15 @@ model WorkPreparation {
   steps            String?
   riskNotes        String?
   estimatedMinutes Int?
+  nailShape        String?
+  nailLength       String?
+  baseCondition    String?
+  alternatives     String?
+  failurePoints    String?
+  unsuitableClients String?
+  difficulty       String?
   sourceRecordId   Int?
+  sourceRecordCount Int      @default(0)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @default(now()) @updatedAt
   work             NailWork @relation(fields: [workId], references: [id], onDelete: Cascade)

@@ -662,6 +662,7 @@ export class TechnicianWorksService {
                           )
                         : null,
                     sourceRecordId: order.serviceRecord.id,
+                    sourceRecordCount: 1,
                   },
                 },
               }
@@ -689,6 +690,64 @@ export class TechnicianWorksService {
       return existing;
     });
     return this.findOne(technicianId, work.id);
+  }
+
+  async updatePreparationFromRecord(
+    technicianId: number,
+    workId: number,
+    recordId: number,
+  ) {
+    const work = await this.prisma.nailWork.findFirst({
+      where: { id: workId, techId: technicianId },
+      select: { id: true },
+    });
+    if (!work) {
+      throw new NotFoundException('作品不存在');
+    }
+
+    const record = await this.prisma.serviceRecord.findUnique({
+      where: { id: recordId },
+    });
+    if (!record || record.technicianId !== technicianId) {
+      throw new NotFoundException('服务记录不存在');
+    }
+
+    const estimatedMinutes =
+      record.actualStartTime && record.actualEndTime
+        ? Math.max(
+            1,
+            Math.round(
+              (record.actualEndTime.getTime() -
+                record.actualStartTime.getTime()) /
+                60000,
+            ),
+          )
+        : null;
+    const data = {
+      tools: record.tools,
+      materials: record.materials,
+      steps: record.techniques,
+      riskNotes: record.nailCondition,
+      preparation: record.nextServiceNotes,
+      estimatedMinutes,
+      sourceRecordId: record.id,
+    };
+
+    const existing = await this.prisma.workPreparation.findUnique({
+      where: { workId },
+      select: { sourceRecordId: true, sourceRecordCount: true },
+    });
+    const sourceRecordCount =
+      (existing?.sourceRecordCount || 0) +
+      (existing?.sourceRecordId === record.id ? 0 : 1);
+
+    await this.prisma.workPreparation.upsert({
+      where: { workId },
+      create: { workId, ...data, sourceRecordCount },
+      update: { ...data, sourceRecordCount },
+    });
+
+    return this.findOne(technicianId, workId);
   }
 
   private assertImageLimit(images?: string) {

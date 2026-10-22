@@ -156,6 +156,40 @@ export class TechnicianCustomersController {
     );
   }
 
+  @Post(':id/profile-facts')
+  @ApiOperation({ summary: '把客户自述确认并写入客户档案' })
+  @ApiParam({ name: 'id', type: String, description: '客户ID' })
+  createProfileFact(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id') id: string,
+    @Body() body: { category: string; content: string },
+  ) {
+    return this.customersService.createProfileFact(
+      parseInt(id, 10),
+      request.user.technicianId,
+      body.category,
+      body.content,
+    );
+  }
+
+  @Patch(':id/profile-facts/:factId')
+  @ApiOperation({ summary: '确认或忽略客户档案信息' })
+  @ApiParam({ name: 'id', type: String, description: '客户ID' })
+  @ApiParam({ name: 'factId', type: String, description: '档案信息ID' })
+  updateProfileFact(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id') id: string,
+    @Param('factId') factId: string,
+    @Body() body: { status: 'active' | 'inactive' },
+  ) {
+    return this.customersService.updateProfileFact(
+      parseInt(id, 10),
+      parseInt(factId, 10),
+      request.user.technicianId,
+      body.status,
+    );
+  }
+
   @Patch(':id/tags')
   @ApiOperation({ summary: '更新客户标签' })
   @ApiParam({ name: 'id', type: String, description: '客户ID' })

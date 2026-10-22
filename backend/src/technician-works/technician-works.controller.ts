@@ -124,6 +124,21 @@ export class TechnicianWorksController {
     return this.technicianWorksService.createFromOrder(request.user.technicianId, orderId);
   }
 
+  @Post(':id/preparation/from-record')
+  @ApiOperation({ summary: '从某次服务记录更新作品制作方案' })
+  @ApiParam({ name: 'id', type: Number, description: '作品ID' })
+  updatePreparationFromRecord(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { recordId: number },
+  ) {
+    return this.technicianWorksService.updatePreparationFromRecord(
+      request.user.technicianId,
+      id,
+      Number(body.recordId),
+    );
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: '更新作品' })
   @ApiParam({ name: 'id', type: Number, description: '作品ID' })

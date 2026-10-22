@@ -131,6 +131,18 @@ export class TechnicianOrdersController {
     );
   }
 
+  @Patch(':id/start-service')
+  @ApiOperation({ summary: '开始服务并生成美甲记录草稿' })
+  @ApiParam({ name: 'id', type: Number, description: '订单ID' })
+  @ApiResponse({ status: 200, description: '已进入服务中' })
+  @ApiResponse({ status: 400, description: '当前状态不支持开始服务' })
+  startService(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.ordersService.startService(id, request.user.technicianId);
+  }
+
   @Get(':id/service-record')
   getServiceRecord(
     @Req() request: { user: { technicianId: number } },

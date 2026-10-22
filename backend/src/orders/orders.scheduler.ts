@@ -439,12 +439,20 @@ export class OrdersScheduler {
       try {
         let systemMessages: any[] = [];
         let conversationId: number | null = null;
+        let transitioned = false;
 
         await this.prisma.$transaction(async (tx) => {
-          await tx.order.update({
-            where: { id: order.id },
+          const claimed = await tx.order.updateMany({
+            where: {
+              id: order.id,
+              status: { in: ['pending_home', 'pending_shop'] },
+            },
             data: { status: 'in_progress', tradeStatus: 'balance_pending' },
           });
+          if (claimed.count !== 1) return;
+          transitioned = true;
+
+          await this.orders.ensureServiceDraft(tx, order, now);
 
           if (order.clientUserId) {
             const preview = '订单即将开始，请做好准备～';
@@ -497,6 +505,8 @@ export class OrdersScheduler {
             systemMessages = [msg1, msg2];
           }
         });
+
+        if (!transitioned) continue;
 
         if (systemMessages.length > 0 && conversationId) {
           try {

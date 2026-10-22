@@ -278,7 +278,7 @@ export class CustomersService {
           include: { photos: { orderBy: [{ stage: 'asc' }, { sortOrder: 'asc' }] } },
         },
         profileFacts: {
-          where: { status: 'active' },
+          where: { status: { in: ['active', 'pending'] } },
           orderBy: { lastConfirmedAt: 'desc' },
         },
         lifecycleHistories: { orderBy: { createdAt: 'desc' }, take: 20 },
@@ -812,6 +812,64 @@ export class CustomersService {
         },
       },
     });
+  }
+
+  async createProfileFact(
+    customerId: number,
+    technicianId: number,
+    category: string,
+    content: string,
+  ) {
+    await this.assertTechnicianCustomer(customerId, technicianId);
+    if (!['allergy', 'contraindication', 'preference', 'communication', 'reminder'].includes(category)) {
+      throw new BadRequestException('档案分类不正确');
+    }
+    const text = String(content || '').trim();
+    if (!text) {
+      throw new BadRequestException('档案内容不能为空');
+    }
+    const now = new Date();
+    return this.prisma.customerProfileFact.upsert({
+      where: { customerId_category_content: { customerId, category, content: text } },
+      create: {
+        customerId,
+        category,
+        content: text,
+        status: 'active',
+        confirmedById: technicianId,
+        firstObservedAt: now,
+        lastConfirmedAt: now,
+      },
+      update: {
+        status: 'active',
+        confirmedById: technicianId,
+        lastConfirmedAt: now,
+      },
+    });
+  }
+
+  async updateProfileFact(
+    customerId: number,
+    factId: number,
+    technicianId: number,
+    status: 'active' | 'inactive',
+  ) {
+    await this.assertTechnicianCustomer(customerId, technicianId);
+    if (!['active', 'inactive'].includes(status)) {
+      throw new BadRequestException('档案状态不正确');
+    }
+    const result = await this.prisma.customerProfileFact.updateMany({
+      where: { id: factId, customerId },
+      data: {
+        status,
+        lastConfirmedAt: new Date(),
+        confirmedById: technicianId,
+      },
+    });
+    if (result.count === 0) {
+      throw new NotFoundException('客户档案信息不存在');
+    }
+    return this.prisma.customerProfileFact.findUnique({ where: { id: factId } });
   }
 
   private async assertTechnicianCustomer(
