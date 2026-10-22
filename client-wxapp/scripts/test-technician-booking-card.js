@@ -69,7 +69,7 @@ assert.equal(normalizeOrder({ ...base, quickBooking: true }).serviceName, '快�
 assert.equal(normalizeOrder({ ...base, isRepeatBooking: true, customTitle: '重新编辑的项目', sourceWork: { title: '原作品名' } }).serviceName, '重新编辑的项目');
 assert(!component.includes('{{order._typeLabel}} · {{order.serviceName}}'));
 assert(component.includes("order.status === 'completed'") && component.includes('发送消息') && component.includes('拨打电话') && component.includes('查看详情'));
-for (const page of ['all-bookings', 'all-itineraries', 'customer-detail', 'schedule']) {
+for (const page of ['all-bookings', 'all-itineraries', 'schedule']) {
   const pageWxml = read(`pages/technician/${page}/index.wxml`);
   assert(pageWxml.includes('variant="schedule"'), `${page} 必须使用统一的行程预约卡片`);
   for (const event of ['quote', 'withdrawquote', 'editbooking', 'reject', 'cancel', 'complete', 'rebook']) {
@@ -85,45 +85,8 @@ for (const action of ['立即报价', '驳回预约', '编辑报价', '取消报
 }
 console.log('预约日期、项目来源及已完成操作检查通过');
 
-// 客户详情只使用该客户详情接口中的订单，并补齐通用卡片的客户身份。
-(async () => {
-  const vm = require('vm');
-  let detailPage;
-  const navigation = [];
-  let requestedId;
-  const api = {
-    technician: { auth: { getUserInfo: async () => ({ shopAddresses: [{ name: '测试门店', detailAddress: '测试地址' }] }) }, customers: { detail: async id => {
-      requestedId = id;
-      return { id: 8, name: '测试客户', phone: '13800000000', clientUserId: 93, orders: [
-        { id: 41, status: 'completed', startTime: '2026-08-30T14:00:00', address: '测试地址', quotePrice: 198, sourceWork: { title: '法式作品' } },
-        { id: 42, status: 'pending_quote', startTime: '2026-08-31T10:00:00', quickBooking: true }
-      ] };
-    } } },
-    chat: { technician: { conversations: async () => [] } }
-  };
-  vm.runInNewContext(read('pages/technician/customer-detail/index.js'), {
-    Page: value => { detailPage = value; },
-    require: name => name.includes('services/api') ? api : require(require('path').resolve(__dirname, '../pages/technician/customer-detail', name)),
-    wx: { navigateTo: value => navigation.push(value.url), showToast: () => {} },
-    console,
-  });
-  detailPage.customerId = 8;
-  detailPage.setData = values => Object.assign(detailPage.data, values);
-  await detailPage.loadCustomer();
-  assert.equal(requestedId, 8);
-  assert.equal(detailPage.data.loadFailed, false);
-  const orders = detailPage.data.customer.orders;
-  assert.equal(orders.length, 2);
-  assert.equal(orders[0].customerName, '测试客户');
-  assert.equal(orders[0].clientUserId, 93);
-  assert.equal(orders[0].serviceName, '法式作品');
-  assert.equal(orders[0]._clock, '14:00');
-  assert.equal(orders[0]._shopName, '测试门店');
-  assert.equal(orders[0]._sourceLabel, '预约同款');
-  assert.equal(orders[1].serviceName, '快捷预约 · 款式待沟通');
-  global.wx = { navigateTo: value => navigation.push(value.url) };
-  detailPage.onBookingCardOpen({ detail: { id: 41 } });
-  assert.equal(navigation[0], '/pages/technician/order-detail/index?id=41');
-  assert(read('pages/technician/customer-detail/index.wxml').includes('<technician-booking-card'));
-  console.log('客户详情预约范围、卡片字段及身份跳转检查通过');
-})().catch(error => { console.error(error); process.exitCode = 1; });
+// 客户详情已改为客户跟进记录，不再复用行程预约卡片。
+const customerDetail = read('pages/technician/customer-detail/index.wxml');
+assert(!customerDetail.includes('<technician-booking-card'), '客户详情不应展示预约卡片');
+assert(customerDetail.includes('客户跟进记录') && customerDetail.includes('openFollowUpSheet'), '客户详情应展示客户跟进记录');
+console.log('客户详情跟进记录边界检查通过');
