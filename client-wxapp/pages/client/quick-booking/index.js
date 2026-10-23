@@ -79,7 +79,7 @@ Page({
 
   viewArtistHome() {
     if (!this.data.artist || !this.techId) return;
-    wx.navigateTo({ url: `/pages/client/artist-home/index?id=${this.techId}&source=quick_booking` });
+    wx.navigateTo({ url: `/pages/client/artist-home/index?id=${this.techId}&source=quick_booking&invite=${encodeURIComponent(this.inviteCode)}` });
   },
 
   async bookNow() {

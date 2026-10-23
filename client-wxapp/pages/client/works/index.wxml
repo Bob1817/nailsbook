@@ -1,4 +1,4 @@
-<nav-bar title="{{businessPage ? '美甲师主页' : '作品'}}" showBack="{{true}}"></nav-bar>
+<nav-bar title="{{galleryOnly ? '全部作品' : (businessPage ? '美甲师主页' : '作品')}}" showBack="{{true}}"></nav-bar>
 
 <view class="page">
   <!-- 内容区 -->
@@ -16,7 +16,7 @@
     </view>
 
     <block wx:else>
-      <view wx:if="{{businessPage && artist}}" class="business-card">
+      <view wx:if="{{businessPage && artist && !galleryOnly}}" class="business-card">
         <view class="business-profile">
           <image wx:if="{{artist.avatarUrl}}" class="business-avatar" src="{{artist.avatarUrl}}" mode="aspectFill" bindtap="viewArtist" data-id="{{artist.id}}" aria-label="查看{{artist.name}}主页" />
           <view wx:else class="business-avatar business-avatar-fallback" bindtap="viewArtist" data-id="{{artist.id}}" role="button" aria-label="查看{{artist.name}}主页"><image src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" /></view>
@@ -70,7 +70,7 @@
           </view>
         </view>
         <text class="empty-title">暂无公开作品</text>
-        <text class="empty-sub">{{businessPage ? '可以先查看服务并发起预约' : '你绑定的美甲师暂时还没有发布作品'}}</text>
+        <text class="empty-sub">{{galleryOnly ? '这位美甲师暂时还没有发布作品' : (businessPage ? '可以先查看服务并发起预约' : '你绑定的美甲师暂时还没有发布作品')}}</text>
       </view>
 
       <!-- 有作品时 -->
@@ -78,7 +78,7 @@
       <!-- 区域标题 -->
       <view class="section-head">
         <view class="section-titles">
-          <text class="section-title">{{businessPage ? '作品画册' : (keyword ? keyword + '灵感' : '精选作品')}}</text>
+          <text class="section-title">{{galleryOnly ? '全部作品' : (businessPage ? '作品画册' : (keyword ? keyword + '灵感' : '精选作品'))}}</text>
           <text class="section-sub">{{businessPage ? '浏览公开作品，选择喜欢的款式' : (keyword ? '为你筛选相关风格作品' : '来自你已绑定美甲师的作品画册')}}</text>
         </view>
         <view wx:if="{{totalCount > 0}}" class="count-badge">
@@ -128,12 +128,12 @@
       <view wx:else class="waterfall">
         <view class="col">
           <view wx:for="{{leftCol}}" wx:key="id">
-            <work-card work="{{item}}" bind:cardtap="viewWork" bind:artisttap="viewArtist" />
+            <work-card work="{{item}}" show-artist="{{!galleryOnly}}" bind:cardtap="viewWork" bind:artisttap="viewArtist" />
           </view>
         </view>
         <view class="col">
           <view wx:for="{{rightCol}}" wx:key="id">
-            <work-card work="{{item}}" bind:cardtap="viewWork" bind:artisttap="viewArtist" />
+            <work-card work="{{item}}" show-artist="{{!galleryOnly}}" bind:cardtap="viewWork" bind:artisttap="viewArtist" />
           </view>
         </view>
       </view>

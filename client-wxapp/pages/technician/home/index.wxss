@@ -130,6 +130,49 @@ page { background: var(--bg-gradient-entry); }
 .business-hero-estimated { border-left: 0; }
 .business-hero-empty { position: relative; padding: 42rpx 0 12rpx; font-size: var(--font-sm); color: var(--text-muted); }
 
+/* ========== 快捷操作 ========== */
+.quick-actions {
+  margin: var(--space-md) var(--space-xl) 0;
+  display: flex;
+  width: auto;
+  min-width: 0;
+  box-sizing: border-box;
+  align-items: stretch;
+  gap: 16rpx;
+  overflow: hidden;
+}
+.quick-action {
+  flex: 1;
+  min-width: 0;
+  min-height: 120rpx;
+  margin: 0;
+  padding: 20rpx 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+  line-height: 1.2;
+}
+.quick-action::after { border: 0; }
+.quick-action-pressed { background: var(--nb-pressed); transform: scale(.98); }
+.quick-action-icon {
+  width: 40rpx;
+  height: 40rpx;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.quick-action-icon image { width: 40rpx; height: 40rpx; }
+.quick-action-title { font-size: var(--font-sm); font-weight: var(--weight-semibold); white-space: nowrap; }
+
 /* ========== 通用卡片 ========== */
 .card {
   margin: var(--space-md) var(--space-xl) 0;
@@ -172,9 +215,9 @@ page { background: var(--bg-gradient-entry); }
   overflow: visible;
 }
 
-.next-empty { padding: var(--space-md) 0 var(--space-xs); }
-.next-empty-title { display: block; font-size: var(--font-lg); font-weight: var(--weight-bold); color: var(--text-primary); }
-.next-empty-sub { display: block; margin-top: 12rpx; font-size: var(--font-sm); line-height: 1.6; color: var(--text-muted); }
+.next-empty { padding: var(--space-sm) 0; text-align: center; }
+.next-empty-title { display: block; font-size: var(--font-lg); font-weight: var(--weight-semibold); color: var(--text-primary); line-height: 1.3; }
+.next-empty-sub { display: block; margin-top: 8rpx; font-size: var(--font-xs); line-height: 1.5; color: var(--text-muted); }
 
 /* ========== 待处理事项 ========== */
 .todo-total-badge { min-width: 48rpx; height: 48rpx; padding: 0 14rpx; border-radius: var(--radius-full); background: var(--brand-gradient); color: var(--text-inverse); font-size: var(--font-xs); font-weight: var(--weight-bold); display: flex; align-items: center; justify-content: center; }
@@ -221,14 +264,6 @@ page { background: var(--bg-gradient-entry); }
 .hw-stat-num { font-size: var(--font-xs); color: rgba(255, 255, 255, 0.82); font-weight: var(--weight-medium); }
 
 /* 跟进 */
-.followup-today { margin-top: var(--space-md); padding-top: 22rpx; border-top: 0; }
-.followup-title { display: block; margin-bottom: 14rpx; color: var(--text-muted); font-size: var(--font-sm); font-weight: var(--weight-bold); }
-.followup-row { min-height: 96rpx; display: flex; align-items: center; gap: var(--space-sm); padding: 12rpx 0; }
-.followup-time { flex-shrink: 0; min-width: 92rpx; color: var(--brand-primary); font-size: var(--font-sm); font-weight: var(--weight-bold); }
-.followup-info { flex: 1; min-width: 0; }
-.followup-name, .followup-content { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.followup-name { color: var(--text-primary); font-size: var(--font-sm); font-weight: var(--weight-bold); }
-.followup-content { margin-top: 5rpx; color: var(--text-muted); font-size: var(--font-xs); }
 .action-task-list { margin-top:12rpx; }
 .action-task-row { min-height:88rpx; display:flex; align-items:center; justify-content:space-between; gap:16rpx; padding:16rpx 0; border-top:1rpx solid var(--nb-line); }
 .action-task-copy { min-width:0; flex:1; }

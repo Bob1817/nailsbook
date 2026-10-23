@@ -62,6 +62,16 @@ Page({
   },
 
   onLoad(options) {
+    if (options.channel === 'wechat_moments' && (options.id || options.shareToken)) {
+      const publicParams = [];
+      if (options.shareToken) publicParams.push('shareToken=' + encodeURIComponent(options.shareToken));
+      else publicParams.push('id=' + encodeURIComponent(options.id));
+      if (options.invite) publicParams.push('invite=' + encodeURIComponent(options.invite));
+      publicParams.push('source=' + encodeURIComponent(options.source || 'work_share'));
+      publicParams.push('channel=wechat_moments');
+      wx.redirectTo({ url: '/pages/client/public-work/index?' + publicParams.join('&') });
+      return;
+    }
     try {
       const rect = wx.getMenuButtonBoundingClientRect();
       this.setData({ viewerCloseTop: rect.top });
@@ -90,6 +100,11 @@ Page({
     try {
       const work = normalizeWorkDetail(await api.technician.works.detail(this.workId));
       work.tags = work.tags ? (typeof work.tags === 'string' ? JSON.parse(work.tags) : work.tags) : [];
+      if (work.sourceService) {
+        work.sourceService.dateText = work.sourceService.completedAt
+          ? formatTime(work.sourceService.completedAt)
+          : '';
+      }
       const imageUrls = work.images ? (typeof work.images === 'string' ? JSON.parse(work.images) : work.images) : [];
       if (imageUrls.length === 0 && work.coverUrl) imageUrls.push(work.coverUrl);
 
@@ -127,11 +142,24 @@ Page({
     this._sharePreparing = true;
     try {
       // 服务端确认该作品当前可公开访问，不能把私密作品按普通 ID 分享。
-      await api.public.works.detail(this.workId);
+      const publicWork = await api.public.works.detail(this.workId);
+      const technicianId = work.technicianId || (work.technician || {}).id || publicWork.technicianId || (publicWork.technician || {}).id;
+      if (!technicianId) throw new Error('作品所属美甲师信息缺失');
+      const artistResult = await api.public.artists.detail(String(technicianId));
+      const artist = artistResult.artist || artistResult || {};
+      if (artist.id && String(artist.id) !== String(technicianId)) throw new Error('作品归属校验失败');
       const profile = wx.getStorageSync('userInfo') || wx.getStorageSync('technician_userInfo') || {};
-      const inviteCode = profile.invitationCode || profile.inviteCode || '';
-      const invite = inviteCode ? '&invite=' + encodeURIComponent(inviteCode) : '';
-      this.setData({ sharePath: '/pages/client/public-work/index?id=' + this.workId + invite });
+      const profileId = profile.id || profile.technicianId;
+      const profileMatches = !profileId || String(profileId) === String(technicianId);
+      const inviteCode = artist.invitationCode
+        || ((publicWork.technician || {}).invitationCode || '')
+        || (profileMatches ? (profile.invitationCode || profile.inviteCode || '') : '');
+      if (!inviteCode) throw new Error('美甲师邀请信息不可用');
+      this.setData({
+        sharePath: '/pages/client/public-work/index?id=' + this.workId
+          + '&invite=' + encodeURIComponent(inviteCode)
+          + '&source=work_share&channel=wechat_share'
+      });
       wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
     } catch (err) {
       this.setData({ sharePath: '' });
@@ -155,7 +183,7 @@ Page({
     trackConversion({ eventType:'work_share_intent', workId:this.data.work.id || this.workId, technicianId:this.data.work.technicianId || (this.data.work.technician || {}).id, channel:'wechat_moments', touchpoint:'work_share' });
     return {
       title: require('../../../utils/share-copy').buildWorkShareTitle(this.data.work),
-      query: this.data.sharePath.split('?')[1] + '&channel=wechat_moments',
+      query: this.data.sharePath.split('?')[1].replace(/channel=[^&]*/, 'channel=wechat_moments'),
       imageUrl: this.data.imageUrls[0] || ''
     };
   },
@@ -205,6 +233,20 @@ Page({
   editWork() {
     if (!this.workId) return;
     wx.navigateTo({ url: `/pages/technician/work-edit/index?id=${this.workId}` });
+  },
+
+  openSourceRecord() {
+    const source = this.data.work && this.data.work.sourceService;
+    if (source && source.orderId && source.recordId) {
+      wx.navigateTo({ url: `/pages/technician/complete-service/index?id=${source.orderId}&mode=record` });
+    }
+  },
+
+  openSourceOrder() {
+    const source = this.data.work && this.data.work.sourceService;
+    if (source && source.orderId) {
+      wx.navigateTo({ url: `/pages/technician/order-detail/index?id=${source.orderId}` });
+    }
   },
 
   showWorkActions(e) {

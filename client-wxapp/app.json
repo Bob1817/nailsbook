@@ -16,7 +16,7 @@
         "designs/index", "create-design/index", "customize-design/index", "design-detail/index", "chat/index",
         "chat-detail/index", "profile/index", "profile-completion/index", "my-technicians/index", "settings/index", "my-favorites/index", "my-likes/index",
         "feedback/index", "manual/index", "agreement/index", "help-feedback/index",
-        "shop-guidance/index"
+        "shop-guidance/index", "quote-confirm/index", "quote-booking/index"
       ]
     },
     {
@@ -30,7 +30,7 @@
         "account-security/index", "service-time/index", "shop-management/index", "tag-management/index",
         "referral-campaign/index", "marketing-materials/index",
         "help-feedback/index", "about/index",
-        "shop-guidance-edit/index", "edit-booking-time/index"
+        "shop-guidance-edit/index", "edit-booking-time/index", "quick-quote/index", "quote-records/index"
       ]
     }
   ],

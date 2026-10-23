@@ -133,6 +133,7 @@ Page({
     inviteCode: '',
     inviteName: '',
     inviteAvatarUrl: '',
+    showInviteGuide: false,
     loading: true,
     loadFailed: false
   },
@@ -298,7 +299,12 @@ Page({
     this.prepareInviteShare();
   },
 
+  openInviteGuide() { this.setData({ showInviteGuide: true }); },
+  closeInviteGuide() { this.setData({ showInviteGuide: false }); },
+  preventBubble() {},
+
   onShareAppMessage() {
+    if (this.data.showInviteGuide) this.setData({ showInviteGuide: false });
     const code = this.data.inviteCode;
     if (!code) return { title: '邀请你加入 OnlyNail', path: '/pages/login/index' };
     const share = {

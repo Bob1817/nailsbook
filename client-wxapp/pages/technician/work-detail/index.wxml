@@ -6,4 +6,14 @@
   <view wx:if="{{work.preparation.preparation}}" class="preparation-row"><text>前置准备</text><text>{{work.preparation.preparation}}</text></view>
   <view wx:if="{{work.preparation.steps}}" class="preparation-row"><text>关键步骤</text><text>{{work.preparation.steps}}</text></view>
   <view wx:if="{{work.preparation.riskNotes}}" class="preparation-row"><text>注意事项</text><text>{{work.preparation.riskNotes}}</text></view>
+  <text wx:if="{{work.preparation.sourceRecordCount}}" class="preparation-source">该方案基于 {{work.preparation.sourceRecordCount}} 次实际服务完善</text>
+</view>
+<view wx:if="{{work.sourceService}}" class="source-service-card">
+  <view class="preparation-head"><text class="preparation-title">经验来源</text><text class="preparation-private">仅美甲师可见</text></view>
+  <view wx:if="{{work.sourceService.recordId}}" class="source-service-row" bindtap="openSourceRecord" role="button" aria-label="查看来源美甲记录">
+    <view><text class="source-service-label">最近沉淀的美甲记录</text><text class="source-service-meta">{{work.sourceService.dateText || '已完善记录'}}</text></view><text class="source-service-arrow">›</text>
+  </view>
+  <view class="source-service-row" bindtap="openSourceOrder" role="button" aria-label="查看来源预约">
+    <view><text class="source-service-label">关联预约</text><text class="source-service-meta">{{work.sourceService.orderNo || '查看预约详情'}}</text></view><text class="source-service-arrow">›</text>
+  </view>
 </view>

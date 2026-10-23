@@ -34,6 +34,13 @@
   align-items: center; pointer-events: none;
 }
 .title-zone.title-left { flex: 1; padding-left: var(--space-md); align-items: flex-start; }
+.title-zone.back-title-left {
+  position: static;
+  flex: 1;
+  padding-left: 4rpx;
+  align-items: flex-start;
+  pointer-events: auto;
+}
 
 .subtitle {
   font-size: var(--font-xs); font-weight: var(--weight-medium);
@@ -54,10 +61,15 @@
   color: var(--text-primary); letter-spacing: -0.5rpx;
   line-height: var(--leading-tight);
 }
+.title-zone.back-title-left .title {
+  font-size: var(--font-xl);
+  font-weight: var(--weight-bold);
+  text-align: left;
+}
 .nav-bar.light .title { color: var(--text-inverse); }
 
 /* 右侧 */
-.nav-right { width: 96rpx; display: flex; align-items: center; justify-content: flex-end; flex-shrink: 0; }
+.nav-right { position:absolute; top:0; bottom:0; width:96rpx; display:flex; align-items:center; justify-content:flex-end; }
 
 /* 占位 */
 .nav-placeholder { width: 100%; }

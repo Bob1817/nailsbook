@@ -3,77 +3,231 @@
   <view wx:if="{{loading}}" class="card">正在加载预约信息…</view>
   <view wx:elif="{{loadError}}" class="card"><text>{{loadError}}</text><button class="ghost booking-action" bindtap="loadOrder">重新加载</button></view>
   <block wx:elif="{{loaded}}">
-    <block wx:if="{{!saved}}">
-      <view class="record-status"><text>{{recordStatus === 'complete' ? '记录已完善' : '记录草稿'}}</text><text>内容自动关联当前预约与客户</text></view>
+    <block wx:if="{{isRecordMode}}">
+      <view class="record-status"><text>{{recordStatus === 'complete' ? '记录已完善' : '记录草稿'}}</text><text wx:if="{{detailCompletedAtText}}">完善于 {{detailCompletedAtText}}</text></view>
 
-      <view wx:if="{{orderStatus !== 'completed'}}" class="card">
-        <text class="title">实际服务信息</text>
-        <label>开始时间 *</label>
-        <view class="time-fields">
-          <picker class="date-picker" mode="date" value="{{startDate}}" data-field="startDate" bindchange="changeTime"><view class="form-input picker-value">{{startDate || '选择日期'}}<text>›</text></view></picker>
-          <picker class="time-picker" mode="time" value="{{startTime}}" data-field="startTime" bindchange="changeTime"><view class="form-input picker-value">{{startTime || '选择时间'}}<text>›</text></view></picker>
+      <view class="card">
+        <text class="title">{{orderSummary.title}}</text>
+        <view class="detail-grid">
+          <view class="detail-row"><text class="detail-label">客户</text><text class="detail-value">{{customerName || '—'}}</text></view>
+          <view class="detail-row"><text class="detail-label">服务日期</text><text class="detail-value">{{detailDateText || '—'}}</text></view>
+          <view class="detail-row"><text class="detail-label">服务时长</text><text class="detail-value">{{detailDurationText || '—'}}</text></view>
+          <view class="detail-row"><text class="detail-label">实收金额</text><text class="detail-value">¥{{actualAmount || '0'}}</text></view>
+          <view class="detail-row"><text class="detail-label">材料成本</text><text class="detail-value">¥{{materialCost || '0'}}</text></view>
         </view>
-        <label>结束时间 *</label>
-        <view class="time-fields">
-          <picker class="date-picker" mode="date" value="{{endDate}}" data-field="endDate" bindchange="changeTime"><view class="form-input picker-value">{{endDate || '选择日期'}}<text>›</text></view></picker>
-          <picker class="time-picker" mode="time" value="{{endTime}}" data-field="endTime" bindchange="changeTime"><view class="form-input picker-value">{{endTime || '选择时间'}}<text>›</text></view></picker>
-        </view>
-        <label>实际支付金额 *</label><input class="form-input" type="digit" data-field="actualAmount" value="{{actualAmount}}" bindinput="input"/>
-        <label>材料成本 *</label><input class="form-input" type="digit" data-field="materialCost" value="{{materialCost}}" bindinput="input"/>
       </view>
 
       <view class="card">
         <text class="title">过程照片</text>
-        <text class="section-hint">服务前、过程中和完成后分别留档，每组最多 9 张。</text>
         <view wx:for="{{photoStages}}" wx:key="key" class="photo-section">
-          <view class="photo-head"><text>{{item.label}}</text><button class="photo-add" data-stage="{{item.key}}" bindtap="choosePhotos" disabled="{{uploading}}">＋ 添加</button></view>
+          <view class="photo-head"><text>{{item.label}}</text></view>
           <scroll-view scroll-x class="photo-strip">
             <view class="photo-list">
-              <view wx:for="{{item.key === 'before' ? beforePhotos : (item.key === 'during' ? duringPhotos : afterPhotos)}}" wx:for-item="url" wx:for-index="photoIndex" wx:key="*this" class="photo-wrap">
+              <view wx:for="{{item.key === 'before' ? beforePhotos : (item.key === 'during' ? duringPhotos : afterPhotos)}}" wx:for-item="url" wx:key="*this" class="photo-wrap">
                 <image class="record-photo" src="{{url}}" mode="aspectFill" data-stage="{{item.key}}" data-url="{{url}}" bindtap="previewPhoto"/>
-                <view class="photo-remove" data-stage="{{item.key}}" data-index="{{photoIndex}}" catchtap="removePhoto">×</view>
               </view>
-              <text wx:if="{{(item.key === 'before' && !beforePhotos.length) || (item.key === 'during' && !duringPhotos.length) || (item.key === 'after' && !afterPhotos.length)}}" class="photo-empty">尚未添加</text>
+              <text wx:if="{{(item.key === 'before' && !beforePhotos.length) || (item.key === 'during' && !duringPhotos.length) || (item.key === 'after' && !afterPhotos.length)}}" class="photo-empty">暂无照片</text>
             </view>
           </scroll-view>
         </view>
       </view>
 
       <view class="card">
-        <text class="title">本次服务事实</text>
-        <label>使用材料</label><textarea class="form-textarea" value="{{materials}}" data-field="materials" bindinput="input" placeholder="品牌、色号、胶型"/>
-        <label>使用工具</label><textarea class="form-textarea" value="{{tools}}" data-field="tools" bindinput="input" placeholder="打磨头、笔刷、灯具等"/>
-        <label>制作步骤与技法</label><textarea class="form-textarea" value="{{techniques}}" data-field="techniques" bindinput="input" placeholder="关键步骤、顺序和调整"/>
-        <label>服务前指甲情况 *</label><textarea class="form-textarea" value="{{nailCondition}}" data-field="nailCondition" bindinput="input" placeholder="甲面、甲型、损伤和敏感情况"/>
-        <label>客户过程反应</label><textarea class="form-textarea" value="{{clientReaction}}" data-field="clientReaction" bindinput="input" placeholder="无异常、敏感、疼痛或其他反应"/>
-        <label>不适或异常</label><textarea class="form-textarea" value="{{discomfortNotes}}" data-field="discomfortNotes" bindinput="input"/>
-        <label>客户反馈</label><textarea class="form-textarea" value="{{customerFeedback}}" data-field="customerFeedback" bindinput="input"/>
-        <label>本次偏好观察</label><textarea class="form-textarea" value="{{preferenceNotes}}" data-field="preferenceNotes" bindinput="input"/>
-        <label>下次服务准备</label><textarea class="form-textarea" value="{{nextServiceNotes}}" data-field="nextServiceNotes" bindinput="input" placeholder="前置工作、替代材料和注意事项"/>
-        <label>护理建议</label><textarea class="form-textarea" value="{{careAdvice}}" data-field="careAdvice" bindinput="input"/>
+        <text class="title">美甲总结</text>
+        <view class="detail-row"><text class="detail-label">服务前甲面情况</text><text class="detail-value">{{nailCondition || '未记录'}}</text></view>
+        <view class="detail-row"><text class="detail-label">本次注意事项</text><text class="detail-value">{{preServiceNotes || '未记录'}}</text></view>
+        <view class="detail-row"><text class="detail-label">客户临时需求</text><text class="detail-value">{{clientRequests || '未记录'}}</text></view>
+        <view class="detail-row"><text class="detail-label">使用材料</text><text class="detail-value">{{materials || '未记录'}}</text></view>
+        <view class="detail-row"><text class="detail-label">使用工具</text><text class="detail-value">{{tools || '未记录'}}</text></view>
+        <view class="detail-row"><text class="detail-label">制作步骤与技法</text><text class="detail-value">{{techniques || '未记录'}}</text></view>
+        <view class="detail-row"><text class="detail-label">客户过程反应</text><text class="detail-value">{{clientReaction || '未记录'}}</text></view>
+        <view class="detail-row"><text class="detail-label">客户反应</text><text class="detail-value">{{reactionLevel || '未记录'}}</text></view>
+        <view class="detail-row"><text class="detail-label">不适或异常</text><text class="detail-value">{{discomfortNotes || '未记录'}}</text></view>
+        <view class="detail-row"><text class="detail-label">客户反馈</text><text class="detail-value">{{customerFeedback || '未记录'}}</text></view>
+        <view class="detail-row"><text class="detail-label">本次偏好观察</text><text class="detail-value">{{preferenceNotes || '未记录'}}</text></view>
+        <view class="detail-row"><text class="detail-label">下次服务准备</text><text class="detail-value">{{nextServiceNotes || '未记录'}}</text></view>
+        <view class="detail-row"><text class="detail-label">护理建议</text><text class="detail-value">{{careAdvice || '未记录'}}</text></view>
+        <view class="detail-row"><text class="detail-label">安全信息确认</text><text class="detail-value">{{safetyConfirmed ? '已确认 ' + safetyConfirmedText : '未确认'}}</text></view>
       </view>
 
       <view class="card">
-        <text class="title">确认同步到客户档案</text>
-        <text class="section-hint">只填写已经确认、下次服务仍然有用的信息。</text>
-        <label>过敏史</label><input class="form-input" value="{{factAllergy}}" data-field="factAllergy" bindinput="input" placeholder="例如：对某类胶敏感"/>
-        <label>禁忌</label><input class="form-input" value="{{factContraindication}}" data-field="factContraindication" bindinput="input"/>
-        <label>稳定偏好</label><input class="form-input" value="{{factPreference}}" data-field="factPreference" bindinput="input"/>
-        <label>沟通习惯</label><input class="form-input" value="{{factCommunication}}" data-field="factCommunication" bindinput="input"/>
-        <label>特别提醒</label><input class="form-input" value="{{factReminder}}" data-field="factReminder" bindinput="input"/>
+        <text class="title">关联信息</text>
+        <view class="detail-link" bindtap="openOrderDetail" role="button" aria-label="查看关联预约">
+          <view><text class="detail-value">关联预约</text><text class="detail-link-sub">{{orderSummary.orderNo || orderSummary.meta}}</text></view>
+          <text class="detail-arrow">›</text>
+        </view>
+        <view wx:if="{{relatedWork}}" class="detail-link" bindtap="openWorkDetail" role="button" aria-label="查看关联作品">
+          <view><text class="detail-value">{{relatedWork.relationText}}</text><text class="detail-link-sub">{{relatedWork.title || '关联作品'}}</text></view>
+          <text class="detail-arrow">›</text>
+        </view>
+      </view>
+    </block>
+    <block wx:elif="{{!saved}}">
+      <view class="record-status">
+        <text>{{recordStatus === 'complete' ? '记录已完善' : '记录草稿'}}</text>
+        <text wx:if="{{saveState === 'saving'}}">保存中…</text>
+        <text wx:elif="{{saveState === 'failed'}}" bindtap="retrySave" role="button" aria-label="重试自动保存">{{saveErrorText}} · 重试</text>
+        <text wx:elif="{{saveState === 'saved'}}">已保存 {{lastSavedText}}</text>
+        <text wx:else>填写内容自动保存</text>
+      </view>
+
+      <view wx:if="{{missingLabels.length && orderStatus === 'completed'}}" class="card missing-card">
+        <text class="title">待补全</text>
+        <text class="section-hint">{{missingText}}</text>
+      </view>
+
+      <view class="card summary-card">
+        <text class="title">这个客户需要注意什么</text>
+        <view wx:if="{{customerAlerts.length}}" class="alert-list">
+          <view wx:for="{{customerAlerts}}" wx:key="*this" class="alert-row"><text class="alert-mark">!</text><text>{{item}}</text></view>
+        </view>
+        <text wx:else class="section-hint">暂无已记录的过敏或禁忌</text>
+        <view class="confirm-row" bindtap="confirmSafety" role="button" aria-label="确认已知悉客户过敏与禁忌">
+          <text class="confirm-check">{{safetyConfirmed ? '✓' : '○'}}</text>
+          <text>{{safetyConfirmed ? '过敏与禁忌已确认 ' + safetyConfirmedText : '确认已知悉过敏与禁忌'}}</text>
+        </view>
+      </view>
+
+      <view class="card summary-card">
+        <text class="title">这个款式需要准备什么</text>
+        <block wx:if="{{preparations.length}}">
+          <view wx:for="{{preparations}}" wx:key="workId" class="preparation-item">
+            <text class="context-work-title">{{item.title}}</text>
+            <view wx:if="{{item.tools}}" class="context-block"><text class="context-label">工具</text><text>{{item.tools}}</text></view>
+            <view wx:if="{{item.materials}}" class="context-block"><text class="context-label">材料</text><text>{{item.materials}}</text></view>
+            <view wx:if="{{item.preparation}}" class="context-block"><text class="context-label">前置准备</text><text>{{item.preparation}}</text></view>
+            <view wx:if="{{item.steps}}" class="context-block"><text class="context-label">关键步骤</text><text>{{item.steps}}</text></view>
+            <view wx:if="{{item.riskNotes}}" class="context-block"><text class="context-label">注意事项</text><text>{{item.riskNotes}}</text></view>
+            <text wx:if="{{item.estimatedMinutes}}" class="context-meta">历史制作约 {{item.estimatedMinutes}} 分钟</text>
+          </view>
+        </block>
+        <text wx:else class="section-hint">本次预约没有关联作品的制作方案</text>
+      </view>
+
+      <view class="card">
+        <text class="title">一、服务前</text>
+        <text class="section-hint">开始服务时先拍服务前照片，再确认甲面情况。</text>
+        <view class="photo-section">
+          <view class="photo-head"><text>服务前照片</text><button class="photo-add" data-stage="before" bindtap="choosePhotos" disabled="{{uploading}}">＋ 添加</button></view>
+          <scroll-view scroll-x class="photo-strip">
+            <view class="photo-list">
+              <view wx:for="{{beforePhotos}}" wx:key="*this" class="photo-wrap">
+                <image class="record-photo" src="{{item}}" mode="aspectFill" data-stage="before" data-url="{{item}}" bindtap="previewPhoto"/>
+                <view class="photo-remove" data-stage="before" data-index="{{index}}" catchtap="removePhoto">×</view>
+              </view>
+              <text wx:if="{{!beforePhotos.length}}" class="photo-empty">尚未添加</text>
+            </view>
+          </scroll-view>
+        </view>
+        <view class="confirm-row" bindtap="confirmNailCondition" role="button" aria-label="确认已记录当前甲面情况">
+          <text class="confirm-check">{{nailConditionConfirmed ? '✓' : '○'}}</text>
+          <text>{{nailConditionConfirmed ? '甲面情况已确认 ' + nailConditionConfirmedText : '确认已记录当前甲面情况'}}</text>
+        </view>
+        <label>当前甲面、甲型与受损情况 *</label>
+        <view class="chip-row">
+          <view wx:for="{{nailConditionSuggestions}}" wx:key="*this" class="chip" data-field="nailCondition" data-value="{{item}}" bindtap="pickSuggestion">{{item}}</view>
+        </view>
+        <textarea class="form-textarea" value="{{nailCondition}}" data-field="nailCondition" bindinput="input" placeholder="甲面、甲型、损伤和敏感情况"/>
+        <label>本次注意事项</label><textarea class="form-textarea" value="{{preServiceNotes}}" data-field="preServiceNotes" bindinput="input" placeholder="本次需要特别留意的处理"/>
+        <label>客户临时需求</label><textarea class="form-textarea" value="{{clientRequests}}" data-field="clientRequests" bindinput="input" placeholder="客户本次临时提出或调整的需求"/>
+      </view>
+
+      <view class="card">
+        <view class="section-toggle" bindtap="toggleProcessDetails" role="button" aria-label="{{showProcessDetails ? '收起过程细节' : '补充过程细节'}}">
+          <view><text class="title">二、过程细节</text><text class="section-hint">可选，只记录对下次服务有用的差异。</text></view>
+          <text class="section-arrow">{{showProcessDetails ? '收起' : '展开'}} ›</text>
+        </view>
+        <block wx:if="{{showProcessDetails}}">
+        <view class="photo-section">
+          <view class="photo-head"><text>过程照片</text><button class="photo-add" data-stage="during" bindtap="choosePhotos" disabled="{{uploading}}">＋ 添加</button></view>
+          <scroll-view scroll-x class="photo-strip">
+            <view class="photo-list">
+              <view wx:for="{{duringPhotos}}" wx:key="*this" class="photo-wrap">
+                <image class="record-photo" src="{{item}}" mode="aspectFill" data-stage="during" data-url="{{item}}" bindtap="previewPhoto"/>
+                <view class="photo-remove" data-stage="during" data-index="{{index}}" catchtap="removePhoto">×</view>
+              </view>
+              <text wx:if="{{!duringPhotos.length}}" class="photo-empty">尚未添加</text>
+            </view>
+          </scroll-view>
+        </view>
+        <label>使用材料</label>
+        <view wx:if="{{materialSuggestions.length}}" class="chip-row">
+          <view wx:for="{{materialSuggestions}}" wx:key="*this" class="chip" data-field="materials" data-value="{{item}}" bindtap="pickSuggestion">{{item}}</view>
+        </view>
+        <textarea class="form-textarea" value="{{materials}}" data-field="materials" bindinput="input" placeholder="品牌、色号、胶型"/>
+        <label>使用工具</label>
+        <view wx:if="{{toolSuggestions.length}}" class="chip-row">
+          <view wx:for="{{toolSuggestions}}" wx:key="*this" class="chip" data-field="tools" data-value="{{item}}" bindtap="pickSuggestion">{{item}}</view>
+        </view>
+        <textarea class="form-textarea" value="{{tools}}" data-field="tools" bindinput="input" placeholder="打磨头、笔刷、灯具等"/>
+        <label>制作步骤与技法</label><textarea class="form-textarea" value="{{techniques}}" data-field="techniques" bindinput="input" placeholder="关键步骤、顺序和调整"/>
+        <label>客户过程反应</label><textarea class="form-textarea" value="{{clientReaction}}" data-field="clientReaction" bindinput="input" placeholder="无异常、敏感、疼痛或其他反应"/>
+        <label>不适或异常</label><textarea class="form-textarea" value="{{discomfortNotes}}" data-field="discomfortNotes" bindinput="input"/>
+        </block>
+      </view>
+
+      <view class="card">
+        <text class="title">三、完成后</text>
+        <view wx:if="{{orderStatus !== 'completed'}}" class="completion-fields">
+          <label>开始时间 *</label>
+          <view class="time-fields">
+            <picker class="date-picker" mode="date" value="{{startDate}}" data-field="startDate" bindchange="changeTime"><view class="form-input picker-value">{{startDate || '选择日期'}}<text>›</text></view></picker>
+            <picker class="time-picker" mode="time" value="{{startTime}}" data-field="startTime" bindchange="changeTime"><view class="form-input picker-value">{{startTime || '选择时间'}}<text>›</text></view></picker>
+          </view>
+          <label>结束时间 *</label>
+          <view class="time-fields">
+            <picker class="date-picker" mode="date" value="{{endDate}}" data-field="endDate" bindchange="changeTime"><view class="form-input picker-value">{{endDate || '选择日期'}}<text>›</text></view></picker>
+            <picker class="time-picker" mode="time" value="{{endTime}}" data-field="endTime" bindchange="changeTime"><view class="form-input picker-value">{{endTime || '选择时间'}}<text>›</text></view></picker>
+          </view>
+          <label>实际支付金额 *</label><input class="form-input" type="digit" data-field="actualAmount" value="{{actualAmount}}" bindinput="input"/>
+          <label>材料成本 *</label><input class="form-input" type="digit" data-field="materialCost" value="{{materialCost}}" bindinput="input"/>
+        </view>
+        <view class="photo-section">
+          <view class="photo-head"><text>完成后照片</text><button class="photo-add" data-stage="after" bindtap="choosePhotos" disabled="{{uploading}}">＋ 添加</button></view>
+          <scroll-view scroll-x class="photo-strip">
+            <view class="photo-list">
+              <view wx:for="{{afterPhotos}}" wx:key="*this" class="photo-wrap">
+                <image class="record-photo" src="{{item}}" mode="aspectFill" data-stage="after" data-url="{{item}}" bindtap="previewPhoto"/>
+                <view class="photo-remove" data-stage="after" data-index="{{index}}" catchtap="removePhoto">×</view>
+              </view>
+              <text wx:if="{{!afterPhotos.length}}" class="photo-empty">尚未添加</text>
+            </view>
+          </scroll-view>
+        </view>
+        <label>客户反应 *</label>
+        <view class="chip-row">
+          <view wx:for="{{reactionOptions}}" wx:key="value" class="chip {{reactionLevel === item.value ? 'chip-active' : ''}}" data-value="{{item.value}}" bindtap="selectReaction">{{item.label}}</view>
+        </view>
+        <label>客户反馈</label><textarea class="form-textarea" value="{{customerFeedback}}" data-field="customerFeedback" bindinput="input"/>
+        <label>本次偏好观察</label>
+        <view class="chip-row">
+          <view wx:for="{{preferenceSuggestions}}" wx:key="*this" class="chip" data-field="preferenceNotes" data-value="{{item}}" bindtap="pickSuggestion">{{item}}</view>
+        </view>
+        <textarea class="form-textarea" value="{{preferenceNotes}}" data-field="preferenceNotes" bindinput="input" placeholder="仅补充本次新发现"/>
+        <label>护理建议</label><textarea class="form-textarea" value="{{careAdvice}}" data-field="careAdvice" bindinput="input"/>
+        <label>下次服务准备</label><textarea class="form-textarea" value="{{nextServiceNotes}}" data-field="nextServiceNotes" bindinput="input" placeholder="前置工作、替代材料和注意事项"/>
+      </view>
+
+      <view class="card">
+        <text class="title">沉淀作品经验</text>
+        <text class="section-hint">可选，仅同步工具、材料、制作步骤和耗时；客户信息仍保留在美甲记录。</text>
+        <view class="confirm-row" bindtap="toggleWorkSync" role="button" aria-label="{{workAssociation.label}}">
+          <text class="confirm-check">{{syncWorkResult ? '✓' : '○'}}</text>
+          <text>{{workAssociation.label}}</text>
+        </view>
       </view>
 
       <view class="record-actions">
-        <button class="ghost booking-action" disabled="{{submitting || uploading}}" bindtap="saveDraft">{{uploading ? '照片上传中…' : '保存草稿'}}</button>
-        <button class="primary booking-action" disabled="{{submitting || uploading}}" loading="{{submitting}}" bindtap="submit">{{orderStatus === 'completed' ? '保存并完善记录' : '确认完成服务'}}</button>
+        <button class="primary booking-action" disabled="{{submitting || uploading || syncingWork}}" loading="{{submitting || syncingWork}}" bindtap="submit">{{orderStatus === 'completed' ? '保存美甲记录' : '完成预约并保存记录'}}</button>
       </view>
-      <text class="completion-tip">填写服务前情况并添加至少一张完成后照片后，记录会标记为已完善；否则保留待办继续补充。</text>
+      <text class="completion-tip">缺少服务前照片、完成后照片、甲面情况或客户反应时，预约仍可完成，美甲记录会保留为待补全。</text>
     </block>
     <block wx:else>
       <view class="card success-card">
         <text class="success-icon">✓</text><text class="success-title">{{recordStatus === 'complete' ? '美甲记录已完善' : '服务已完成，记录待补全'}}</text>
         <text class="success-desc">{{customerName ? '客户：' + customerName : '本次服务已保存'}}</text>
-        <button wx:if="{{orderStatus !== 'completed' || recordStatus === 'complete'}}" class="primary booking-action" loading="{{openingWork}}" bindtap="goPublishWork">{{openingWork ? '准备作品草稿…' : '整理关联作品'}}</button>
+        <text wx:if="{{workSyncNotice}}" class="success-tip">{{workSyncNotice}}</text>
+        <button wx:if="{{relatedWork}}" class="ghost booking-action" bindtap="openWorkDetail">查看关联作品</button>
         <button class="ghost booking-action" bindtap="finishAndBack">返回预约</button>
       </view>
     </block>

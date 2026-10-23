@@ -17,7 +17,7 @@
         />
         <view wx:if="{{keyword}}" class="search-clear" bindtap="clearKeyword" role="button" aria-label="清空搜索"><view class="clear-line"></view></view>
       </view>
-      <button wx:if="{{inviteCode}}" class="btn-invite booking-action" open-type="share" hover-class="btn-invite-pressed" aria-label="发送客户注册链接给微信好友">
+      <button wx:if="{{inviteCode}}" class="btn-invite booking-action" bindtap="openInviteGuide" hover-class="btn-invite-pressed" aria-label="邀请客户">
         <text class="invite-icon">+</text>
         <text class="invite-text">邀请</text>
       </button>
@@ -62,12 +62,6 @@
   <!-- 可滚动客户列表 -->
   <scroll-view scroll-y class="list-scroll" enhanced show-scrollbar="{{false}}">
   <view class="list-area">
-    <view class="customer-flow-card">
-      <text class="customer-flow-title">客户与预约流程</text>
-      <text class="customer-flow-desc">邀请客户后会直接建立关系，无需审批。客户提交预约后，你完成报价，客户确认即创建预约。</text>
-      <view class="customer-flow-steps"><text>1 邀请绑定</text><text>2 客户预约</text><text>3 提交报价</text><text>4 客户确认</text></view>
-      <text class="customer-flow-note">也可以进入客户档案，选择客户后代其发起预约。</text>
-    </view>
     <!-- 骨架屏 -->
     <view wx:if="{{loading && customers.length === 0}}" class="skeleton-list">
       <view wx:for="{{[1,2,3]}}" wx:key="*this" class="skel-card"></view>
@@ -143,6 +137,21 @@
     </view>
   </view>
   </scroll-view>
+</view>
+
+<view wx:if="{{showInviteGuide}}" class="invite-guide-mask" bindtap="closeInviteGuide">
+  <view class="invite-guide-dialog" catchtap="preventBubble" role="dialog" aria-label="邀请客户说明">
+    <text class="invite-guide-title">邀请客户</text>
+    <text class="invite-guide-desc">邀请客户后会直接建立关系，无需审批。客户注册或登录后自动与你绑定，即可发起预约。</text>
+    <view class="invite-guide-flow">
+      <text>1 发送邀请</text><text>2 客户注册或登录</text><text>3 自动绑定</text><text>4 发起预约</text>
+    </view>
+    <text class="invite-guide-note">你也可以进入客户档案，选择客户后代其发起预约。</text>
+    <view class="invite-guide-actions">
+      <view class="invite-guide-cancel" bindtap="closeInviteGuide" role="button">取消</view>
+      <button class="invite-guide-share booking-action" open-type="share" aria-label="发送客户注册链接给微信好友">发送邀请</button>
+    </view>
+  </view>
 </view>
 
 

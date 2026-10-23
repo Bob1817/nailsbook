@@ -3,14 +3,24 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 let definition, resolvePreview, previews = 0, exportCalls = 0, failList = false;
-const api = { technician: { marketingMaterials: {
-  list: async () => { if (failList) throw new Error('offline'); return { list: [] }; },
-  preview: () => { previews++; return new Promise(resolve => { resolvePreview = resolve; }); },
-  export: async () => { exportCalls++; throw new Error('offline'); }
-} } };
+const api = { technician: {
+  auth: { getUserInfo: async () => ({ invitationCode: 'ABCD1234' }) },
+  brandProfile: { get: async () => ({ publicationStatus: 'published' }) },
+  works: { list: async () => ({ list: [{ publicationStatus: 'approved', isVisible: true, visibilityScope: 'public' }] }) },
+  marketingMaterials: {
+    list: async () => { if (failList) throw new Error('offline'); return { list: [] }; },
+    preview: () => { previews++; return new Promise(resolve => { resolvePreview = resolve; }); },
+    export: async () => { exportCalls++; throw new Error('offline'); }
+  }
+} };
 vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../pages/technician/marketing-materials/index.js'), 'utf8'), {
   Page: value => { definition = value; }, require: () => api,
-  wx: { showToast() {}, env: { USER_DATA_PATH: '/mock' }, getFileSystemManager: () => ({ writeFileSync() {} }) }
+  wx: {
+    showToast() {},
+    getStorageSync() { return {}; },
+    env: { USER_DATA_PATH: '/mock' },
+    getFileSystemManager: () => ({ writeFileSync() {} })
+  }
 });
 function page() {
   return { ...definition, data: { ...definition.data, title: '原草稿', editingId: 1 },
@@ -18,6 +28,10 @@ function page() {
 }
 (async () => {
   const p = page();
+  await p.loadMarketingOverview();
+  assert.equal(p.data.completionPercent, 100);
+  assert.equal(p.data.completionDoneCount, 3);
+  assert.equal(p.data.completionItems.length, 3);
   const pending = p.previewMaterial();
   await Promise.resolve();
   await p.previewMaterial(); await p.exportMaterial(); p.newMaterial();
@@ -37,5 +51,5 @@ function page() {
   assert.equal(p.data.loadFailed, true);
   failList = false; await p.loadMaterials();
   assert.equal(p.data.loadFailed, false);
-  console.log('营销素材：操作互斥、旧预览失效、失败恢复及列表重试通过');
+  console.log('营销工具：配置完成度、素材操作互斥、旧预览失效、失败恢复及列表重试通过');
 })().catch(error => { console.error(error); process.exitCode = 1; });

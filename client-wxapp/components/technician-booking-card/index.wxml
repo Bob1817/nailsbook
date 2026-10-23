@@ -137,7 +137,11 @@
       <view class="schedule-action schedule-action-secondary" catchtap="withdrawQuote" role="button" aria-label="取消报价">取消报价</view>
       <view class="schedule-action schedule-action-primary" catchtap="quote" role="button" aria-label="编辑报价">编辑报价</view>
     </block>
-    <block wx:elif="{{order._actionStatus === 'pending_confirm' || order._actionStatus === 'pending_shop'}}">
+    <block wx:elif="{{order._actionStatus === 'pending_confirm'}}">
+      <view class="schedule-action schedule-action-secondary" catchtap="reject" role="button" aria-label="驳回申请">驳回申请</view>
+      <view class="schedule-action schedule-action-primary" catchtap="confirm" role="button" aria-label="同意预约">同意预约</view>
+    </block>
+    <block wx:elif="{{order._actionStatus === 'pending_shop'}}">
       <view class="schedule-action schedule-action-secondary" catchtap="editBooking" role="button" aria-label="编辑预约">编辑预约</view>
       <view class="schedule-action schedule-action-danger" catchtap="cancel" role="button" aria-label="取消预约">取消预约</view>
     </block>
@@ -151,6 +155,7 @@
     </block>
     <view wx:else class="schedule-action schedule-action-primary schedule-action-single" catchtap="open" role="button" aria-label="查看预约详情">预约详情</view>
   </view>
+  <booking-confirm wx:if="{{confirming}}" order="{{confirming}}" bind:close="closeConfirmDialog" bind:saved="onConfirmDialogSaved" />
 </view>
 
 <view wx:else class="booking-card booking-card-compact" bindtap="open" role="button" aria-label="查看{{order.customerName}}的预约详情">

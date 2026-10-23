@@ -43,6 +43,7 @@ async function promptReason(title, placeholderText) {
 }
 
 const technicianBookingCardHandlers = {
+  onBookingCardConfirmed: (page) => reload(page),
   onBookingCardOpen(event) {
     const id = eventId(event);
     if (id) wx.navigateTo({ url: `/pages/technician/order-detail/index?id=${id}` });

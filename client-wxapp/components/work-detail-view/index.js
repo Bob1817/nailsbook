@@ -19,6 +19,7 @@ Component({
     sharePath: { type: String, value: '' },
     isLoggedIn: { type: Boolean, value: false },
     canRetryShare: { type: Boolean, value: false },
+    isClientView: { type: Boolean, value: false },
     commentText: { type: String, value: '' },
     submittingComment: { type: Boolean, value: false },
     replyingTo: { type: Object, value: null },
@@ -64,6 +65,7 @@ Component({
       wx.openLocation({ latitude: lat, longitude: lng, name: shop.name || '工作室', address: shop.address || '', scale: 18 });
     },
     previewImage(e) { wx.previewImage({ current: e.currentTarget.dataset.url, urls: this.properties.imageUrls }); },
+    onInputFocus() { this.setData({ inputFocused: true }); },
     onKeyboardHeightChange(e) { this.setData({ keyboardHeight: Math.max(0, Number(e.detail.height) || 0) }); },
     onInputBlur() { this.setData({ keyboardHeight: 0, inputFocused: false }); },
     onInput(e) { this.triggerEvent('commentinput', { value: e.detail.value }); },

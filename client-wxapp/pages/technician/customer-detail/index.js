@@ -1,5 +1,5 @@
 const api = require('../../../services/api');
-const { formatMoney, formatBookingDate, parseDate } = require('../../../utils/format');
+const { formatMoney, formatBookingDate, formatClock, parseDate } = require('../../../utils/format');
 
 const LIFECYCLE_LABELS = {
   new: '新客',
@@ -14,46 +14,13 @@ const SOURCE_LABELS = {
   booking: '首次预约',
   custom_request: '私人设计需求'
 };
-
-function todayDateValue() {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function parseJsonArray(raw) {
-  if (Array.isArray(raw)) return raw.filter(Boolean);
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
-  } catch (e) {
-    return [];
-  }
-}
-
-function orderLabel(order) {
-  const name = order.customTitle
-    || (order.service && order.service.name)
-    || (order.sourceWork && order.sourceWork.title)
-    || '预约服务';
-  return `${name} · ${formatBookingDate(order.startTime)}`;
-}
-
-function emptyFuDraft() {
-  return {
-    content: '',
-    plannedDate: todayDateValue(),
-    beforePhoto: '',
-    afterPhoto: '',
-    nailProjects: '',
-    materials: '',
-    tools: ''
-  };
-}
-
+const PROFILE_FACT_CATEGORIES = [
+  { value: 'allergy', label: '过敏' },
+  { value: 'contraindication', label: '禁忌' },
+  { value: 'preference', label: '稳定偏好' },
+  { value: 'communication', label: '沟通习惯' },
+  { value: 'reminder', label: '特别提醒' }
+];
 function parseTags(raw) {
   if (!raw) return [];
   if (Array.isArray(raw)) return raw.filter(Boolean);
@@ -126,16 +93,7 @@ Page({
     showNotesEdit: false,
     notesDraft: '',
     savingNotes: false,
-    archiving: false,
-    savingFollowUp: false,
-    completingFollowUpId: '',
-    showFollowUpSheet: false,
-    fuDraft: emptyFuDraft(),
-    fuBookingOptions: [],
-    fuWorkOptions: [],
-    fuBookingIndex: 0,
-    fuWorkIndex: 0,
-    uploadingFu: false
+    archiving: false
   },
 
   onLoad(options) {
@@ -193,19 +151,48 @@ Page({
 
       const tags = parseTags(raw.tags);
       const identity = buildCustomerIdentity(raw);
+      const relatedWorks = (raw.relatedWorks || []).map(work => ({
+        ...work,
+        _dateText: work.serviceDate ? formatBookingDate(work.serviceDate) : '',
+        _permissionText: [
+          work.permissions && work.permissions.canShare ? '分享' : '',
+          work.permissions && work.permissions.canFavorite ? '收藏' : '',
+          work.permissions && work.permissions.canComment ? '评论' : ''
+        ].filter(Boolean).join(' · ') || '仅查看'
+      }));
+      const serviceRecords = (raw.serviceRecords || []).map(item => {
+        const order = item.order || orders.find(candidate => String(candidate.id) === String(item.orderId)) || null;
+        const stageCount = { before: 0, during: 0, after: 0 };
+        (item.photos || []).forEach(photo => {
+          if (stageCount[photo.stage] !== undefined) stageCount[photo.stage] += 1;
+        });
+        const missingPhotos = [
+          stageCount.before ? '' : '服务前照片',
+          stageCount.after ? '' : '完成后照片'
+        ].filter(Boolean);
+        const serviceTime = item.actualEndTime || item.actualStartTime || (order && order.startTime);
+        return {
+          ...item,
+          _dateText: serviceTime
+            ? `${formatBookingDate(serviceTime)} ${formatClock(serviceTime)}`
+            : '记录草稿',
+          _photoCount: (item.photos || []).length,
+          _photoCountsText: `服务前 ${stageCount.before} · 过程中 ${stageCount.during} · 完成后 ${stageCount.after} 张`,
+          _missingText: missingPhotos.length ? `缺${missingPhotos.join('、')}` : '',
+          _statusText: item.status === 'complete' ? '已完善' : '待补全',
+          _serviceTitle: order
+            ? (order.customTitle
+              || (order.service && order.service.name)
+              || (order.sourceWork && order.sourceWork.title)
+              || '预约服务')
+            : '美甲服务'
+        };
+      });
 
       const customer = {
         ...raw,
         orders,
-        relatedWorks: (raw.relatedWorks || []).map(work => ({
-          ...work,
-          _dateText: work.serviceDate ? formatBookingDate(work.serviceDate) : '',
-          _permissionText: [
-            work.permissions && work.permissions.canShare ? '分享' : '',
-            work.permissions && work.permissions.canFavorite ? '收藏' : '',
-            work.permissions && work.permissions.canComment ? '评论' : ''
-          ].filter(Boolean).join(' · ') || '仅查看'
-        })),
+        relatedWorks,
         _tags: tags,
         _displayName: identity.displayName,
         _accountName: identity.accountName,
@@ -237,30 +224,38 @@ Page({
         _lifecycleLabel: LIFECYCLE_LABELS[raw.lifecycle && raw.lifecycle.status] || '新客',
         _lifecycleReason: (raw.lifecycle && raw.lifecycle.reason) || '尚未完成首次服务',
         _sourceLabel: SOURCE_LABELS[raw.sourceType] || '其他来源',
-        _profileFacts: (raw.profileFacts || []).map(item => ({
-          ...item,
-          _categoryText: ({ allergy: '过敏', contraindication: '禁忌', preference: '稳定偏好', communication: '沟通习惯', reminder: '特别提醒' })[item.category] || '客户信息',
-          _confirmedText: item.lastConfirmedAt ? formatBookingDate(item.lastConfirmedAt) : ''
-        })),
-        _serviceRecords: (raw.serviceRecords || []).map(item => ({
-          ...item,
-          _dateText: item.actualEndTime ? formatBookingDate(item.actualEndTime) : '记录草稿',
-          _photoCount: (item.photos || []).length
-        })),
-        _followUps: (raw.followUps || []).map(item => {
-          const relatedWork = item.relatedWork || null;
-          return {
+        _profileGroups: (() => {
+          const facts = (raw.profileFacts || []).map(item => ({
             ...item,
-            _plannedText: formatBookingDate(item.plannedAt),
-            _statusText: item.status === 'completed' ? '已完成' : '待跟进',
-            _beforePhotos: parseJsonArray(item.beforePhotos),
-            _afterPhotos: parseJsonArray(item.afterPhotos),
-            _relatedOrderText: item.relatedOrder ? orderLabel(item.relatedOrder) : '',
-            _relatedWork: relatedWork
-              ? { id: relatedWork.id, title: relatedWork.title || '' }
-              : null
-          };
-        }),
+            _key: `f${item.id}`,
+            _confirmedText: item.lastConfirmedAt ? formatBookingDate(item.lastConfirmedAt) : ''
+          }));
+          const activeFacts = facts.filter(item => item.status !== 'pending');
+          const groupOf = categories => activeFacts.filter(item => categories.includes(item.category));
+          const preferenceItems = [
+            raw.preferredStyles ? `款式：${raw.preferredStyles}` : '',
+            raw.preferredColors ? `颜色：${raw.preferredColors}` : '',
+            raw.preferredNailShapes ? `甲型：${raw.preferredNailShapes}` : '',
+            raw.preferredNailLengths ? `长度：${raw.preferredNailLengths}` : ''
+          ].filter(Boolean).map((content, index) => ({ id: null, content, _key: `p${index}`, _confirmedText: '' }));
+          return [
+            { key: 'safety', title: '安全信息', items: groupOf(['allergy', 'contraindication']) },
+            { key: 'preference', title: '稳定偏好', items: [...groupOf(['preference']), ...preferenceItems] },
+            { key: 'habit', title: '服务习惯', items: groupOf(['communication']) },
+            { key: 'personal', title: '个性需求', items: groupOf(['reminder']) }
+          ].filter(group => group.items.length);
+        })(),
+        _pendingFacts: (raw.profileFacts || []).filter(item => item.status === 'pending').map(item => ({
+          ...item,
+          _key: `f${item.id}`,
+          _categoryText: ({ allergy: '过敏', contraindication: '禁忌', preference: '稳定偏好', communication: '沟通习惯', reminder: '特别提醒' })[item.category] || '客户信息'
+        })),
+        _selfReported: [
+          raw.allergies ? { category: 'allergy', label: '过敏', content: raw.allergies } : null,
+          raw.contraindications ? { category: 'contraindication', label: '禁忌', content: raw.contraindications } : null,
+          raw.specialReminders ? { category: 'reminder', label: '提醒', content: raw.specialReminders } : null
+        ].filter(Boolean),
+        _serviceRecords: serviceRecords,
         _recentLabel: summary.lastServiceAt
           ? (() => {
               const date = parseDate(summary.lastServiceAt);
@@ -294,12 +289,79 @@ Page({
     });
   },
   openServiceRecord(e) {
-    const orderId = e.currentTarget.dataset.orderId;
-    if (orderId) wx.navigateTo({ url: `/pages/technician/complete-service/index?id=${orderId}&mode=record` });
+    const { orderId, mode } = e.currentTarget.dataset;
+    if (orderId) wx.navigateTo({ url: `/pages/technician/complete-service/index?id=${orderId}&mode=${mode || 'record'}` });
   },
 
   onAvatarError() {
     this.setData({ 'customer._avatarFailed': true });
+  },
+
+  // ---------- 美甲档案待确认信息 ----------
+  async updateFactStatus(e) {
+    const { id, status } = e.currentTarget.dataset;
+    if (!id || !status || this._updatingFact) return;
+    this._updatingFact = true;
+    try {
+      await api.technician.customers.updateProfileFact(this.customerId, id, status);
+      wx.showToast({ title: status === 'active' ? '已确认' : '已忽略', icon: 'none' });
+      await this.loadCustomer();
+    } catch (err) {
+      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+    } finally {
+      this._updatingFact = false;
+    }
+  },
+
+  async confirmSelfReported(e) {
+    const { category, content } = e.currentTarget.dataset;
+    if (!category || !content || this._updatingFact) return;
+    this._updatingFact = true;
+    try {
+      await api.technician.customers.createProfileFact(this.customerId, { category, content });
+      wx.showToast({ title: '已写入客户档案', icon: 'none' });
+      await this.loadCustomer();
+    } catch (err) {
+      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+    } finally {
+      this._updatingFact = false;
+    }
+  },
+
+  addProfileFact() {
+    if (this._updatingFact) return;
+    wx.showActionSheet({
+      itemList: PROFILE_FACT_CATEGORIES.map(item => item.label),
+      success: ({ tapIndex }) => {
+        const category = PROFILE_FACT_CATEGORIES[tapIndex];
+        if (!category) return;
+        wx.showModal({
+          title: `新增${category.label}`,
+          editable: true,
+          placeholderText: '填写下次服务仍然需要使用的信息',
+          confirmText: '保存',
+          success: async (result) => {
+            if (!result.confirm) return;
+            const content = String(result.content || '').trim();
+            if (!content) return wx.showToast({ title: '请填写档案内容', icon: 'none' });
+            if (content.length > 500) return wx.showToast({ title: '档案内容不能超过 500 字', icon: 'none' });
+            this._updatingFact = true;
+            try {
+              await api.technician.customers.createProfileFact(this.customerId, {
+                category: category.value,
+                content
+              });
+              wx.showToast({ title: '已写入客户档案', icon: 'none' });
+              await this.loadCustomer();
+            } catch (err) {
+              wx.showToast({ title: err.message || '档案保存失败', icon: 'none' });
+            } finally {
+              this._updatingFact = false;
+            }
+          }
+        });
+      }
+    });
   },
 
   openRemarkEdit() {
@@ -376,10 +438,6 @@ Page({
     wx.navigateTo({ url: `/pages/technician/work-detail/index?id=${e.currentTarget.dataset.id}` });
   },
 
-  createExclusiveWork() {
-    wx.navigateTo({ url: `/pages/technician/work-edit/index?customerId=${this.customerId}` });
-  },
-
   newOrder() {
     const customer = this.data.customer;
     if (!customer || !customer.clientUserId) {
@@ -423,167 +481,6 @@ Page({
   onUnload() {
     this._detailRequestId = (this._detailRequestId || 0) + 1;
     if (this._archiveTimer) clearTimeout(this._archiveTimer);
-  },
-
-  openFollowUpSheet() {
-    const customer = this.data.customer;
-    if (!customer) return;
-    this.setData({
-      showFollowUpSheet: true,
-      fuBookingOptions: [{ id: 0, label: '不关联预约' }].concat(
-        (customer.orders || []).map((order) => ({ id: order.id, label: orderLabel(order) }))
-      ),
-      fuWorkOptions: [{ id: 0, label: '不关联作品' }].concat(
-        (customer.relatedWorks || []).map((work) => ({ id: work.id, label: work.title || '未命名作品' }))
-      ),
-      fuBookingIndex: 0,
-      fuWorkIndex: 0,
-      fuDraft: emptyFuDraft()
-    });
-  },
-
-  closeFollowUpSheet() {
-    if (this.data.savingFollowUp || this.data.uploadingFu) return;
-    this.setData({ showFollowUpSheet: false });
-  },
-
-  onFuContentInput(e) {
-    this.setData({ 'fuDraft.content': e.detail.value });
-  },
-
-  onFuDateChange(e) {
-    this.setData({ 'fuDraft.plannedDate': e.detail.value });
-  },
-
-  onFuBookingChange(e) {
-    this.setData({ fuBookingIndex: Number(e.detail.value) || 0 });
-  },
-
-  onFuWorkChange(e) {
-    this.setData({ fuWorkIndex: Number(e.detail.value) || 0 });
-  },
-
-  onFuFieldInput(e) {
-    const field = e.currentTarget.dataset.field;
-    if (field) this.setData({ [`fuDraft.${field}`]: e.detail.value });
-  },
-
-  chooseFuPhoto(e) {
-    const side = e.currentTarget.dataset.side;
-    if (!side || this.data.uploadingFu) return;
-    const onChooseFail = (err) => {
-      if (!String(err && err.errMsg || '').includes('cancel')) {
-        wx.showToast({ title: '无法打开图片选择器', icon: 'none' });
-      }
-    };
-    if (typeof wx.chooseMedia === 'function') {
-      wx.chooseMedia({
-        count: 1,
-        mediaType: ['image'],
-        sourceType: ['album', 'camera'],
-        sizeType: ['compressed'],
-        success: (res) => this.uploadFuPhoto(side, res.tempFiles && res.tempFiles[0]),
-        fail: onChooseFail
-      });
-      return;
-    }
-    wx.chooseImage({
-      count: 1,
-      sourceType: ['album', 'camera'],
-      sizeType: ['compressed'],
-      success: (res) => this.uploadFuPhoto(side, { tempFilePath: (res.tempFilePaths || [])[0] }),
-      fail: onChooseFail
-    });
-  },
-
-  async uploadFuPhoto(side, file) {
-    const filePath = file && (file.tempFilePath || file.path);
-    if (!filePath) {
-      wx.showToast({ title: '未能读取所选图片', icon: 'none' });
-      return;
-    }
-    this.setData({ uploadingFu: true });
-    wx.showLoading({ title: '上传中...' });
-    try {
-      const result = await api.upload.image(filePath, 'technician');
-      this.setData({ [`fuDraft.${side}Photo`]: result.url });
-    } catch (err) {
-      wx.showToast({ title: err.message || '照片上传失败', icon: 'none' });
-    } finally {
-      wx.hideLoading();
-      this.setData({ uploadingFu: false });
-    }
-  },
-
-  removeFuPhoto(e) {
-    const side = e.currentTarget.dataset.side;
-    if (!side || this.data.uploadingFu) return;
-    this.setData({ [`fuDraft.${side}Photo`]: '' });
-  },
-
-  previewFollowUpPhoto(e) {
-    const urls = e.currentTarget.dataset.urls || [];
-    if (!urls.length) return;
-    const current = e.currentTarget.dataset.url;
-    wx.previewImage({ urls, current: current || urls[0] });
-  },
-
-  async submitFollowUp() {
-    if (this.data.savingFollowUp || this.data.uploadingFu) return;
-    const draft = this.data.fuDraft || {};
-    const content = (draft.content || '').trim();
-    if (!content) {
-      wx.showToast({ title: '请输入跟进内容', icon: 'none' });
-      return;
-    }
-    const payload = {
-      content,
-      plannedAt: `${draft.plannedDate || todayDateValue()}T09:00:00+08:00`
-    };
-    if (this.data.fuBookingIndex > 0) {
-      const orders = (this.data.customer && this.data.customer.orders) || [];
-      const order = orders[this.data.fuBookingIndex - 1];
-      if (order) payload.relatedOrderId = order.id;
-    }
-    if (this.data.fuWorkIndex > 0) {
-      const works = (this.data.customer && this.data.customer.relatedWorks) || [];
-      const work = works[this.data.fuWorkIndex - 1];
-      if (work) payload.relatedWorkId = work.id;
-    }
-    if (draft.beforePhoto) payload.beforePhotos = [draft.beforePhoto];
-    if (draft.afterPhoto) payload.afterPhotos = [draft.afterPhoto];
-    const nailProjects = (draft.nailProjects || '').trim();
-    const materials = (draft.materials || '').trim();
-    const tools = (draft.tools || '').trim();
-    if (nailProjects) payload.nailProjects = nailProjects;
-    if (materials) payload.materials = materials;
-    if (tools) payload.tools = tools;
-    this.setData({ savingFollowUp: true });
-    try {
-      await api.technician.customers.createFollowUp(this.customerId, payload);
-      wx.showToast({ title: '跟进记录已保存', icon: 'success' });
-      this.setData({ showFollowUpSheet: false });
-      await this.loadCustomer();
-    } catch (err) {
-      wx.showToast({ title: err.message || '保存失败', icon: 'none' });
-    } finally {
-      this.setData({ savingFollowUp: false });
-    }
-  },
-
-  async completeFollowUp(e) {
-    const id = e.currentTarget.dataset.id;
-    if (!id || this.data.completingFollowUpId) return;
-    this.setData({ completingFollowUpId: id });
-    try {
-      await api.technician.customers.completeFollowUp(this.customerId, id);
-      wx.showToast({ title: '已完成跟进', icon: 'success' });
-      await this.loadCustomer();
-    } catch (err) {
-      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
-    } finally {
-      this.setData({ completingFollowUpId: '' });
-    }
   },
 
   // ---------- 标签编辑 ----------

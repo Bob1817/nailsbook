@@ -8,7 +8,7 @@ let page, back = 0, destination, depth = 1, error = { code: 404 };
 vm.runInNewContext(source, {
   Page: p => { page = p; }, console: { error() {} },
   getCurrentPages: () => Array(depth).fill({}),
-  wx: { navigateBack: () => back++, reLaunch: o => { destination = o.url; } },
+  wx: { navigateBack: () => back++, reLaunch: o => { destination = o.url; }, hideShareMenu() {}, showShareMenu() {} },
   require: name => name.includes('services/api') ? { public: { works: { detail: async () => { throw error; } } } } : {}
 });
 const instance = { ...page, data: { ...page.data }, setData(patch) { Object.assign(this.data, patch); } };

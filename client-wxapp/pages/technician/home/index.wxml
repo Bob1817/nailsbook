@@ -50,6 +50,26 @@
     <view wx:else class="business-hero-empty">经营数据正在生成</view>
   </view>
 
+  <!-- ===== 快捷操作 ===== -->
+  <view class="quick-actions" aria-label="快捷操作">
+    <view class="quick-action" bindtap="openQuickQuote" hover-class="quick-action-pressed" role="button" aria-label="快捷报价">
+      <view class="quick-action-icon"><image src="/static/icons/quick-quote.svg" mode="aspectFit"/></view>
+      <text class="quick-action-title">快捷报价</text>
+    </view>
+    <button class="quick-action" bindtap="openCreateBooking" hover-class="quick-action-pressed" aria-label="代客预约">
+      <view class="quick-action-icon"><image src="/static/icons/invite-booking.svg" mode="aspectFit"/></view>
+      <text class="quick-action-title">代客预约</text>
+    </button>
+    <button wx:if="{{shareIdentityReady}}" class="quick-action" open-type="share" data-share-kind="homepage" hover-class="quick-action-pressed" aria-label="分享主页">
+      <view class="quick-action-icon"><image src="/static/icons/share.svg" mode="aspectFit"/></view>
+      <text class="quick-action-title">分享主页</text>
+    </button>
+    <button wx:else class="quick-action" bindtap="handleShortcutShareUnavailable" hover-class="quick-action-pressed" aria-label="分享主页">
+      <view class="quick-action-icon"><image src="/static/icons/share.svg" mode="aspectFit"/></view>
+      <text class="quick-action-title">分享主页</text>
+    </button>
+  </view>
+
   <!-- ===== 下一单 ===== -->
   <view class="card next-card {{nextOrder ? 'next-card-filled' : ''}}">
     <block wx:if="{{nextOrder}}">
@@ -100,24 +120,6 @@
     </view>
 
     <view wx:if="{{confirmationTodos.length === 0 && todoItems.length === 0 && actionTasks.length === 0}}" class="empty-soft">今日待办已清空，可以专心服务客户。</view>
-
-    <view wx:if="{{todayFollowUps.length > 0}}" class="followup-today">
-      <text class="followup-title">今日客户跟进</text>
-      <view
-        wx:for="{{todayFollowUps}}"
-        wx:key="id"
-        class="followup-row"
-        bindtap="openFollowUpCustomer"
-        data-id="{{item.customer.id}}"
-      >
-        <view class="followup-time">{{item._clock}}</view>
-        <view class="followup-info">
-          <text class="followup-name">{{item._customerName}}</text>
-          <text class="followup-content">{{item.content}}</text>
-        </view>
-        <text class="todo-arrow">›</text>
-      </view>
-    </view>
   </view>
 
   <!-- ===== 热门作品 ===== -->

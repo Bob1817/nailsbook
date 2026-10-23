@@ -10,7 +10,7 @@ const api = { technician: { orders: { confirm: async (id, payload) => {
 } } } };
 vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../components/booking-confirm/index.js'), 'utf8'), {
   Component: value => { definition = value; },
-  require: name => name.includes('services/api') ? api : { requestBookingReminder: async () => {}, formatBookingDate: () => '9月9日 周三', formatClock: () => '10:30' },
+  require: name => name.includes('services/api') ? api : { requestBookingReminder: async () => {}, formatBookingDate: () => '9月9日 周三', formatClock: () => '10:30', parseDate: value => (value ? new Date(value) : null) },
   wx: { showToast() {} }
 });
 const watchdog = setTimeout(() => { console.error('确认表单测试超时'); process.exit(1); }, 3000);

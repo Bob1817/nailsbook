@@ -36,7 +36,7 @@ describe('ClientOrdersService.create 下单校验', () => {
     prisma = {
       clientTechBinding: { findFirst: jest.fn() },
       clientUser: { findUnique: jest.fn() },
-      nailWork: { findFirst: jest.fn() },
+      nailWork: { findFirst: jest.fn(), findMany: jest.fn() },
     };
     service = new ClientOrdersService(prisma, {} as never, {} as never);
   });
@@ -154,6 +154,30 @@ describe('ClientOrdersService.create 下单校验', () => {
         serviceLines: { orderBy: { sortOrder: 'asc' } },
         promotion: true,
       },
+    });
+    expect(prisma.clientUser.findUnique).not.toHaveBeenCalled();
+  });
+
+  it('自定义预约包含失效参考作品时拒绝创建', async () => {
+    prisma.clientTechBinding.findFirst.mockResolvedValue({ technician: tech() });
+    prisma.nailWork.findMany.mockResolvedValue([{ id: 101 }]);
+
+    await expect(service.create(11, {
+      ...baseDto,
+      intentWorkIds: [101, 102],
+    })).rejects.toThrow('部分参考作品已失效，请重新选择');
+    expect(prisma.nailWork.findMany).toHaveBeenCalledWith({
+      where: {
+        id: { in: [101, 102] },
+        techId: 7,
+        isVisible: true,
+        archivedAt: null,
+        OR: [
+          { visibilityScope: 'public' },
+          { clientAccesses: { some: { clientUserId: 11, canView: true } } },
+        ],
+      },
+      select: { id: true },
     });
     expect(prisma.clientUser.findUnique).not.toHaveBeenCalled();
   });

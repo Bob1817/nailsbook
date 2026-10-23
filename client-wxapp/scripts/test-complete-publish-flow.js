@@ -1,5 +1,4 @@
-// 静态/流程验证：完成服务 → 发布关联作品 一键引导
-// 覆盖：页面注册、API 签名、保存成功后的后续行动入口、作品发布预填授权与关联订单
+// 静态/流程验证：完成预约时一次保存美甲记录并按需关联作品
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
@@ -32,8 +31,8 @@ assert.ok(
 );
 
 const completeWxml = read('pages/technician/complete-service/index.wxml');
-assert.ok(completeWxml.includes('wx:if="{{!saved}}"'), 'WXML 应按保存状态切换表单/成功视图');
-assert.ok(completeWxml.includes('goPublishWork'), 'WXML 应包含发布关联作品入口');
+assert.ok(/wx:(?:if|elif)="\{\{!saved\}\}"/.test(completeWxml), 'WXML 应按保存状态切换表单/成功视图');
+assert.ok(completeWxml.includes('toggleWorkSync'), 'WXML 应在提交前让美甲师确认是否关联作品');
 assert.ok(completeWxml.includes('finishAndBack'), 'WXML 应包含返回入口');
 
 // ---------- 2. 流程验证：complete-service 保存成功 → 发布引导 ----------
@@ -118,10 +117,23 @@ api.technician.orders.complete = async (id, data) => { completeCalls.push({ id, 
   completeCalls.length = 0;
   page.data.saved = false;
 
-  // 填写服务记录并提交
+  // 填写美甲记录并提交；关联作品在同一次确认中完成
+  let draftCalls = 0;
+  api.technician.works.createFromOrder = async (id) => {
+    assert.strictEqual(id, 12);
+    draftCalls++;
+    return { id: 99, title: '本次美甲作品' };
+  };
   page.data.actualStartTime = '2026-08-15T14:00';
   page.data.actualEndTime = '2026-08-15T16:00';
   page.data.materials = 'OPI #H42';
+  page.data.nailCondition = '甲面状态正常';
+  page.data.reactionLevel = 'normal';
+  page.data.beforePhotos = ['https://img/before.jpg'];
+  page.data.afterPhotos = ['https://img/after.jpg'];
+  page.data.preferenceNotes = '偏好短方圆甲';
+  page.data.syncWorkResult = true;
+  page.data.workAssociation = { mode: 'create', workId: 0, label: '创建作品草稿' };
   page.data.actualEndTime = '2026-08-15T13:00';
   await page.submit();
   assert.strictEqual(completeCalls.length, 0, '非法时间不得调用完成接口');
@@ -138,9 +150,12 @@ api.technician.orders.complete = async (id, data) => { completeCalls.push({ id, 
   assert.strictEqual(completeCalls.length, 1, 'complete 应被调用一次');
   assert.strictEqual(completeCalls[0].id, 12);
   assert.strictEqual(completeCalls[0].data.materials, 'OPI #H42', '服务记录字段应透传');
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(completeCalls[0].data, 'profileFacts'), false, '服务总结不应要求重复抄写长期客户档案');
   assert.strictEqual(completeCalls[0].data.materialCost, 0);
   assert.ok(completeCalls[0].data.actualStartTime.endsWith('Z'), '时间应转 ISO 格式');
   assert.strictEqual(page.data.saved, true, '保存后进入成功态');
+  assert.strictEqual(draftCalls, 1, '保存美甲记录时应一次创建关联作品草稿');
+  assert.strictEqual(page.data.relatedWork.id, 99, '成功态应持有关联作品');
 
   // 重复提交应被拦截
   await page.submit();
@@ -152,21 +167,6 @@ api.technician.orders.complete = async (id, data) => { completeCalls.push({ id, 
   assert.strictEqual(page.data.saved, false, '网络失败不能显示保存成功');
   assert.strictEqual(page.data.submitting, false, '网络失败后应允许手动重试');
   page.data.saved = true;
-
-  // 后续行动：发布关联作品（预填订单）
-  let draftCalls = 0;
-  api.technician.works.createFromOrder = async (id) => {
-    assert.strictEqual(id, 12);
-    draftCalls++;
-    return { id: 99 };
-  };
-  await Promise.all([page.goPublishWork(), page.goPublishWork()]);
-  assert.strictEqual(draftCalls, 1, '重复点击不能创建多个关联作品');
-  assert.strictEqual(
-    redirects[redirects.length - 1],
-    '/pages/technician/work-edit/index?id=99',
-    '应编辑订单唯一关联的草稿'
-  );
 
   // ---------- 3. 流程验证：work-edit 按 orderId 预填授权并预选关联订单 ----------
   api.technician.works.accessOptions = async () => ([

@@ -36,6 +36,7 @@
           bind:reject="onBookingCardReject"
           bind:cancel="onBookingCardCancel"
           bind:complete="onBookingCardComplete"
+          bind:confirmed="onBookingCardConfirmed"
           bind:rebook="onBookingCardRebook"
         />
       </view>

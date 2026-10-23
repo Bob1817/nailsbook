@@ -85,8 +85,12 @@ for (const action of ['立即报价', '驳回预约', '编辑报价', '取消报
 }
 console.log('预约日期、项目来源及已完成操作检查通过');
 
-// 客户详情已改为客户跟进记录，不再复用行程预约卡片。
+// 客户详情美甲记录列表仅展示基本信息，详细与关联信息在记录详情页展示。
 const customerDetail = read('pages/technician/customer-detail/index.wxml');
+const completeService = read('pages/technician/complete-service/index.wxml');
 assert(!customerDetail.includes('<technician-booking-card'), '客户详情不应展示预约卡片');
-assert(customerDetail.includes('客户跟进记录') && customerDetail.includes('openFollowUpSheet'), '客户详情应展示客户跟进记录');
-console.log('客户详情跟进记录边界检查通过');
+assert(customerDetail.includes('美甲记录') && customerDetail.includes('bindtap="openServiceRecord"'), '客户详情应展示美甲记录列表入口');
+assert(!customerDetail.includes('新建作品'), '客户详情的美甲记录区域不应提供旁路作品创建入口');
+assert(completeService.includes('关联信息') && completeService.includes('openOrderDetail') && completeService.includes('openWorkDetail'), '记录详情页应聚合关联预约与作品');
+assert(!customerDetail.includes('客户跟进记录'), '客户详情不应继续展示重复的跟进记录');
+console.log('客户详情美甲记录边界检查通过');

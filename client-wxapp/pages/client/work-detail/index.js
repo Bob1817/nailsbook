@@ -53,6 +53,16 @@ Page({
   },
 
   onLoad: function (options) {
+    if (options.channel === 'wechat_moments' && (options.id || options.shareToken)) {
+      var publicParams = [];
+      if (options.shareToken) publicParams.push('shareToken=' + encodeURIComponent(options.shareToken));
+      else publicParams.push('id=' + encodeURIComponent(options.id));
+      if (options.invite) publicParams.push('invite=' + encodeURIComponent(options.invite));
+      publicParams.push('source=' + encodeURIComponent(options.source || 'work_share'));
+      publicParams.push('channel=wechat_moments');
+      wx.redirectTo({ url: '/pages/client/public-work/index?' + publicParams.join('&') });
+      return;
+    }
     this.focusCommentsOnLoad = options.focus === 'comments';
     if (options.id) {
       this.workId = parseInt(options.id);
@@ -122,10 +132,31 @@ Page({
     wx.navigateBack();
   },
 
-  viewArtist: function () {
+  resolveInviteCode: async function () {
     var work = this.data.work || {};
     var technicianId = work.technicianId || (work.technician && work.technician.id);
-    if (technicianId) wx.navigateTo({ url: '/pages/client/artist-home/index?id=' + technicianId });
+    if (!technicianId) return '';
+    var embeddedInvite = (work.technician && work.technician.invitationCode) || work.invitationCode || '';
+    try {
+      var result = await api.public.artists.detail(String(technicianId));
+      var artist = result.artist || result || {};
+      if (artist.id && String(artist.id) !== String(technicianId)) return '';
+      this.inviteCode = artist.invitationCode || embeddedInvite;
+    } catch (_) {
+      this.inviteCode = embeddedInvite;
+    }
+    return this.inviteCode || '';
+  },
+
+  viewArtist: async function () {
+    var work = this.data.work || {};
+    var technicianId = work.technicianId || (work.technician && work.technician.id);
+    if (!technicianId) return;
+    var inviteCode = await this.resolveInviteCode();
+    if (!inviteCode) return wx.showToast({ title: '美甲师邀请信息暂不可用', icon: 'none' });
+    wx.navigateTo({
+      url: '/pages/client/artist-home/index?id=' + technicianId + '&invite=' + encodeURIComponent(inviteCode) + '&source=work_detail'
+    });
   },
 
   viewCommentArtist: function (e) {
@@ -133,7 +164,7 @@ Page({
   },
 
   // 预约同款
-  bookSameStyle: function () {
+  bookSameStyle: async function () {
     var work = this.data.work;
     if (!work || !work.id) return;
     var technicianId = work.technicianId || (work.technician && work.technician.id);
@@ -141,7 +172,9 @@ Page({
       wx.showToast({ title: '暂无法获取美甲师信息', icon: 'none' });
       return;
     }
-    wx.navigateTo({ url: '/pages/client/create-order/index?workId=' + work.id + '&techId=' + technicianId + '&source=work_detail' });
+    var inviteCode = await this.resolveInviteCode();
+    if (!inviteCode) return wx.showToast({ title: '美甲师邀请信息暂不可用', icon: 'none' });
+    wx.navigateTo({ url: '/pages/client/create-order/index?workId=' + work.id + '&techId=' + technicianId + '&invite=' + encodeURIComponent(inviteCode) + '&source=work_detail' });
   },
 
   onShareAppMessage: function () {
@@ -155,19 +188,35 @@ Page({
     };
   },
 
+  onShareTimeline: function () {
+    var work = this.data.work || {};
+    if (!this.data.sharePath) return { title: '美甲作品', query: '' };
+    if (work.id) api.client.works.recordShare(work.id, 'wechat_moments').catch(function () {});
+    return {
+      title: require('../../../utils/share-copy').buildWorkShareTitle(work),
+      query: this.data.sharePath.split('?')[1].replace(/channel=[^&]*/, 'channel=wechat_moments'),
+      imageUrl: this.data.imageUrls[0] || ''
+    };
+  },
+
   prepareSharePath: function () {
     if (this._sharePreparing) return;
     this.setData({ sharePath: '' });
     wx.hideShareMenu();
     if (!this.data.permissions.canShare) return;
     this._sharePreparing = true;
-    return api.client.works.createShareGrant(this.workId).then((grant) => {
+    return Promise.all([
+      api.client.works.createShareGrant(this.workId),
+      this.resolveInviteCode()
+    ]).then(([grant, inviteCode]) => {
       if (!grant.public && !/^[a-f0-9]{48}$/.test(grant.token || '')) throw new Error('分享授权无效');
-      const path = grant.public
+      if (!inviteCode) throw new Error('美甲师邀请信息不可用');
+      const basePath = grant.public
         ? '/pages/client/public-work/index?id=' + this.workId
         : '/pages/client/public-work/index?shareToken=' + grant.token;
+      const path = basePath + '&invite=' + encodeURIComponent(inviteCode) + '&source=work_share&channel=wechat_share';
       this.setData({ sharePath: path });
-      wx.showShareMenu({ menus: ['shareAppMessage'] });
+      wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
     }).catch(() => this.setData({ sharePath: '' })).finally(() => { this._sharePreparing = false; });
   },
 

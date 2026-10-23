@@ -1,3 +1,6 @@
 {
-  "component": true
+  "component": true,
+  "usingComponents": {
+    "booking-confirm": "/components/booking-confirm/index"
+  }
 }

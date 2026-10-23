@@ -670,6 +670,10 @@ export class OrdersService {
                 actualStartTime: true,
                 actualEndTime: true,
                 reactionLevel: true,
+                nailCondition: true,
+                clientReaction: true,
+                discomfortNotes: true,
+                preferenceNotes: true,
                 careAdvice: true,
                 nextServiceNotes: true,
                 materials: true,
@@ -711,6 +715,19 @@ export class OrdersService {
             coverUrl: true,
             standardPriceFen: true,
             preparation: true,
+          },
+        },
+        intentWorks: {
+          orderBy: { sortOrder: 'asc' },
+          select: {
+            work: {
+              select: {
+                id: true,
+                title: true,
+                coverUrl: true,
+                preparation: true,
+              },
+            },
           },
         },
         worksFromOrder: {
@@ -832,7 +849,7 @@ export class OrdersService {
   ) {
     const order = await this.findOneForTechnician(orderId, technicianId);
     if (['cancelled', 'rejected', 'expired', 'no_show'].includes(order.status)) {
-      throw new BadRequestException('当前预约状态不能记录美甲服务');
+      throw new BadRequestException('当前预约状态不能编辑美甲记录');
     }
     if (dto.complete && order.status !== 'completed') {
       throw new BadRequestException('订单完成后才能将美甲记录标记为已完善');
@@ -1998,65 +2015,38 @@ export class OrdersService {
           },
         });
       }
-      const contentTask = await tx.contentPublicationTask.upsert({
-        where: { orderId: id },
-        create: {
-          technicianId: order.technicianId,
-          orderId: id,
-          status: 'selecting_images',
-          headline: '本次美甲作品',
-          serviceSummary: order.remark || null,
-          bookingCallToAction: '欢迎咨询档期与价格',
-          hashtags: '#美甲 #美甲作品',
-        },
-        update: {},
-      });
-      const postServiceTasks = [
-        ['complete_service_record', '补全服务记录', 'high', actualEnd],
-        ['care_instructions', '发送护理说明', 'high', actualEnd],
-        ['review_invitation', '邀请客户评价', 'normal', actualEnd],
-        ['photo_consent', '确认照片公开授权', 'normal', actualEnd],
-        ['organize_work', '整理本次作品素材', 'normal', actualEnd],
-        ['create_case', '创建作品案例', 'normal', actualEnd],
-        ['publish_content', '发布本次服务内容', 'normal', actualEnd],
-        [
-          'repurchase_reminder',
-          '客户复购提醒',
-          'normal',
-          suggestedMaintenanceAt,
-        ],
-      ] as const;
-      for (const [type, title, priority, dueAt] of postServiceTasks) {
+      if (!recordIsComplete) {
         await tx.actionTask.upsert({
           where: {
-            taskKey: `${order.technicianId}:${type}:order:${id}`,
+            taskKey: `${order.technicianId}:complete_service_record:order:${id}`,
           },
           create: {
             technicianId: order.technicianId,
-            taskKey: `${order.technicianId}:${type}:order:${id}`,
-            type,
-            title,
+            taskKey: `${order.technicianId}:complete_service_record:order:${id}`,
+            type: 'complete_service_record',
+            title: '补全美甲记录',
             description: `服务订单 #${id}`,
-            priority,
+            priority: 'high',
             relatedType: 'order',
             relatedId: id,
-            actionPath:
-              type === 'complete_service_record'
-                ? `/pages/technician/complete-service/index?id=${id}`
-                : type === 'create_case'
-                ? `/pages/technician/work-edit/index?orderId=${id}`
-                : type === 'publish_content'
-                  ? `/pages/technician/content-publication/index?id=${contentTask.id}`
-                  : `/pages/technician/order-detail/index?id=${id}`,
-            dueAt,
-            ...(type === 'complete_service_record' && recordIsComplete
-              ? { status: 'completed', resolvedAt: actualEnd }
-              : {}),
+            actionPath: `/pages/technician/complete-service/index?id=${id}`,
+            dueAt: actualEnd,
           },
-          update:
-            type === 'complete_service_record' && recordIsComplete
-              ? { status: 'completed', resolvedAt: actualEnd }
-              : {},
+          update: {
+            status: 'pending',
+            resolvedAt: null,
+            dueAt: actualEnd,
+          },
+        });
+      } else {
+        await tx.actionTask.updateMany({
+          where: {
+            technicianId: order.technicianId,
+            type: 'complete_service_record',
+            relatedType: 'order',
+            relatedId: id,
+          },
+          data: { status: 'completed', resolvedAt: actualEnd },
         });
       }
       await tx.customer.update({

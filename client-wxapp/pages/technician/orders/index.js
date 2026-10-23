@@ -46,6 +46,7 @@ Page({
   onBookingCardCancel: technicianBookingCardHandlers.onBookingCardCancel,
   onBookingCardComplete: technicianBookingCardHandlers.onBookingCardComplete,
   onBookingCardRebook: technicianBookingCardHandlers.onBookingCardRebook,
+  onBookingCardConfirmed: technicianBookingCardHandlers.onBookingCardConfirmed,
   data: {
     bookingDayReady: false,
     dayAccepting: true,

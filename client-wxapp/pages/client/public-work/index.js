@@ -27,9 +27,7 @@ Page({
     this.entrySource = options.source || 'work_share';
     if (options.scene) options = parseWorkScene(options.scene) || {};
     this.inviteCode = options.invite ? decodeURIComponent(options.invite) : '';
-    if (wx.showShareMenu) {
-      wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
-    }
+    wx.hideShareMenu();
     if (!options.shareToken && !options.id) {
       this.setData({ loading: false, error: true, errorMessage: '分享链接无效', errorDescription: '链接信息不完整，请返回浏览，或请分享者重新发送作品链接。', canRetry: false });
       return;
@@ -63,7 +61,9 @@ Page({
       };
       const techId = rawWork.technicianId || (rawWork.technician && (rawWork.technician.id || rawWork.technician.technicianId));
       this._techId = techId || null;
-      this.inviteCode = this.inviteCode || (rawWork.technician && rawWork.technician.invitationCode) || '';
+      const workInviteCode = (rawWork.technician && rawWork.technician.invitationCode) || '';
+      // 作品接口返回的所属美甲师是可信归属，不能让分享链接中的任意 invite 覆盖它。
+      this.inviteCode = workInviteCode;
       const app = getApp();
       const role = wx.getStorageSync('role') || (app.globalData && app.globalData.role);
       const currentTechnician = wx.getStorageSync('technician_userInfo') || wx.getStorageSync('userInfo') || (app.globalData && app.globalData.userInfo) || {};
@@ -82,7 +82,7 @@ Page({
               city: artist.city || '',
               bio: artist.bio || '',
               acceptingBookings: artist.acceptingBookings !== false,
-              invitationCode: artist.invitationCode || this.inviteCode,
+              invitationCode: artist.invitationCode || workInviteCode,
               shops: (artist.shopAddresses || []).filter(shop => shop && shop.enabled !== false).map(shop => ({
                 name: shop.name || '服务店铺',
                 address: [shop.province, shop.city, shop.district, shop.detailAddress].filter(Boolean).join(' '),
@@ -91,7 +91,7 @@ Page({
                 longitude: shop.longitude
               }))
             };
-            this.inviteCode = this.inviteCode || artist.invitationCode || '';
+            this.inviteCode = artist.invitationCode || workInviteCode;
             artist.styleTags = (artist.styleTags || artist.specialties || []).slice(0, 5);
             artist.specialtiesText = artist.specialtiesText || (artist.styleTags.length ? artist.styleTags.slice(0, 2).join(' · ') : '');
             techSnapshot = {
@@ -143,6 +143,8 @@ Page({
         loading: false,
         error: false
       });
+      if (this.inviteCode) wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
+      else wx.hideShareMenu();
       if (!this._viewTracked) {
         this._viewTracked = true;
         trackConversion({ eventType: 'work_view', workId: work.id, technicianId: techId, channel: this.shareChannel || 'wechat_share', touchpoint: 'work_share', shareToken: this.shareToken });

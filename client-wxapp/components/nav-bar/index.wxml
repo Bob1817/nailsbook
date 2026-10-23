@@ -15,13 +15,13 @@
     </view>
 
     <!-- 标题区域：有返回键时居中，否则左对齐 -->
-    <view class="title-zone {{showBack || titleCenter ? 'title-center' : 'title-left'}}">
+    <view class="title-zone {{showBack || titleCenter ? 'title-center' : 'title-left'}} {{backTitleLeft ? 'back-title-left' : ''}}">
       <text wx:if="{{subtitle}}" class="subtitle">{{subtitle}}</text>
       <text class="title">{{title}}</text>
     </view>
 
     <!-- 右侧插槽 -->
-    <view class="nav-right">
+    <view class="nav-right" style="right: {{menuButtonRightOffset + 8}}px;">
       <slot name="right"></slot>
     </view>
 

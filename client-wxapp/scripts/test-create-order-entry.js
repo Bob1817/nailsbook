@@ -4,7 +4,7 @@ const vm = require('node:vm');
 const path = require('node:path');
 const { createRequire } = require('node:module');
 const file = path.join(__dirname, '../pages/client/create-order/index.js');
-const tech = id => ({ technician: { id, status: 'active', serviceItems: [], shopAddresses: [] }, isDefault: true });
+const tech = (id, serviceItems = []) => ({ technician: { id, status: 'active', serviceItems, shopAddresses: [] }, isDefault: true });
 let bindings = [], definition, draft = {};
 vm.runInNewContext(fs.readFileSync(file, 'utf8'), {
   Page: value => definition = value, console,
@@ -37,6 +37,10 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   bindings = [tech(1), tech(2)];
   p = page({ mode: 'full' }); await flush();
   assert.equal(p._fullMode, true, '显式完整模式仍支持先选服务');
+  bindings = [tech(1, [{ id: 'basic', name: '基础美甲', price: 100, durationMinutes: 60 }])];
+  p = page({ mode: 'full', content: 'custom' }); await flush();
+  assert.equal(p.data.isCustomService, true, '统一需求入口即使存在标准服务也应保持自定义模式');
+  bindings = [tech(1), tech(2)];
   p = page({ techId: '2' }); await flush();
   assert.equal(p.data.selectedTechId, 2); assert.equal(p.data.presetLocked, true);
   p.onSelectTechnician({ currentTarget: { dataset: { id: 1 } } });

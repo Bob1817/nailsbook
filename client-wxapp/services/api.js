@@ -212,6 +212,11 @@ const client = {
     blockedSlots: (techId) => api.get(`${C}/orders/blocked-slots/${techId}`)
   },
 
+  bookingQuotes: {
+    accept: (token) => api.post(`${C}/booking-quotes/${token}/accept`, {}),
+    book: (token, data) => api.post(`${C}/booking-quotes/${token}/book`, data)
+  },
+
   tradeOrders: {
     list: () => api.get(`${C}/orders/trade-orders/list`)
   },
@@ -318,6 +323,7 @@ const technician = {
     trips: () => api.get(`${T}/orders/trips`),
     incomeCalendar: () => api.get(`${T}/orders/income-calendar`),
     detail: (id) => api.get(`${T}/orders/${id}`),
+    startService: (id) => api.patch(`${T}/orders/${id}/start-service`, {}),
     serviceRecord: (id) => api.get(`${T}/orders/${id}/service-record`),
     saveServiceRecord: (id, data) => api.patch(`${T}/orders/${id}/service-record`, data),
     // 兼容尚未部署 blocked-slots 专用路由的线上后端：从现有订单列表派生美甲师占用。
@@ -351,12 +357,11 @@ const technician = {
     list: (params) => api.get(`${T}/customers`, params),
     detail: (id) => api.get(`${T}/customers/${id}`),
     tags: () => api.get(`${T}/customers/tags`),
-    todayFollowUps: () => api.get(`${T}/customers/follow-ups/today`),
-    createFollowUp: (id, data) => api.post(`${T}/customers/${id}/follow-ups`, data),
-    completeFollowUp: (id, followUpId) => api.patch(`${T}/customers/${id}/follow-ups/${followUpId}/complete`, {}),
     updateName: (id, name) => api.patch(`${T}/customers/${id}/name`, { name }),
     updateNotes: (id, notes) => api.patch(`${T}/customers/${id}/notes`, { notes }),
     archive: (id) => api.patch(`${T}/customers/${id}/archive`, {}),
+    updateProfileFact: (id, factId, status) => api.patch(`${T}/customers/${id}/profile-facts/${factId}`, { status }),
+    createProfileFact: (id, data) => api.post(`${T}/customers/${id}/profile-facts`, data),
     updateTags: (id, tags) => api.patch(`${T}/customers/${id}/tags`, { tags })
   },
 
@@ -368,6 +373,7 @@ const technician = {
   works: {
     list: (params) => api.get(`${T}/works`, params),
     detail: (id) => api.get(`${T}/works/${id}`),
+    updatePreparationFromRecord: (id, recordId) => api.post(`${T}/works/${id}/preparation/from-record`, { recordId }),
     promotion: (id) => api.get(`${T}/works/${id}/promotion`),
     savePromotion: (id, data) => api.put(`${T}/works/${id}/promotion`, data),
     create: (data) => api.post(`${T}/works`, data),
@@ -407,6 +413,11 @@ const technician = {
     quote: (id, data) => api.post(`${T}/designs/${id}/quote`, data)
   },
 
+  customService: {
+    list: () => api.get(`${T}/custom-service-requests`),
+    quote: (id, data) => api.patch(`${T}/custom-service-requests/${id}/quote`, data)
+  },
+
   subscription: {
     plans: () => api.get(`${T}/subscriptions/plans`),
     current: () => api.get(`${T}/subscriptions/current`),
@@ -422,6 +433,14 @@ const technician = {
     update: (id, data) => api.patch(`${T}/marketing-materials/${id}`, data),
     preview: (id) => api.post(`${T}/marketing-materials/${id}/preview`, {}),
     export: (id, idempotencyKey) => api.post(`${T}/marketing-materials/${id}/export`, { idempotencyKey })
+  },
+
+  bookingQuotes: {
+    list: () => api.get(`${T}/booking-quotes`),
+    detail: (id) => api.get(`${T}/booking-quotes/${id}`),
+    create: (data) => api.post(`${T}/booking-quotes`, data),
+    withdraw: (id) => api.patch(`${T}/booking-quotes/${id}/withdraw`, {}),
+    image: (id) => api.get(`${T}/booking-quotes/${id}/image`)
   },
 
   revenues: {
@@ -608,6 +627,11 @@ const publicApi = {
   },
   referrals: {
     resolve: (token) => api.get(`${P}/referrals/${token}`, null, { needAuth: false })
+  },
+  bookingQuotes: {
+    detail: (token) => api.get(`${P}/booking-quotes/${token}`, null, { needAuth: false }),
+    invitation: (token) => api.get(`${P}/booking-quotes/${token}/invitation`, null, { needAuth: false }),
+    decline: (token, reason) => api.post(`${P}/booking-quotes/${token}/decline`, { reason }, { needAuth: false })
   },
   works: {
     list: (params) => api.get(`${P}/works`, params, { needAuth: false }),

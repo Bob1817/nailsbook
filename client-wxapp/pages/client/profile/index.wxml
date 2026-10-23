@@ -107,7 +107,7 @@
           </view>
           <view class="menu-item" bindtap="navigateToDesigns">
             <view class="menu-icon-wrap menu-icon-pink"><image class="m-icon" src="/static/icons/edit.svg" mode="aspectFit" /></view>
-            <text class="menu-label">我的设计</text>
+            <text class="menu-label">设计记录</text>
             <text class="menu-arrow">›</text>
           </view>
           <view class="menu-item" bindtap="navigateToFavorites">

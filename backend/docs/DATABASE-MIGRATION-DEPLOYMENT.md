@@ -20,6 +20,8 @@
 - `20260803170000_add_wechat_identity`：增加微信 OpenID 与客户、美甲师双角色绑定。
 - `20260803180000_add_auth_verification_codes`：增加持久化验证码和限流状态。
 - `20260803190000_add_wechat_platform_config`：增加后台维护的微信登录、支付加密配置及校验状态。
+- `20261022100000_add_service_record_phase_one`：扩展美甲记录，增加分阶段照片、客户档案事实与作品制作方案。
+- `20261022120000_add_service_record_phase_two`：补充服务前确认、客户需求、反应等级与作品制作参数。
 
 ## A. 全新数据库部署
 
@@ -38,7 +40,7 @@ sqlite3 "$deployment_db" "PRAGMA foreign_key_check;"
 
 验收结果应为：
 
-- 37 个迁移全部完成；
+- 仓库中的迁移全部完成（2026-10-23 审计时共 106 个）；
 - `migrate diff` 输出 `No difference detected.`；
 - `foreign_key_check` 无输出。
 

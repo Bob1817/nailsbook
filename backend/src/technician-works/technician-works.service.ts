@@ -20,6 +20,17 @@ import {
 // Configurable base URL for uploads
 const UPLOAD_BASE_URL = process.env.UPLOAD_BASE_URL || 'http://localhost:3000';
 
+function mergeReusableList(existing?: string | null, incoming?: string | null) {
+  const values: string[] = [];
+  [existing, incoming].forEach((source) => {
+    String(source || '').split(/[、,，;；\n]+/).forEach((item) => {
+      const value = item.trim();
+      if (value && !values.includes(value)) values.push(value);
+    });
+  });
+  return values.length ? values.join('、') : null;
+}
+
 @Injectable()
 export class TechnicianWorksService {
   constructor(
@@ -92,6 +103,7 @@ export class TechnicianWorksService {
         serviceLines: { orderBy: { sortOrder: 'asc' } },
         promotion: true,
         preparation: true,
+        sourceOrder: { select: { id: true, orderNo: true } },
       },
     });
 
@@ -99,7 +111,33 @@ export class TechnicianWorksService {
       throw new NotFoundException('作品不存在');
     }
 
-    return this.mapWork(work, technicianId);
+    const sourceRecordId = work.preparation?.sourceRecordId;
+    const sourceRecord = sourceRecordId
+      ? await this.prisma.serviceRecord.findFirst({
+          where: { id: sourceRecordId, technicianId },
+          select: {
+            id: true,
+            orderId: true,
+            status: true,
+            completedAt: true,
+            order: { select: { orderNo: true } },
+          },
+        })
+      : null;
+    const sourceOrderId = sourceRecord?.orderId || work.sourceOrder?.id;
+    const mapped = this.mapWork(work, technicianId);
+    return {
+      ...mapped,
+      sourceService: sourceOrderId
+        ? {
+            orderId: sourceOrderId,
+            orderNo: sourceRecord?.order?.orderNo || work.sourceOrder?.orderNo || '',
+            recordId: sourceRecord?.id || null,
+            recordStatus: sourceRecord?.status || null,
+            completedAt: sourceRecord?.completedAt || null,
+          }
+        : null,
+    };
   }
 
   async getHeroRecommendations(technicianId: number) {
@@ -535,50 +573,8 @@ export class TechnicianWorksService {
       const record = await this.prisma.serviceRecord.findUnique({
         where: { orderId },
       });
-      if (record) {
-        await this.prisma.workPreparation.upsert({
-          where: { workId: existing.id },
-          create: {
-            workId: existing.id,
-            tools: record.tools,
-            materials: record.materials,
-            steps: record.techniques,
-            riskNotes: record.nailCondition,
-            preparation: record.nextServiceNotes,
-            estimatedMinutes:
-              record.actualStartTime && record.actualEndTime
-                ? Math.max(
-                    1,
-                    Math.round(
-                      (record.actualEndTime.getTime() -
-                        record.actualStartTime.getTime()) /
-                        60000,
-                    ),
-                  )
-                : null,
-            sourceRecordId: record.id,
-          },
-          update: {
-            tools: record.tools,
-            materials: record.materials,
-            steps: record.techniques,
-            riskNotes: record.nailCondition,
-            preparation: record.nextServiceNotes,
-            estimatedMinutes:
-              record.actualStartTime && record.actualEndTime
-                ? Math.max(
-                    1,
-                    Math.round(
-                      (record.actualEndTime.getTime() -
-                        record.actualStartTime.getTime()) /
-                        60000,
-                    ),
-                  )
-                : null,
-            sourceRecordId: record.id,
-          },
-        });
-      }
+      if (record?.status === 'complete')
+        return this.updatePreparationFromRecord(technicianId, existing.id, record.id);
       return this.findOne(technicianId, existing.id);
     }
     const order = await this.prisma.order.findFirst({
@@ -588,6 +584,7 @@ export class TechnicianWorksService {
         serviceRecord: {
           select: {
             id: true,
+            status: true,
             actualAmount: true,
             tools: true,
             materials: true,
@@ -641,15 +638,13 @@ export class TechnicianWorksService {
           publicationStatus: 'draft',
           publicAuthorizationStatus: 'pending',
           isVisible: false,
-          ...(order.serviceRecord
+          ...(order.serviceRecord?.status === 'complete'
             ? {
                 preparation: {
                   create: {
                     tools: order.serviceRecord.tools,
                     materials: order.serviceRecord.materials,
                     steps: order.serviceRecord.techniques,
-                    riskNotes: order.serviceRecord.nailCondition,
-                    preparation: order.serviceRecord.nextServiceNotes,
                     estimatedMinutes:
                       order.serviceRecord.actualStartTime && order.serviceRecord.actualEndTime
                         ? Math.max(
@@ -711,6 +706,9 @@ export class TechnicianWorksService {
     if (!record || record.technicianId !== technicianId) {
       throw new NotFoundException('服务记录不存在');
     }
+    if (record.status !== 'complete') {
+      throw new BadRequestException('美甲记录完善后才能同步作品制作方案');
+    }
 
     const estimatedMinutes =
       record.actualStartTime && record.actualEndTime
@@ -723,23 +721,27 @@ export class TechnicianWorksService {
             ),
           )
         : null;
-    const data = {
-      tools: record.tools,
-      materials: record.materials,
-      steps: record.techniques,
-      riskNotes: record.nailCondition,
-      preparation: record.nextServiceNotes,
-      estimatedMinutes,
-      sourceRecordId: record.id,
-    };
-
     const existing = await this.prisma.workPreparation.findUnique({
       where: { workId },
-      select: { sourceRecordId: true, sourceRecordCount: true },
+      select: {
+        tools: true,
+        materials: true,
+        steps: true,
+        estimatedMinutes: true,
+        sourceRecordId: true,
+        sourceRecordCount: true,
+      },
     });
     const sourceRecordCount =
       (existing?.sourceRecordCount || 0) +
       (existing?.sourceRecordId === record.id ? 0 : 1);
+    const data = {
+      tools: mergeReusableList(existing?.tools, record.tools),
+      materials: mergeReusableList(existing?.materials, record.materials),
+      steps: record.techniques?.trim() || existing?.steps || null,
+      estimatedMinutes: estimatedMinutes || existing?.estimatedMinutes || null,
+      sourceRecordId: record.id,
+    };
 
     await this.prisma.workPreparation.upsert({
       where: { workId },

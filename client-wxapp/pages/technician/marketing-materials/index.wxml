@@ -1,47 +1,153 @@
-<nav-bar title="宣传物料" showBack/>
+<nav-bar title="营销工具" showBack/>
 <view class="page">
-  <view class="intro-card">
-    <text class="intro-title">制作作品宣传海报</text>
-    <text class="intro-desc">预览、编辑和保存草稿不会扣额度，仅成功导出图片时计费。</text>
+  <view class="completion-card">
+    <view class="completion-head">
+      <view class="completion-copy">
+        <text class="section-title">营销配置</text>
+        <text class="section-desc">完善公开主页、作品和邀请能力，让分享后的客户可以顺利了解并预约你</text>
+      </view>
+      <view class="completion-score" wx:if="{{!overviewLoading && !overviewLoadFailed}}">
+        <text class="completion-percent">{{completionPercent}}%</text>
+        <text class="completion-label">完成度</text>
+      </view>
+    </view>
+
+    <view wx:if="{{overviewLoading}}" class="overview-state">正在检查营销配置…</view>
+    <view wx:elif="{{overviewLoadFailed}}" class="overview-state overview-failed">
+      <text>配置状态加载失败</text>
+      <button class="inline-action" bindtap="loadMarketingOverview">重新检查</button>
+    </view>
+    <block wx:else>
+      <view class="progress-track" aria-label="营销配置完成度 {{completionPercent}}%">
+        <view class="progress-value" style="width: {{completionPercent}}%;"></view>
+      </view>
+      <text class="progress-summary">已完成 {{completionDoneCount}} / {{completionItems.length}} 项</text>
+      <view class="completion-list">
+        <view
+          wx:for="{{completionItems}}"
+          wx:key="key"
+          class="completion-row"
+          data-route="{{item.route}}"
+          bindtap="openMarketingTool"
+          role="button"
+          aria-label="{{item.label}}，{{item.done ? '已完成' : '待完善'}}"
+        >
+          <view class="status-mark {{item.done ? 'is-done' : ''}}">{{item.done ? '✓' : index + 1}}</view>
+          <view class="completion-item-copy">
+            <text class="completion-item-title">{{item.label}}</text>
+            <text class="completion-item-hint">{{item.hint}}</text>
+          </view>
+          <text class="completion-action">{{item.done ? '查看' : '去完善'}} ›</text>
+        </view>
+      </view>
+    </block>
   </view>
 
-  <view class="editor-card">
-    <view class="section-head">
-      <text class="section-title">{{editingId ? '编辑物料' : '新建物料'}}</text>
-      <button class="text-btn" disabled="{{saving || previewing || exporting}}" bindtap="newMaterial">清空重建</button>
+  <view class="tool-section">
+    <view class="group-head">
+      <text class="group-title">品牌与内容</text>
+      <text class="group-desc">管理客户看到的品牌形象与作品内容</text>
     </view>
-    <text class="field-label">主标题</text>
-    <input placeholder-class="form-placeholder" disabled="{{saving || previewing || exporting}}" class="field-input" maxlength="30" value="{{title}}" placeholder="例如：春日法式新款" bindinput="onTitleInput" confirm-type="done" />
-    <text class="field-label">副标题</text>
-    <input placeholder-class="form-placeholder" disabled="{{saving || previewing || exporting}}" class="field-input" maxlength="50" value="{{subtitle}}" placeholder="描述款式或活动亮点" bindinput="onSubtitleInput" confirm-type="done" />
-    <view class="field-row">
-      <view class="field-half">
-        <text class="field-label">参考价格</text>
-        <input placeholder-class="form-placeholder" disabled="{{saving || previewing || exporting}}" class="field-input" type="digit" value="{{price}}" placeholder="选填" bindinput="onPriceInput" confirm-type="done" />
+    <view class="tool-card">
+      <view class="tool-row" data-route="homepage" bindtap="openMarketingTool" role="button">
+        <view class="tool-icon"><image class="tool-icon-image" src="/static/icons/profile-edit.svg" mode="aspectFit" /></view>
+        <view class="tool-copy">
+          <text class="tool-title">美甲师主页</text>
+          <text class="tool-desc">配置公开资料与精选作品，建立个人品牌</text>
+        </view>
+        <text class="tool-arrow">›</text>
       </view>
-      <view class="field-half">
-        <text class="field-label">预约说明</text>
-        <input placeholder-class="form-placeholder" disabled="{{saving || previewing || exporting}}" class="field-input" maxlength="30" value="{{contact}}" placeholder="欢迎咨询预约" bindinput="onContactInput" confirm-type="done" />
+      <view class="tool-row" data-route="works" bindtap="openMarketingTool" role="button">
+        <view class="tool-icon"><image class="tool-icon-image" src="/static/icons/image.svg" mode="aspectFit" /></view>
+        <view class="tool-copy">
+          <text class="tool-title">作品管理</text>
+          <text class="tool-desc">发布、管理并分享作品</text>
+        </view>
+        <text class="tool-arrow">›</text>
       </view>
-    </view>
-    <image wx:if="{{previewUrl}}" class="poster-preview" src="{{previewUrl}}" mode="widthFix" aria-label="宣传海报预览" />
-    <view class="editor-actions">
-      <button class="secondary-btn booking-action" bindtap="previewMaterial" loading="{{previewing}}" disabled="{{saving || previewing || exporting}}">预览</button>
-      <button class="primary-btn booking-action" bindtap="exportMaterial" loading="{{exporting}}" disabled="{{saving || previewing || exporting}}">导出到相册</button>
     </view>
   </view>
 
-  <view class="history-card">
-    <text class="section-title">历史草稿</text>
-    <view wx:if="{{loading}}" class="empty-text">加载中…</view>
-    <view wx:elif="{{loadFailed}}" class="empty-text">草稿加载失败，请重试<button class="secondary-btn booking-action" bindtap="loadMaterials">重新加载</button></view>
-    <view wx:elif="{{materials.length === 0}}" class="empty-text">暂无草稿，从上方创建第一张海报</view>
-    <button wx:for="{{materials}}" wx:key="id" class="material-row" disabled="{{saving || previewing || exporting}}" data-id="{{item.id}}" bindtap="editMaterial">
-      <view class="material-main">
-        <text class="material-title">{{item.title}}</text>
-        <text class="material-meta">{{item.status === 'exported' ? '已导出' : '草稿'}} · 已导出 {{item.exportCount}} 次</text>
+  <view class="tool-section">
+    <view class="group-head">
+      <text class="group-title">客户增长</text>
+      <text class="group-desc">通过分享和邀请建立客户关系</text>
+    </view>
+    <view class="tool-card">
+      <view class="tool-row" data-route="quickQuote" bindtap="openMarketingTool" role="button">
+        <view class="tool-icon"><image class="tool-icon-image" src="/static/icons/calendar.svg" mode="aspectFit" /></view>
+        <view class="tool-copy">
+          <text class="tool-title">快速报价</text>
+          <text class="tool-desc">拆解服务与材料，生成可转发的专属报价确认函</text>
+        </view>
+        <text class="tool-arrow">›</text>
       </view>
-      <text class="material-edit">编辑</text>
-    </button>
+      <view class="tool-row" data-route="customers" bindtap="openMarketingTool" role="button">
+        <view class="tool-icon"><image class="tool-icon-image" src="/static/icons/client.svg" mode="aspectFit" /></view>
+        <view class="tool-copy">
+          <text class="tool-title">邀请客户</text>
+          <text class="tool-desc">发送邀请码，客户登录后自动绑定</text>
+        </view>
+        <text class="tool-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="tool-section material-section">
+    <view class="group-head">
+      <text class="group-title">宣传物料</text>
+      <text class="group-desc">将作品整理成适合转发的宣传图片</text>
+    </view>
+
+    <view class="poster-intro">
+      <view class="tool-icon"><image class="tool-icon-image" src="/static/icons/share.svg" mode="aspectFit" /></view>
+      <view class="tool-copy">
+        <text class="tool-title">作品宣传海报</text>
+        <text class="tool-desc">预览、编辑和保存草稿不扣额度，仅成功导出图片时计费</text>
+      </view>
+    </view>
+
+    <view class="editor-card">
+      <view class="section-head">
+        <text class="section-title">{{editingId ? '编辑物料' : '新建物料'}}</text>
+        <button class="text-btn" disabled="{{saving || previewing || exporting}}" bindtap="newMaterial">清空重建</button>
+      </view>
+      <text class="field-label">主标题</text>
+      <input placeholder-class="form-placeholder" disabled="{{saving || previewing || exporting}}" class="field-input" maxlength="30" value="{{title}}" placeholder="例如：春日法式新款" bindinput="onTitleInput" confirm-type="done" />
+      <text class="field-label">副标题</text>
+      <input placeholder-class="form-placeholder" disabled="{{saving || previewing || exporting}}" class="field-input" maxlength="50" value="{{subtitle}}" placeholder="描述款式或活动亮点" bindinput="onSubtitleInput" confirm-type="done" />
+      <view class="field-row">
+        <view class="field-half">
+          <text class="field-label">参考价格</text>
+          <input placeholder-class="form-placeholder" disabled="{{saving || previewing || exporting}}" class="field-input" type="digit" value="{{price}}" placeholder="选填" bindinput="onPriceInput" confirm-type="done" />
+        </view>
+        <view class="field-half">
+          <text class="field-label">预约说明</text>
+          <input placeholder-class="form-placeholder" disabled="{{saving || previewing || exporting}}" class="field-input" maxlength="30" value="{{contact}}" placeholder="欢迎咨询预约" bindinput="onContactInput" confirm-type="done" />
+        </view>
+      </view>
+      <image wx:if="{{previewUrl}}" class="poster-preview" src="{{previewUrl}}" mode="widthFix" aria-label="宣传海报预览" />
+      <view class="editor-actions">
+        <button class="secondary-btn booking-action" bindtap="previewMaterial" loading="{{previewing}}" disabled="{{saving || previewing || exporting}}">预览</button>
+        <button class="primary-btn booking-action" bindtap="exportMaterial" loading="{{exporting}}" disabled="{{saving || previewing || exporting}}">导出到相册</button>
+      </view>
+    </view>
+
+    <view class="history-card">
+      <text class="section-title">历史草稿</text>
+      <view wx:if="{{loading}}" class="empty-text">加载中…</view>
+      <view wx:elif="{{loadFailed}}" class="empty-text">
+        <text>草稿加载失败，请重试</text>
+        <button class="reload-btn" bindtap="loadMaterials">重新加载</button>
+      </view>
+      <view wx:elif="{{materials.length === 0}}" class="empty-text">暂无草稿，从上方创建第一张海报</view>
+      <button wx:for="{{materials}}" wx:key="id" class="material-row" disabled="{{saving || previewing || exporting}}" data-id="{{item.id}}" bindtap="editMaterial">
+        <view class="material-main">
+          <text class="material-title">{{item.title}}</text>
+          <text class="material-meta">{{item.status === 'exported' ? '已导出' : '草稿'}} · 已导出 {{item.exportCount}} 次</text>
+        </view>
+        <text class="material-edit">编辑</text>
+      </button>
+    </view>
   </view>
 </view>

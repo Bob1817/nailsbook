@@ -22,9 +22,10 @@
   </view>
   <block wx:elif="{{work.id}}">
     <view class="top-action top-back" style="{{topButtonStyle}}" data-event="back" bindtap="emit" role="button" aria-label="返回"><text class="top-back-glyph">‹</text></view>
-    <swiper class="image-swiper" current="{{currentImageIndex}}" circular="{{imageUrls.length > 1}}" bindchange="onSwiperChange">
+    <swiper class="image-swiper {{isClientView ? 'client-image-swiper' : ''}}" current="{{currentImageIndex}}" circular="{{imageUrls.length > 1}}" bindchange="onSwiperChange">
       <swiper-item wx:for="{{imageUrls}}" wx:key="*this" bindtap="previewImage" data-url="{{item}}"><image class="work-image" src="{{item}}" mode="aspectFill" aria-label="{{work.title || '美甲作品'}}第{{index + 1}}张图片" /></swiper-item>
     </swiper>
+    <view wx:if="{{isClientView && imageUrls.length > 1}}" class="image-count" aria-label="第{{currentImageIndex + 1}}张，共{{imageUrls.length}}张">{{currentImageIndex + 1}} / {{imageUrls.length}}</view>
     <view class="info-panel {{visitorInfo ? 'visitor-panel' : ''}}">
       <view class="intro-section">
         <view class="title-row">
@@ -89,19 +90,26 @@
         <text wx:else class="visitor-hint">店铺信息待完善，预约前请确认服务地点</text>
       </view>
 
-      <view wx:if="{{!visitorInfo}}" class="engagement-section" style="display:flex;overflow:hidden;">
-        <view style="flex:1 1 0;width:0;min-width:0;" class="engagement-action {{work.isLiked ? 'is-active' : ''}}" data-event="like" bindtap="emit" role="button" aria-label="点赞，{{work.likeCount || 0}}次"><image class="engagement-icon" src="{{work.isLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}"/><text class="action-count">{{work.likeCount || 0}}</text></view>
-        <view style="flex:1 1 0;width:0;min-width:0;" class="engagement-action {{work.isFavorited ? 'is-active' : ''}}" data-event="favorite" bindtap="emit" role="button" aria-label="收藏，{{work.favoriteCount || 0}}次"><image class="engagement-icon" src="{{work.isFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}"/><text class="action-count">{{work.favoriteCount || 0}}</text></view>
-        <button style="flex:1 1 0;width:0;min-width:0;" class="engagement-action" disabled="{{!canShare && !canRetryShare}}" open-type="{{canShare ? 'share' : ''}}" bindtap="retryShare" aria-label="{{canShare ? '分享作品' : (canRetryShare ? '重新检查作品分享状态' : '此作品暂不可分享')}}"><image class="engagement-icon" src="/static/icons/share.svg"/></button>
-      </view>
-
       <view wx:if="{{!visitorInfo}}" class="comments-section">
         <view class="comments-header"><text class="comments-title">评论</text><text class="comments-count">{{comments.length}} 条</text></view>
         <view wx:if="{{comments.length}}" class="comments">
           <view wx:for="{{comments}}" wx:key="id" class="comment" data-comment="{{item}}" bindtap="replyComment">
             <image wx:if="{{item.user.avatarUrl || item.userAvatar}}" class="avatar" src="{{item.user.avatarUrl || item.userAvatar}}" mode="aspectFill" />
             <view wx:else class="avatar fallback"><image src="{{(item.user.role || item.userRole) === 'technician' ? '/static/icons/technician.svg' : '/static/icons/client.svg'}}" mode="aspectFit" class="nb-default-avatar" aria-label="默认头像" /></view>
-            <view class="comment-body"><view class="comment-meta"><view class="comment-meta-copy"><text class="comment-name">{{item.user.name || item.userName || '匿名用户'}}</text><text wx:if="{{(item.user.role || item.userRole) === 'technician'}}" class="badge">美甲师</text><text wx:if="{{item.isPinned}}" class="badge pinned">置顶</text><text class="comment-time">{{item.createdAtText}}</text></view><view wx:if="{{isAuthor}}" class="comment-manage" data-comment="{{item}}" catchtap="manageComment" role="button" aria-label="管理评论">•••</view></view><text class="comment-text">{{item.content}}</text></view>
+            <view class="comment-body">
+              <view class="comment-meta"><view class="comment-meta-copy"><text class="comment-name">{{item.user.name || item.userName || '匿名用户'}}</text><text wx:if="{{(item.user.role || item.userRole) === 'technician'}}" class="badge">美甲师</text><text wx:if="{{item.isPinned}}" class="badge pinned">置顶</text><text class="comment-time">{{item.createdAtText}}</text></view><view wx:if="{{isAuthor}}" class="comment-manage" data-comment="{{item}}" catchtap="manageComment" role="button" aria-label="管理评论">•••</view></view>
+              <text class="comment-text">{{item.content}}</text>
+              <view wx:if="{{item.replies && item.replies.length}}" class="comment-replies">
+                <view wx:for="{{item.replies}}" wx:for-item="reply" wx:key="id" class="comment-reply">
+                  <image wx:if="{{reply.user.avatarUrl || reply.userAvatar}}" class="reply-avatar" src="{{reply.user.avatarUrl || reply.userAvatar}}" mode="aspectFill" />
+                  <view wx:else class="reply-avatar fallback"><image src="{{(reply.user.role || reply.userRole) === 'technician' ? '/static/icons/technician.svg' : '/static/icons/client.svg'}}" mode="aspectFit" class="nb-default-avatar" aria-label="默认头像" /></view>
+                  <view class="reply-body">
+                    <view class="reply-meta"><text class="reply-name">{{reply.user.name || reply.userName || '匿名用户'}}</text><text wx:if="{{(reply.user.role || reply.userRole) === 'technician'}}" class="badge">美甲师</text><text class="comment-time">{{reply.createdAtText}}</text></view>
+                    <text class="reply-text">{{reply.content}}</text>
+                  </view>
+                </view>
+              </view>
+            </view>
           </view>
         </view>
         <view wx:else class="empty"><text class="empty-title">还没有评论</text><text class="empty-sub">说说你对这个作品的看法</text></view>
@@ -112,7 +120,18 @@
     </view>
     <view wx:if="{{!visitorInfo}}" class="composer-section" style="bottom:{{keyboardHeight}}px;{{keyboardHeight ? 'padding-bottom:20rpx;' : ''}}">
         <view wx:if="{{replyingTo}}" class="replying">回复 @{{replyingTo.name}} <text class="replying-cancel" data-event="commentcancel" bindtap="emit">取消</text></view>
-        <view class="input-row"><input class="comment-input" placeholder="{{canComment ? '添加评论…' : '登录后参与评论'}}" value="{{commentText}}" focus="{{inputFocused}}" adjust-position="{{false}}" hold-keyboard="{{true}}" bindkeyboardheightchange="onKeyboardHeightChange" bindblur="onInputBlur" bindinput="onInput" bindconfirm="submitComment" confirm-type="send"/><button disabled="{{submittingComment}}" loading="{{submittingComment}}" class="send" hover-class="send-pressed" bindtap="submitComment" aria-label="{{submittingComment ? '正在发送评论' : '发送评论'}}">{{submittingComment ? '发送中' : '发送'}}</button></view>
+        <view class="input-row">
+          <view class="comment-entry">
+            <image class="comment-entry-icon" src="/static/icons/edit.svg" mode="aspectFit" aria-hidden="true" />
+            <input class="comment-input" placeholder="{{canComment ? '写评论…' : '登录后参与评论'}}" value="{{commentText}}" focus="{{inputFocused}}" adjust-position="{{false}}" hold-keyboard="{{true}}" bindfocus="onInputFocus" bindkeyboardheightchange="onKeyboardHeightChange" bindblur="onInputBlur" bindinput="onInput" bindconfirm="submitComment" confirm-type="send"/>
+          </view>
+          <button wx:if="{{inputFocused || keyboardHeight || commentText || replyingTo}}" disabled="{{submittingComment}}" loading="{{submittingComment}}" class="send" hover-class="send-pressed" bindtap="submitComment" aria-label="{{submittingComment ? '正在发送评论' : '发送评论'}}">{{submittingComment ? '发送中' : '发送'}}</button>
+          <view wx:else class="composer-actions">
+            <view class="composer-action composer-stat {{work.isLiked ? 'is-active' : ''}}" data-event="like" bindtap="emit" role="button" aria-label="点赞，{{work.likeCount || 0}}次"><image class="composer-action-icon" src="{{work.isLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}"/><text class="composer-action-count">{{work.likeCount || 0}}</text></view>
+            <view class="composer-action composer-stat {{work.isFavorited ? 'is-active' : ''}}" data-event="favorite" bindtap="emit" role="button" aria-label="收藏，{{work.favoriteCount || 0}}次"><image class="composer-action-icon" src="{{work.isFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}"/><text class="composer-action-count">{{work.favoriteCount || 0}}</text></view>
+            <button class="composer-action composer-share" disabled="{{!canShare && !canRetryShare}}" open-type="{{canShare ? 'share' : ''}}" bindtap="retryShare" aria-label="{{canShare ? '分享作品' : (canRetryShare ? '重新检查作品分享状态' : '此作品暂不可分享')}}"><image class="composer-action-icon" src="/static/icons/share.svg"/></button>
+          </view>
+        </view>
     </view>
     <!-- 已登录：分享 + 预约同款 / 编辑作品 -->
     <view wx:if="{{visitorInfo && isLoggedIn}}" class="visitor-booking-bar">

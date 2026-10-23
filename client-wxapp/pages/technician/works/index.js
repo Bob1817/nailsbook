@@ -183,10 +183,6 @@ Page({
     wx.navigateTo({ url: '/pages/technician/work-edit/index' });
   },
   goDetail(e) { wx.navigateTo({ url: '/pages/technician/work-detail/index?id=' + ((e.detail && e.detail.id) || e.currentTarget.dataset.id) }); },
-  openArtistHome(e) {
-    const id = e.detail && e.detail.id;
-    if (id) wx.navigateTo({ url: '/pages/client/artist-home/index?id=' + id });
-  },
   goEditById(id) { wx.navigateTo({ url: '/pages/technician/work-edit/index?id=' + id }); },
 
   async toggleVisible(id) {
@@ -243,26 +239,5 @@ Page({
       wx.hideLoading();
       wx.showToast({ title: '删除失败', icon: 'none' });
     }
-  }
-  ,
-
-  manageHero(e) {
-    const dataset = e.currentTarget.dataset;
-    wx.navigateTo({ url: '/pages/technician/hero-recommendations/index?' + (dataset.hero ? 'removeWorkId=' : 'workId=') + dataset.id });
-  },
-
-  showShareBlockReason(e) {
-    wx.showToast({ title: e.currentTarget.dataset.reason || '该作品暂不可公开分享', icon: 'none' });
-  },
-
-  onShareAppMessage(options) {
-    const id = options && options.target && options.target.dataset.id;
-    const work = this.data.works.find(item => String(item.id) === String(id));
-    if (!work) return { title: '我的美甲作品', path: '/pages/client/works/index' };
-    if (!work.isShareReady) return { title: '我的美甲作品', path: '/pages/client/works/index' };
-    const profile = wx.getStorageSync('userInfo') || wx.getStorageSync('technician_userInfo') || {};
-    const inviteCode = profile.invitationCode || profile.inviteCode || '';
-    const inviteQuery = inviteCode ? '&invite=' + encodeURIComponent(inviteCode) : '';
-    return { title: require('../../../utils/share-copy').buildWorkShareTitle(work), path: '/pages/client/public-work/index?id=' + work.id + inviteQuery + '&channel=wechat_share', imageUrl: work.coverUrl || '' };
   }
 });

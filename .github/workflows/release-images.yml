@@ -56,7 +56,12 @@ jobs:
         run: |
           npm ci
           npm run check:schema-drift
-          npm test -- --runInBand src/artist-applications/artist-applications.service.spec.ts src/artist-applications/artist-applications.sqlite.spec.ts
+          npm test -- --runInBand \
+            src/artist-applications/artist-applications.service.spec.ts \
+            src/artist-applications/artist-applications.sqlite.spec.ts \
+            src/orders/orders.transitions.spec.ts \
+            src/orders/client-orders.create.spec.ts \
+            src/technician-works/work-preparation-from-record.spec.ts
           npm run build
 
       - name: Verify admin frontend

@@ -59,7 +59,7 @@ Page({
   async onLoad(options) {
     this._pageActive = true;
     await Promise.all([this.loadAccessOptions(), this.loadServices(), this.loadWorkTags()]);
-    if (!options.id && !options.orderId && !options.customerId) {
+    if (!options.id && !options.orderId) {
       await this.restoreCreateIntent();
     }
     if (options.id) {
@@ -67,8 +67,6 @@ Page({
       this.loadWork(options.id);
     } else if (options.orderId) {
       this.prefillFromOrder(options.orderId);
-    } else if (options.customerId) {
-      this.prefillCustomer(options.customerId);
     }
     wx.setNavigationBarTitle({ title: options.id ? '编辑作品' : '上传作品' });
   },
@@ -160,18 +158,6 @@ Page({
 
   clearCreateIntent() {
     if (typeof wx.removeStorageSync === 'function') wx.removeStorageSync(CREATE_INTENT_STORAGE_KEY);
-  },
-
-  prefillCustomer(customerId) {
-    const customer = this.data.accessOptions.find(item => String(item.id) === String(customerId));
-    if (!customer) {
-      wx.showToast({ title: '该客户尚未绑定客户端账号', icon: 'none' });
-      return;
-    }
-    this.setData({
-      visibilityScope: 'authorized_clients',
-      accessGrants: [makeGrant(customer, customer.orders || [])]
-    });
   },
 
   // 由"完成服务"引导进入：预填该订单所属客户的授权，并预选关联该订单

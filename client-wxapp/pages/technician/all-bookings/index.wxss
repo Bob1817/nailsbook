@@ -52,8 +52,20 @@ page {
 .page-header {
   flex-shrink: 0;
   padding: 16rpx 40rpx 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 .page-count { font-size: var(--font-sm); color: var(--text-muted); }
+.quick-quote-entry {
+  min-height: 88rpx;
+  padding: 0 24rpx;
+  display: flex;
+  align-items: center;
+  color: var(--nb-text-link);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-medium);
+}
 
 /* ===== 列表 ===== */
 .list-scroll { flex: 1; min-height: 0; }
@@ -87,3 +99,37 @@ page {
 
 /* ===== 行程卡片 ===== */
 .trip-list { display: flex; flex-direction: column; gap: 16rpx; }
+.quote-list { display: flex; flex-direction: column; gap: 16rpx; }
+.partial-load-tip { min-height: 88rpx; padding: 0 24rpx; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-md); background: var(--bg-input); color: var(--text-muted); font-size: var(--font-sm); }
+.quote-card {
+  padding: 28rpx 30rpx;
+  border-radius: var(--card-radius);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+}
+.quote-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20rpx; }
+.quote-title-group { min-width: 0; display: flex; flex-direction: column; gap: 6rpx; }
+.quote-title { color: var(--text-primary); font-size: var(--font-md); font-weight: var(--weight-semibold); }
+.quote-no { color: var(--text-muted); font-size: var(--font-xs); }
+.quote-status { flex-shrink: 0; padding: 8rpx 16rpx; border-radius: var(--radius-sm); font-size: var(--font-xs); }
+.quote-status.pending { background: var(--tone-gray-bg); color: var(--tone-gray-text); }
+.quote-status.done { background: var(--tone-emerald-bg); color: var(--tone-emerald-text); }
+.quote-status.muted { background: var(--bg-input); color: var(--text-muted); }
+.quote-summary { margin-top: 22rpx; display: block; color: var(--text-secondary); font-size: var(--font-sm); line-height: 1.55; }
+.quote-meta { margin-top: 20rpx; display: flex; flex-wrap: wrap; gap: 12rpx 24rpx; color: var(--text-muted); font-size: var(--font-xs); }
+.quote-meta text:first-child { color: var(--text-primary); font-weight: var(--weight-semibold); }
+.quote-order-link,
+.quote-next { min-height: 88rpx; margin-top: 12rpx; display: flex; align-items: center; justify-content: flex-end; color: var(--nb-text-link); font-size: var(--font-sm); }
+.request-quote-mask { position: fixed; z-index: 100; inset: 0; display: flex; align-items: flex-end; background: rgba(0,0,0,.48); }
+.request-quote-sheet { width: 100%; padding: 30rpx 30rpx calc(30rpx + env(safe-area-inset-bottom)); border-radius: 30rpx 30rpx 0 0; background: var(--bg-card); box-sizing: border-box; }
+.request-quote-title { display: block; color: var(--text-primary); font-size: var(--font-lg); font-weight: var(--weight-semibold); }
+.request-quote-label { display: block; margin: 24rpx 0 10rpx; color: var(--text-muted); font-size: var(--font-sm); }
+.request-quote-input,
+.request-quote-textarea { width: 100%; padding: 0 22rpx; border: 0; border-radius: var(--radius-sm); background: var(--bg-input); box-sizing: border-box; }
+.request-quote-input { height: 88rpx; }
+.request-quote-textarea { height: 150rpx; padding-top: 20rpx; }
+.request-quote-actions { display: flex; gap: 14rpx; margin-top: 26rpx; }
+.request-quote-cancel,
+.request-quote-submit { min-height: 88rpx; flex: 1; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-lg); font-size: var(--font-sm); font-weight: var(--weight-semibold); }
+.request-quote-cancel { background: var(--bg-input); color: var(--text-muted); }
+.request-quote-submit { background: var(--nb-action); color: var(--text-inverse); }

@@ -1,5 +1,6 @@
 var api = require('../../../services/api');
 var { normalizeWork } = require('../../../utils/normalize-work');
+var { buildClientLoginUrl } = require('../../../utils/artist-navigation');
 
 var SORT_TABS = [
   { key: 'latest', label: '最新' },
@@ -52,6 +53,7 @@ Page({
     keyword: '',
     targetTechId: '',
     businessPage: false,
+    galleryOnly: false,
     artist: null,
     serviceItems: [],
     shopAddresses: [],
@@ -61,10 +63,12 @@ Page({
   onLoad: function (options) {
     this.entrySource = options.source || (options.techId ? 'artist_home' : 'works');
     this.inviteCode = options.invite ? decodeURIComponent(options.invite) : '';
-    if (wx.showShareMenu) wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
+    if (options.techId) wx.hideShareMenu();
+    else if (wx.showShareMenu) wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
     this.setData({
       keyword: options.keyword ? decodeURIComponent(options.keyword) : '',
-      targetTechId: options.techId ? String(options.techId) : ''
+      targetTechId: options.techId ? String(options.techId) : '',
+      galleryOnly: options.mode === 'gallery'
     });
     if (this.data.targetTechId) {
       this.loadBusinessPage();
@@ -82,7 +86,8 @@ Page({
     ]).then(function (results) {
       var res = results[0];
       var artist = res.artist || {};
-      self.inviteCode = self.inviteCode || artist.invitationCode || '';
+      // 公开作品集按 techId 加载，归因邀请码以该美甲师的公开资料为准。
+      self.inviteCode = artist.invitationCode || '';
       artist.initial = (artist.name || '美').charAt(0);
       var techSnapshot = {
         id: artist.id,
@@ -118,6 +123,8 @@ Page({
         loading: false,
         loadFailed: false
       });
+      if (self.inviteCode) wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
+      else wx.hideShareMenu();
       self.applyFilter();
     }).catch(function (err) {
       console.error('loadBusinessPage error:', err);
@@ -284,10 +291,15 @@ Page({
     }
     var app = getApp();
     var source = this.entrySource || 'card';
-    var target = '/pages/client/works/index?techId=' + artist.id + '&source=' + encodeURIComponent(source) + (artist.invitationCode ? '&invite=' + encodeURIComponent(artist.invitationCode) : '');
+    var target = '/pages/client/artist-home/index?id=' + artist.id + '&source=' + encodeURIComponent(source) + (artist.invitationCode ? '&invite=' + encodeURIComponent(artist.invitationCode) : '') + '&book=1';
     if (!app.globalData.token || wx.getStorageSync('role') !== 'client') {
-      var invite = artist.invitationCode ? '&invite=' + encodeURIComponent(artist.invitationCode) : '';
-      wx.navigateTo({ url: '/pages/client/login/index?redirect=' + encodeURIComponent(target) + invite + '&source=card' });
+      wx.navigateTo({
+        url: buildClientLoginUrl(target, {
+          source: source,
+          inviteCode: artist.invitationCode,
+          quickBookingTechId: artist.id
+        })
+      });
       return;
     }
     var bindings = wx.getStorageSync('client_bindings') || [];
@@ -295,7 +307,7 @@ Page({
       return String((binding.technician && binding.technician.id) || binding.id) === String(artist.id);
     });
     if (bound) {
-      wx.navigateTo({ url: '/pages/client/create-order/index?techId=' + artist.id + '&source=' + encodeURIComponent(source) });
+      wx.navigateTo({ url: '/pages/client/create-order/index?techId=' + artist.id + '&invite=' + encodeURIComponent(artist.invitationCode || '') + '&source=' + encodeURIComponent(source) });
       return;
     }
     if (!artist.invitationCode) {

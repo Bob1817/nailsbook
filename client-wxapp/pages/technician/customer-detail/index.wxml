@@ -79,19 +79,35 @@
     <text class="lifecycle-explanation">{{customer._lifecycleReason}}。仅统计已完成服务与确认收入。</text>
   </view>
 
-  <view wx:if="{{customer._profileFacts.length}}" class="card customer-memory-card">
-    <view class="card-head"><text class="card-title">客户注意事项</text><text class="memory-private">仅美甲师可见</text></view>
-    <view wx:for="{{customer._profileFacts}}" wx:key="id" class="memory-row">
-      <text class="memory-category">{{item._categoryText}}</text>
-      <view class="memory-copy"><text>{{item.content}}</text><text class="memory-date">最近确认 {{item._confirmedText}}</text></view>
+  <view class="card customer-memory-card">
+    <view class="card-head"><text class="card-title">美甲档案</text><view class="card-action" bindtap="addProfileFact" role="button">新增</view></view>
+    <text class="memory-private">稳定信息 · 仅美甲师可见</text>
+    <view wx:for="{{customer._profileGroups}}" wx:key="key" class="memory-group">
+      <text class="memory-group-title">{{item.title}}</text>
+      <view wx:for="{{item.items}}" wx:for-item="fact" wx:key="_key" class="memory-row">
+        <view class="memory-copy">
+          <text>{{fact.content}}</text>
+          <text wx:if="{{fact._confirmedText}}" class="memory-date">最近确认 {{fact._confirmedText}}</text>
+        </view>
+      </view>
     </view>
-  </view>
+    <text wx:if="{{!customer._profileGroups.length}}" class="muted">暂无稳定档案，可新增或确认客户自述</text>
 
-  <view wx:if="{{customer._serviceRecords.length}}" class="card service-history-card">
-    <view class="card-head"><text class="card-title">美甲记录（{{customer._serviceRecords.length}}）</text></view>
-    <view wx:for="{{customer._serviceRecords}}" wx:key="id" class="service-history-row" bindtap="openServiceRecord" data-order-id="{{item.orderId}}">
-      <view class="service-history-copy"><text class="service-history-title">{{item._dateText}} · {{item.nailCondition || '服务记录'}}</text><text class="service-history-desc">{{item.materials || item.techniques || item.customerFeedback || '查看本次服务详情'}}</text></view>
-      <view class="service-history-meta"><text>{{item._photoCount}} 张照片</text><text>{{item.status === 'complete' ? '已完善' : '草稿'}} ›</text></view>
+    <view wx:if="{{customer._pendingFacts.length}}" class="memory-pending">
+      <text class="memory-pending-title">待确认的新发现</text>
+      <view wx:for="{{customer._pendingFacts}}" wx:key="_key" class="memory-pending-row">
+        <view class="memory-copy"><text>{{item._categoryText}}：{{item.content}}</text></view>
+        <view class="fact-action" data-id="{{item.id}}" data-status="active" catchtap="updateFactStatus" role="button" aria-label="确认这条档案信息">确认</view>
+        <view class="fact-action" data-id="{{item.id}}" data-status="inactive" catchtap="updateFactStatus" role="button" aria-label="忽略这条档案信息">忽略</view>
+      </view>
+    </view>
+
+    <view wx:if="{{customer._selfReported.length}}" class="memory-pending">
+      <text class="memory-pending-title">客户自述 · 待确认</text>
+      <view wx:for="{{customer._selfReported}}" wx:key="content" class="memory-pending-row">
+        <view class="memory-copy"><text>{{item.label}}：{{item.content}}</text></view>
+        <view class="fact-action" data-category="{{item.category}}" data-content="{{item.content}}" catchtap="confirmSelfReported" role="button" aria-label="确认客户自述并写入档案">确认</view>
+      </view>
     </view>
   </view>
 
@@ -146,13 +162,11 @@
   </view>
 
   <!-- ============ 关联作品 ============ -->
-  <view class="card">
+  <view wx:if="{{customer._serviceRecords.length === 0 && customer.relatedWorks.length}}" class="card">
     <view class="card-head">
       <text class="card-title">关联作品（{{customer.relatedWorks.length}}）</text>
-      <view wx:if="{{customer.clientUserId}}" class="card-action" bindtap="createExclusiveWork">新建专属作品</view>
     </view>
-    <view wx:if="{{customer.relatedWorks.length === 0}}" class="muted">暂无关联作品，可在发布或编辑作品时为该客户授权</view>
-    <scroll-view wx:else scroll-x enhanced show-scrollbar="{{false}}" class="work-scroll">
+    <scroll-view scroll-x enhanced show-scrollbar="{{false}}" class="work-scroll">
       <view class="work-row">
         <view wx:for="{{customer.relatedWorks}}" wx:key="id" class="related-work" bindtap="goWorkDetail" data-id="{{item.id}}">
           <image wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" class="related-work-image" lazy-load aria-label="{{item.title || '客户关联作品'}}"/>
@@ -165,66 +179,22 @@
     </scroll-view>
   </view>
 
-  <!-- ============ 客户跟进记录 ============ -->
-  <view class="card">
+  <!-- ============ 美甲记录 ============ -->
+  <view wx:if="{{customer._serviceRecords.length}}" class="card service-history-card">
     <view class="card-head">
-      <text class="card-title">客户跟进记录（{{customer._followUps.length}}）</text>
-      <view class="card-action" bindtap="openFollowUpSheet" role="button" aria-label="新增跟进记录">新增记录</view>
+      <text class="card-title">美甲记录（{{customer._serviceRecords.length}}）</text>
     </view>
-    <view wx:if="{{customer._followUps.length === 0}}" class="muted">暂无跟进记录，点击「新增记录」安排回访沟通</view>
-    <view wx:else class="fu-list">
-      <view wx:for="{{customer._followUps}}" wx:key="id" class="fu-item">
-        <view class="fu-head">
-          <text class="fu-date">{{item._plannedText}}</text>
-          <text class="fu-status {{item.status === 'completed' ? 'fu-status-done' : 'fu-status-pending'}}">{{item._statusText}}</text>
+    <view wx:for="{{customer._serviceRecords}}" wx:key="id" class="service-history-row" bindtap="openServiceRecord" data-order-id="{{item.orderId}}" data-mode="{{item.status === 'complete' ? 'record' : 'edit'}}" role="button" aria-label="查看本次美甲记录">
+      <view class="service-history-head">
+        <view class="service-history-copy">
+          <text class="service-history-title">{{item._dateText}}</text>
+          <text class="service-history-desc">{{item._serviceTitle}}</text>
         </view>
-        <text class="fu-content">{{item.content}}</text>
-        <view wx:if="{{item._relatedOrderText || item._relatedWork}}" class="fu-links">
-          <view wx:if="{{item._relatedOrderText}}" class="fu-link">
-            <text class="fu-link-label">关联预约</text>
-            <text class="fu-link-value">{{item._relatedOrderText}}</text>
-          </view>
-          <view wx:if="{{item._relatedWork}}" class="fu-link work-link" bindtap="goWorkDetail" data-id="{{item._relatedWork.id}}" role="button" aria-label="查看关联作品">
-            <text class="fu-link-label">关联作品</text>
-            <text class="fu-link-value">{{item._relatedWork.title || '未命名作品'}}</text>
-          </view>
-        </view>
-        <view wx:if="{{item.nailProjects || item.materials || item.tools}}" class="fu-details">
-          <view wx:if="{{item.nailProjects}}" class="fu-detail">
-            <text class="fu-detail-label">美甲项目</text>
-            <text class="fu-detail-value">{{item.nailProjects}}</text>
-          </view>
-          <view wx:if="{{item.materials}}" class="fu-detail">
-            <text class="fu-detail-label">使用材料</text>
-            <text class="fu-detail-value">{{item.materials}}</text>
-          </view>
-          <view wx:if="{{item.tools}}" class="fu-detail">
-            <text class="fu-detail-label">工具</text>
-            <text class="fu-detail-value">{{item.tools}}</text>
-          </view>
-        </view>
-        <view wx:if="{{item._beforePhotos.length || item._afterPhotos.length}}" class="fu-photos">
-          <view wx:if="{{item._beforePhotos.length}}" class="fu-photo-group">
-            <text class="fu-photo-label">服务前</text>
-            <view class="fu-photo-row">
-              <image wx:for="{{item._beforePhotos}}" wx:for-item="photo" wx:key="*this" src="{{photo}}" mode="aspectFill" class="fu-photo" lazy-load data-urls="{{item._beforePhotos}}" data-url="{{photo}}" bindtap="previewFollowUpPhoto" aria-label="服务前照片" />
-            </view>
-          </view>
-          <view wx:if="{{item._afterPhotos.length}}" class="fu-photo-group">
-            <text class="fu-photo-label">服务后</text>
-            <view class="fu-photo-row">
-              <image wx:for="{{item._afterPhotos}}" wx:for-item="photo" wx:key="*this" src="{{photo}}" mode="aspectFill" class="fu-photo" lazy-load data-urls="{{item._afterPhotos}}" data-url="{{photo}}" bindtap="previewFollowUpPhoto" aria-label="服务后照片" />
-            </view>
-          </view>
-        </view>
-        <view
-          wx:if="{{item.status === 'pending'}}"
-          class="fu-complete booking-action {{completingFollowUpId ? 'is-disabled' : ''}}"
-          aria-disabled="{{!!completingFollowUpId}}"
-          role="button"
-          bindtap="completeFollowUp"
-          data-id="{{item.id}}"
-        >{{completingFollowUpId === item.id ? '处理中' : '完成跟进'}}</view>
+        <text class="record-status">{{item._statusText}}</text>
+      </view>
+      <view class="record-foot">
+        <text class="service-history-meta">{{item._photoCountsText}}</text>
+        <text wx:if="{{item._missingText}}" class="record-missing">{{item._missingText}} · 去补全</text>
       </view>
     </view>
   </view>
@@ -241,9 +211,9 @@
   <view class="remark-modal" catchtap="">
     <text class="remark-modal-title">编辑其他备注</text>
     <textarea
-      class="fu-input"
+      class="notes-input"
       maxlength="500"
-      placeholder="记录客户过敏史、偏好、禁忌等"
+      placeholder="记录无法归类的其他信息"
       placeholder-class="customer-form-placeholder"
       value="{{notesDraft}}"
       bindinput="onNotesInput"
@@ -332,57 +302,6 @@
   <view class="sheet-footer">
     <view class="action-btn action-primary booking-action {{savingTags ? 'is-disabled' : ''}}" role="button" aria-disabled="{{savingTags}}" bindtap="saveTags">
       {{savingTags ? '保存中...' : '保存标签'}}
-    </view>
-  </view>
-</view>
-
-<!-- ============ 新增跟进记录弹层 ============ -->
-<view wx:if="{{showFollowUpSheet}}" class="sheet-mask" bindtap="closeFollowUpSheet"></view>
-<view class="sheet {{showFollowUpSheet ? 'sheet-show' : ''}}" catchtap="">
-  <view class="sheet-header">
-    <text class="sheet-title">新增跟进记录</text>
-    <view class="sheet-close {{savingFollowUp || uploadingFu ? 'is-disabled' : ''}}" bindtap="closeFollowUpSheet" role="button" aria-label="关闭新增跟进记录" aria-disabled="{{savingFollowUp || uploadingFu}}">✕</view>
-  </view>
-
-  <scroll-view scroll-y class="sheet-body">
-    <text class="sub-label">跟进内容</text>
-    <textarea
-      class="fu-input"
-      maxlength="500"
-      placeholder="记录回访内容或下次需要联系的事项"
-      placeholder-class="customer-form-placeholder"
-      value="{{fuDraft.content}}"
-      bindinput="onFuContentInput" confirm-type="done" />
-
-    <text class="sub-label">计划日期</text>
-    <picker mode="date" value="{{fuDraft.plannedDate}}" bindchange="onFuDateChange">
-      <view class="fu-picker-row">
-        <text class="fu-picker-value">{{fuDraft.plannedDate}}</text>
-        <text class="fu-picker-arrow">›</text>
-      </view>
-    </picker>
-
-    <text class="sub-label">关联预约（可选）</text>
-    <picker mode="selector" range="{{fuBookingOptions}}" range-key="label" value="{{fuBookingIndex}}" bindchange="onFuBookingChange">
-      <view class="fu-picker-row">
-        <text class="fu-picker-value {{fuBookingIndex === 0 ? 'is-placeholder' : ''}}">{{fuBookingOptions[fuBookingIndex] ? fuBookingOptions[fuBookingIndex].label : '不关联预约'}}</text>
-        <text class="fu-picker-arrow">›</text>
-      </view>
-    </picker>
-
-    <text class="sub-label">关联作品（可选）</text>
-    <picker mode="selector" range="{{fuWorkOptions}}" range-key="label" value="{{fuWorkIndex}}" bindchange="onFuWorkChange">
-      <view class="fu-picker-row">
-        <text class="fu-picker-value {{fuWorkIndex === 0 ? 'is-placeholder' : ''}}">{{fuWorkOptions[fuWorkIndex] ? fuWorkOptions[fuWorkIndex].label : '不关联作品'}}</text>
-        <text class="fu-picker-arrow">›</text>
-      </view>
-    </picker>
-
-  </scroll-view>
-
-  <view class="sheet-footer">
-    <view class="action-btn action-primary booking-action {{savingFollowUp || uploadingFu ? 'is-disabled' : ''}}" role="button" aria-disabled="{{savingFollowUp || uploadingFu}}" bindtap="submitFollowUp">
-      {{savingFollowUp ? '保存中...' : '保存记录'}}
     </view>
   </view>
 </view>

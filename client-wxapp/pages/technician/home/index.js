@@ -34,7 +34,6 @@ Page({
     todoItems: [],
     confirmationTodos: [],
     todoTotal: 0,
-    todayFollowUps: [],
     actionTasks: [],
     businessOverview: null,
 
@@ -46,7 +45,9 @@ Page({
     reminderStatus: null,
     bookingReminderNeeded: false,
     showSubscriptionOnboarding: false,
-    reminderRequesting: false
+    reminderRequesting: false,
+    shareProfile: null,
+    shareIdentityReady: false
   },
 
   // ---------- 生命周期 ----------
@@ -60,7 +61,14 @@ Page({
 
   onShow() {
     if (wx.getStorageSync('role') !== 'technician') return;
-    this.setData({ isTourist: isTouristTechnician() });
+    const tourist = isTouristTechnician();
+    const shareProfile = wx.getStorageSync('technician_userInfo') || wx.getStorageSync('userInfo') || {};
+    this.setData({
+      isTourist: tourist,
+      shareProfile,
+      shareIdentityReady: !tourist && !!shareProfile.id && !!shareProfile.invitationCode
+    });
+    if (!tourist && (!shareProfile.id || !shareProfile.invitationCode)) this.prepareShortcutShares();
     this.loadDashboard();
   },
 
@@ -79,12 +87,11 @@ Page({
     this.setData({ loading: true });
 
     try {
-      const [tripsResult, ordersResult, convResult, worksResult, followUpsResult, insights, incomeCalendar, reminderResult, actionTasksResult] = await Promise.all([
+      const [tripsResult, ordersResult, convResult, worksResult, insights, incomeCalendar, reminderResult, actionTasksResult] = await Promise.all([
         api.technician.orders.trips().catch(() => []),
         api.technician.orders.list().catch(() => []),
         api.chat.technician.conversations().catch(() => []),
         api.technician.works.list().catch(() => []),
-        api.technician.customers.todayFollowUps().catch(() => []),
         api.technician.insights.overview().catch(() => null),
         api.technician.orders.incomeCalendar().catch(() => null),
         isTouristTechnician()
@@ -100,15 +107,6 @@ Page({
       const allOrdersRaw = Array.isArray(ordersResult) ? ordersResult : (ordersResult.data || []);
       const convs = Array.isArray(convResult) ? convResult : (convResult.data || []);
       const worksRaw = Array.isArray(worksResult) ? worksResult : (worksResult.data || []);
-      const followUpsRaw = Array.isArray(followUpsResult)
-        ? followUpsResult
-        : (followUpsResult.data || []);
-      const todayFollowUps = followUpsRaw.map(item => ({
-        ...item,
-        _clock: formatClock(item.plannedAt),
-        _customerName: (item.customer && item.customer.name) || '客户'
-      }));
-
       const orders = tripsRaw.map(normalizeOrder).filter(Boolean);
       const allOrders = allOrdersRaw.map(normalizeOrder).filter(Boolean);
       const summary = buildDashboardSummary(orders, new Date());
@@ -283,7 +281,6 @@ Page({
         todoItems,
         confirmationTodos,
         todoTotal,
-        todayFollowUps,
         actionTasks,
         businessOverview,
         featuredWorks,
@@ -520,6 +517,75 @@ Page({
     wx.navigateTo({ url: '/pages/technician/business-data/index' });
   },
 
+  openQuickQuote() {
+    if (isTouristTechnician()) {
+      wx.showToast({ title: '请先激活美甲师账号', icon: 'none' });
+      return;
+    }
+    wx.navigateTo({ url: '/pages/technician/quick-quote/index' });
+  },
+
+  openCreateBooking() {
+    if (isTouristTechnician()) {
+      wx.showToast({ title: '请先激活美甲师账号', icon: 'none' });
+      return;
+    }
+    wx.navigateTo({ url: '/pages/technician/create-order/index' });
+  },
+
+  async prepareShortcutShares() {
+    try {
+      const cached = this.data.shareProfile || {};
+      const fresh = await api.technician.auth.getUserInfo();
+      const shareProfile = { ...cached, ...fresh };
+      wx.setStorageSync('userInfo', shareProfile);
+      wx.setStorageSync('technician_userInfo', shareProfile);
+      this.setData({
+        shareProfile,
+        shareIdentityReady: !!shareProfile.id && !!shareProfile.invitationCode
+      });
+    } catch (err) {
+      console.warn('refresh shortcut share profile failed', err);
+    }
+  },
+
+  handleShortcutShareUnavailable() {
+    if (isTouristTechnician()) {
+      wx.showToast({ title: '请先激活美甲师账号', icon: 'none' });
+      return;
+    }
+    wx.showToast({ title: '主页信息加载中，请稍后重试', icon: 'none' });
+    this.prepareShortcutShares();
+  },
+
+  onShareAppMessage(e) {
+    const profile = this.data.shareProfile || {};
+    const invite = profile.invitationCode || '';
+    const shareKind = e && e.target && e.target.dataset.shareKind;
+    if (!profile.id || !invite) {
+      return { title: 'OnlyNail', path: '/pages/login/index' };
+    }
+    if (shareKind === 'homepage') {
+      return {
+        title: `${profile.name || '美甲师'}的美甲主页`,
+        path: `/pages/client/artist-home/index?id=${profile.id}&source=artist_share&invite=${encodeURIComponent(invite)}`,
+        imageUrl: profile.avatarUrl || undefined
+      };
+    }
+    if (shareKind === 'booking') {
+      return {
+        title: `预约${profile.name || '美甲师'} · 选个时间就好`,
+        path: `/pages/client/quick-booking/index?techId=${profile.id}&invite=${encodeURIComponent(invite)}`,
+        imageUrl: profile.avatarUrl || undefined
+      };
+    }
+    return {
+      title: `${profile.name || '美甲师'}邀请你成为专属客户`,
+      path: `/pages/login/index?invite=${encodeURIComponent(invite)}&source=invite`,
+      imageUrl: profile.avatarUrl || undefined
+    };
+  },
+
   navigateToWorkDetail(e) {
     const id = (e.detail && e.detail.id) || e.currentTarget.dataset.id;
     if (id) wx.navigateTo({ url: `/pages/technician/work-detail/index?id=${id}` });
@@ -620,15 +686,12 @@ Page({
     }
   },
 
-  openFollowUpCustomer(e) {
-    const id = e.currentTarget.dataset.id;
-    if (id) wx.navigateTo({ url: `/pages/technician/customer-detail/index?id=${id}` });
-  }
-  ,openActionTask(e) {
+  openActionTask(e) {
     const task = (this.data.actionTasks || []).find(item => item.id === Number(e.currentTarget.dataset.id));
     if (task && task.actionPath) wx.navigateTo({ url: task.actionPath });
-  }
-  ,async completeActionTask(e) {
+  },
+
+  async completeActionTask(e) {
     const id = Number(e.currentTarget.dataset.id);
     if (!id) return;
     try {

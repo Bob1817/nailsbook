@@ -55,328 +55,97 @@
             </view>
         </view>
       </view>
+      <view class="hero-content-bridge" aria-hidden="true"></view>
     </view>
 
-    <!-- 统计条：至少 2 项真实指标才展示，避免单独一个数字没有信息量 -->
-    <view class="stats-section" wx:if="{{hasRealStats}}">
-      <view class="stats-card">
-        <view class="stat-item" wx:if="{{artist.workCount}}">
-          <text class="stat-num">{{artist.workCount}}</text>
-          <text class="stat-label">作品</text>
-        </view>
-        <view class="stat-divider" wx:if="{{artist.workCount && (artist.rating != null || artist.reviewCount)}}"></view>
-        <view class="stat-item" wx:if="{{artist.rating != null}}">
-          <text class="stat-num">{{artist.rating}}</text>
-          <text class="stat-label">评分</text>
-        </view>
-        <view class="stat-divider" wx:if="{{artist.rating != null && artist.reviewCount}}"></view>
-        <view class="stat-item" wx:if="{{artist.reviewCount}}">
-          <text class="stat-num">{{artist.reviewCount}}</text>
-          <text class="stat-label">真实评价</text>
-        </view>
-      </view>
-    </view>
-
-    <view class="section-block availability-section" wx:if="{{availabilityDays.length}}">
-      <view class="section-header">
-        <view class="section-bar"></view>
-        <view class="availability-title-wrap"><text class="section-title">近期档期</text><text class="availability-headline">{{availabilityHeadline}}</text></view>
-      </view>
-      <scroll-view scroll-x class="availability-scroll" enhanced show-scrollbar="{{false}}">
-        <view class="availability-days">
-          <view wx:for="{{availabilityDays}}" wx:key="serviceDate" class="availability-day {{item.full ? 'is-full' : ''}}">
-            <text class="availability-weekday">{{item.weekday}}</text>
-            <text class="availability-date">{{item.day}}</text>
-            <text class="availability-status">{{item.status}}</text>
-          </view>
-        </view>
-      </scroll-view>
-    </view>
-
-    <!-- ===== 自我描述与定位（常驻，首屏可见） ===== -->
+    <!-- 简介：主页只显示摘要，完整理念按需展开 -->
     <view class="section-block" wx:if="{{brandTagline || artist.bio || aestheticPhilosophy || artist.servicePhilosophy}}">
       <view class="section-header">
         <view class="section-bar"></view>
-        <text class="section-title">自我介绍</text>
+        <text class="section-title">简介</text>
+        <text wx:if="{{aestheticPhilosophy || artist.servicePhilosophy || artist.bio.length > 70}}" class="section-more" bindtap="openAboutDetail">更多 ›</text>
       </view>
-      <view class="about-card">
+      <view class="about-card compact-card" bindtap="openAboutDetail" role="button" aria-label="查看完整简介">
         <text wx:if="{{brandTagline}}" class="positioning-text">{{brandTagline}}</text>
-        <text wx:if="{{artist.bio}}" class="bio-text">{{artist.bio}}</text>
-        <text wx:elif="{{brandIntroduction}}" class="bio-text">{{brandIntroduction}}</text>
-        <view class="philosophy-block" wx:if="{{aestheticPhilosophy}}">
-          <text class="philosophy-label">审美理念</text>
-          <text class="philosophy-text">{{aestheticPhilosophy}}</text>
-        </view>
-        <view class="philosophy-block" wx:if="{{artist.servicePhilosophy}}">
-          <text class="philosophy-label">服务理念</text>
-          <text class="philosophy-text">{{artist.servicePhilosophy}}</text>
-        </view>
+        <text class="bio-text bio-summary">{{artist.bio || brandIntroduction}}</text>
       </view>
     </view>
 
-    <!-- ===== 成长与认证（常驻） ===== -->
+    <!-- 履历：仅显示一条成长经历和一项认证 -->
     <view class="section-block" wx:if="{{timeline.length || qualifications.length}}">
       <view class="section-header">
         <view class="section-bar"></view>
-        <text class="section-title">成长与认证</text>
+        <text class="section-title">履历</text>
+        <text wx:if="{{timeline.length > 1 || qualifications.length > 1}}" class="section-more" bindtap="openCareerDetail">更多 ›</text>
       </view>
-      <view class="about-card">
-        <view class="timeline-section" wx:if="{{timeline.length}}">
-          <view class="timeline-list">
-            <view wx:for="{{timeline}}" wx:key="year" class="timeline-item">
-              <view class="timeline-dot {{index < timeline.length - 1 ? 'has-line' : ''}}"></view>
-              <view wx:if="{{index < timeline.length - 1}}" class="timeline-line"></view>
-              <view class="timeline-content">
-                <text class="timeline-year">{{item.year}}</text>
-                <text class="timeline-desc">{{item.desc}}</text>
-              </view>
-            </view>
-          </view>
+      <view class="about-card compact-card" bindtap="openCareerDetail" role="button" aria-label="查看完整履历">
+        <view wx:if="{{timeline.length}}" class="career-summary-row">
+          <text class="career-summary-key">{{timeline[0].year}}</text>
+          <text class="career-summary-value">{{timeline[0].desc}}</text>
         </view>
-        <view class="qualification-list" wx:if="{{qualifications.length}}" style="margin-top:12rpx;">
-          <view wx:for="{{qualifications}}" wx:key="id" class="qualification-item">
-            <view class="qualification-main">
-              <view class="qualification-head">
-                <text class="qualification-type">{{item.typeLabel}}</text>
-                <text wx:if="{{item.isVerified}}" class="qualification-verified">已认证</text>
-              </view>
-              <text class="qualification-title">{{item.title}}</text>
-              <text class="qualification-detail">
-                <text wx:if="{{item.detail}}">{{item.detail}}</text>
-                <text wx:if="{{item.organization}}"> · {{item.organization}}</text>
-                <text wx:if="{{item.year}}"> · {{item.year}}</text>
-              </text>
-            </view>
-          </view>
+        <view wx:if="{{qualifications.length}}" class="career-summary-row">
+          <text class="career-summary-key">{{qualifications[0].typeLabel}}</text>
+          <text class="career-summary-value">{{qualifications[0].title}}</text>
         </view>
       </view>
     </view>
 
-    <!-- ===== 工作室环境与到店信息 ===== -->
-    <view class="section-block" wx:if="{{privacyNote || exclusiveServiceNote || environmentPhotos.length || artist.shopName || artist.shopAddress}}">
+    <!-- 店铺：地址与操作常驻，环境和服务说明按需展开 -->
+    <view class="section-block" wx:if="{{artist.shopName || artist.shopAddress}}">
       <view class="section-header">
         <view class="section-bar"></view>
-        <text class="section-title">工作室</text>
+        <text class="section-title">店铺</text>
+        <text wx:if="{{environmentPhotos.length || privacyNote || exclusiveServiceNote || studioPolicyItems.length}}" class="section-more" bindtap="openStudioDetail">更多 ›</text>
       </view>
-      <!-- 空间说明 -->
-      <view class="about-card" wx:if="{{privacyNote || exclusiveServiceNote}}">
-        <view class="kv-row" wx:if="{{exclusiveServiceNote}}">
-          <text class="kv-label">空间定位</text>
-          <text class="kv-value">{{exclusiveServiceNote}}</text>
-        </view>
-        <view class="kv-row" wx:if="{{privacyNote}}">
-          <text class="kv-label">私密环境</text>
-          <text class="kv-value">{{privacyNote}}</text>
-        </view>
-      </view>
-      <!-- 地址与到店 -->
-      <view class="shop-card" style="margin-top:16rpx;" wx:if="{{artist.shopName || artist.shopAddress}}">
-        <view class="shop-hero-wrap" wx:if="{{environmentPhotos.length}}">
-          <swiper
-            class="shop-hero"
-            autoplay="{{environmentPhotos.length > 1}}"
-            circular="{{environmentPhotos.length > 1}}"
-            interval="4000"
-            duration="500"
-            bindchange="onEnvironmentHeroChange"
-            aria-label="工作室环境照片轮播"
-          >
-            <swiper-item wx:for="{{environmentPhotos}}" wx:key="imageUrl">
-              <view
-                class="shop-hero-slide"
-                bindtap="previewEnvPhoto"
-                data-idx="{{index}}"
-                role="button"
-                aria-label="预览第{{index + 1}}张工作室环境照片"
-              >
-                <image class="shop-hero-image" src="{{item.imageUrl}}" mode="aspectFill" lazy-load />
-                <view class="shop-hero-overlay" wx:if="{{item.caption || item.sceneTag}}">
-                  <text class="shop-hero-tag" wx:if="{{item.sceneTag}}">{{item.sceneTag}}</text>
-                  <text class="shop-hero-caption" wx:if="{{item.caption}}">{{item.caption}}</text>
-                </view>
-              </view>
-            </swiper-item>
-          </swiper>
-          <text class="shop-hero-count" wx:if="{{environmentPhotos.length > 1}}">{{environmentHeroIndex + 1}} / {{environmentPhotos.length}}</text>
-        </view>
+      <view class="shop-card compact-shop-card">
+        <image wx:if="{{environmentPhotos.length}}" class="shop-summary-image" src="{{environmentPhotos[0].imageUrl}}" mode="aspectFill" bindtap="openStudioDetail" aria-label="查看店铺详情" />
         <view class="shop-info">
           <text class="shop-name">{{artist.shopName}}</text>
           <view class="shop-detail-row shop-address-row" wx:if="{{artist.shopAddress}}">
-            <image class="detail-icon-svg" src="/static/icons/pin.svg" mode="aspectFit"/>
+            <view class="detail-icon-wrap"><image class="detail-icon-svg" src="/static/icons/pin.svg" mode="aspectFit"/></view>
             <view class="shop-address-content">
               <text class="detail-text">{{artist.shopAddress}}</text>
-              <view wx:if="{{artist._guidance}}" class="guidance-entry-inline" bindtap="openGuidance" role="button" aria-label="查看到店指引">
-                <text class="guidance-entry-text">查看到店指引</text>
-                <text class="guidance-entry-arrow">›</text>
-              </view>
+              <view wx:if="{{artist._guidance}}" class="guidance-entry-inline" bindtap="openGuidance" role="button" aria-label="查看到店指引"><text class="guidance-entry-text">到店指引</text><text class="guidance-entry-arrow">›</text></view>
             </view>
           </view>
-          <view class="shop-detail-row" wx:if="{{artist.businessHours}}">
-            <image class="detail-icon-svg" src="/static/icons/clock.svg" mode="aspectFit"/>
-            <text class="detail-text">营业时间：{{artist.businessHours}}</text>
-          </view>
-          <view wx:if="{{studioPolicyItems.length}}" class="shop-policy-entry" bindtap="openStudioPolicies" role="button" aria-label="查看服务保障与预约政策">
-            <image class="detail-icon-svg" src="/static/icons/shield.svg" mode="aspectFit"/>
-            <text class="shop-policy-text">服务保障与预约政策</text>
-            <text class="shop-policy-summary">共 {{studioPolicyItems.length}} 项</text>
-            <text class="shop-policy-arrow">›</text>
-          </view>
+          <view class="shop-detail-row" wx:if="{{artist.businessHours}}"><view class="detail-icon-wrap"><image class="detail-icon-svg" src="/static/icons/clock.svg" mode="aspectFit"/></view><text class="detail-text">{{artist.businessHours}}</text></view>
           <view class="shop-actions">
-            <button class="action-btn booking-action" style="flex:1 1 0%;width:0;min-width:0;height:44px;min-height:44px;padding:0 16px;box-sizing:border-box;" bindtap="openNavigation">
-              <image class="action-icon-svg" src="/static/icons/navigation.svg" mode="aspectFit"/>
-              <text>一键导航</text>
-            </button>
-            <button class="action-btn booking-action" style="flex:1 1 0%;width:0;min-width:0;height:44px;min-height:44px;padding:0 16px;box-sizing:border-box;" bindtap="callPhone">
-              <image class="action-icon-svg" src="/static/icons/phone.svg" mode="aspectFit"/>
-              <text>一键拨号</text>
-            </button>
+            <button class="action-btn booking-action" bindtap="openNavigation"><image class="action-icon-svg" src="/static/icons/navigation.svg" mode="aspectFit"/><text>导航</text></button>
+            <button class="action-btn booking-action" bindtap="callPhone"><image class="action-icon-svg" src="/static/icons/phone.svg" mode="aspectFit"/><text>电话</text></button>
           </view>
         </view>
       </view>
     </view>
 
-    <!-- 擅长风格：定位与审美 -->
-    <view class="section-block" wx:if="{{artist.styleTags.length}}">
-      <view class="section-header">
-        <view class="section-bar"></view>
-        <text class="section-title">擅长风格</text>
-      </view>
-      <scroll-view scroll-x class="style-scroll" wx:if="{{stylePhotoCards.length}}">
-        <view class="style-list">
-          <view wx:for="{{stylePhotoCards}}" wx:key="label" class="style-card" bindtap="viewWork" data-id="{{item.workId}}" role="button" aria-label="查看{{item.label}}风格作品">
-            <image class="style-card-image" src="{{item.imageUrl}}" mode="aspectFill" lazy-load />
-            <view class="style-card-overlay"></view>
-            <text class="style-card-text">{{item.label}}</text>
-          </view>
-        </view>
-      </scroll-view>
-      <view class="style-chip-list" wx:if="{{styleTextTags.length}}">
-        <text wx:for="{{styleTextTags}}" wx:key="label" class="style-chip">{{item.label}}</text>
-      </view>
-    </view>
-
-    <!-- ===== 服务流程 ===== -->
-    <view class="section-block" wx:if="{{serviceProcess.length}}">
-      <view class="section-header">
-        <view class="section-bar"></view>
-        <text class="section-title">服务流程</text>
-      </view>
-      <view class="about-card">
-        <view wx:if="{{serviceProcess.length}}" class="process-list">
-          <view wx:for="{{serviceProcess}}" wx:key="step" class="process-item">
-            <view class="process-no">{{item.step}}</view>
-            <view class="process-body">
-              <text class="process-name">{{item.title}}</text>
-              <text class="process-desc" wx:if="{{item.description}}">{{item.description}}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-    </view>
-
-    <!-- 服务内容与价格 -->
-    <view class="section-block" wx:if="{{services.length}}">
-      <view class="section-header">
-        <view class="section-bar"></view>
-        <text class="section-title">服务内容</text>
-      </view>
-      <view class="service-list">
-        <view wx:for="{{services}}" wx:key="name" class="service-card">
-          <view class="service-icon-wrap">
-            <image class="service-icon-svg" src="{{item.icon}}" mode="aspectFit"/>
-          </view>
-          <view class="service-info">
-            <view class="service-top">
-              <text class="service-name">{{item.name}}</text>
-              <view class="service-right-meta">
-                <view class="service-duration" wx:if="{{item.duration}}">
-                  <image class="duration-icon-svg" src="/static/icons/clock.svg" mode="aspectFit"/>
-                  <text>约{{item.duration}}</text>
-                </view>
-                <text class="service-price semantic-money" wx:if="{{item.price}}">¥{{item.price}}起</text>
-              </view>
-            </view>
-            <text class="service-desc" wx:if="{{item.desc}}">{{item.desc}}</text>
-          </view>
-        </view>
-      </view>
-    </view>
-
-    <!-- FAQ -->
-    <view class="section-block" wx:if="{{faqs.length}}">
-      <view class="section-header">
-        <view class="section-bar"></view>
-        <text class="section-title">常见问题</text>
-      </view>
-      <view class="about-card">
-        <view wx:for="{{faqs}}" wx:key="question" class="faq-item">
-          <text class="faq-q">{{item.question}}</text>
-          <text class="faq-a">{{item.answer}}</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- ===== 8. 客户评价 ===== -->
-    <view class="section-block" wx:if="{{reviews.length}}">
-      <view class="section-header">
-        <view class="section-bar"></view>
-        <text class="section-title">客户评价</text>
-        <text wx:if="{{reviews.length}}" class="section-more">查看全部 ›</text>
-      </view>
-      
-      <view class="review-list">
-        <view wx:for="{{reviews}}" wx:key="id" class="review-card">
-          <view class="review-header">
-            <image wx:if="{{item.clientAvatarUrl}}" src="{{item.clientAvatarUrl}}" class="review-avatar" mode="aspectFill"/>
-            <view wx:else class="review-avatar-fallback"><image src="/static/icons/client.svg" mode="aspectFit" class="nb-default-avatar" aria-label="客户默认头像" /></view>
-            <view class="review-meta">
-              <view class="review-name-row">
-                <text class="review-name">{{item.clientName}}</text>
-                <text class="review-time">{{item.timeAgo || '3天前'}}</text>
-              </view>
-              <view class="review-stars">
-                <text wx:for="{{5}}" wx:for-item="star" wx:key="*this" class="star {{star < item.rating ? 'star-filled' : ''}}">★</text>
-              </view>
-            </view>
-          </view>
-          <text class="review-content">{{item.content}}</text>
-        </view>
-      </view>
-    </view>
-
-    <view class="section-block" wx:if="{{homepageComments.length}}">
-      <view class="section-header">
-        <view class="section-bar"></view>
-        <text class="section-title">主页评论</text>
-        <text class="section-more" bindtap="openComments">{{commentCount}} 条</text>
-      </view>
-      <view class="homepage-comment-list">
-        <view wx:for="{{homepageComments}}" wx:key="id" class="homepage-comment">
-          <image wx:if="{{item.clientAvatarUrl}}" class="homepage-comment-avatar" src="{{item.clientAvatarUrl}}" mode="aspectFill"/>
-          <image wx:else class="homepage-comment-avatar" src="/static/icons/client.svg" mode="aspectFit"/>
-          <view class="homepage-comment-body">
-            <view class="homepage-comment-head"><text class="homepage-comment-name">{{item.clientName}}</text><text class="homepage-comment-time">{{item.timeAgo}}</text></view>
-            <text class="homepage-comment-content">{{item.content}}</text>
-          </view>
-        </view>
-      </view>
-    </view>
-
-    <!-- ===== 精选作品（最后：专业证明） ===== -->
+    <!-- 精选作品 -->
     <view class="section-block" wx:if="{{works.length}}">
       <view class="section-header">
         <view class="section-bar"></view>
         <text class="section-title">精选作品</text>
-        <text class="section-more" bindtap="viewAllWorks">{{artist.workCount ? artist.workCount + ' 件 · ' : ''}}查看全部 ›</text>
+        <text class="section-more" bindtap="viewAllWorks">查看全部 ›</text>
       </view>
-      <view class="gallery-grid">
-        <view wx:for="{{displayWorks}}" wx:key="id" class="gallery-item" bindtap="viewWork" data-id="{{item.id}}">
-          <image src="{{item.coverUrl}}" mode="aspectFill" class="gallery-img"/>
-          <view class="gallery-overlay">
-            <view class="gallery-tag">
-              <text>{{item.styleText || '美甲设计'}} · {{item.duration || '60'}}min</text>
-            </view>
+      <view class="featured-work-grid">
+        <view wx:for="{{displayWorks}}" wx:key="id" class="featured-work-item">
+          <work-card work="{{item}}" show-artist="{{false}}" bind:cardtap="viewWork" />
+        </view>
+      </view>
+    </view>
+
+    <!-- 精选评论：客户评价与主页评论统一展示 -->
+    <view class="section-block" wx:if="{{featuredComments.length}}">
+      <view class="section-header">
+        <view class="section-bar"></view>
+        <text class="section-title">精选评论</text>
+        <text wx:if="{{featuredComments.length > 2}}" class="section-more" bindtap="openReviewDetail">更多 ›</text>
+      </view>
+      <view class="review-list">
+        <view wx:for="{{displayComments}}" wx:key="key" class="review-card compact-review-card">
+          <view class="review-header">
+            <image wx:if="{{item.clientAvatarUrl}}" src="{{item.clientAvatarUrl}}" class="review-avatar" mode="aspectFill"/>
+            <view wx:else class="review-avatar-fallback"><image src="/static/icons/client.svg" mode="aspectFit" class="nb-default-avatar" aria-label="客户默认头像" /></view>
+            <view class="review-meta"><view class="review-name-row"><text class="review-name">{{item.clientName}}</text><text class="review-time">{{item.timeAgo}}</text></view><view wx:if="{{item.rating}}" class="review-stars"><text wx:for="{{5}}" wx:for-item="star" wx:key="*this" class="star {{star < item.rating ? 'star-filled' : ''}}">★</text></view></view>
           </view>
+          <text class="review-content review-summary">{{item.content}}</text>
         </view>
       </view>
     </view>
@@ -404,10 +173,53 @@
     </view>
     <button class="btn-book-main booking-action {{!isOwner && artist.acceptingBookings === false ? 'is-disabled' : ''}}" style="flex:1 1 0%;width:0;min-width:0;height:44px;min-height:44px;padding:0 16px;box-sizing:border-box;" bindtap="bookArtist" disabled="{{!isOwner && artist.acceptingBookings === false}}">
       <image class="btn-icon-svg" src="/static/icons/calendar.svg" mode="aspectFit"/>
-      <text class="btn-text">{{isOwner ? '查看客户预约入口' : (artist.acceptingBookings === false ? '暂未接单' : '发起预约')}}</text>
+      <text class="btn-text">{{isOwner ? '查看客户预约入口' : (artist.acceptingBookings === false ? '暂未接单' : (availabilitySummary || '发起预约'))}}</text>
     </button>
   </view>
 </view>
+
+<view wx:if="{{detailModal}}" class="modal-mask" bindtap="closeDetailModal">
+  <view class="profile-detail-panel" catchtap="">
+    <view class="profile-detail-head">
+      <text class="modal-title">{{detailModal === 'about' ? '个人简介' : (detailModal === 'career' ? '履历与认证' : (detailModal === 'studio' ? '店铺详情' : '精选评论'))}}</text>
+      <view class="profile-detail-close" bindtap="closeDetailModal" role="button">关闭</view>
+    </view>
+    <scroll-view scroll-y class="profile-detail-scroll">
+      <view wx:if="{{detailModal === 'about'}}" class="profile-detail-content">
+        <text wx:if="{{brandTagline}}" class="positioning-text">{{brandTagline}}</text>
+        <text wx:if="{{artist.bio || brandIntroduction}}" class="bio-text">{{artist.bio || brandIntroduction}}</text>
+        <view wx:if="{{aestheticPhilosophy}}" class="detail-info-block"><text class="detail-info-label">审美理念</text><text class="detail-info-value">{{aestheticPhilosophy}}</text></view>
+        <view wx:if="{{artist.servicePhilosophy}}" class="detail-info-block"><text class="detail-info-label">服务理念</text><text class="detail-info-value">{{artist.servicePhilosophy}}</text></view>
+      </view>
+
+      <view wx:elif="{{detailModal === 'career'}}" class="profile-detail-content">
+        <view wx:if="{{timeline.length}}" class="timeline-list">
+          <view wx:for="{{timeline}}" wx:key="year" class="timeline-item"><view class="timeline-dot"></view><view wx:if="{{index < timeline.length - 1}}" class="timeline-line"></view><view class="timeline-content"><text class="timeline-year">{{item.year}}</text><text class="timeline-desc">{{item.desc}}</text></view></view>
+        </view>
+        <view wx:if="{{qualifications.length}}" class="qualification-list">
+          <view wx:for="{{qualifications}}" wx:key="id" class="qualification-item"><view class="qualification-main"><view class="qualification-head"><text class="qualification-type">{{item.typeLabel}}</text><text wx:if="{{item.isVerified}}" class="qualification-verified">已认证</text></view><text class="qualification-title">{{item.title}}</text><text class="qualification-detail"><text wx:if="{{item.detail}}">{{item.detail}}</text><text wx:if="{{item.organization}}"> · {{item.organization}}</text><text wx:if="{{item.year}}"> · {{item.year}}</text></text></view></view>
+        </view>
+      </view>
+
+      <view wx:elif="{{detailModal === 'studio'}}" class="profile-detail-content">
+        <swiper wx:if="{{environmentPhotos.length}}" class="detail-shop-swiper" circular="{{environmentPhotos.length > 1}}" indicator-dots="{{environmentPhotos.length > 1}}">
+          <swiper-item wx:for="{{environmentPhotos}}" wx:key="imageUrl" bindtap="previewEnvPhoto" data-idx="{{index}}"><image class="detail-shop-image" src="{{item.imageUrl}}" mode="aspectFill" lazy-load /></swiper-item>
+        </swiper>
+        <text class="shop-name">{{artist.shopName}}</text>
+        <view wx:if="{{artist.shopAddress}}" class="detail-info-block"><text class="detail-info-label">地址</text><text class="detail-info-value">{{artist.shopAddress}}</text></view>
+        <view wx:if="{{artist.businessHours}}" class="detail-info-block"><text class="detail-info-label">营业时间</text><text class="detail-info-value">{{artist.businessHours}}</text></view>
+        <view wx:if="{{exclusiveServiceNote}}" class="detail-info-block"><text class="detail-info-label">空间定位</text><text class="detail-info-value">{{exclusiveServiceNote}}</text></view>
+        <view wx:if="{{privacyNote}}" class="detail-info-block"><text class="detail-info-label">环境说明</text><text class="detail-info-value">{{privacyNote}}</text></view>
+        <view wx:if="{{studioPolicyItems.length}}" class="detail-link-row" bindtap="openStudioPolicies" role="button"><text>服务保障与预约政策</text><text>›</text></view>
+      </view>
+
+      <view wx:else class="profile-detail-content">
+        <view wx:for="{{featuredComments}}" wx:key="key" class="review-card detail-review-card"><view class="review-header"><image wx:if="{{item.clientAvatarUrl}}" src="{{item.clientAvatarUrl}}" class="review-avatar" mode="aspectFill"/><view wx:else class="review-avatar-fallback"><image src="/static/icons/client.svg" mode="aspectFit" class="nb-default-avatar" /></view><view class="review-meta"><view class="review-name-row"><text class="review-name">{{item.clientName}}</text><text class="review-time">{{item.timeAgo}}</text></view><view wx:if="{{item.rating}}" class="review-stars"><text wx:for="{{5}}" wx:for-item="star" wx:key="*this" class="star {{star < item.rating ? 'star-filled' : ''}}">★</text></view></view></view><text class="review-content">{{item.content}}</text></view>
+      </view>
+    </scroll-view>
+  </view>
+</view>
+
 <view wx:if="{{showOwnerMenuSheet}}" class="modal-mask" bindtap="closeOwnerMenu">
   <view class="owner-action-panel" catchtap="">
     <view class="owner-action-item" data-action="edit" catchtap="handleOwnerMenuAction" role="button">编辑主页</view>

@@ -72,12 +72,8 @@ Page({
     return `${month}-${day}`;
   },
 
-  goToCreateDesign() {
-    wx.navigateTo({ url: '/pages/client/create-design/index' });
-  },
-
-  goToCustomizeDesign() {
-    wx.navigateTo({ url: '/pages/client/customize-design/index' });
+  goToBooking() {
+    wx.navigateTo({ url: '/pages/client/create-order/index?mode=full&content=custom' });
   },
 
   goToDesignDetail(e) {

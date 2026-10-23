@@ -35,4 +35,11 @@ function serializeGuidanceSection(section) {
   };
 }
 
-module.exports = { createBlockId, normalizeGuidanceSection, serializeGuidanceSection };
+function hasGuidanceContent(guidance) {
+  if (!guidance || guidance.enabled !== true) return false;
+  return ['metro', 'bus', 'driving'].some((mode) =>
+    normalizeGuidanceSection(guidance[mode], mode).blocks.length > 0
+  );
+}
+
+module.exports = { createBlockId, normalizeGuidanceSection, serializeGuidanceSection, hasGuidanceContent };

@@ -42,11 +42,6 @@
   margin-bottom: 20rpx;
 }
 
-.create-tag.upload {
-  background: var(--nb-page);
-  color: var(--nb-ink);
-}
-
 .create-icon-wrap {
   width: 80rpx;
   height: 80rpx;
@@ -56,11 +51,6 @@
   align-items: center;
   justify-content: center;
   margin-bottom: 20rpx;
-  box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
-}
-
-.create-icon-wrap.upload {
-  background: var(--nb-action);
   box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
 }
 

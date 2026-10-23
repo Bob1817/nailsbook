@@ -52,7 +52,9 @@ App({
         technician: '/pages/technician/home/index'
       };
       const homePage = homePages[role] || homePages.client;
-      const preserveSharePage = (options.path === 'pages/login/index' && options.query && options.query.invite) || options.path === 'pages/client/quick-booking/index' || options.path === 'pages/client/public-work/index' || options.path === 'pages/client/artist-home/index' || options.path === 'pages/client/create-order/index';
+      const isWorkTimelineEntry = options.query && options.query.channel === 'wechat_moments'
+        && (options.path === 'pages/client/work-detail/index' || options.path === 'pages/technician/work-detail/index');
+      const preserveSharePage = (options.path === 'pages/login/index' && options.query && options.query.invite) || options.path === 'pages/client/quick-booking/index' || options.path === 'pages/client/public-work/index' || options.path === 'pages/client/artist-home/index' || options.path === 'pages/client/works/index' || options.path === 'pages/client/create-order/index' || options.path === 'pages/client/quote-confirm/index' || options.path === 'pages/client/quote-booking/index' || isWorkTimelineEntry;
 
       // 先校验 token 是否有效，避免带失效 token 跳首页导致 401
       this.verifyToken(token, role)

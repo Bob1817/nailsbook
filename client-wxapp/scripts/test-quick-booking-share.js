@@ -33,7 +33,7 @@ const page = () => ({ ...definition, techId: 7, inviteCode: 'INVITE7', data: { .
   assert.ok(!share.path.includes('tool='), 'owner mode must not propagate');
   assert.equal(guest.onShareTimeline().query, 'techId=7&invite=INVITE7');
   guest.viewArtistHome();
-  assert.equal(destination, '/pages/client/artist-home/index?id=7&source=quick_booking');
+  assert.equal(destination, '/pages/client/artist-home/index?id=7&source=quick_booking&invite=INVITE7');
   const owner = page();
   owner.data.owner = true; owner.data.artist = { acceptingBookings: true }; owner.data.acceptingBookings = true;
   await owner.onAvailabilityChange({ detail: { value: true } });

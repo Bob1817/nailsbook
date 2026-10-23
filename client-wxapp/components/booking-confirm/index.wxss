@@ -9,6 +9,9 @@
 .summary-time { font-size: var(--font-md); font-weight: var(--weight-semibold); }
 .summary-detail { margin-top: 8rpx; color: var(--nb-secondary); }
 .proposal-hint { margin-top: 16rpx; color: var(--nb-muted); font-size: var(--font-xs); line-height: 1.5; }
+.schedule-pickers { display: flex; gap: 16rpx; }
+.schedule-picker { flex: 1; min-width: 0; }
+.schedule-picker-cell { min-height: 44px; display: flex; align-items: center; justify-content: center; padding: 0 16rpx; box-sizing: border-box; border-radius: var(--input-radius); background: var(--nb-soft-surface); color: var(--nb-ink); font-weight: var(--weight-medium); }
 .field-label { margin: 24rpx 0 12rpx; font-weight: var(--weight-medium); }
 .form-input { background: var(--nb-soft-surface); color: var(--nb-ink); border: 0; }
 .deposit-confirm { margin-top: 12rpx; }

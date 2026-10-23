@@ -1,4 +1,4 @@
-# NailBook 后端部署手册
+# OnlyNail 后端部署手册
 
 ## 前置条件
 
@@ -174,15 +174,17 @@ curl -I https://m.lunails.cn          # 期望 200，返回 SPA 的 index.html
 ```bash
 cd /opt/nailbook
 git pull
-docker compose up -d --build backend       # 仅后端更新
+docker compose pull backend                # 拉取 CI 构建的后端镜像
+docker compose up -d backend               # 仅重建后端容器，启动时执行迁移
 docker compose up -d --build client-web     # 仅用户端更新
 docker compose pull admin-web               # 拉取 CI 构建的管理端镜像
 docker compose up -d admin-web               # 仅重建管理端容器
 ```
 
-也可以使用 `./deploy/deploy.sh admin-web`。该命令只拉取管理端镜像并重建容器，
-不会在生产服务器执行 `npm ci` 或前端构建。执行前应确认目标提交的
-`admin-image` GitHub Actions 任务已经成功。
+也可以使用 `./deploy/deploy.sh backend` 或 `./deploy/deploy.sh admin-web`。
+两个命令都只拉取 CI 生成的镜像并重建容器，不会在生产服务器执行
+`npm ci` 或应用构建。执行前应确认目标提交对应的镜像任务已经成功，
+并在 `.env` 中把镜像变量固定到该提交的 `sha-<完整SHA>` 标签。
 
 后端容器启动时执行 `prisma migrate deploy`。迁移失败时应用不会继续启动，
 禁止使用 `prisma db push` 代替生产迁移；详细预检和备份流程见

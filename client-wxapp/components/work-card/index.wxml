@@ -1,4 +1,4 @@
-<view wx:if="{{variant === 'editorial'}}" class="nb-theme wc-editorial {{featured ? 'wc-featured' : 'wc-standard'}}" bindtap="onTap" role="button" aria-label="查看{{work.title || '美甲作品'}}详情">
+<view wx:if="{{variant === 'editorial'}}" class="nb-theme wc-editorial {{featured ? 'wc-featured' : 'wc-standard'}} {{manageable ? 'wc-manageable' : ''}}" bindtap="onTap" role="button" aria-label="查看{{work.title || '美甲作品'}}详情">
   <view class="wc-editorial-media {{featured ? 'aspect-featured' : 'aspect-grid'}}">
     <image wx:if="{{work.coverUrl}}" src="{{work.coverUrl}}" mode="aspectFill" class="wc-editorial-img" lazy-load aria-label="{{work.title || '美甲作品'}}"/>
     <view wx:else class="wc-editorial-img wc-img-empty"></view>
@@ -12,17 +12,17 @@
     <view wx:if="{{manageable}}" class="wc-manage" catchtap="onActionTap" role="button" aria-label="管理作品"><image src="/static/icons/more-horizontal.svg" class="wc-manage-icon"/></view>
     <text wx:if="{{displayPrice}}" class="wc-price-pill">{{displayPrice}}</text>
   </view>
-  <view class="wc-editorial-copy">
+  <view class="wc-editorial-copy {{!manageable && !showArtist ? 'wc-title-only' : ''}}">
     <text class="wc-editorial-title">{{work.title}}</text>
-    <view class="wc-editorial-artist" catchtap="onArtistTap" role="button" aria-label="查看{{work.technicianName || '美甲师'}}的主页">
+    <view wx:if="{{!manageable && showArtist}}" class="wc-editorial-artist" catchtap="onArtistTap" role="button" aria-label="查看{{work.technicianName || '美甲师'}}的主页">
       <image wx:if="{{work.technicianAvatarUrl}}" src="{{work.technicianAvatarUrl}}" mode="aspectFill" class="wc-editorial-avatar" lazy-load aria-label="{{work.technicianName || '美甲师'}}的头像"/>
       <view wx:else class="wc-editorial-avatar wc-editorial-avatar-fallback"><image src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" /></view>
       <view class="wc-editorial-artist-copy">
         <text class="wc-editorial-name">{{work.technicianName || '独立美甲师'}}</text>
-        <text wx:if="{{manageable && artistStatus}}" class="wc-editorial-place">{{artistStatus}}</text>
-        <text wx:elif="{{artistPlaceLine}}" class="wc-editorial-place">{{artistPlaceLine}}</text>
+        <text wx:if="{{artistPlaceLine}}" class="wc-editorial-place">{{artistPlaceLine}}</text>
       </view>
     </view>
+    <text wx:if="{{manageable && artistStatus}}" class="wc-manage-status">{{artistStatus}}</text>
   </view>
   <view wx:if="{{showClientActions}}" class="wc-client-actions">
     <view class="wc-client-tools">

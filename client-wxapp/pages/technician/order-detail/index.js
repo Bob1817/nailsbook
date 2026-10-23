@@ -70,6 +70,64 @@ function todayISO() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+function recordServiceTitle(record) {
+  const order = record && record.order;
+  if (!order) return '美甲服务';
+  return order.customTitle
+    || (order.serviceLines || []).map(line => line.nameSnapshot).filter(Boolean).join('、')
+    || (order.service && order.service.name)
+    || '美甲服务';
+}
+
+function recentServiceInsights(records, currentRecord) {
+  return (records || [])
+    .filter(record => record.status === 'complete' && (!currentRecord || record.id !== currentRecord.id))
+    .map(record => {
+      const notes = [
+        record.nailCondition ? `甲面：${record.nailCondition}` : '',
+        record.discomfortNotes ? `不适：${record.discomfortNotes}` : '',
+        record.preferenceNotes ? `偏好：${record.preferenceNotes}` : '',
+        record.nextServiceNotes ? `下次准备：${record.nextServiceNotes}` : ''
+      ].filter(Boolean);
+      return notes.length ? {
+        id: record.id,
+        dateText: record.actualEndTime
+          ? formatBookingDate(record.actualEndTime)
+          : (record.actualStartTime ? formatBookingDate(record.actualStartTime) : '历史服务'),
+        notes
+      } : null;
+    })
+    .filter(Boolean)
+    .slice(0, 2);
+}
+
+function hasPreparation(preparation) {
+  return !!(preparation && [
+    preparation.tools,
+    preparation.materials,
+    preparation.preparation,
+    preparation.steps,
+    preparation.riskNotes,
+    preparation.estimatedMinutes
+  ].some(Boolean));
+}
+
+function preparationWorks(raw, sourceWork) {
+  const works = [];
+  if (sourceWork) works.push(sourceWork);
+  (raw.intentWorks || []).forEach(item => {
+    if (item && item.work) works.push(item.work);
+  });
+  return works
+    .filter((work, index, values) => work && work.id && values.findIndex(item => item && item.id === work.id) === index)
+    .filter(work => hasPreparation(work.preparation))
+    .map(work => ({
+      id: work.id,
+      title: work.title || '关联作品',
+      preparation: work.preparation
+    }));
+}
+
 Page({
   data: {
     order: null,
@@ -266,6 +324,28 @@ Page({
       const priceDiffFen = quotePriceFen > 0 ? (quotePriceFen - serviceSubtotalFen) : 0;
       const workPriceFen = sourceWork && sourceWork.standardPriceFen ? Number(sourceWork.standardPriceFen) : 0;
       const hasTechnicianQuote = !!raw.quotedAt;
+      const customerAlerts = [
+        raw.customer && raw.customer.allergies ? `过敏：${raw.customer.allergies}` : '',
+        raw.customer && raw.customer.contraindications ? `禁忌：${raw.customer.contraindications}` : '',
+        raw.customer && raw.customer.specialReminders ? `提醒：${raw.customer.specialReminders}` : '',
+        ...(((raw.customer && raw.customer.profileFacts) || [])
+          .filter(fact => ['allergy', 'contraindication', 'reminder'].includes(fact.category))
+          .map(fact => fact.status === 'pending' ? `${fact.content}（待确认）` : fact.content))
+      ].filter((text, index, values) => text && values.indexOf(text) === index);
+      const customerPreferences = [
+        raw.customer && raw.customer.preferredStyles ? `款式：${raw.customer.preferredStyles}` : '',
+        raw.customer && raw.customer.preferredColors ? `颜色：${raw.customer.preferredColors}` : '',
+        raw.customer && raw.customer.preferredNailShapes ? `甲型：${raw.customer.preferredNailShapes}` : '',
+        raw.customer && raw.customer.preferredNailLengths ? `长度：${raw.customer.preferredNailLengths}` : '',
+        ...(((raw.customer && raw.customer.profileFacts) || [])
+          .filter(fact => ['preference', 'communication'].includes(fact.category))
+          .map(fact => fact.status === 'pending' ? `${fact.content}（待确认）` : fact.content))
+      ].filter((text, index, values) => text && values.indexOf(text) === index);
+      const customerHistoryInsights = recentServiceInsights(
+        raw.customer && raw.customer.serviceRecords,
+        raw.serviceRecord
+      );
+      const workPreparations = preparationWorks(raw, sourceWork);
 
       const decorated = {
         ...o,
@@ -311,27 +391,27 @@ Page({
           : (depositAmount > 0 ? `待支付定金 ¥${depositAmount}` : '未支付定金'),
         bookingType: raw.bookingType || 'legacy',
         sourceWork,
-        _customerAlerts: [
-          raw.customer && raw.customer.allergies ? `过敏：${raw.customer.allergies}` : '',
-          raw.customer && raw.customer.contraindications ? `禁忌：${raw.customer.contraindications}` : '',
-          raw.customer && raw.customer.specialReminders ? `提醒：${raw.customer.specialReminders}` : '',
-          ...(((raw.customer && raw.customer.profileFacts) || [])
-            .filter(fact => ['allergy', 'contraindication', 'reminder'].includes(fact.category))
-            .map(fact => fact.content))
-        ].filter((text, index, values) => text && values.indexOf(text) === index),
-        _customerPreferences: [
-          raw.customer && raw.customer.preferredStyles,
-          raw.customer && raw.customer.preferredColors,
-          raw.customer && raw.customer.preferredNailShapes,
-          raw.customer && raw.customer.preferredNailLengths,
-          ...(((raw.customer && raw.customer.profileFacts) || [])
-            .filter(fact => ['preference', 'communication'].includes(fact.category))
-            .map(fact => fact.content))
-        ].filter((text, index, values) => text && values.indexOf(text) === index),
+        _customerAlerts: customerAlerts,
+        _customerPreferences: customerPreferences,
+        _customerHistoryInsights: customerHistoryInsights,
+        _preparationWorks: workPreparations,
+        _hasPreparationContext: customerAlerts.length > 0 || customerPreferences.length > 0 || customerHistoryInsights.length > 0 || workPreparations.length > 0,
+        _customerId: (raw.customer && raw.customer.id) || '',
+        _recordTotal: (raw.customer && raw.customer._count && raw.customer._count.serviceRecords) || 0,
         _recentRecords: ((raw.customer && raw.customer.serviceRecords) || [])
           .filter(record => !raw.serviceRecord || record.id !== raw.serviceRecord.id)
-          .slice(0, 3),
-        _preparation: sourceWork && sourceWork.preparation ? sourceWork.preparation : null,
+          .slice(0, 3)
+          .map(record => ({
+            id: record.id,
+            orderId: record.orderId,
+            _dateText: record.actualEndTime
+              ? formatBookingDate(record.actualEndTime)
+              : (record.actualStartTime ? formatBookingDate(record.actualStartTime) : '记录草稿'),
+            _serviceText: recordServiceTitle(record),
+            _statusText: record.status === 'complete' ? '已完善' : '待补全'
+          })),
+        _ctaLabel: o.status === 'in_progress' ? '继续记录' : '开始服务',
+        _showStartCta: ['pending_home', 'pending_shop', 'in_progress'].includes(o.status),
         _serviceRecordStatus: raw.serviceRecord ? raw.serviceRecord.status : 'none'
         ,promotion: raw.promotion || null
       };
@@ -413,6 +493,11 @@ Page({
   viewSourceWork() {
     const sourceWork = this.data.order && this.data.order.sourceWork;
     if (sourceWork && sourceWork.id) wx.navigateTo({ url: `/pages/technician/work-detail/index?id=${sourceWork.id}` });
+  },
+
+  viewPreparationWork(e) {
+    const id = Number(e.currentTarget.dataset.id);
+    if (id) wx.navigateTo({ url: `/pages/technician/work-detail/index?id=${id}` });
   },
 
   // ---------- 客户操作 ----------
@@ -687,9 +772,41 @@ Page({
       url: `/pages/technician/complete-service/index?id=${this.orderId}`
     });
   },
-  openServiceRecord() {
-    wx.navigateTo({ url: `/pages/technician/complete-service/index?id=${this.orderId}&mode=record` });
+  openServiceRecord(e) {
+    const dataset = (e && e.currentTarget && e.currentTarget.dataset) || {};
+    const orderId = dataset.orderId || this.orderId;
+    const useEditMode = dataset.mode === 'edit';
+    wx.navigateTo({
+      url: useEditMode
+        ? `/pages/technician/complete-service/index?id=${orderId}`
+        : `/pages/technician/complete-service/index?id=${orderId}&mode=record`
+    });
   },
+  openCustomerDetail() {
+    const customerId = this.data.order && this.data.order._customerId;
+    if (!customerId) return;
+    wx.navigateTo({ url: `/pages/technician/customer-detail/index?id=${customerId}` });
+  },
+
+  async startService() {
+    const order = this.data.order;
+    if (!order || this.data.submitting) return;
+    if (order.status === 'in_progress') {
+      wx.navigateTo({ url: `/pages/technician/complete-service/index?id=${this.orderId}` });
+      return;
+    }
+    this.setData({ submitting: true });
+    try {
+      await api.technician.orders.startService(this.orderId);
+      await this.loadOrder();
+      wx.navigateTo({ url: `/pages/technician/complete-service/index?id=${this.orderId}` });
+    } catch (err) {
+      wx.showToast({ title: err.message || '开始服务失败', icon: 'none' });
+    } finally {
+      this.setData({ submitting: false });
+    }
+  },
+
   openEditActualAmount() {
     const order = this.data.order;
     if (!order || order.status !== 'completed') return;

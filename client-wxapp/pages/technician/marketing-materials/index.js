@@ -12,6 +12,11 @@ function writePreviewFile(materialId, imageBase64) {
 
 Page({
   data: {
+    overviewLoading: true,
+    overviewLoadFailed: false,
+    completionPercent: 0,
+    completionDoneCount: 0,
+    completionItems: [],
     loading: true,
     saving: false,
     exporting: false,
@@ -28,6 +33,70 @@ Page({
 
   onLoad() {
     this.loadMaterials();
+  },
+
+  onShow() {
+    this.loadMarketingOverview();
+  },
+
+  async loadMarketingOverview() {
+    this.setData({ overviewLoading: true, overviewLoadFailed: false });
+    const cachedUser = wx.getStorageSync('technician_userInfo') || wx.getStorageSync('userInfo') || {};
+    try {
+      const [profile, brand, worksResult] = await Promise.all([
+        api.technician.auth.getUserInfo().catch(() => cachedUser),
+        api.technician.brandProfile.get(),
+        api.technician.works.list()
+      ]);
+      const works = worksResult.list || worksResult.data || worksResult || [];
+      const homepageReady = brand.publicationStatus === 'published';
+      const worksReady = works.some(item => (
+        item.publicationStatus === 'approved'
+        && item.isVisible !== false
+        && (item.visibilityScope || 'public') === 'public'
+      ));
+      const invitationReady = /^[A-Z0-9]{8}$/.test(String(profile.invitationCode || ''));
+      const completionItems = [
+        {
+          key: 'homepage',
+          route: 'homepage',
+          label: '公开美甲师主页',
+          hint: homepageReady ? '客户可通过分享查看主页' : '完善资料并发布主页',
+          done: homepageReady
+        },
+        {
+          key: 'works',
+          route: 'works',
+          label: '发布公开作品',
+          hint: worksReady ? '已有作品可用于展示和分享' : '至少发布 1 个公开作品',
+          done: worksReady
+        },
+        {
+          key: 'customers',
+          route: 'customers',
+          label: '启用客户邀请',
+          hint: invitationReady ? '邀请码可用于自动绑定客户' : '生成有效邀请码后即可邀请',
+          done: invitationReady
+        }
+      ];
+      const completionDoneCount = completionItems.filter(item => item.done).length;
+      this.setData({
+        overviewLoading: false,
+        completionItems,
+        completionDoneCount,
+        completionPercent: Math.round((completionDoneCount / completionItems.length) * 100)
+      });
+    } catch {
+      this.setData({ overviewLoading: false, overviewLoadFailed: true });
+    }
+  },
+
+  openMarketingTool(e) {
+    const route = e.currentTarget.dataset.route;
+    if (route === 'quickQuote') return wx.navigateTo({ url: '/pages/technician/quick-quote/index' });
+    if (route === 'homepage') return wx.navigateTo({ url: '/pages/technician/homepage-settings/index' });
+    if (route === 'works') return wx.navigateTo({ url: '/pages/technician/works/index' });
+    if (route === 'customers') return wx.switchTab({ url: '/pages/technician/customers/index' });
   },
 
   async loadMaterials() {

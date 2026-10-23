@@ -9,6 +9,7 @@ function getNavBarInfo() {
       statusBarHeight: si.statusBarHeight,
       menuButtonHeight: mb.height,
       menuButtonTop: mb.top,
+      menuButtonRightOffset: si.windowWidth - mb.left,
       navBarHeight: mb.top + mb.height + (mb.top - si.statusBarHeight)
     };
   }
@@ -52,6 +53,10 @@ Component({
     titleCenter: {
       type: Boolean,
       value: false
+    },
+    backTitleLeft: {
+      type: Boolean,
+      value: false
     }
   },
 
@@ -59,7 +64,8 @@ Component({
     statusBarHeight: 0,
     navBarHeight: 0,
     menuButtonHeight: 0,
-    menuButtonTop: 0
+    menuButtonTop: 0,
+    menuButtonRightOffset: 0
   },
 
   lifetimes: {

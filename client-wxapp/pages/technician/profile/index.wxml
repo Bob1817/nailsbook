@@ -23,27 +23,26 @@
   </view>
 
   <view class="card availability-card">
-    <text class="card-title availability-title">预约设置</text>
-    <view class="availability-row availability-module">
-      <view class="status-copy">
-        <text class="status-label">接受新预约</text>
-        <text class="profile-helper accepting-helper">{{savingAccepting ? '正在保存…' : acceptingHint}}</text>
+    <view class="availability-head">
+      <view class="availability-head-copy">
+        <view class="availability-title-row">
+          <text class="card-title availability-title">预约设置</text>
+          <text class="availability-state {{savingAccepting ? 'is-pending' : (acceptingEnabled ? 'is-on' : 'is-off')}}">{{savingAccepting ? '保存中' : (acceptingEnabled ? '接单中' : '已暂停')}}</text>
+        </view>
+        <text class="availability-helper">{{acceptingHint}}</text>
       </view>
       <nb-switch checked="{{acceptingEnabled}}" disabled="{{savingAccepting}}" bindchange="onAcceptingChange" label="接受新预约，{{acceptingEnabled ? '已开启，点击暂停' : '已关闭，点击开启'}}"/>
     </view>
-    <view class="profile-schedule-row availability-module" bindtap="openScheduleModal" role="button" aria-label="设置工作时间" hover-class="profile-pressed">
-      <view class="status-copy">
+
+    <view class="availability-settings">
+      <view class="availability-setting" bindtap="openScheduleModal" role="button" aria-label="设置工作时间，当前{{scheduleSummary}}" hover-class="profile-pressed">
         <text class="status-label">工作时间</text>
-        <text class="profile-helper">{{scheduleSummary}}</text>
+        <view class="availability-setting-summary"><text class="availability-setting-text">{{scheduleSummary}}</text><text class="availability-setting-arrow">›</text></view>
       </view>
-      <text class="semantic-link profile-link">修改 ›</text>
-    </view>
-    <view class="profile-schedule-row availability-module" bindtap="openCapacityModal" role="button" aria-label="设置每日接待人数和预约间隔" hover-class="profile-pressed">
-      <view class="status-copy">
+      <view class="availability-setting" bindtap="openCapacityModal" role="button" aria-label="设置每日接待人数和预约间隔，当前每日{{dailyBookingLimit}}位，间隔{{appointmentBufferMinutes}}分钟" hover-class="profile-pressed">
         <text class="status-label">接待能力</text>
-        <text class="profile-helper">{{capacitySummary}}</text>
+        <view class="availability-setting-summary"><text class="availability-setting-text">{{dailyBookingLimit}} 位/日 · {{appointmentBufferMinutes}} 分钟间隔</text><text class="availability-setting-arrow">›</text></view>
       </view>
-      <text class="semantic-link profile-link">修改 ›</text>
     </view>
   </view>
 
@@ -71,19 +70,6 @@
           <text class="setup-step-btn">{{item.done ? '查看' : '去完善'}}</text>
           <text class="setup-step-arrow">›</text>
         </view>
-      </view>
-    </view>
-  </view>
-
-  <view class="setup-guide-card growth-guide-card">
-    <view class="setup-guide-head">
-      <view class="setup-guide-title-row"><text class="setup-guide-title">经营成长路径</text><view class="setup-guide-badge">三项核心</view></view>
-      <text class="setup-guide-desc">依次完善个人品牌、作品内容和客户预约，形成稳定的获客与服务闭环</text>
-    </view>
-    <view class="setup-steps">
-      <view wx:for="{{growthSteps}}" wx:key="key" class="setup-step" bindtap="goSetupStep" data-route="{{item.route}}">
-        <view class="setup-step-left"><view class="setup-step-icon-wrap {{item.done ? 'setup-step-done' : ''}}"><text>{{item.done ? '✓' : index + 1}}</text></view><view class="setup-step-text"><text class="setup-step-label">{{item.label}}</text><text class="setup-step-hint">{{item.hint}}</text></view></view>
-        <view class="setup-step-action"><text class="setup-step-btn">{{item.done ? '查看' : '去完善'}}</text><text class="setup-step-arrow">›</text></view>
       </view>
     </view>
   </view>
@@ -153,11 +139,6 @@
     </view>
   </view>
 
-  <view class="card profile-invite-entry" bindtap="openInviteDetail" role="button" hover-class="profile-pressed">
-    <view><text class="status-label">邀请客户</text><text class="profile-helper">通过邀请码建立客户绑定</text></view>
-    <text class="menu-arrow">›</text>
-  </view>
-
   <!-- ============ 设置 ============ -->
   <view class="card">
     <text class="card-title">账号与设置</text>
@@ -197,9 +178,9 @@
 
 <view wx:if="{{showCapacityModal}}" class="ws-overlay" bindtap="closeCapacityModal">
   <view class="ws-sheet capacity-sheet" catchtap="preventBubble">
-    <view class="ws-header">
+    <view class="ws-header settings-sheet-header">
       <text class="ws-title">接待能力</text>
-      <view class="ws-close" bindtap="closeCapacityModal" role="button" aria-label="关闭"><text class="ws-close-icon">✕</text></view>
+      <view class="ws-close settings-sheet-close" bindtap="closeCapacityModal" role="button" aria-label="关闭"><text class="ws-close-icon">✕</text></view>
     </view>
     <view class="capacity-body">
       <text class="capacity-intro">为一对一服务保留充足时间，系统会在客户提交预约时立即锁定名额。</text>
@@ -339,14 +320,14 @@
 <view wx:if="{{showScheduleModal}}" class="ws-overlay" bindtap="closeScheduleModal">
   <view class="ws-sheet" catchtap="preventBubble">
     <!-- Header -->
-    <view class="ws-header">
+    <view class="ws-header settings-sheet-header">
       <text class="ws-title">工作时间设置</text>
-      <view class="ws-close" bindtap="closeScheduleModal">
+      <view class="ws-close settings-sheet-close" bindtap="closeScheduleModal" role="button" aria-label="关闭">
         <text class="ws-close-icon">✕</text>
       </view>
     </view>
 
-    <scroll-view scroll-y class="ws-body" enhanced show-scrollbar="{{false}}">
+    <scroll-view scroll-y class="ws-body schedule-settings-body" enhanced show-scrollbar="{{false}}">
       <!-- 新增方案按钮 -->
       <view class="ws-add-btn" bindtap="addScheme">
         <text class="ws-add-icon">+</text>

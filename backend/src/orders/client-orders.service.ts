@@ -219,6 +219,30 @@ export class ClientOrdersService {
       }
     }
 
+    const intentWorkIds = Array.from(new Set(dto.intentWorkIds ?? []));
+    if (intentWorkIds.length > 0) {
+      const availableIntentWorks = await this.prisma.nailWork.findMany({
+        where: {
+          id: { in: intentWorkIds },
+          techId: dto.techId,
+          isVisible: true,
+          archivedAt: null,
+          OR: [
+            { visibilityScope: 'public' },
+            {
+              clientAccesses: {
+                some: { clientUserId, canView: true },
+              },
+            },
+          ],
+        },
+        select: { id: true },
+      });
+      if (availableIntentWorks.length !== intentWorkIds.length) {
+        throw new BadRequestException('部分参考作品已失效，请重新选择');
+      }
+    }
+
     const isCustom =
       !sourceWork &&
       (!dto.selectedServiceIds || dto.selectedServiceIds.length === 0) &&
@@ -430,6 +454,15 @@ export class ClientOrdersService {
                 ? JSON.stringify(dto.customImages)
                 : null,
             sourceWorkId: dto.sourceWorkId ?? null,
+            intentWorks:
+              intentWorkIds.length > 0
+                ? {
+                    create: intentWorkIds.map((workId, sortOrder) => ({
+                      workId,
+                      sortOrder,
+                    })),
+                  }
+                : undefined,
             promotionId: sourcePromotion?.id ?? null,
             bookingType,
             quickBooking: dto.quickBooking === true,
@@ -1784,6 +1817,14 @@ export class ClientOrdersService {
           totalDurationMinutes: true,
         },
       },
+      intentWorks: {
+        orderBy: { sortOrder: 'asc' as const },
+        select: {
+          work: {
+            select: { id: true, title: true, coverUrl: true },
+          },
+        },
+      },
       promotion: true,
       serviceLines: { orderBy: { sortOrder: 'asc' as const } },
     };
@@ -1847,6 +1888,7 @@ export class ClientOrdersService {
         subtotalFen: line.subtotalFen,
         source: line.source,
       })),
+      intentWorks: (order.intentWorks ?? []).map((item: any) => item.work),
       fundDiscountAmount: order.fundDiscountAmount ?? 0,
       paymentStatus: order.paymentStatus ?? 'unpaid',
       tradeStatus: order.tradeStatus ?? null,

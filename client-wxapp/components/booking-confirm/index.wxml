@@ -7,7 +7,18 @@
           <view class="summary-time">{{summary}}</view>
         <view class="summary-detail">{{order.customerName || '客户'}} · {{order.shopName || order._shopName || '店铺待确认'}}</view>
         </view>
-        <view class="proposal-hint">{{proposalChanged ? '价格或定金已调整，提交后由客户确认最新方案。' : '请核对最终总价和定金收款情况后确认排期。'}}</view>
+        <view wx:if="{{hasQuote}}" class="schedule-editor">
+          <view class="field-label">预约时间（改动后将由客户确认）</view>
+          <view class="schedule-pickers">
+            <picker class="schedule-picker" mode="date" value="{{dateValue}}" bindchange="onDateChange" disabled="{{submitting}}" aria-label="预约日期">
+              <view class="schedule-picker-cell"><text>{{dateText || '选择日期'}}</text></view>
+            </picker>
+            <picker class="schedule-picker" mode="time" value="{{timeValue}}" bindchange="onTimeChange" disabled="{{submitting}}" aria-label="预约时间">
+              <view class="schedule-picker-cell"><text>{{timeText || '选择时间'}}</text></view>
+            </picker>
+          </view>
+        </view>
+        <view class="proposal-hint">{{(proposalChanged || scheduleChanged) ? '时间或价格已调整，提交后由客户确认最新方案。' : '请核对最终总价和定金收款情况后确认排期。'}}</view>
         <view class="field-label">最终总价（元）</view>
         <input class="form-input" placeholder-class="form-placeholder" type="digit" value="{{price}}" bindinput="onPrice" disabled="{{submitting}}" aria-label="最终总价，元" placeholder="请输入最终总价" adjust-position cursor-spacing="100" />
         <view class="field-label">定金金额（元）</view>
@@ -25,7 +36,7 @@
     </scroll-view>
     <view class="confirm-actions">
       <button class="booking-action cancel {{submitting ? 'is-disabled' : ''}}" disabled="{{submitting}}" hover-class="action-pressed" bindtap="close">取消</button>
-      <button class="booking-action submit {{submitting ? 'is-disabled' : ''}}" loading="{{submitting}}" disabled="{{submitting}}" hover-class="action-pressed" bindtap="submit">{{submitting ? '确认中' : (proposalChanged ? '提交客户确认' : '确认排期')}}</button>
+      <button class="booking-action submit {{submitting ? 'is-disabled' : ''}}" loading="{{submitting}}" disabled="{{submitting}}" hover-class="action-pressed" bindtap="submit">{{submitting ? '确认中' : ((proposalChanged || scheduleChanged) ? '提交客户确认' : '确认排期')}}</button>
     </view>
   </view>
 </view>

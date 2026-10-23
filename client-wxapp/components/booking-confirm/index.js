@@ -1,5 +1,5 @@
 const api = require('../../services/api');
-const { formatBookingDate, formatClock } = require('../../utils/format');
+const { formatBookingDate, formatClock, parseDate } = require('../../utils/format');
 const { requestBookingReminder } = require('../../utils/wechat-subscription');
 
 const { action: checkboxColor } = require('../../utils/colors');
@@ -8,18 +8,32 @@ function validDeposit(price, deposit) {
   return money.test(String(price).trim()) && Number(price) > 0 && Number(price) <= 1000000
     && money.test(String(deposit).trim()) && Number(deposit) <= Number(price);
 }
+function pad2(value) {
+  return String(value).padStart(2, '0');
+}
+function toDatePickerValue(date) {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+}
 
 Component({
   properties: { order: { type: Object, value: null, observer: 'resetForm' } },
-  data: { checkboxColor, showDepositStatus: false, depositError: '', price: '', deposit: '', depositPaid: false, proposalChanged: false, submitting: false, error: '', summary: '' },
+  data: { checkboxColor, showDepositStatus: false, depositError: '', price: '', deposit: '', depositPaid: false, proposalChanged: false, submitting: false, error: '', summary: '', hasQuote: false, dateValue: '', timeValue: '', dateText: '', timeText: '', initialDate: '', initialTime: '', scheduleChanged: false },
   methods: {
     resetForm(order) {
       if (!order) return;
+      const parsed = parseDate(order.startTime);
+      const dateValue = parsed ? toDatePickerValue(parsed) : '';
+      const timeValue = parsed ? `${pad2(parsed.getHours())}:${pad2(parsed.getMinutes())}` : '';
+      const hasQuote = Number(order.quoteVersion || 0) > 0 || !!order.acceptedProposal;
       this.setData({
         price: String(order.price || 0), deposit: String(order.depositAmount || 0),
         depositPaid: false, proposalChanged: false, error: '', depositError: '',
         showDepositStatus: validDeposit(order.price, order.depositAmount || 0) && Number(order.depositAmount) > 0,
-        summary: `${formatBookingDate(order.startTime)} ${formatClock(order.startTime)}`
+        summary: `${formatBookingDate(order.startTime)} ${formatClock(order.startTime)}`,
+        hasQuote, dateValue, timeValue, scheduleChanged: false,
+        dateText: parsed ? formatBookingDate(parsed) : '',
+        timeText: timeValue,
+        initialDate: dateValue, initialTime: timeValue
       });
     },
     stop() {},
@@ -27,6 +41,21 @@ Component({
     updateProposalChanged(price, deposit) {
       const order = this.data.order || {};
       this.setData({ proposalChanged: Number(price) !== Number(order.price || 0) || Number(deposit) !== Number(order.depositAmount || 0) });
+    },
+    updateScheduleChanged() {
+      const { dateValue, timeValue, initialDate, initialTime } = this.data;
+      this.setData({ scheduleChanged: Boolean(dateValue && timeValue && (dateValue !== initialDate || timeValue !== initialTime)) });
+    },
+    onDateChange(e) {
+      const dateValue = e.detail.value;
+      const parsed = parseDate(`${dateValue} 12:00`);
+      this.setData({ dateValue, dateText: parsed ? formatBookingDate(parsed) : dateValue, error: '' });
+      this.updateScheduleChanged();
+    },
+    onTimeChange(e) {
+      const timeValue = e.detail.value;
+      this.setData({ timeValue, timeText: timeValue, error: '' });
+      this.updateScheduleChanged();
     },
     validateDeposit() {
       const valid = validDeposit(this.data.price, this.data.deposit);
@@ -67,10 +96,26 @@ Component({
       this.setData({ submitting: true, error: '' });
       try {
         await requestBookingReminder('technician');
-        const result = await api.technician.orders.confirm(this.data.order.id, {
-          price: Number(price), depositAmount: Number(deposit),
-          isDepositPaid: Number(deposit) > 0 && this.data.depositPaid
-        });
+        const order = this.data.order || {};
+        const isDepositPaid = Number(deposit) > 0 && this.data.depositPaid;
+        let result;
+        if (this.data.hasQuote && this.data.scheduleChanged && this.data.dateValue && this.data.timeValue) {
+          // 有报价信息的预约改期：时间与价格需整体走方案确认，由客户重新确认
+          result = await api.technician.orders.quote(order.id, {
+            useCurrentServices: true,
+            services: [],
+            quoteVersion: Number(order.quoteVersion || 0),
+            serviceDate: this.data.dateValue,
+            startTime: this.data.timeValue,
+            finalPriceFen: Math.round(Number(price) * 100),
+            depositAmount: Number(deposit),
+            isDepositPaid
+          });
+        } else {
+          result = await api.technician.orders.confirm(order.id, {
+            price: Number(price), depositAmount: Number(deposit), isDepositPaid
+          });
+        }
         wx.showToast({ title: result && result.status === 'pending_agree' ? '已发送客户确认' : '已确认排期', icon: 'success' });
         this.triggerEvent('saved');
       } catch (err) {

@@ -26,7 +26,7 @@ describe('P0-14 booking application contract', () => {
       'utf8',
     );
     const createBlock = service.slice(
-      service.indexOf('async create(clientUserId'),
+      service.indexOf('async create('),
       service.indexOf('async createFromDesign'),
     );
     expect(createBlock).toContain('blockedTimeSlot.create');

@@ -695,12 +695,21 @@ page { background: var(--bg-gradient-entry); }
 .context-card { font-size:var(--font-sm); }
 .context-head,.record-entry { display:flex; align-items:center; justify-content:space-between; gap:20rpx; }
 .context-private,.context-meta,.record-entry-desc { display:block; margin-top:8rpx; color:var(--nb-muted); font-size:var(--font-xs); }
-.alert-list { margin-top:18rpx; }
+.context-section { margin-top:22rpx; padding-top:22rpx; border-top:1rpx solid var(--nb-line); }
+.context-section-title { display:block; color:var(--nb-ink); font-size:var(--font-sm); font-weight:var(--weight-semibold); }
+.service-insight { margin-top:14rpx; }
+.service-insight .context-line { display:block; margin-top:6rpx; }
+.alert-list { margin-top:8rpx; }
 .alert-row { display:flex; align-items:flex-start; gap:12rpx; padding:14rpx 0; color:var(--nb-ink); line-height:1.5; }
 .alert-mark { flex:0 0 40rpx; width:40rpx; height:40rpx; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--bg-input); font-weight:var(--weight-bold); }
-.preference-list,.context-block { margin-top:20rpx; }
+.preference-list { margin-top:10rpx; }
+.context-block { margin-top:16rpx; }
 .context-label { display:block; margin-bottom:8rpx; color:var(--nb-muted); font-size:var(--font-xs); font-weight:var(--weight-semibold); }
 .context-line { display:block; margin-top:8rpx; line-height:1.5; }
+.preparation-work { margin-top:14rpx; padding:16rpx 20rpx; border-radius:var(--radius-sm); background:var(--nb-soft-surface); }
+.preparation-work-head { min-height:44px; display:flex; align-items:center; justify-content:space-between; gap:16rpx; }
+.preparation-work-title { color:var(--nb-ink); font-weight:var(--weight-semibold); }
+.preparation-work-arrow { color:var(--nb-text-link); font-size:var(--font-md); }
 .record-entry { min-height:44px; }
 .record-entry-action { flex-shrink:0; color:var(--nb-text-link); font-size:var(--font-sm); }
 .history-row { display:flex; justify-content:space-between; gap:18rpx; padding:20rpx 0; border-bottom:1rpx solid var(--nb-line); }
@@ -708,6 +717,12 @@ page { background: var(--bg-gradient-entry); }
 .history-title,.history-desc { display:block; line-height:1.5; }
 .history-desc,.history-status { margin-top:6rpx; color:var(--nb-muted); font-size:var(--font-xs); }
 .history-status { flex-shrink:0; }
+.history-main { flex:1; min-width:0; }
+.history-desc { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.record-more { margin-top:12rpx; padding:14rpx 0 4rpx; color:var(--nb-text-link); font-size:var(--font-sm); text-align:right; }
+.start-service-card { display:flex; flex-direction:column; gap:20rpx; }
+.start-service-desc { display:block; margin-top:8rpx; color:var(--nb-muted); font-size:var(--font-xs); line-height:1.5; }
+.start-service-btn { min-height:44px; height:44px; }
 
 @import '../../../styles/booking-form.wxss';
 @import '../../../styles/booking-actions.wxss';

@@ -13,16 +13,18 @@ for (const label of ['主页形象', '专业介绍', '服务项目', '服务地�
   assert(homepageJs.includes(`label:'${label}'`), `主页完善度缺少 ${label}`);
 }
 
-const profileJs = read('pages/technician/profile/index.js');
 const profileWxml = read('pages/technician/profile/index.wxml');
-assert(profileWxml.includes('经营成长路径'));
-for (const label of ['建立个人品牌', '管理并宣传作品', '管理客户与预约']) {
-  assert(profileJs.includes(`label: '${label}'`), `经营成长路径缺少 ${label}`);
-}
+assert(!profileWxml.includes('经营成长路径'), '经营成长路径不应占用我的页面核心位置');
+const marketingWxml = read('pages/technician/marketing-materials/index.wxml');
+for (const label of ['美甲师主页', '作品管理', '邀请客户']) assert(marketingWxml.includes(label), `营销工具缺少 ${label}`);
+for (const label of ['营销配置', '品牌与内容', '客户增长', '宣传物料']) assert(marketingWxml.includes(label), `营销工具缺少 ${label} 分区`);
+assert(marketingWxml.includes('completionPercent'), '营销工具缺少配置完成度');
+assert(marketingWxml.indexOf('营销配置') < marketingWxml.indexOf('品牌与内容'), '配置完成度应先于工具分类展示');
 
 const customers = read('pages/technician/customers/index.wxml');
 assert(customers.includes('邀请客户后会直接建立关系，无需审批'));
-assert(customers.includes('客户提交预约后，你完成报价，客户确认即创建预约'));
+assert(customers.includes('showInviteGuide'), '客户邀请说明应在邀请弹窗中显示');
+assert(!customers.includes('customer-flow-card'), '客户页首屏不应常驻流程说明卡');
 
 const workEditor = read('pages/technician/work-edit/index.js');
 assert(workEditor.includes("title: isEdit ? '作品已更新' : '作品已提交审核'"));

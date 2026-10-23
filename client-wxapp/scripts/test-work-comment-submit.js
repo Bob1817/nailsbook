@@ -4,7 +4,15 @@ const path = require('node:path');
 const vm = require('node:vm');
 const flush = () => new Promise(resolve => setImmediate(resolve));
 (async () => {
+  const sharedWxml = fs.readFileSync(path.join(__dirname, '../components/work-detail-view/index.wxml'), 'utf8');
+  const sharedWxss = fs.readFileSync(path.join(__dirname, '../components/work-detail-view/index.wxss'), 'utf8');
+  assert.match(sharedWxml, /wx:for="\{\{item\.replies\}\}"/, '共用作品详情必须渲染评论回复');
+  assert.match(sharedWxml, /\{\{reply\.content\}\}/, '回复内容必须显示');
+  assert.match(sharedWxml, /\{\{reply\.createdAtText\}\}/, '回复时间必须显示');
+  assert.match(sharedWxss, /\.comment-replies\s*\{/, '回复列表必须有独立布局');
   for (const role of ['client', 'technician']) {
+    const pageSource = fs.readFileSync(path.join(__dirname, '../pages', role, 'work-detail/index.js'), 'utf8');
+    assert.match(pageSource, /replies:\s*\(c\.replies \|\| \[\]\)\.map\(processComment\)/, role + ' 必须保留接口返回的回复树');
     let page, resolveRequest, rejectRequest, calls = 0;
     const works = { addComment: () => { calls++; return new Promise((resolve, reject) => { resolveRequest = resolve; rejectRequest = reject; }); } };
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../pages', role, 'work-detail/index.js'), 'utf8'), {

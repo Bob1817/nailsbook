@@ -16,12 +16,14 @@ function expect(source, pattern, message) {
 
 expect(wxml, /wx:if="\{\{manageable\}\}" class="wc-manage"[\s\S]*catchtap="onActionTap"/, '技师端应保留右上角管理入口');
 expect(wxml, /wx:if="\{\{showClientActions\}\}" class="wc-client-actions"/, '客户端仅应在绑定发布者后展示独立操作区');
+expect(wxml, /!manageable && !showArtist \? 'wc-title-only'/, '仅显示标题的作品卡应使用独立样式');
 expect(wxml, /catchtap="onLikeTap"[\s\S]*catchtap="onFavoriteTap"[\s\S]*catchtap="onBookTap"/, '客户端操作顺序应为点赞、收藏、预约同款');
 expect(js, /url: '\/pages\/client\/create-order\/index\?workId=' \+ work\.id/, '预约同款应携带作品 ID 进入下单页');
 expect(wxss, /\.wc-manage \{[^}]*width:88rpx;[^}]*height:88rpx;/, '技师管理入口应满足 44px 触控尺寸');
 expect(wxss, /\.wc-status-icons \{[^}]*left:12rpx;/, '作品状态胶囊左侧应使用统一卡片边距');
 expect(wxss, /\.wc-manage \{[^}]*padding:17rpx 12rpx 0 0;[^}]*justify-content:flex-end;/, '管理图标右侧可见边距应与状态胶囊左侧一致');
 expect(wxss, /\.wc-book-same \{[^}]*min-height:88rpx;/, '预约同款应满足 44px 触控尺寸');
+expect(wxss, /\.wc-editorial-copy\.wc-title-only \{ padding:16rpx 18rpx; \}/, '仅显示标题的作品卡上下内边距应保持一致');
 expect(js, /showClientActions: !manageable && publisherBound/, '作品卡片操作应由发布者身份和绑定关系共同决定');
 expect(js, /function publicationStatusText\(w\)/, '美甲师作品卡片应按审核状态生成发布文案');
 expect(js, /pending:\s*'待审核'/, '待审核作品不得显示为已发布');
@@ -33,9 +35,8 @@ expect(js, /standardPriceFen \|\| w\.serviceSubtotalFen \|\| w\.priceCents/, '�
 expect(wxml, /class="wc-editorial-artist"[^>]*catchtap="onArtistTap"[^>]*aria-label="查看\{\{work\.technicianName \|\| '美甲师'\}\}的主页"/, '编辑式作品卡片的头像和名称应提供主页入口');
 expect(wxml, /class="wc-tech-pill"[^>]*catchtap="onArtistTap"[^>]*aria-label="查看\{\{work\.technicianName \|\| '美甲师'\}\}的主页"/, '网格式作品卡片的头像和名称应提供主页入口');
 expect(technicianHomeWxml, /bind:artisttap="openArtistHome"/, '美甲师首页作品应接入主页跳转事件');
-expect(technicianWorksWxml, /bind:artisttap="openArtistHome"/, '美甲师作品列表应接入主页跳转事件');
+if (/bind:artisttap="openArtistHome"/.test(technicianWorksWxml)) throw new Error('美甲师作品管理卡不应重复提供本人主页入口');
 expect(technicianHomeJs, /openArtistHome\(e\)[\s\S]*\/pages\/client\/artist-home\/index\?id=/, '美甲师首页头像和名称应进入对应主页');
-expect(technicianWorksJs, /openArtistHome\(e\)[\s\S]*\/pages\/client\/artist-home\/index\?id=/, '美甲师作品列表头像和名称应进入对应主页');
 expect(technicianHomeJs, /\.map\(\(w\) => \(\{\s*\.\.\.w,/, '美甲师首页应保留接口返回的完整作品价格字段');
 if (/priceText: w\.price \? '¥' \+ w\.price : ''/.test(technicianHomeJs)) {
   throw new Error('美甲师首页不应使用旧 price 字段覆盖统一价格口径');
@@ -109,16 +110,20 @@ expect(technicianDetailJs, /editWork\(\)[\s\S]*\/pages\/technician\/work-edit\/i
 expect(technicianDetailJs, /showWorkActions\(e\)[\s\S]*隐藏作品[\s\S]*置顶作品[\s\S]*加入主页精选[\s\S]*推荐至客户首页[\s\S]*编辑作品[\s\S]*删除作品/, '详情页三点菜单必须使用一致、明确的动作加对象文案，并将删除放在最后');
 expect(sharedDetailJs, /heroSlot: work\.heroSlot \|\| null/, '作品详情管理事件应携带客户首页推荐状态');
 const introIndex = sharedDetailWxml.indexOf('class="intro-section"');
-const engagementIndex = sharedDetailWxml.indexOf('class="engagement-section"');
 const commentsIndex = sharedDetailWxml.indexOf('class="comments-section"');
 const composerIndex = sharedDetailWxml.indexOf('class="composer-section"');
-if (!(introIndex < engagementIndex && engagementIndex < commentsIndex && commentsIndex < composerIndex)) {
-  throw new Error('作品介绍区顺序必须为标题描述、互动操作、评论、输入框');
+if (!(introIndex < commentsIndex && commentsIndex < composerIndex)) {
+  throw new Error('作品介绍区顺序必须为标题描述、评论、底部输入与互动工具栏');
 }
 expect(sharedDetailWxml, /class="title-row"[\s\S]*wx:if="\{\{!visitorInfo && showBookSame\}\}" class="booking-action"[^>]*bindtap="bookSame"/, '预约同款应在标题右侧，保留原预约事件和访客页面独立入口');
 expect(sharedDetailWxss, /\.booking-action-face \{[^}]*height:\s*44px;[^}]*border-radius:\s*8px;[^}]*font-size:\s*var\(--font-sm\);/, '标题行预约同款可见按钮必须对齐 44px 统一按钮规格');
 expect(sharedDetailWxml, /class="send"(?![^>]*size="mini")/, '评论发送按钮不得使用 size="mini" 造成字号与居中偏差');
-expect(sharedDetailWxss, /button\.send,\s*\.send \{[^}]*display:\s*flex;[^}]*align-items:\s*center;[^}]*justify-content:\s*center;[^}]*font-size:\s*var\(--font-sm\);/, '评论发送按钮必须 flex 垂直水平居中并使用统一字号');
+expect(sharedDetailWxss, /\.send \{[^}]*display:\s*flex;[^}]*align-items:\s*center;[^}]*justify-content:\s*center;[^}]*font-size:\s*var\(--font-sm\);/, '评论发送按钮必须 flex 垂直水平居中并使用统一字号');
+expect(sharedDetailWxss, /\.info-panel \{[^}]*padding-bottom:\s*0;[^}]*background:\s*var\(--nb-surface\);/, '普通作品详情面板不得重复预留底部安全区，评论区背景应连续衔接输入栏');
+expect(sharedDetailWxss, /\.info-panel\.visitor-panel \{[^}]*padding-bottom:\s*calc\(150rpx \+ env\(safe-area-inset-bottom\)\);/, '访客作品详情仍需为底部预约栏预留安全区');
+expect(sharedDetailWxss, /\.composer-section \{[^}]*padding:\s*10rpx 24rpx calc\(10rpx \+ env\(safe-area-inset-bottom\)\);[^}]*background:\s*var\(--nb-surface\);[^}]*box-shadow:/, '评论工具栏应使用紧凑的白色底栏并保留安全区');
+expect(sharedDetailWxml, /class="comment-entry"[\s\S]*class="comment-entry-icon"[^>]*\/static\/icons\/edit\.svg[\s\S]*class="comment-input"/, '评论输入胶囊应包含明确的写作图标');
+expect(sharedDetailWxss, /\.comment-entry \{[^}]*height:\s*44px;[^}]*border-radius:\s*22px;[^}]*background:\s*var\(--nb-page\);/, '评论输入胶囊应在白色底栏中使用浅灰圆角表面');
 expect(sharedDetailWxml, /class="visitor-bar-btn visitor-bar-btn-primary booking-action"[^>]*bindtap="bookSame"/, '游客作品详情底部预约入口必须接入统一按钮标准');
 expect(sharedDetailWxml, /disabled="\{\{!isOwnerView && visitorInfo\.acceptingBookings === false\}\}"[^>]*>\{\{isOwnerView \? '编辑作品'/, '本人作品主操作应显示编辑作品且不受接单状态影响');
 expect(sharedDetailWxss, /@import ['"]\.\.\/\.\.\/styles\/booking-actions\.wxss['"];/, '共享作品详情组件必须引入统一按钮样式');
@@ -128,8 +133,15 @@ const bookingIndex = sharedDetailWxml.indexOf('class="booking-action"');
 if (!(introIndex < bookingIndex && bookingIndex < sharedDetailWxml.indexOf('class="work-price-row"'))) throw new Error('预约同款必须在标题行而非互动栏');
 if (/work-share-poster/.test(sharedDetailWxml)) throw new Error('作品详情页不应在互动栏下方展示海报、文案或二维码营销区块');
 
-expect(sharedDetailWxml, /class="engagement-section" style="display:flex;[^"]*overflow:hidden;"/, '互动操作区必须使用微信兼容的 Flex 等分布局');
-const equalActions = sharedDetailWxml.match(/style="flex:1 1 0;width:0;min-width:0;"/g) || [];
-if (equalActions.length !== 3) throw new Error('互动栏只保留点赞、收藏、分享三等分操作');
+expect(sharedDetailWxml, /class="composer-actions"[\s\S]*data-event="like"[\s\S]*data-event="favorite"[\s\S]*class="composer-action composer-share"/, '点赞、收藏和分享必须位于评论输入框右侧的底部工具栏');
+expect(sharedDetailWxml, /<button wx:if="\{\{inputFocused \|\| keyboardHeight \|\| commentText \|\| replyingTo\}\}"[^>]*class="send"/, '发送按钮默认隐藏，仅在输入或回复状态显示');
+expect(sharedDetailJs, /onInputFocus\(\) \{ this\.setData\(\{ inputFocused: true \}\); \}/, '评论输入框聚焦后必须切换为发送态');
+expect(sharedDetailWxss, /\.image-swiper\.client-image-swiper \{[^}]*height:\s*70vh;/, '客户端作品图片必须占据首屏至少三分之二');
+expect(clientDetailWxml, /<work-detail-view isClientView/, '客户端作品详情页必须显式启用作品优先布局');
+expect(sharedDetailWxml, /wx:if="\{\{isClientView && imageUrls\.length > 1\}\}" class="image-count"[^>]*>\{\{currentImageIndex \+ 1\}\} \/ \{\{imageUrls\.length\}\}/, '多图作品必须显示当前张数和总张数');
+expect(sharedDetailWxss, /\.composer-action \{[^}]*min-width:\s*44px;[^}]*height:\s*44px;/, '底部互动按钮触控区域不得小于 44px');
+expect(sharedDetailWxss, /\.composer-actions \{[^}]*flex:\s*0 0 182px;[^}]*width:\s*182px;[^}]*justify-content:\s*flex-end;/, '底部互动区必须使用稳定且舒展的固定宽度');
+expect(sharedDetailWxss, /\.composer-share \{[^}]*flex:\s*0 0 56px;[^}]*width:\s*56px;[^}]*min-width:\s*56px;[^}]*max-width:\s*56px;/, '原生分享按钮必须完整锁定触控宽度');
+expect(sharedDetailWxss, /\.send \{[^}]*flex:\s*0 0 64px;[^}]*height:\s*44px;[^}]*border-radius:\s*22px;/, '输入态发送按钮应使用紧凑胶囊比例');
 
 console.log('作品卡片角色交互检查通过');

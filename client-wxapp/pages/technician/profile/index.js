@@ -18,17 +18,15 @@ const TOOLS = [
   { key: 'homepage',    label: '我的主页', icon: '/static/icons/profile-edit.svg' },
   { key: 'services',    label: '服务管理', icon: '/static/icons/scissors.svg' },
   { key: 'works',       label: '作品管理', icon: '/static/icons/image.svg' },
-  { key: 'designs',     label: '设计需求', icon: '/static/icons/edit.svg' },
   { key: 'shops',       label: '店铺管理', icon: '/static/icons/shop.svg' },
   { key: 'tags',        label: '标签管理', icon: '/static/icons/tag.svg' },
-  { key: 'marketingMaterials', label: '宣传物料', icon: '/static/icons/share.svg' }
+  { key: 'marketingMaterials', label: '营销工具', icon: '/static/icons/share.svg' }
 ];
 
 const TOOL_ROUTES = {
   homepage:     '/pages/technician/homepage-settings/index',
   services:     '/pages/technician/services/index',
   works:        '/pages/technician/works/index',
-  designs:      '/pages/technician/design-requests/index',
   serviceTime:  '/pages/technician/service-time/index',
   shops:        '/pages/technician/shop-management/index',
   tags:         '/pages/technician/tag-management/index',
@@ -53,7 +51,7 @@ Page({
     canAcceptOrders: false,  // 是否满足接单前置条件（已配置到店服务）
     stats: { todayOrders: 0, monthOrders: 0, pendingTotal: 0, customers: 0, newCustomers: 0, works: 0, monthlyRevenue: '¥0', rating: '待积累' },
     orderShortcuts: ORDER_SHORTCUTS.map((s) => ({ ...s, count: 0 })),
-    tools: ['services', 'works', 'shops', 'designs', 'tags', 'marketingMaterials', 'homepage', 'quickBooking'].map(key => TOOLS.find(item => item.key === key)),
+    tools: ['services', 'works', 'shops', 'tags', 'marketingMaterials', 'homepage', 'quickBooking'].map(key => TOOLS.find(item => item.key === key)),
     showStatsDetail: false,
     showInviteDetail: false,
     inviteLinkLoading: false,
@@ -76,7 +74,6 @@ Page({
     needsSetup: false,       // shopService 未配置时显示引导卡
     shopServiceOn: false,
     setupSteps: [],
-    growthSteps: [],
 
     // 服务类型引导弹窗（仅工作时间设置时触发）
     showServiceTypeModal: false,
@@ -211,19 +208,9 @@ Page({
     ];
     const canAcceptOrders = serviceReady && shopReady && scheduleReady;
     this.setData({ userInfo, shopServiceOn, needsSetup: !canAcceptOrders, canAcceptOrders, setupSteps });
-    this.refreshGrowthSteps();
+    if (userInfo.id && userInfo.invitationCode) wx.showShareMenu({ menus: ['shareAppMessage'] });
+    else wx.hideShareMenu();
     this.computeAccepting();
-  },
-
-  refreshGrowthSteps() {
-    const userInfo = this.data.userInfo || {};
-    const stats = this.data.stats || {};
-    const homepageReady = !!(userInfo.name && userInfo.avatarUrl && (userInfo.bio || userInfo.city));
-    this.setData({ growthSteps: [
-      { key: 'homepage', label: '建立个人品牌', hint: homepageReady ? '主页形象与公开资料已完善' : '完善头像、简介与服务区域', done: homepageReady, route: 'homepage' },
-      { key: 'works', label: '管理并宣传作品', hint: Number(stats.works) > 0 ? `已有 ${stats.works} 个作品` : '发布首个作品并分享获客', done: Number(stats.works) > 0, route: 'works' },
-      { key: 'customers', label: '管理客户与预约', hint: Number(stats.customers) > 0 ? `已有 ${stats.customers} 位客户` : '邀请客户绑定并发起预约', done: Number(stats.customers) > 0, route: 'customers' }
-    ] });
   },
 
   goSetupStep(e) {
@@ -398,7 +385,6 @@ Page({
             count: byStatus[item.status] || 0
           }))
         });
-        this.refreshGrowthSteps();
         return;
       }
 
@@ -460,7 +446,6 @@ Page({
         },
         orderShortcuts
       });
-      this.refreshGrowthSteps();
     } finally {
       this._statsLoading = false;
     }
@@ -522,7 +507,7 @@ Page({
     }
     return {
       title: require('../../../utils/share-copy').buildArtistShareTitle(u),
-      path: u.id ? `/pages/client/artist-home/index?id=${u.id}&source=card` : (code ? `/pages/login/index?invite=${code}` : '/pages/login/index'),
+      path: u.id && code ? `/pages/client/artist-home/index?id=${u.id}&source=artist_share&invite=${encodeURIComponent(code)}` : (code ? `/pages/login/index?invite=${encodeURIComponent(code)}` : '/pages/login/index'),
       imageUrl: u.avatarUrl || ''
     };
   },

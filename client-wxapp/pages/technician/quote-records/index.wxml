@@ -1,0 +1,2 @@
+<nav-bar title="全部预约" showBack/>
+<view class="redirect-state">正在打开预约中的报价…</view>

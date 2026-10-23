@@ -19,6 +19,7 @@ describe('OrdersService 流转成功路径', () => {
         cb(prisma),
       ),
       order: {
+        findUnique: jest.fn(),
         update: jest.fn().mockResolvedValue({ id: 1 }),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
@@ -81,6 +82,37 @@ describe('OrdersService 流转成功路径', () => {
     );
     jest.spyOn(service as any, 'assertTechnicianWorkSchedule').mockResolvedValue(undefined);
     jest.spyOn(service as any, 'assertTechnicianShopSchedule').mockResolvedValue(undefined);
+  });
+
+  it('预约详情同时返回客户档案与全部关联作品准备方案', async () => {
+    prisma.order.findUnique.mockResolvedValue({ id: 1, serviceRecord: null });
+
+    await service.findOne(1);
+
+    const include = prisma.order.findUnique.mock.calls[0][0].include;
+    expect(include.customer.select.profileFacts.where.status).toEqual({ in: ['active', 'pending'] });
+    expect(include.customer.select.serviceRecords.select).toEqual(expect.objectContaining({
+      nailCondition: true,
+      clientReaction: true,
+      discomfortNotes: true,
+      preferenceNotes: true,
+      materials: true,
+      tools: true,
+    }));
+    expect(include.sourceWork.select.preparation).toBe(true);
+    expect(include.intentWorks).toEqual({
+      orderBy: { sortOrder: 'asc' },
+      select: {
+        work: {
+          select: {
+            id: true,
+            title: true,
+            coverUrl: true,
+            preparation: true,
+          },
+        },
+      },
+    });
   });
 
   it('confirm 上门：pending_confirm → pending_home，并给客户发系统消息+推送', async () => {
@@ -325,6 +357,16 @@ describe('OrdersService 流转成功路径', () => {
         create: expect.objectContaining({ amount: 200, orderId: 1 }),
       }),
     );
+    expect(prisma.actionTask.upsert).toHaveBeenCalledTimes(1);
+    expect(prisma.actionTask.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          type: 'complete_service_record',
+          title: '补全美甲记录',
+        }),
+      }),
+    );
+    expect(prisma.contentPublicationTask.upsert).not.toHaveBeenCalled();
     expect(res).toEqual({ id: 9, amount: 200 });
   });
 

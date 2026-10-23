@@ -1,4 +1,5 @@
 const api = require('../../../services/api');
+const { hasGuidanceContent } = require('../../../utils/shop-guidance');
 const {
   getBookingReminderResultState,
   isSubscriptionCategoryMissing,
@@ -110,7 +111,15 @@ async function enrichShopMetadata(orders) {
   const artists = Object.fromEntries(artistEntries);
 
   return orders.map((order) => {
-    if (order.serviceType !== '到店美甲' || !order.technician) return order;
+    if (order.serviceType !== '到店美甲') return order;
+    const hideUnverifiedGuidance = () => ({
+      ...order,
+      shopAddress: {
+        ...(order.shopAddress || {}),
+        guidanceEnabled: false
+      }
+    });
+    if (!order.technician) return hideUnverifiedGuidance();
     const artist = artists[String(order.technician.id)];
     const shops = artist && Array.isArray(artist.shopAddresses)
       ? artist.shopAddresses.filter((shop) => shop && shop.enabled !== false)
@@ -121,13 +130,13 @@ async function enrichShopMetadata(orders) {
       const detail = compactAddress(shop.detailAddress);
       return targetAddress && (full === targetAddress || (detail && targetAddress.includes(detail)) || full.includes(targetAddress));
     }) || (shops.length === 1 ? shops[0] : null);
-    if (!matched) return order;
+    if (!matched) return hideUnverifiedGuidance();
     return {
       ...order,
       shopAddress: {
         ...(order.shopAddress || {}),
         name: matched.name || (order.shopAddress && order.shopAddress.name) || '',
-        guidanceEnabled: matched.guidance && matched.guidance.enabled === true
+        guidanceEnabled: hasGuidanceContent(matched.guidance)
       }
     };
   });

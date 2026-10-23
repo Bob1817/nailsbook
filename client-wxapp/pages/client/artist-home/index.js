@@ -5,7 +5,6 @@ const { buildArtistShareTitle } = require('../../../utils/share-copy');
 const { buildClientLoginUrl } = require('../../../utils/artist-navigation');
 const { trackConversion } = require('../../../utils/conversion-tracking');
 
-const DEFAULT_SERVICE_ICONS = ['/static/icons/svc-handcare.svg', '/static/icons/svc-palette.svg', '/static/icons/svc-extend.svg', '/static/icons/svc-remove.svg'];
 const QUALIFICATION_TYPE_LABEL = {
   education: '教育经历',
   training: '培训经历',
@@ -13,6 +12,53 @@ const QUALIFICATION_TYPE_LABEL = {
   certification: '行业认证',
   award: '获奖记录'
 };
+
+function mergeFeaturedComments(reviews, homepageComments) {
+  const serviceReviews = (reviews || []).map((item) => ({ ...item, key: `review-${item.id}` }));
+  const profileComments = (homepageComments || []).map((item) => ({
+    ...item,
+    key: `comment-${item.id}`,
+    clientName: item.clientName || '匿名用户',
+    clientAvatarUrl: item.clientAvatarUrl || '',
+    rating: 0
+  }));
+  return serviceReviews.concat(profileComments).filter((item) => item.content).slice(0, 10);
+}
+
+function buildAvailabilitySummary(artist, bookingSettings) {
+  if (artist.acceptingBookings === false) return { text: '已暂停接单', available: false };
+  if (!bookingSettings) return { text: '', available: false };
+
+  const dailyBookingLimit = Number(bookingSettings.dailyBookingLimit) || 2;
+  const bookingCounts = bookingSettings.bookingCounts || {};
+  const closedDates = (bookingSettings.days || [])
+    .filter((day) => !day.accepting)
+    .map((day) => day.serviceDate);
+  const today = new Date();
+
+  for (let offset = 0; offset < 21; offset += 1) {
+    const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offset);
+    const serviceDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const remaining = dailyBookingLimit - Number(bookingCounts[serviceDate] || 0);
+    const isClosed = closedDates.includes(serviceDate)
+      || !bookingEngine.activeScheduleForDate(artist.serviceSchedule, serviceDate);
+    if (isClosed || remaining <= 0) continue;
+
+    if (offset === 0) {
+      return {
+        text: remaining <= 3 ? `仅剩 ${remaining} 名额` : '今日可约',
+        available: true
+      };
+    }
+    return {
+      text: offset === 1
+        ? '明日可约'
+        : (offset === 2 ? '后日可约' : `${date.getMonth() + 1}月${date.getDate()}日可约`),
+      available: true
+    };
+  }
+  return { text: '暂无可约档期', available: false };
+}
 
 Page({
   data: {
@@ -25,7 +71,6 @@ Page({
     reviews: [],
     qualifications: [],
     timeline: [],
-    services: [],
     heroImageUrl: '',
     bannerImages: [],
     environmentPhotos: [],
@@ -34,37 +79,31 @@ Page({
     policies: null,
     studioPolicyItems: [],
     showStudioPolicyModal: false,
-    faqs: [],
     exclusiveServiceNote: '',
     privacyNote: '',
-    serviceProcess: [],
     aestheticPhilosophy: '',
     brandIntroduction: '',
     brandTagline: '',
-    hasRealStats: false,
     isLiked: false,
     likeCount: 0,
     isFavorited: false,
     favoriteCount: 0,
     commentCount: 0,
     homepageComments: [],
+    featuredComments: [],
+    displayComments: [],
+    availabilitySummary: '',
+    hasAvailableSchedule: false,
+    detailModal: '',
     showCommentComposer: false,
     commentDraft: '',
     commentSubmitting: false,
     isBound: false,
-    isReturningClient: false,
-    isBindingPending: false,
     entrySource: '',
-    entrySourceLabel: '',
-    entryGuide: '',
     navBarHeight: 88,
     loading: true,
     loadFailed: false,
-    stylePhotoCards: [],
-    styleTextTags: [],
-    showOwnerMenuSheet: false,
-    availabilityDays: [],
-    availabilityHeadline: ''
+    showOwnerMenuSheet: false
   },
 
   onLoad(options) {
@@ -83,9 +122,7 @@ Page({
     const entrySource = options.source || '';
     this.inviteCode = options.invite ? decodeURIComponent(options.invite) : '';
     this.resumeBooking = options.book === '1';
-    if (wx.showShareMenu) {
-      wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
-    }
+    wx.hideShareMenu();
     this.setData({
       artistId,
       previewMode: options.preview === '1' || isOwner,
@@ -121,41 +158,8 @@ Page({
       this.loadHome();
     }
     if (this.data.artistId && !this.data.previewMode) {
-      this.loadRelationship().then(() => this.updateEntryGuide());
-    } else {
-      this.updateEntryGuide();
+      this.loadRelationship();
     }
-  },
-
-  updateEntryGuide() {
-    const sourceLabels = {
-      friend: '来自朋友分享',
-      share: '来自分享名片',
-      share_card: '来自分享名片',
-      xhs: '来自小红书',
-      xiaohongshu: '来自小红书',
-      douyin: '来自抖音',
-      inquiry: '来自咨询询价',
-      artist_home: '美甲师主页',
-      booking: '预约引导',
-      card: '美甲师名片'
-    };
-    const entrySourceLabel = sourceLabels[this.data.entrySource] || '';
-    let entryGuide = '';
-    if (this.data.previewMode || this.data.isOwner) {
-      entryGuide = '';
-    } else if (!getApp().globalData.token) {
-      entryGuide = '浏览作品与环境无需登录；预约或咨询时登录即可。';
-    } else if (this.data.isBindingPending) {
-      entryGuide = '点击预约将使用当前美甲师的邀请码直接完成关联。';
-    } else if (!this.data.isBound) {
-      entryGuide = '预约将绑定 TA 为你的专属美甲师（一对一工作室）。';
-    } else if (this.data.isReturningClient) {
-      entryGuide = '欢迎回来，可直接预约或预约上次同款。';
-    } else {
-      entryGuide = '已绑定，选好服务与时间即可提交预约。';
-    }
-    this.setData({ entryGuide, entrySourceLabel });
   },
 
   viewWork(e) {
@@ -169,7 +173,7 @@ Page({
   viewAllWorks() {
     const source = this.data.entrySource || 'artist_home';
     const invite = this.inviteCode ? '&invite=' + encodeURIComponent(this.inviteCode) : '';
-    wx.navigateTo({ url: '/pages/client/works/index?techId=' + this.data.artistId + invite + '&source=' + encodeURIComponent(source) });
+    wx.navigateTo({ url: '/pages/client/works/index?techId=' + this.data.artistId + invite + '&source=' + encodeURIComponent(source) + '&mode=gallery' });
   },
 
   async loadHome() {
@@ -190,43 +194,18 @@ Page({
         api.public.brands.profile(this.data.artistId, (this.data.previewMode || this.data.isOwner)
           ? { content: `owner_preview_${Date.now()}` }
           : undefined).catch(() => null),
-        api.public.brands.services(this.data.artistId, { page: 1, pageSize: 20 }).catch(() => null),
         api.public.brands.comments(this.data.artistId, { page: 1, pageSize: 20 }).catch(() => null),
         api.public.bookingSettings(this.data.artistId).catch(() => null)
       ]);
       const res = results[0];
       const worksRes = results[1];
       const brandRes = results[2];
-      const servicesRes = results[3];
-      const commentsRes = results[4];
-      const bookingSettings = results[5];
+      const commentsRes = results[3];
+      const bookingSettings = results[4];
       const artist = res.artist || res.technician || res || {};
-      this.inviteCode = this.inviteCode || artist.invitationCode || '';
+      // 页面展示对象由公开接口按 artistId 确认，邀请码也必须以该对象的服务端值为准。
+      this.inviteCode = artist.invitationCode || '';
       const brand = (brandRes && (brandRes.brand || brandRes)) || {};
-      const dailyBookingLimit = Number(bookingSettings && bookingSettings.dailyBookingLimit) || 2;
-      const bookingCounts = (bookingSettings && bookingSettings.bookingCounts) || {};
-      const closedDates = ((bookingSettings && bookingSettings.days) || []).filter((day) => !day.accepting).map((day) => day.serviceDate);
-      const availabilityDays = Array.from({ length: 7 }, (_, index) => {
-        const date = new Date();
-        date.setDate(date.getDate() + index);
-        const serviceDate = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
-        const count = Number(bookingCounts[serviceDate] || 0);
-        const remaining = Math.max(0, dailyBookingLimit - count);
-        const rest = closedDates.indexOf(serviceDate) >= 0 || !bookingEngine.activeScheduleForDate(artist.serviceSchedule, serviceDate);
-        return {
-          serviceDate,
-          weekday: index === 0 ? '今天' : '周' + ['日', '一', '二', '三', '四', '五', '六'][date.getDay()],
-          day: date.getDate(),
-          status: rest ? '休息' : (remaining === 0 ? '已约满' : (remaining === 1 ? '仅剩1个' : (count > 0 ? '少量可约' : '可预约'))),
-          full: !rest && remaining === 0,
-          available: !rest && remaining > 0
-        };
-      });
-      const availableCount = availabilityDays.filter((day) => day.available).length;
-      const availabilityHeadline = availableCount <= 2
-        ? '近期档期较满，建议提前预约'
-        : (availabilityDays.some((day) => day.full) ? '本周部分日期已约满' : '本周尚有少量预约名额');
-
       // 基础信息
       artist.initial = (artist.name || '美').charAt(0);
       artist.name = brand.name || artist.name || '';
@@ -306,22 +285,6 @@ Page({
         desc: item.description || item.desc || ''
       })).filter((item) => item.year || item.desc);
 
-      // 服务列表：仅真实数据
-      const serviceSource = servicesRes
-        ? (servicesRes.items || servicesRes.data || [])
-        : (artist.serviceItems || []);
-      const services = serviceSource.map((item, idx) => ({
-        name: item.name || '',
-        price: item.price && typeof item.price === 'object'
-          ? (item.price.min || item.price.max || 0)
-          : (item.priceCents ? item.priceCents / 100 : (item.price || 0)),
-        duration: item.durationMinutes ? `${item.durationMinutes}分钟` : (item.duration || ''),
-        desc: item.description || item.desc || '',
-        icon: (item.icon && item.icon.indexOf && item.icon.indexOf('/') === 0)
-          ? item.icon
-          : DEFAULT_SERVICE_ICONS[idx % DEFAULT_SERVICE_ICONS.length]
-      }));
-
       // 品牌：环境、保障、规则、FAQ、一对一与流程
       // 工作室环境只展示所选店铺的实景照片
       const shopPhotos = (Array.isArray(shop.photos) ? shop.photos : [])
@@ -358,16 +321,6 @@ Page({
       ].filter((item) => item.content);
       const exclusiveServiceNote = brand.exclusiveServiceNote || '';
       const privacyNote = brand.privacyNote || '';
-      const serviceProcess = (brand.serviceProcess || []).map((item, index) => ({
-        step: item.step || index + 1,
-        title: item.title || '',
-        description: item.description || ''
-      })).filter((item) => item.title || item.description);
-      const faqs = (brand.faqs || []).map((item) => ({
-        question: item.question || '',
-        answer: item.answer || ''
-      })).filter((item) => item.question && item.answer);
-
       // 美甲师快照（统一注入到每个作品，确保作品卡/详情页/收藏列表口径与美甲师主页一致）
       const techSnapshot = {
         id: this.data.artistId,
@@ -396,23 +349,6 @@ Page({
         isBound: isBound
       })).filter(item => item.coverUrl);
 
-      // 擅长风格只使用带对应真实标签的作品图；没有匹配作品时展示文字标签
-      const styleShowcases = artist.styleTags.map((label) => {
-        const matchedWork = sourceWorks.find((item) => {
-          const tags = parseWorkTags(item.tags);
-          return tags.some((tag) => tag === label || tag.indexOf(label) >= 0 || label.indexOf(tag) >= 0);
-        });
-        return {
-          label,
-          workId: matchedWork ? matchedWork.id : '',
-          imageUrl: matchedWork
-            ? (matchedWork.coverUrl || (Array.isArray(matchedWork.imageUrls) ? matchedWork.imageUrls[0] : '') || '')
-            : ''
-        };
-      });
-      const stylePhotoCards = styleShowcases.filter((item) => item.imageUrl);
-      const styleTextTags = styleShowcases.filter((item) => !item.imageUrl);
-
       // 未配置主页背景时，才以真实环境图 / 作品封面作为降级背景
       const bannerImages = [
         ...environmentPhotos.map((item) => item.imageUrl),
@@ -431,45 +367,41 @@ Page({
         initial: (review.client?.name || review.clientName || '匿').charAt(0),
         timeAgo: formatTimeAgo(review.createdAt)
       }));
+      const featuredComments = mergeFeaturedComments(reviews, homepageComments);
+      const availability = buildAvailabilitySummary(artist, bookingSettings);
 
       this.setData({
         artist,
         works,
-        displayWorks: works.slice(0, 8),
+        displayWorks: works.slice(0, 6),
         reviews,
+        featuredComments,
+        displayComments: featuredComments.slice(0, 2),
+        availabilitySummary: availability.text,
+        hasAvailableSchedule: availability.available,
         timeline,
-        services,
         qualifications,
         heroImageUrl: brand.heroImageUrl || '',
         bannerImages,
         environmentPhotos,
         environmentHeroIndex: 0,
-        stylePhotoCards,
-        styleTextTags,
-        availabilityDays,
-        availabilityHeadline,
         standards,
         policies,
         studioPolicyItems,
-        faqs,
         exclusiveServiceNote,
         privacyNote,
-        serviceProcess,
         aestheticPhilosophy,
         brandIntroduction,
         brandTagline,
         brandShare: brand.share || null,
-        hasRealStats: (
-          (artist.workCount > 0 ? 1 : 0) +
-          ((artist.rating != null && !Number.isNaN(artist.rating)) ? 1 : 0) +
-          (artist.reviewCount > 0 ? 1 : 0)
-        ) >= 2,
         likeCount,
         favoriteCount,
         commentCount,
         homepageComments,
         loading: false
       });
+      if (this.inviteCode) wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
+      else wx.hideShareMenu();
       if (!this.data.isOwner && !this._viewTracked) {
         this._viewTracked = true;
         trackConversion({ eventType:'artist_view', technicianId:Number(artist.id || this.data.artistId), channel:this.data.entrySource || 'direct', touchpoint:'artist_home' });
@@ -492,16 +424,13 @@ Page({
       wx.setStorageSync('client_bindings', bindings);
       const isBound = bindings.some(b => String(b.id || b.technicianId) === String(this.data.artistId));
       const interaction = await api.client.artists.homepageInteractions(this.data.artistId);
-      const pendingMap = wx.getStorageSync('client_binding_pending') || {};
-      const isBindingPending = !isBound && !!pendingMap[String(this.data.artistId)];
       this.setData({
         isBound,
         isLiked: !!interaction.isLiked,
         isFavorited: !!interaction.isFavorited,
         likeCount: Number(interaction.likeCount || 0),
         favoriteCount: Number(interaction.favoriteCount || 0),
-        commentCount: Number(interaction.commentCount || 0),
-        isBindingPending
+        commentCount: Number(interaction.commentCount || 0)
       });
     } catch (err) {
       // ignore
@@ -542,6 +471,11 @@ Page({
     if (!this.requireClientLogin()) return;
     this.setData({ showCommentComposer: true });
   },
+  openAboutDetail() { this.setData({ detailModal: 'about' }); },
+  openCareerDetail() { this.setData({ detailModal: 'career' }); },
+  openStudioDetail() { this.setData({ detailModal: 'studio' }); },
+  openReviewDetail() { this.setData({ detailModal: 'reviews' }); },
+  closeDetailModal() { this.setData({ detailModal: '' }); },
   closeComments() { if (!this.data.commentSubmitting) this.setData({ showCommentComposer: false }); },
   onCommentInput(e) { this.setData({ commentDraft: e.detail.value }); },
   async submitHomepageComment() {
@@ -551,8 +485,12 @@ Page({
     try {
       await api.client.artists.addHomepageComment(this.data.artistId, content);
       const result = await api.public.brands.comments(this.data.artistId, { page: 1, pageSize: 20 });
+      const homepageComments = (result.items || []).map((item) => ({ ...item, timeAgo: formatTimeAgo(item.createdAt) }));
+      const featuredComments = mergeFeaturedComments(this.data.reviews, homepageComments);
       this.setData({
-        homepageComments: (result.items || []).map((item) => ({ ...item, timeAgo: formatTimeAgo(item.createdAt) })),
+        homepageComments,
+        featuredComments,
+        displayComments: featuredComments.slice(0, 2),
         commentCount: Number(result.total || 0),
         commentDraft: '',
         showCommentComposer: false
@@ -616,8 +554,7 @@ Page({
         const pendingMap = wx.getStorageSync('client_binding_pending') || {};
         delete pendingMap[String(this.data.artistId)];
         wx.setStorageSync('client_binding_pending', pendingMap);
-        this.setData({ isBound: true, isBindingPending: false });
-        this.updateEntryGuide();
+        this.setData({ isBound: true });
       }
       let quickMode = false;
       if (api.public && api.public.bookingSettings) {
@@ -743,21 +680,6 @@ function formatBusinessHours(hours) {
   const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
   const days = open.map(item => weekdays[Number(item.weekday)]).filter(Boolean);
   return open[0].start + ' - ' + open[0].end + '（' + days.join('、') + '）';
-}
-
-function parseWorkTags(value) {
-  let tags = value || [];
-  if (typeof tags === 'string') {
-    try {
-      tags = JSON.parse(tags);
-    } catch (error) {
-      tags = tags.split(/[、，,]/);
-    }
-  }
-  return (Array.isArray(tags) ? tags : [])
-    .flatMap((tag) => String(tag || '').split(/[、，,]/))
-    .map((tag) => tag.trim())
-    .filter(Boolean);
 }
 
 function formatTimeAgo(dateStr) {

@@ -236,6 +236,7 @@ page { background: var(--bg-page); }
 .info-text-muted { color:var(--text-muted); }
 .order-detail-address { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
 .order-guidance-link { position:relative; min-height:44rpx; color:var(--nb-text-link); font-weight:var(--weight-medium); }
+.order-guidance-link .info-text { color:var(--nb-text-link); }
 .order-guidance-link::before { content:''; position:absolute; top:-20rpx; right:0; bottom:-24rpx; left:-12rpx; }
 .order-guidance-link:active { opacity:.68; }
 .payment-row { margin-top:8rpx; }
@@ -243,8 +244,8 @@ page { background: var(--bg-page); }
 /* 卡片底部：未开始显示倒计时，终态显示详情入口 */
 .order-footer {
   min-height: 88rpx;
-  margin-top: 16rpx;
-  padding: 14rpx 0;
+  margin-top: -16rpx;
+  padding: 0;
   box-sizing: border-box;
   border-top: 0;
   display: flex;
@@ -260,7 +261,7 @@ page { background: var(--bg-page); }
 .countdown-main,.countdown-next { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.35; }
 .countdown-main { color:var(--nb-secondary); font-weight: var(--weight-semibold); }
 .countdown-next { color:var(--nb-muted); font-size: var(--font-xs); }
-.footer-action { min-height:60rpx; flex-shrink:0; padding-left:12rpx; display:flex; align-items:center; justify-content:flex-end; gap:8rpx; color:var(--nb-text-link); font-size:var(--font-sm); font-weight:var(--weight-semibold); }
+.footer-action { min-height:88rpx; flex-shrink:0; padding-left:12rpx; display:flex; align-items:center; justify-content:flex-end; gap:8rpx; color:var(--nb-text-link); font-size:var(--font-sm); font-weight:var(--weight-semibold); }
 .footer-clock {
   width: 28rpx;
   height: 28rpx;
@@ -291,7 +292,7 @@ page { background: var(--bg-page); }
 .list-area { padding: 20rpx 32rpx 0; }
 .order-list { gap: 16rpx; }
 .order-card { border-radius: 24rpx; box-shadow: none; }
-.order-card-content { padding: 24rpx; }
+.order-card-content { padding: 24rpx 24rpx 0; }
 .order-date-box { width: 104rpx; min-height: 120rpx; border-radius: 18rpx; }
 .order-time-title { font-size: var(--font-md); font-weight: var(--weight-semibold); }
 .info-text { font-size: var(--font-xs); }

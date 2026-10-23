@@ -111,7 +111,7 @@ for (const options of [{ shareToken: 'review-token', book: '1' }, { id: '123' },
   global.wx = { setStorageSync: (key, value) => { storage[key] = value; } };
   vm.runInNewContext(read('pages/client/public-work/index.js'), {
     Page: value => { page = value; }, require: createRequire(shareFile),
-    wx: { getStorageSync: () => '', redirectTo: ({ url }) => { destination = url; } }
+    wx: { getStorageSync: () => '', redirectTo: ({ url }) => { destination = url; }, hideShareMenu: () => {}, showShareMenu: () => {} }
   });
   page.setData = data => Object.assign(page.data, data);
   page.loadWork = () => { loads++; };

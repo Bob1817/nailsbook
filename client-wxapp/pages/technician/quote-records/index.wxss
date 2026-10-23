@@ -1,0 +1,2 @@
+page { background: var(--bg-page); }
+.redirect-state { min-height: 360rpx; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: var(--font-sm); }

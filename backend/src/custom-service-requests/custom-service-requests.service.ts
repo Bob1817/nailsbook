@@ -379,6 +379,7 @@ export class CustomServiceRequestsService {
         data: {
           orderNo: this.generateOrderNo(),
           technicianId: request.techId,
+          customServiceRequestId: request.id,
           customerId: customer.id,
           clientUserId,
           addressId: request.addressId,

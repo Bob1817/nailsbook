@@ -19,7 +19,8 @@
 
   <!-- 统计 -->
   <view class="page-header">
-    <text class="page-count">共 {{filteredOrders.length}} 个{{tradeView ? '订单' : '预约'}}</text>
+    <text class="page-count">共 {{activeFilter === 'pre_booking' ? filteredPreBookingItems.length : filteredOrders.length}} 个{{activeFilter === 'pre_booking' ? '待成单事项' : (tradeView ? '订单' : '预约')}}</text>
+    <view wx:if="{{!tradeView}}" class="quick-quote-entry" bindtap="openQuickQuote" hover-class="control-pressed" role="button">快速报价</view>
   </view>
 
   <!-- 预约列表 -->
@@ -29,10 +30,45 @@
         <view wx:for="{{[1,2]}}" wx:key="*this" class="skel-card"></view>
       </view>
 
+      <view wx:elif="{{activeFilter === 'pre_booking' && preBookingLoadFailed}}" class="empty-card" aria-live="polite">
+        <text class="empty-title">待成单事项加载失败</text>
+        <text class="empty-sub">请检查网络后重试</text>
+        <view class="retry-btn booking-action" bindtap="loadOrders" role="button">重新加载</view>
+      </view>
+
       <view wx:elif="{{loadFailed}}" class="empty-card" aria-live="polite">
         <text class="empty-title">预约列表加载失败</text>
         <text class="empty-sub">请检查网络后重试</text>
         <view class="retry-btn booking-action" bindtap="loadOrders" role="button">重新加载</view>
+      </view>
+
+      <view wx:elif="{{activeFilter === 'pre_booking' && filteredPreBookingItems.length === 0}}" class="empty-card">
+        <text class="empty-title">暂无待成单事项</text>
+        <text class="empty-sub">快速报价和客户提交的需求会统一显示在这里</text>
+        <view class="retry-btn booking-action" bindtap="openQuickQuote" role="button">创建报价</view>
+      </view>
+
+      <view wx:elif="{{activeFilter === 'pre_booking'}}" class="quote-list">
+        <view wx:if="{{preBookingPartialFailed}}" class="partial-load-tip" bindtap="loadOrders" role="button">部分事项暂未加载，点击重试</view>
+        <view wx:for="{{filteredPreBookingItems}}" wx:key="_key" class="quote-card" data-key="{{item._key}}" bindtap="openPreBookingItem" hover-class="control-pressed" role="button">
+          <view class="quote-head">
+            <view class="quote-title-group">
+              <text class="quote-title">{{item._customerText}}</text>
+              <text class="quote-no">{{item._kindText}}{{item.quoteNo ? ' · ' + item.quoteNo : ''}}</text>
+            </view>
+            <text class="quote-status {{item._statusKind}}">{{item._statusText}}</text>
+          </view>
+          <text class="quote-summary">{{item._summaryText}}</text>
+          <view class="quote-meta">
+            <text wx:if="{{item._priceText}}">¥{{item._priceText}}</text>
+            <text wx:if="{{item.totalDurationMinutes}}">{{item.totalDurationMinutes}} 分钟</text>
+            <text>{{item._createdText}}</text>
+          </view>
+          <view wx:if="{{item.order}}" class="quote-order-link" data-id="{{item.order.id}}" catchtap="openQuoteOrder" role="button">查看关联预约</view>
+          <view wx:elif="{{item._canQuote}}" class="quote-order-link" data-key="{{item._key}}" catchtap="openRequestQuote" role="button">{{item._priceText ? '修改报价' : '立即报价'}}</view>
+          <view wx:elif="{{item._sourceType === 'quote'}}" class="quote-next">查看报价详情</view>
+          <view wx:else class="quote-next">等待客户确认</view>
+        </view>
       </view>
 
       <view wx:elif="{{filteredOrders.length === 0}}" class="empty-card">
@@ -53,9 +89,24 @@
           bind:reject="onBookingCardReject"
           bind:cancel="onBookingCardCancel"
           bind:complete="onBookingCardComplete"
+          bind:confirmed="onBookingCardConfirmed"
           bind:rebook="onBookingCardRebook"
         />
       </view>
     </view>
   </scroll-view>
+</view>
+
+<view wx:if="{{showRequestQuote}}" class="request-quote-mask" bindtap="closeRequestQuote">
+  <view class="request-quote-sheet" catchtap="noop">
+    <text class="request-quote-title">为{{quotingItem._kindText}}报价</text>
+    <text class="request-quote-label">报价金额</text>
+    <input class="request-quote-input" type="digit" value="{{requestQuotePrice}}" data-field="requestQuotePrice" bindinput="onRequestQuoteInput" placeholder="请输入金额"/>
+    <text class="request-quote-label">报价说明</text>
+    <textarea class="request-quote-textarea" value="{{requestQuoteRemark}}" data-field="requestQuoteRemark" bindinput="onRequestQuoteInput" maxlength="200" placeholder="说明包含的服务和注意事项"/>
+    <view class="request-quote-actions">
+      <view class="request-quote-cancel" bindtap="closeRequestQuote" role="button">取消</view>
+      <view class="request-quote-submit" bindtap="submitRequestQuote" role="button">{{submittingRequestQuote ? '提交中…' : '发送报价'}}</view>
+    </view>
+  </view>
 </view>

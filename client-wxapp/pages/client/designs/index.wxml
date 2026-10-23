@@ -1,29 +1,16 @@
-<nav-bar title="设计" showBack/>
+<nav-bar title="设计记录" showBack/>
 <view class="container">
-  <!-- 顶部创建入口 -->
+  <!-- 新需求统一进入预约流程，历史记录继续保留查看与转预约能力。 -->
   <view class="create-section">
-    <view class="create-card" bindtap="goToCustomizeDesign">
+    <view class="create-card" bindtap="goToBooking">
       <view class="create-card-content">
-        <view class="create-tag">创意定制</view>
+        <view class="create-tag">预约美甲</view>
         <view class="create-icon-wrap customize">
           <view class="create-icon-dot"></view>
         </view>
         <view class="create-info">
-          <text class="create-title">设计美甲</text>
-          <text class="create-desc">从风格、配色到甲型，发起你的专属灵感需求</text>
-        </view>
-      </view>
-    </view>
-
-    <view class="create-card" bindtap="goToCreateDesign">
-      <view class="create-card-content">
-        <view class="create-tag upload">图稿参考</view>
-        <view class="create-icon-wrap upload">
-          <view class="create-icon-dot"></view>
-        </view>
-        <view class="create-info">
-          <text class="create-title">上传设计</text>
-          <text class="create-desc">上传喜欢的参考图，与美甲师沟通细节</text>
+          <text class="create-title">发起预约</text>
+          <text class="create-desc">在预约中填写款式说明、上传参考图或选择作品</text>
         </view>
       </view>
     </view>
@@ -58,8 +45,8 @@
       <view class="empty-icon-wrap">
         <view class="empty-icon-dot"></view>
       </view>
-      <text class="empty-title">暂无设计作品</text>
-      <text class="empty-desc">点击上方按钮创建你的第一个美甲设计</text>
+      <text class="empty-title">暂无设计记录</text>
+      <text class="empty-desc">新的款式需求可直接在预约中提交</text>
     </view>
 
     <!-- 设计列表 -->

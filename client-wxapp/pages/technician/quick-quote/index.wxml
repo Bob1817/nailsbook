@@ -1,0 +1,158 @@
+<nav-bar title="快捷报价" showBack backTitleLeft/>
+
+<view class="quote-page">
+  <view wx:if="{{loading}}" class="state">正在加载服务…</view>
+
+  <block wx:elif="{{!quote}}">
+      <view class="compose-card">
+        <view class="compose-head">
+          <text class="compose-eyebrow">新建报价单</text>
+          <text class="intent-badge">意向报价</text>
+        </view>
+        <text class="compose-title">组合本次美甲服务</text>
+
+        <view wx:if="{{selectedServices.length || displayFees.length}}" class="quote-lines">
+          <view wx:for="{{selectedServices}}" wx:key="id" class="quote-line">
+            <view class="quote-line-main">
+              <text class="quote-line-name">{{item.name}} <text class="quote-line-quantity">× {{item.quantity}}</text></text>
+              <text class="quote-line-meta">{{item.durationMinutes * item.quantity}} 分钟 · {{item.description || '美甲服务'}}</text>
+            </view>
+            <text class="quote-line-price">¥{{item._subtotalText}}</text>
+          </view>
+          <view wx:for="{{displayFees}}" wx:key="index" class="quote-line quote-line-fee">
+            <view class="quote-line-main">
+              <view class="quote-fee-heading">
+                <text class="quote-line-name">{{item.name || '临时收费项目'}}</text>
+                <text class="quote-fee-tag">临时项目</text>
+                <button size="mini" class="quote-fee-remove" data-index="{{index}}" bindtap="removeFee" hover-class="control-pressed" aria-label="移除{{item.name || '临时收费项目'}}"><image src="/static/icons/picker-close.svg" mode="aspectFit"/></button>
+              </view>
+              <text class="quote-line-meta quote-fee-note">{{requirement || '按本次需求临时添加'}}</text>
+            </view>
+            <text class="quote-line-price">¥{{item._subtotalText}}</text>
+          </view>
+        </view>
+
+        <view wx:if="{{!selectedServices.length}}" class="service-entry" bindtap="openServicePicker" hover-class="control-pressed" role="button" aria-label="选择系统服务">
+          <view class="service-entry-icon"><image src="/static/icons/document.svg" mode="aspectFit"/></view>
+          <view class="service-entry-copy"><text class="service-entry-title">选择系统服务</text><text class="service-entry-caption">按客户需求组合多个项目</text></view>
+          <image class="service-entry-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit"/>
+        </view>
+        <view wx:else class="add-service-link" bindtap="openServicePicker" hover-class="control-pressed" role="button">
+          <text class="add-service-plus">＋</text>
+          <text>继续添加系统服务</text>
+        </view>
+
+        <view class="compose-divider"></view>
+        <view class="compose-summary">
+          <view class="summary-copy">
+            <text>系统预计时长 <text class="summary-strong">{{selectedServices.length ? durationText : '—'}}</text></text>
+            <text>共 {{quoteItemCount}} 个项目</text>
+          </view>
+          <text class="summary-total">¥{{calculatedText}}</text>
+        </view>
+      </view>
+
+    <block>
+      <view class="adjust-card">
+        <view class="adjust-head">
+          <view class="adjust-copy">
+            <text class="adjust-title">最终报价调整</text>
+            <text class="adjust-caption">可根据沟通结果修改折扣价和服务时长</text>
+          </view>
+          <text class="editable-badge">可编辑</text>
+        </view>
+        <view class="adjust-fields">
+          <view class="adjust-field">
+            <text class="adjust-label">最终报价（元）</text>
+            <view class="adjust-value price-value {{finalPriceError ? 'is-error' : ''}}"><text>¥</text><input type="digit" data-field="finalPrice" value="{{finalPrice}}" bindinput="input" placeholder="{{calculatedText}}" placeholder-class="price-placeholder" aria-label="最终报价，可修改"/></view>
+          </view>
+          <view class="adjust-field">
+            <text class="adjust-label">服务时长（小时）</text>
+            <input class="adjust-value {{durationError ? 'is-error' : ''}}" type="digit" value="{{durationInput}}" bindinput="onDurationInput" placeholder="0" placeholder-class="price-placeholder" aria-label="服务时长，可修改"/>
+          </view>
+        </view>
+      </view>
+
+      <view class="supplement-panel">
+      <view class="supplement-card" bindtap="toggleMore" hover-class="control-pressed" role="button" aria-expanded="{{showMore}}">
+        <view class="supplement-icon"><text>＋</text></view>
+        <view class="supplement-copy">
+          <text class="supplement-title">补充报价信息</text>
+          <text class="supplement-caption">作品参考、备注等次要信息</text>
+        </view>
+        <text class="supplement-arrow">{{showMore ? '⌃' : '⌄'}}</text>
+      </view>
+
+      <view wx:if="{{showMore}}" class="optional-card">
+        <text class="custom-title">添加临时收费项目</text>
+        <text class="custom-caption">例如：特殊饰品、拆卸复杂款式等</text>
+        <view class="temporary-fee-form">
+          <input class="temporary-fee-input temporary-fee-name {{feeNameError ? 'is-error' : ''}}" data-field="name" value="{{temporaryFee.name}}" bindinput="editTemporaryFee" maxlength="80" placeholder="项目名称" aria-label="临时收费项目名称"/>
+          <input class="temporary-fee-input temporary-fee-price {{feePriceError ? 'is-error' : ''}}" data-field="price" value="{{temporaryFee.price}}" bindinput="editTemporaryFee" type="digit" placeholder="金额" aria-label="临时收费项目金额"/>
+          <button size="mini" class="temporary-fee-add" bindtap="addTemporaryFee" hover-class="control-pressed">添加</button>
+        </view>
+        <textarea class="textarea" data-field="requirement" value="{{requirement}}" bindinput="input" maxlength="1000" placeholder="备注（选填，例如款式偏好、服务说明）"/>
+      </view>
+      </view>
+
+      <view class="profile-tip">
+        <image src="/static/icons/quick-quote.svg" mode="aspectFit"/>
+        <view class="profile-tip-copy">
+          <text class="profile-tip-title">报价单会自动带上你的主页</text>
+          <text class="profile-tip-caption">现在只做意向沟通，不需要客户信息。客户同意后登录注册，再进入预约流程。</text>
+        </view>
+      </view>
+
+      <view class="quote-submit {{!selectedServices.length || submitting ? 'is-disabled' : ''}}" hover-class="{{!selectedServices.length || submitting ? 'none' : 'primary-pressed'}}" bindtap="submit" role="button" aria-disabled="{{!selectedServices.length || submitting}}">
+        <image src="{{!selectedServices.length || submitting ? '/static/icons/navigation.svg' : '/static/icons/navigation-white.svg'}}" mode="aspectFit"/>
+        <text>预览并转发报价单</text>
+      </view>
+      <text class="submit-hint">客户接受报价后，才会进入注册和预约</text>
+    </block>
+  </block>
+
+  <view wx:else class="letter">
+    <text class="eyebrow">ONLYNAIL PRIVATE ESTIMATE</text>
+    <text class="letter-title">专属报价确认函</text>
+    <text class="letter-no">NO. {{quote.quoteNo}}</text>
+    <scroll-view wx:if="{{quote.referenceImages.length}}" class="letter-images" scroll-x enable-flex>
+      <image wx:for="{{quote.referenceImages}}" wx:key="*this" src="{{item}}" mode="aspectFill"/>
+    </scroll-view>
+    <view class="letter-price"><text>最终报价</text><text>¥{{quote._priceText}}</text></view>
+    <view wx:for="{{quote.lines}}" wx:key="id" class="letter-line"><text>{{item.nameSnapshot}} × {{item.quantity}}</text><text>¥{{item.subtotalFen / 100}}</text></view>
+    <view class="letter-meta"><text>预计 {{quote.totalDurationMinutes}} 分钟</text><text>有效期至 {{quote._expiresText}}</text></view>
+    <button class="primary" open-type="share">确认并转发给客户</button>
+    <button class="secondary" bindtap="newQuote">创建新报价</button>
+  </view>
+</view>
+
+<block wx:if="{{showServicePicker}}">
+  <view class="sheet-mask" bindtap="closeServicePicker" catchtouchmove="noop"></view>
+  <view class="service-sheet" catchtap="noop">
+    <view class="sheet-header">
+      <view class="sheet-heading">
+        <text class="sheet-eyebrow">已设置的服务价格</text>
+        <text class="sheet-title">选择系统服务</text>
+      </view>
+      <button size="mini" class="sheet-close" bindtap="closeServicePicker" hover-class="control-pressed" aria-label="关闭"><image src="/static/icons/picker-close.svg" mode="aspectFit"/></button>
+    </view>
+    <scroll-view scroll-y class="sheet-service-list">
+      <view wx:for="{{services}}" wx:key="id" class="picker-service-row {{index === services.length - 1 ? 'is-last' : ''}}">
+        <view class="picker-service-main">
+          <view class="picker-service-heading"><text class="picker-service-name">{{item.name}}</text><text class="picker-service-price">¥{{item._pickerPriceText}}</text></view>
+          <view class="picker-service-duration"><image src="/static/icons/clock.svg" mode="aspectFit"/><text>{{item.durationMinutes}} 分钟 · {{item._pickerCategory}}</text></view>
+        </view>
+        <view class="quantity-stepper">
+          <button size="mini" class="stepper-button" data-id="{{item.id}}" data-delta="-1" bindtap="changeDraftServiceQuantity" hover-class="control-pressed" disabled="{{!draftServiceQuantities[item.id]}}" aria-label="减少{{item.name}}数量"><image src="/static/icons/picker-minus.svg" mode="aspectFit"/></button>
+          <text class="stepper-value">{{draftServiceQuantities[item.id] || 0}}</text>
+          <button size="mini" class="stepper-button stepper-plus" data-id="{{item.id}}" data-delta="1" bindtap="changeDraftServiceQuantity" hover-class="control-pressed" aria-label="增加{{item.name}}数量"><image src="/static/icons/picker-plus.svg" mode="aspectFit"/></button>
+        </view>
+      </view>
+      <text wx:if="{{!services.length}}" class="sheet-empty">暂无已生效且设置价格的服务</text>
+    </scroll-view>
+    <view class="sheet-footer">
+      <view class="sheet-total"><text>已选 {{servicePickerCount}} 项 · {{servicePickerDurationText}}</text><text>¥{{servicePickerTotalText}}</text></view>
+      <button size="mini" class="sheet-confirm" bindtap="confirmServicePicker" hover-class="primary-pressed" disabled="{{!servicePickerCount}}">确定</button>
+    </view>
+  </view>
+</block>

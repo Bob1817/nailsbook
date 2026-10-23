@@ -99,7 +99,8 @@ Page({
       return;
     }
     this._pageActive = true;
-    this._fullMode = options.mode === 'full' || !!options.design_id || !!options.serviceId;
+    this._preferCustom = options.content === 'custom';
+    this._fullMode = options.mode === 'full' || this._preferCustom || !!options.design_id || !!options.serviceId;
     this.setData({ referenceOnly: options.reference === '1' });
     this._attributionSource = options.source || '';
     this.inviteCode = options.invite || '';
@@ -194,7 +195,8 @@ Page({
     return api.public.artists.detail(this._presetTechId).then(async result => {
       const artist = result.artist || result;
       const tech = { ...artist, status: artist.acceptingBookings ? 'active' : 'inactive', serviceItems: artist.serviceItems || [], shopService: !!artist.shopService, homeService: !!artist.homeService };
-      this.inviteCode = this.inviteCode || artist.invitationCode || '';
+      // 预约目标由 techId 确认，后续绑定只能使用该美甲师公开资料中的邀请码。
+      this.inviteCode = artist.invitationCode || '';
       if (this.isClientLoggedIn() && this.inviteCode) {
         wx.showLoading({ title: '正在关联美甲师', mask: true });
         try {
@@ -395,10 +397,11 @@ Page({
       shopAddresses: shopAddrs, selectedShopName: '',
       serviceOptions: [], selectedServiceOptionKey: '',
       activeServiceItems: serviceItems,
-      selectedServiceIds: [], selectedServiceMap: {}, selectedWorkIds: [],
+      selectedServiceIds: [], selectedServiceMap: {}, selectedWorkIds: [], selectedWorkMap: {},
+      showWorkSelector: false,
       selectedServiceCount: 0, selectedServiceTotal: 0, selectedServiceDuration: 0,
       // 美甲师无服务项目时自动切换到自定义需求模式
-      isCustomService: serviceItems.length === 0,
+      isCustomService: this._preferCustom || serviceItems.length === 0,
       startTime: ''
     });
     this.refreshServiceOptions(tech, false);
@@ -553,6 +556,7 @@ Page({
   switchContentMode: function (e) {
     if (this.sourceWorkId) return;
     var mode = e.currentTarget.dataset.mode;
+    this._preferCustom = mode === 'custom';
     if (mode === 'standard') this.sourceWorkId = null;
     this.setData({
       isCustomService: mode === 'custom',
@@ -722,6 +726,7 @@ Page({
       customTitle: d.customTitle,
       customDesc: d.customDesc,
       customImages: d.customImages,
+      selectedWorkIds: d.selectedWorkIds,
       serviceDate: d.serviceDate,
       startTime: d.startTime,
       remark: d.remark
@@ -749,6 +754,8 @@ Page({
         customTitle: draft.customTitle || '',
         customDesc: draft.customDesc || '',
         customImages: draft.customImages || [],
+        selectedWorkIds: draft.selectedWorkIds || [],
+        selectedWorkMap: selectionMap(draft.selectedWorkIds),
         serviceDate: this._resumeDraft ? (draft.serviceDate || this.data.serviceDate) : this.data.serviceDate,
         startTime: this._resumeDraft ? (draft.startTime || '') : '',
         remark: draft.remark || ''
@@ -927,6 +934,7 @@ Page({
       payload.customTitle = d.customTitle.trim();
       if (d.customDesc.trim()) payload.customDescription = d.customDesc.trim();
       if (d.customImages.length > 0) payload.customImages = d.customImages;
+      if (d.selectedWorkIds.length > 0) payload.intentWorkIds = d.selectedWorkIds;
     } else {
       payload.selectedServiceIds = d.selectedServiceIds;
     }

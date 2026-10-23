@@ -5,6 +5,7 @@ import {
   IsArray,
   ValidateNested,
   IsBoolean,
+  ArrayMaxSize,
   MaxLength,
   Matches,
 } from 'class-validator';
@@ -80,6 +81,13 @@ export class CreateClientOrderDto {
   @IsArray()
   @IsString({ each: true })
   customImages?: string[];
+
+  @ApiPropertyOptional({ description: '自定义需求参考的作品 ID，最多 3 个' })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(3)
+  @IsInt({ each: true })
+  intentWorkIds?: number[];
 
   @ApiPropertyOptional({ description: '预约同款的来源作品 ID' })
   @IsOptional()

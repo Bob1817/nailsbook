@@ -1,43 +1,33 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const vm = require('node:vm');
 
-(async () => {
-  let definition;
-  const creates = [], completes = [];
-  const customers = {
-    createFollowUp: (id, payload) => new Promise((resolve, reject) => creates.push({ id, payload, resolve, reject })),
-    completeFollowUp: (customerId, id) => new Promise((resolve, reject) => completes.push({ customerId, id, resolve, reject }))
-  };
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../pages/technician/customer-detail/index.js'), 'utf8'), {
-    Page: value => { definition = value; }, require: () => ({ technician: { customers } }), wx: { showToast() {} }
-  });
-  const page = { ...definition, customerId: 7, data: JSON.parse(JSON.stringify(definition.data)), setData(values) { Object.assign(this.data, values); }, async loadCustomer() {} };
-  page.data.followUpContent = '提醒护理';
-  page.data.followUpDate = '2026-09-08';
-  const first = page.createFollowUp();
-  await page.createFollowUp();
-  assert.equal(creates.length, 1);
-  page.data.followUpContent = '新的跟进';
-  creates[0].resolve(); await first;
-  assert.equal(page.data.followUpContent, '新的跟进');
-  const second = page.createFollowUp();
-  creates[1].reject(new Error('网络失败')); await second;
-  assert.equal(page.data.followUpContent, '新的跟进');
-  assert.equal(page.data.savingFollowUp, false);
-  const retry = page.createFollowUp();
-  creates[2].resolve(); await retry;
-  assert.equal(page.data.followUpContent, '');
-  const event = { currentTarget: { dataset: { id: 11 } } };
-  const completing = page.completeFollowUp(event);
-  await page.completeFollowUp(event);
-  assert.equal(completes.length, 1);
-  assert.equal(page.data.completingFollowUpId, 11);
-  completes[0].reject(new Error('网络失败')); await completing;
-  assert.equal(page.data.completingFollowUpId, '');
-  const retryComplete = page.completeFollowUp(event);
-  completes[1].resolve(); await retryComplete;
-  assert.equal(page.data.completingFollowUpId, '');
-  console.log('客户跟进防重复、提交期间新输入保留及失败重试通过');
-})().catch(error => { console.error(error); process.exitCode = 1; });
+const pageDir = path.join(__dirname, '../pages/technician/customer-detail');
+const wxml = fs.readFileSync(path.join(pageDir, 'index.wxml'), 'utf8');
+const js = fs.readFileSync(path.join(pageDir, 'index.js'), 'utf8');
+
+assert(!wxml.includes('客户跟进记录'), '客户详情不应继续展示客户跟进记录卡片');
+assert(!wxml.includes('新增跟进记录'), '客户详情不应保留跟进记录录入弹层');
+for (const handler of ['openFollowUpSheet', 'submitFollowUp', 'completeFollowUp', '_followUps']) {
+  assert(!js.includes(handler), `客户详情不应保留不可达跟进逻辑：${handler}`);
+}
+assert(!wxml.includes('bindtap="createExclusiveWork"'), '客户详情不应绕过服务记录直接新建作品');
+assert(!js.includes('createExclusiveWork()'), '客户详情不应保留旁路作品创建逻辑');
+const workEdit = fs.readFileSync(path.join(__dirname, '../pages/technician/work-edit/index.js'), 'utf8');
+assert(!workEdit.includes('options.customerId'), '作品编辑页不应保留客户详情旁路预填入口');
+assert(!workEdit.includes('prefillCustomer('), '作品编辑页只应通过关联预约预填客户授权');
+assert(wxml.includes('customer._serviceRecords.length === 0 && customer.relatedWorks.length'), '历史关联作品兼容区应仅在无记录且确有作品时展示');
+assert(wxml.includes('bindtap="addProfileFact"'), '稳定客户档案应保留唯一的结构化新增入口');
+for (const category of ['allergy', 'contraindication', 'preference', 'communication', 'reminder']) {
+  assert(js.includes(`value: '${category}'`), `客户档案应支持结构化分类：${category}`);
+}
+
+const serviceRecordIndex = wxml.indexOf('<!-- ============ 美甲记录 ============ -->');
+const basicInfoIndex = wxml.indexOf('<!-- ============ 基础信息 ============ -->');
+const relatedWorkIndex = wxml.indexOf('<!-- ============ 关联作品 ============ -->');
+const bottomActionIndex = wxml.indexOf('<!-- ============ 底部操作 ============ -->');
+assert(serviceRecordIndex > basicInfoIndex, '美甲记录应位于基础信息之后');
+assert(serviceRecordIndex > relatedWorkIndex, '美甲记录应位于关联作品兼容区之后');
+assert(serviceRecordIndex < bottomActionIndex, '美甲记录应位于底部固定操作之前');
+
+console.log('客户详情已移除跟进记录，并将美甲记录置于页面内容底部');

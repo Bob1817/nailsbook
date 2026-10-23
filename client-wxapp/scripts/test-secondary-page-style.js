@@ -8,8 +8,6 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const cases = [
   ['消息页', 'pages/client/chat/index.wxml', 'pages/client/chat/index.wxss', 4],
   ['会话页', 'pages/client/chat-detail/index.wxml', 'pages/client/chat-detail/index.wxss', 1],
-  ['新建设计', 'pages/client/create-design/index.wxml', 'pages/client/create-design/index.wxss', 1],
-  ['定制设计', 'pages/client/customize-design/index.wxml', 'pages/client/customize-design/index.wxss', 3],
   ['问题反馈', 'pages/client/feedback/index.wxml', 'pages/client/feedback/index.wxss', 2],
   ['我的收藏', 'pages/client/my-favorites/index.wxml', 'pages/client/my-favorites/index.wxss', 2],
   ['我的点赞', 'pages/client/my-likes/index.wxml', 'pages/client/my-likes/index.wxss', 2],

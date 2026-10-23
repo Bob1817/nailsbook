@@ -36,6 +36,10 @@ Component({
     manageable: {
       type: Boolean,
       value: false
+    },
+    showArtist: {
+      type: Boolean,
+      value: true
     }
   },
 

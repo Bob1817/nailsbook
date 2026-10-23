@@ -109,7 +109,9 @@ page { background: var(--bg-gradient-entry); }
   margin-bottom: var(--space-md);
 }
 .card-more {
-  min-height: 88rpx;
+  min-height: 44px;
+  /* 负外边距保持 44px 触控区，同时不让链接把标题行撑高，保证标题与内容间隔与其他卡片一致 */
+  margin: -22rpx 0;
   padding: 0 12rpx;
   display: flex;
   align-items: center;
@@ -427,6 +429,14 @@ page { background: var(--bg-gradient-entry); }
 }
 .ws-close:active { background: var(--nb-page); }
 .ws-close-icon { font-size: var(--font-md); color: var(--text-muted); font-weight: var(--weight-semibold); }
+
+/* 设置弹窗：触控区保持 44px，关闭按钮脱离标题栏排版。 */
+.settings-sheet-header { position:relative; min-height:72rpx; padding:12rpx 112rpx 8rpx 40rpx; box-sizing:border-box; }
+.settings-sheet-close { position:absolute; top:50%; right:16rpx; flex-shrink:0; background:transparent; transform:translateY(-50%); }
+.settings-sheet-close .ws-close-icon { width:56rpx; height:56rpx; border-radius:50%; background:var(--bg-input); display:flex; align-items:center; justify-content:center; font-size:var(--font-sm); }
+.settings-sheet-close:active { background:transparent; }
+.settings-sheet-close:active .ws-close-icon { background:var(--nb-page); }
+.ws-body.schedule-settings-body { padding-top:8rpx; }
 
 .ws-body {
   flex: 1;
@@ -1263,29 +1273,26 @@ page { background: var(--bg-gradient-entry); }
 }
 .st-form-close:active { background: var(--nb-page); }
 
-.status-copy { display:flex; flex-direction:column; gap:8rpx; }
-
 /* 我的页：复用语义色，以留白区分内容与操作。 */
 .name { overflow-wrap:anywhere; }
-.availability-card { margin-top:0; }
-.availability-title {
-  margin-bottom: 16rpx;
-}
+.availability-card { margin-top:0; padding:24rpx 28rpx; }
+.availability-head { min-height:44px; display:flex; align-items:center; justify-content:space-between; gap:24rpx; }
+.availability-head-copy { flex:1; min-width:0; }
+.availability-title-row { display:flex; align-items:center; gap:14rpx; min-width:0; }
+.availability-title { margin:0; }
+.availability-state { flex-shrink:0; font-size:var(--font-xs); font-weight:var(--weight-medium); }
+.availability-state.is-on { color:var(--nb-success); }
+.availability-state.is-off, .availability-state.is-pending { color:var(--nb-muted); }
+.availability-helper { display:block; margin-top:4rpx; overflow:hidden; color:var(--nb-muted); font-size:var(--font-xs); line-height:1.35; text-overflow:ellipsis; white-space:nowrap; }
 .availability-card .status-label {
   font-size: var(--font-sm);
   font-weight: var(--weight-medium);
 }
-.availability-card .profile-helper {
-  margin-top: 0;
-  font-size: var(--font-xs);
-  line-height: 1.35;
-}
-.availability-card .accepting-helper { white-space:nowrap; }
-.availability-row, .profile-schedule-row, .profile-invite-entry {
-  display:flex; align-items:center; justify-content:space-between; gap:24rpx;
-}
-.availability-row, .profile-schedule-row { min-height:112rpx; padding:20rpx 22rpx; border-radius:16rpx; background:var(--nb-soft-surface); box-sizing:border-box; }
-.profile-schedule-row { margin-top:12rpx; align-items:center; }
+.availability-settings { margin-top:16rpx; display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:12rpx; }
+.availability-setting { min-width:0; min-height:44px; padding:14rpx 18rpx; display:flex; flex-direction:column; justify-content:center; border-radius:14rpx; background:var(--nb-soft-surface); box-sizing:border-box; }
+.availability-setting-summary { min-width:0; margin-top:4rpx; display:flex; align-items:center; gap:6rpx; color:var(--nb-muted); font-size:var(--font-xs); line-height:1.35; }
+.availability-setting-text { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.availability-setting-arrow { flex-shrink:0; color:var(--nb-text-link); font-size:var(--font-sm); }
 .capacity-sheet { height:auto; min-height:620rpx; }
 .capacity-body { padding:0 32rpx 32rpx; }
 .capacity-intro { display:block; padding:8rpx 0 24rpx; font-size:var(--font-sm); line-height:1.6; color:var(--nb-muted); }
@@ -1300,10 +1307,8 @@ page { background: var(--bg-gradient-entry); }
 .capacity-stepper-btn.is-disabled { color:var(--nb-border); background:var(--nb-soft-surface); }
 .capacity-stepper-value { min-width:76rpx; padding:0 8rpx; text-align:center; font-size:var(--font-sm); font-weight:600; color:var(--nb-ink); white-space:nowrap; }
 .capacity-buffer-value { min-width:116rpx; }
-.status-copy { flex:1; min-width:0; }
 .status-label { line-height:1.5; }
 .profile-helper { display:block; font-size:var(--font-sm); color:var(--nb-muted); line-height:1.5; margin-top:6rpx; }
-.profile-link { min-height:88rpx; padding-left:20rpx; display:flex; align-items:center; font-size:var(--font-sm); flex-shrink:0; }
 .profile-pressed { opacity:.65; }
 .profile-summary { display:grid; grid-template-columns:minmax(0, 1.4fr) repeat(2, minmax(0, 1fr)); gap:16rpx; }
 .profile-summary .stat-value { font-size:var(--font-lg); }
@@ -1341,11 +1346,9 @@ page { background: var(--bg-gradient-entry); }
   color:var(--nb-secondary);
 }
 .menu-value { flex-shrink:0; color:var(--nb-muted); font-size:var(--font-xs); }
-.card-more { min-height:44px; }
 .setup-step-arrow { color:var(--nb-muted); }
 .menu-item, .logout-btn { min-height:44px; }
 .setup-guide-card { background:var(--nb-surface); }
-.growth-guide-card { margin-top:24rpx; }
 .setup-guide-badge { background:var(--nb-soft-surface); color:var(--nb-text-link); }
 
 .profile-detail-sheet .ws-close { min-width:44px; min-height:44px; font-size:var(--font-sm); }
@@ -1405,10 +1408,6 @@ page { background: var(--bg-gradient-entry); }
 .account-dialog-cancel { background: var(--nb-soft-surface); color: var(--nb-secondary); }
 .account-dialog-confirm { background: var(--nb-action); color: var(--nb-inverse); }
 .account-dialog-button:active { opacity: .72; }
-
-/* 说明独占整行，不再被开关挤窄；工作时间摘要仍可正常换行。 */
-.availability-row { display:flex; align-items:center; justify-content:space-between; gap:16rpx; }
-.accepting-helper { white-space:normal; }
 
 .invite-actions { display: flex; flex-direction: column; gap: 16rpx; margin: 24rpx 0; }
 .profile-invite-content .invite-action { width: 100%; margin: 0; padding: 0 16px; min-height: 44px; height: 44px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; border-radius: 8px; font-size: 14px; line-height: 1.4; }
