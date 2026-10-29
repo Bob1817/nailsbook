@@ -25,6 +25,7 @@ describe('PublicArtistController', () => {
       city: '上海',
       serviceArea: '静安区',
       homeService: true,
+      homeServiceSettings:JSON.stringify({ province:'Shanghai', city:'Shanghai', origin:{ latitude:31.23, longitude:121.47, address:'Service base' }, tiers:[{ maxKm:20, feeFen:0 }], days:['mon','tue','wed','thu','fri','sat','sun'], startTime:'08:00', endTime:'22:00' }),
       shopService: true,
       invitationCode: 'NAIL7',
       serviceItems: JSON.stringify([

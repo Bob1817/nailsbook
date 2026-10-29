@@ -1,3 +1,5 @@
+import { serviceFormIssues } from './service-forms';
+
 type TechnicianBookingConfig = {
   status?: string;
   homeService: boolean;
@@ -5,6 +7,7 @@ type TechnicianBookingConfig = {
   serviceItems?: string | null;
   serviceSchedule?: string | null;
   shopAddresses?: string | null;
+  homeServiceSettings?: string | null;
 };
 
 function jsonArray(value?: string | null) {
@@ -74,10 +77,13 @@ export function bookingReadiness(
     issues.push('请配置并启用有效的工作时间方案');
   }
 
+  if (technician.homeService && (!serviceType || serviceType === '上门美甲')) {
+    issues.push(...serviceFormIssues(technician, 'home'));
+  }
   if (serviceType === '到店美甲' || (!serviceType && technician.shopService)) {
     const enabledShops = jsonArray(technician.shopAddresses).filter(
       (item: any) =>
-        item &&
+        item && String(item.name || '').trim() &&
         item.enabled !== false &&
         typeof (item.detailAddress || item.address) === 'string' &&
         (item.detailAddress || item.address).trim(),

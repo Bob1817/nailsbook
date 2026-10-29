@@ -1,3 +1,4 @@
+import { publicHomeSettings } from '../technicians/service-forms';
 import { assertPhoneAvailable, assertClientBinding, resolvePhoneRole, ROLE_SWITCH_DISABLED, INVALID_ARTIST_INVITE } from '../common/account-role-policy';
 import { recordWorkShareRegistration } from '../common/work-share-registration';
 import { BindSharedWorkDto } from './dto/bind-shared-work.dto';
@@ -310,6 +311,7 @@ export class ClientAuthService {
       serviceArea: technician.serviceArea,
       status: technician.status,
       homeService: technician.homeService,
+        homeServiceSettings: publicHomeSettings(technician.homeServiceSettings),
       shopService: technician.shopService,
       shopAddresses: technician.shopAddresses
         ? JSON.parse(technician.shopAddresses)
@@ -419,6 +421,7 @@ export class ClientAuthService {
         serviceArea: technician.serviceArea,
         status: technician.status,
         homeService: technician.homeService,
+        homeServiceSettings: publicHomeSettings(technician.homeServiceSettings),
         shopService: technician.shopService,
         shopAddresses: technician.shopAddresses
           ? JSON.parse(technician.shopAddresses)
@@ -846,6 +849,7 @@ export class ClientAuthService {
         phone: defaultBinding.technician.phone,
         status: defaultBinding.technician.status,
         homeService: defaultBinding.technician.homeService,
+        homeServiceSettings: publicHomeSettings(defaultBinding.technician.homeServiceSettings),
         shopService: defaultBinding.technician.shopService,
         shopAddresses: defaultBinding.technician.shopAddresses
           ? JSON.parse(defaultBinding.technician.shopAddresses)
@@ -863,6 +867,7 @@ export class ClientAuthService {
         serviceArea: b.technician.serviceArea,
         status: b.technician.status,
         homeService: b.technician.homeService,
+        homeServiceSettings: publicHomeSettings(b.technician.homeServiceSettings),
         shopService: b.technician.shopService,
         invitationCode: b.technician.invitationCode,
         socialMedia: b.technician.socialMedia
@@ -961,6 +966,7 @@ export class ClientAuthService {
               phone: defaultBinding.technician.phone,
               status: defaultBinding.technician.status,
               homeService: defaultBinding.technician.homeService,
+        homeServiceSettings: publicHomeSettings(defaultBinding.technician.homeServiceSettings),
               shopService: defaultBinding.technician.shopService,
               shopAddresses: defaultBinding.technician.shopAddresses
                 ? JSON.parse(defaultBinding.technician.shopAddresses)
@@ -1010,6 +1016,7 @@ export class ClientAuthService {
         serviceArea: b.technician.serviceArea,
         status: b.technician.status,
         homeService: b.technician.homeService,
+        homeServiceSettings: publicHomeSettings(b.technician.homeServiceSettings),
         shopService: b.technician.shopService,
         invitationCode: b.technician.invitationCode,
         socialMedia: b.technician.socialMedia
@@ -1840,6 +1847,7 @@ export class ClientAuthService {
       serviceArea: technician.serviceArea,
       status: technician.status,
       homeService: technician.homeService,
+        homeServiceSettings: publicHomeSettings(technician.homeServiceSettings),
       shopService: technician.shopService,
       shopAddresses: technician.shopAddresses
         ? JSON.parse(technician.shopAddresses)

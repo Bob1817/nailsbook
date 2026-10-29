@@ -12,6 +12,7 @@ describe('PublicBrandService public DTO snapshots', () => {
           city: '上海',
           serviceArea: '静安区',
           homeService: true,
+          homeServiceSettings:JSON.stringify({ province:'Shanghai', city:'Shanghai', origin:{ latitude:31.23, longitude:121.47, address:'Service base' }, tiers:[{ maxKm:20, feeFen:0 }], days:['mon','tue','wed','thu','fri','sat','sun'], startTime:'08:00', endTime:'22:00' }),
           shopService: true,
           serviceItems:
             '[{"name":"护理","price":99,"durationMinutes":60,"isActive":true}]',
@@ -46,7 +47,7 @@ describe('PublicBrandService public DTO snapshots', () => {
             homepageComments: 1,
           },
           phone: '13800000000',
-          shopAddresses: '[{"detailAddress":"内部精确地址"}]',
+          shopAddresses: '[{"name":"工作室","detailAddress":"内部精确地址"}]',
         }),
       },
     };

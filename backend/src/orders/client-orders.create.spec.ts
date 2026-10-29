@@ -10,6 +10,7 @@ describe('ClientOrdersService.create 下单校验', () => {
     id: 7,
     status: 'active',
     homeService: true,
+    homeServiceSettings: JSON.stringify({ province:'浙江省', city:'杭州市', origin:{ latitude:30, longitude:120, address:'出发地点' }, tiers:[{ maxKm:10, feeFen:1000 }], days:['mon','wed'], startTime:'09:00', endTime:'18:00' }),
     shopService: true,
     serviceItems: JSON.stringify([
       {
@@ -27,7 +28,7 @@ describe('ClientOrdersService.create 下单校验', () => {
       ],
     }),
     shopAddresses: JSON.stringify([
-      { id: 'shop-1', detailAddress: '测试路 1 号', enabled: true },
+      { id: 'shop-1', name:'测试门店', detailAddress: '测试路 1 号', enabled: true },
     ]),
     ...over,
   });
@@ -101,7 +102,7 @@ describe('ClientOrdersService.create 下单校验', () => {
       technician: tech(),
     });
     prisma.clientUser.findUnique.mockResolvedValue(null);
-    await expect(service.create(11, baseDto)).rejects.toBeInstanceOf(
+    await expect(service.create(11, { ...baseDto, serviceType:'到店美甲' })).rejects.toBeInstanceOf(
       NotFoundException,
     );
   });

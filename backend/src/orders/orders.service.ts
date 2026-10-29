@@ -33,6 +33,7 @@ import {
   isLaunchTechnician,
 } from '../common/miniprogram-launch-mode';
 import {
+  ServiceSnapshotLine,
   buildServiceSnapshotLines,
   finalPriceFen,
   summarizeSnapshotLines,
@@ -1374,17 +1375,19 @@ export class OrdersService {
     } }) : [];
     if (extras.length !== surchargeIds.length) throw new BadRequestException('附加服务已失效，请重新选择');
     if (!dto.useCurrentServices && services.some(item => (item as any).category && SURCHARGE_CATEGORIES.includes((item as any).category))) throw new BadRequestException('附加费用请在附加服务中选择');
-    const extraLines = extras.map((item, index) => ({
+    const extraLines: Array<ServiceSnapshotLine & { source:string }> = extras.map((item, index) => ({
       serviceId: item.id, servicePublicIdSnapshot: item.publicId, nameSnapshot: item.name,
       unitPriceFen: item.priceMinFen || 0, subtotalFen: item.priceMinFen || 0,
       durationMinutes: 0, quantity: 1, sortOrder: serviceLines.length + index, source: 'surcharge',
     }));
+    if (order.homeServiceFeeFen > 0) extraLines.push({ serviceId:null, servicePublicIdSnapshot:null, nameSnapshot:'上门服务费', unitPriceFen:order.homeServiceFeeFen, subtotalFen:order.homeServiceFeeFen, durationMinutes:0, quantity:1, sortOrder:serviceLines.length + extraLines.length, source:'surcharge' });
     const coreFen = dto.corePriceFen ?? (dto.useCurrentServices
-      ? (order.pricingDetails ? JSON.parse(order.pricingDetails).coreFen : order.finalPriceFen ?? summary.serviceSubtotalFen)
+      ? (order.pricingDetails ? JSON.parse(order.pricingDetails).coreFen : (order.finalPriceFen == null ? summary.serviceSubtotalFen : order.finalPriceFen - (order.homeServiceFeeFen || 0)))
       : finalPriceFen(summary.serviceSubtotalFen, dto.discountAmountFen || 0));
     if (!dto.useCurrentServices && coreFen > summary.serviceSubtotalFen) throw new BadRequestException('基础组合报价不能超过服务合计');
     const totals = quoteTotals(summary.serviceSubtotalFen, coreFen, extraLines.reduce((sum, line) => sum + line.subtotalFen, 0), dto.finalPriceFen);
     const quotedFinalPriceFen = totals.finalFen;
+    if (quotedFinalPriceFen < (order.homeServiceFeeFen || 0)) throw new BadRequestException('最终报价不能低于已确认的上门费用');
     const discountAmountFen = Math.max(0, summary.serviceSubtotalFen + totals.extrasFen - quotedFinalPriceFen);
     const depositModeSnapshot = dto.depositAmount !== undefined ? 'fixed' : order.depositModeSnapshot || 'none';
     const depositValueSnapshot = dto.depositAmount !== undefined ? Math.round(dto.depositAmount * 100) : order.depositValueSnapshot || 0;

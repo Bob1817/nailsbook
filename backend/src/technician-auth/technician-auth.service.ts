@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { bookingReadiness } from '../technicians/booking-readiness';
+import { parseHomeSettings, serviceFormIssues } from '../technicians/service-forms';
 import { VerificationCodeService } from '../common/verification-code/verification-code.service';
 import { SmsService } from '../common/sms/sms.service';
 import type { Prisma } from '@prisma/client';
@@ -365,6 +366,7 @@ export class TechnicianAuthService {
       status: technician.status,
       invitationCode: technician.invitationCode,
       homeService: technician.homeService,
+      homeServiceSettings: parseHomeSettings(technician.homeServiceSettings),
       shopService: technician.shopService,
       // 是否已通过激活密钥认证（游客模式为 false）
       isActivated: !!technician.passwordHash,
@@ -594,6 +596,7 @@ export class TechnicianAuthService {
       invitationCode: technician.invitationCode,
       lastLoginAt: technician.lastLoginAt,
       homeService: technician.homeService,
+      homeServiceSettings: parseHomeSettings(technician.homeServiceSettings),
       shopService: technician.shopService,
       // 是否已通过激活密钥认证（游客模式为 false）
       isActivated: !!technician.passwordHash,
@@ -628,6 +631,7 @@ export class TechnicianAuthService {
   async updateStatus(
     technicianId: number,
     status: (typeof TechnicianAuthService.EDITABLE_STATUSES)[number],
+    forms: { homeService?: boolean; shopService?: boolean } = {},
   ) {
     const technician = await this.prisma.technician.findUnique({
       where: { id: technicianId },
@@ -642,7 +646,9 @@ export class TechnicianAuthService {
     }
 
     if (status === 'active') {
-      const readiness = bookingReadiness({ ...technician, status: 'active' });
+      const readiness = bookingReadiness({ ...technician,
+        homeService: forms.homeService ?? technician.homeService,
+        shopService: forms.shopService ?? technician.shopService, status: 'active' });
       if (!readiness.ready) {
         throw new BadRequestException(readiness.issues[0]);
       }
@@ -650,7 +656,10 @@ export class TechnicianAuthService {
 
     return this.prisma.technician.update({
       where: { id: technicianId, status: { in: ['active', 'inactive'] } },
-      data: { status },
+      data: { status, ...(status === 'active' ? {
+        homeService: forms.homeService ?? technician.homeService,
+        shopService: forms.shopService ?? technician.shopService,
+      } : {}) },
       select: {
         id: true,
         name: true,
@@ -718,6 +727,10 @@ export class TechnicianAuthService {
     }
 
     if (dto.socialMedia !== undefined) {
+      if (!String(dto.socialMedia.wechat || '').trim() && this.prisma.brandProfile &&
+        await this.prisma.brandProfile.findFirst({ where: { technicianId, publicationStatus: 'published' }, select: { id: true } })) {
+        throw new BadRequestException('主页已开启，客户沟通微信号不能为空');
+      }
       const normalizedSocialMedia = Object.fromEntries(
         Object.entries(dto.socialMedia).filter(
           ([key, value]) =>
@@ -781,6 +794,7 @@ export class TechnicianAuthService {
         socialMedia: true,
         serviceItems: true,
         serviceSchedule: true,
+        homeServiceSettings: true,
         customTags: true,
         styleTags: true,
       },
@@ -794,6 +808,7 @@ export class TechnicianAuthService {
       serviceSchedule: updated.serviceSchedule
         ? JSON.parse(updated.serviceSchedule)
         : null,
+      homeServiceSettings: parseHomeSettings(updated.homeServiceSettings),
       customTags: updated.customTags ? JSON.parse(updated.customTags) : [],
       styleTags: updated.styleTags ? JSON.parse(updated.styleTags) : [],
       bookingReady: bookingReadiness(updated).ready,
@@ -843,6 +858,7 @@ export class TechnicianAuthService {
       homeService?: boolean;
       shopService?: boolean;
       shopAddresses?: any[];
+      homeServiceSettings?: Record<string, any>;
     },
   ) {
     const technician = await this.prisma.technician.findUnique({
@@ -868,6 +884,21 @@ export class TechnicianAuthService {
       );
     }
 
+    if (dto.homeServiceSettings !== undefined) {
+      updateData.homeServiceSettings = JSON.stringify(dto.homeServiceSettings);
+    }
+    if (dto.shopAddresses !== undefined && dto.shopService !== true && serviceFormIssues({ ...technician, ...updateData }, 'shop').length) updateData.shopService = false;
+    const next = { ...technician, ...updateData };
+    for (const type of ['shop', 'home'] as const) {
+      if ((type === 'shop' ? next.shopService : next.homeService)) {
+        const issues = serviceFormIssues(next, type);
+        if (issues.length) throw new BadRequestException(issues[0]);
+      }
+    }
+    if (!next.homeService && !next.shopService && technician.status === 'active') {
+      updateData.status = 'inactive';
+    }
+
     const updated = await this.prisma.technician.update({
       where: { id: technicianId },
       data: updateData,
@@ -883,6 +914,7 @@ export class TechnicianAuthService {
         homeService: true,
         shopService: true,
         shopAddresses: true,
+        homeServiceSettings: true,
         socialMedia: true,
       },
     });
@@ -890,6 +922,7 @@ export class TechnicianAuthService {
     return {
       ...updated,
       shopAddresses: this.parseShopAddresses(updated.shopAddresses),
+      homeServiceSettings: parseHomeSettings(updated.homeServiceSettings),
       socialMedia: this.parseSocialMedia(updated.socialMedia),
     };
   }

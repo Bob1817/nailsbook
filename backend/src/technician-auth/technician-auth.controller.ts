@@ -202,6 +202,7 @@ export class TechnicianAuthController {
     return this.technicianAuthService.updateStatus(
       request.user.technicianId,
       body.status,
+      { homeService: body.homeService, shopService: body.shopService },
     );
   }
 
@@ -268,10 +269,6 @@ export class TechnicianAuthController {
     @Req() request: { user: { technicianId: number } },
     @Body() body: UpdateTechnicianServiceTypeDto,
   ) {
-    console.log(
-      'updateServiceType called with body:',
-      JSON.stringify(body, null, 2),
-    );
     return this.technicianAuthService.updateServiceType(
       request.user.technicianId,
       body,

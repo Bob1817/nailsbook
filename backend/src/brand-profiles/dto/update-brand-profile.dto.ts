@@ -57,6 +57,10 @@ export class BrandFaqDto {
 export class UpdateBrandProfileDto {
   @IsOptional()
   @IsString()
+  @MaxLength(64)
+  wechat?: string;
+  @IsOptional()
+  @IsString()
   @MaxLength(50)
   brandName?: string;
 

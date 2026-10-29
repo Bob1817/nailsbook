@@ -1,3 +1,4 @@
+import { publicHomeSettings } from '../technicians/service-forms';
 import {
   Controller,
   Get,
@@ -231,6 +232,7 @@ export class PublicArtistController {
         styleTags: parseJsonArray(technician.styleTags),
         isVerified: technician.isVerified,
         homeService: auditMode ? false : technician.homeService,
+        homeServiceSettings: publicHomeSettings(technician.homeServiceSettings),
         shopService: technician.shopService,
         protectWechat,
         auditMode,

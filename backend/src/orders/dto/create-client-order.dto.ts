@@ -22,6 +22,7 @@ export class CreateClientOrderDto {
   @IsOptional() @IsString() expectedDepositMode?: string;
   @IsOptional() @IsInt() expectedDepositValue?: number;
   @IsOptional() @IsInt() expectedPriceFen?: number;
+  @IsOptional() @IsInt() expectedHomeServiceFeeFen?: number;
   @IsOptional() @IsBoolean() quickBooking?: boolean;
   @IsOptional() @IsBoolean() referenceOnly?: boolean;
 

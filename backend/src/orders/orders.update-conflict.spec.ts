@@ -3,6 +3,7 @@ import { ClientOrdersService } from './client-orders.service';
 import { OrdersService } from './orders.service';
 
 describe('修改预约时间的冲突保护', () => {
+  const homeTechnician = { homeServiceSettings:JSON.stringify({ province:'上海', city:'上海', origin:{ latitude:31.23, longitude:121.47, address:'出发点' }, tiers:[{ maxKm:20, feeFen:0 }], days:['mon','tue','wed','thu','fri','sat','sun'], startTime:'08:00', endTime:'22:00' }) };
   const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const serviceDate = [
     futureDate.getFullYear(),
@@ -26,6 +27,7 @@ describe('修改预约时间的冲突保护', () => {
           id: 1,
           clientUserId: 8,
           technicianId: 7,
+          technician: homeTechnician,
           status: 'pending_quote',
           startTime: new Date('2026-07-01T10:00:00'),
           endTime: new Date('2026-07-01T12:00:00'),
@@ -38,6 +40,7 @@ describe('修改预约时间的冲突保护', () => {
           province: '上海',
           city: '上海',
           district: '静安区',
+          latitude:31.23, longitude:121.47,
           detailAddress: '测试地址',
         }),
       },
@@ -82,6 +85,7 @@ describe('修改预约时间的冲突保护', () => {
           id: 1,
           clientUserId: 8,
           technicianId: 7,
+          technician: homeTechnician,
           status: 'pending_quote',
           startTime: new Date('2026-07-01T10:00:00'),
           endTime: new Date('2026-07-01T12:00:00'),
@@ -94,6 +98,7 @@ describe('修改预约时间的冲突保护', () => {
           province: '上海',
           city: '上海',
           district: '静安区',
+          latitude:31.23, longitude:121.47,
           detailAddress: '测试地址',
         }),
       },

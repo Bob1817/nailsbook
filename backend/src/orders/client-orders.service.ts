@@ -20,6 +20,7 @@ import { BookingMutexService } from './booking-mutex.service';
 import { ReferralQualificationService } from '../referrals/referral-qualification.service';
 import { RewardFundService } from '../referrals/reward-fund.service';
 import { assertWithinServiceSchedule } from './order-work-schedule';
+import { assertHomeService, homeServiceQuote } from '../technicians/service-forms';
 import { bookingReadiness } from '../technicians/booking-readiness';
 import { parseBusinessDateTime } from './business-time';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
@@ -96,6 +97,16 @@ export class ClientOrdersService {
     });
   }
 
+  async quoteHomeService(clientUserId: number, technicianId: number, addressId: number) {
+    const binding = await this.prisma.clientTechBinding.findFirst({
+      where: { clientId: clientUserId, techId: technicianId, status: 'active' }, include: { technician: true },
+    });
+    if (!binding || binding.technician.status !== 'active' || !binding.technician.homeService) throw new BadRequestException('该美甲师当前未开放上门美甲');
+    const address = await this.prisma.clientAddress.findFirst({ where: { id: addressId, clientId: clientUserId } });
+    if (!address) throw new NotFoundException('请选择本人保存的上门地址');
+    return homeServiceQuote(binding.technician.homeServiceSettings, address);
+  }
+
   async create(
     clientUserId: number,
     dto: CreateClientOrderDto,
@@ -136,7 +147,6 @@ export class ClientOrdersService {
     if (dto.quickBooking) {
       assertBookingDate(dto.serviceDate);
       if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(dto.startTime) || parseBusinessDateTime(dto.serviceDate, dto.startTime).getTime() <= Date.now()) throw new BadRequestException('请选择未来的预约时间');
-      if (dto.serviceType !== '到店美甲') throw new BadRequestException('极简预约目前仅支持到店服务');
     }
     const binding = await this.prisma.clientTechBinding.findFirst({
       where: {
@@ -329,13 +339,20 @@ export class ClientOrdersService {
       totalDurationMinutes || DEFAULT_BOOKING_DURATION_MINUTES;
     const serviceSubtotalFen =
       quoteOverride?.serviceSubtotalFen ?? summary.serviceSubtotalFen;
-    const finalPriceFen =
+    const homeQuote = dto.serviceType === '上门美甲'
+      ? await this.quoteHomeService(clientUserId, dto.techId, dto.addressId || 0) : null;
+    const homeServiceFeeFen = homeQuote?.feeFen || 0;
+    if (dto.serviceType === '上门美甲' && dto.expectedHomeServiceFeeFen !== undefined && dto.expectedHomeServiceFeeFen !== homeServiceFeeFen) {
+      throw new BadRequestException('上门费用已更新，请重新确认地址和费用后提交');
+    }
+    const basePriceFen =
       quoteOverride?.finalPriceFen ??
       (bookingType === 'work'
         ? sourceWork!.standardPriceFen
         : bookingType === 'standard'
           ? serviceSubtotalFen
           : null);
+    const finalPriceFen = basePriceFen == null ? null : basePriceFen + homeServiceFeeFen;
     // Calculate deposit from per-service deposit settings
     let defaultDepositFen = 0;
     let depositModeSnapshot = 'none';
@@ -369,6 +386,7 @@ export class ClientOrdersService {
       availabilityDuration,
     );
 
+    if (dto.serviceType === '上门美甲') assertHomeService(binding.technician, dto.serviceDate, dto.startTime, availabilityDuration);
     const client = await this.prisma.clientUser.findUnique({
       where: { id: clientUserId },
     });
@@ -442,6 +460,8 @@ export class ClientOrdersService {
             endTime,
             address: orderAddress,
             serviceType: dto.serviceType,
+            homeServiceFeeFen,
+            homeServiceDistanceKm: homeQuote?.distanceKm ?? null,
             remark: dto.remark ?? null,
             customTitle: quoteOverride
               ? `专属报价 ${quoteOverride.quoteNo}`
@@ -476,7 +496,7 @@ export class ClientOrdersService {
             serviceSubtotalFen,
             discountAmountFen: Math.max(
               0,
-              serviceSubtotalFen - (finalPriceFen ?? serviceSubtotalFen),
+              serviceSubtotalFen - (basePriceFen ?? serviceSubtotalFen),
             ),
             finalPriceFen,
             totalDurationMinutes,
@@ -774,10 +794,6 @@ export class ClientOrdersService {
         throw new NotFoundException('地址不存在');
       }
 
-      this.assertSameCity(
-        { province: design.technician.province, city: design.technician.city },
-        { province: address.province, city: address.city },
-      );
 
       addressId = address.id;
       orderAddress = this.formatAddress(address);
@@ -785,6 +801,8 @@ export class ClientOrdersService {
       throw new BadRequestException('请提供有效的地址信息');
     }
 
+    const homeQuote = dto.serviceType === '上门美甲' ? await this.quoteHomeService(clientUserId, dto.techId, dto.addressId || 0) : null;
+    if (homeQuote) assertHomeService(design.technician, dto.serviceDate, dto.startTime, DEFAULT_BOOKING_DURATION_MINUTES);
     const customerName = client.nickname || client.phone;
     assertWithinServiceSchedule(
       design.technician.serviceSchedule,
@@ -853,6 +871,7 @@ export class ClientOrdersService {
             endTime,
             address: orderAddress,
             serviceType: dto.serviceType,
+            homeServiceFeeFen:homeQuote?.feeFen || 0, homeServiceDistanceKm:homeQuote?.distanceKm ?? null,
             applicationKey: dto.applicationKey ?? null,
             bookingPhase: 'application',
             expectedDate: startTime,
@@ -1101,6 +1120,7 @@ export class ClientOrdersService {
 
     const isShopOrder = ['shop', '到店美甲'].includes(order.serviceType || '');
     let orderAddress = order.address || '';
+    let homeServiceDistanceKm = order.homeServiceDistanceKm;
     let addressId = order.addressId;
     if (isShopOrder) {
       const shops = this.normalizeShopAddresses(order.technician?.shopAddresses);
@@ -1137,6 +1157,10 @@ export class ClientOrdersService {
         where: { id: dto.addressId, clientId: clientUserId },
       });
       if (!address) throw new NotFoundException('地址不存在');
+      assertHomeService(order.technician, dto.serviceDate, dto.startTime, durationMinutes);
+      const fee = homeServiceQuote(order.technician.homeServiceSettings, address);
+      if (fee.feeFen !== (order.homeServiceFeeFen || 0)) throw new BadRequestException('新地址的上门费发生变化，请联系美甲师调整报价或重新预约');
+      homeServiceDistanceKm = fee.distanceKm;
       addressId = address.id;
       orderAddress = this.formatAddress(address);
     }
@@ -1176,6 +1200,7 @@ export class ClientOrdersService {
           startTime,
           endTime,
           address: orderAddress,
+          homeServiceDistanceKm,
           reminderDaySent: false,
           reminderHourSent: false,
         },
@@ -1797,6 +1822,7 @@ export class ClientOrdersService {
           phone: true,
           avatarUrl: true,
           shopAddresses: true,
+          homeServiceSettings:true,
           serviceSchedule: true,
         },
       },
@@ -1872,6 +1898,8 @@ export class ClientOrdersService {
       quickBooking: order.quickBooking === true,
       durationPending: order.quickBooking === true && !order.totalDurationMinutes,
       serviceType: order.serviceType ?? null,
+      homeServiceFeeFen: order.homeServiceFeeFen || 0,
+      homeServiceDistanceKm: order.homeServiceDistanceKm ?? null,
       remark: order.remark ?? null,
       address: order.address ?? null,
       quotePrice: order.quotePrice ?? null,
@@ -2199,10 +2227,6 @@ export class ClientOrdersService {
         throw new NotFoundException('地址不存在');
       }
 
-      this.assertSameCity(
-        { province: technician.province, city: technician.city },
-        { province: address.province, city: address.city },
-      );
 
       return {
         addressId: address.id,

@@ -79,6 +79,7 @@ model Technician {
   inviteKey                  TechnicianInviteKey?
   // Service type settings
   homeService                Boolean                     @default(false)
+  homeServiceSettings        String? // JSON: coverage, origin, distance tiers, weekly hours
   shopService                Boolean                     @default(false)
   shopAddresses              String? // JSON array of shop addresses
   serviceItems               String? // JSON array of technician service items
@@ -484,6 +485,8 @@ model Order {
   serviceSubtotalFen     Int                     @default(0)
   discountAmountFen      Int                     @default(0)
   finalPriceFen          Int?
+  homeServiceFeeFen      Int                          @default(0)
+  homeServiceDistanceKm  Float?
   totalDurationMinutes   Int?
   serviceLines           OrderServiceLine[]
   bookingQuote           BookingQuote?

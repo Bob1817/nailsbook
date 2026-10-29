@@ -1,5 +1,6 @@
 import {
   Injectable,
+  BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
@@ -11,6 +12,13 @@ const clean = (value?: string) => value?.trim() || null;
 export class BrandProfilesService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private socialMedia(raw?: string | null): Record<string, any> {
+    try {
+      const value = JSON.parse(raw || '{}');
+      return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+    } catch { return {}; }
+  }
+
   async getForOwner(technicianId: number) {
     const technician = await this.prisma.technician.findUnique({
       where: { id: technicianId },
@@ -21,6 +29,7 @@ export class BrandProfilesService {
         city: true,
         serviceArea: true,
         bio: true,
+        socialMedia: true,
       },
     });
     if (!technician) throw new NotFoundException('美甲师不存在');
@@ -35,6 +44,7 @@ export class BrandProfilesService {
     return profile
       ? {
           ...profile,
+          wechat: this.socialMedia(technician.socialMedia).wechat || '',
           specialties: this.parseArray(profile.specialties),
           featuredReviewIds: this.parseArray(profile.featuredReviewIds),
           featuredServiceIds:
@@ -47,6 +57,7 @@ export class BrandProfilesService {
         }
       : {
           technicianId,
+          wechat: this.socialMedia(technician.socialMedia).wechat || '',
           brandName: technician.name,
           tagline: null,
           heroImageUrl: null,
@@ -83,11 +94,21 @@ export class BrandProfilesService {
   async update(technicianId: number, dto: UpdateBrandProfileDto) {
     const technician = await this.prisma.technician.findUnique({
       where: { id: technicianId },
-      select: { id: true, name: true },
+      select: { id: true, name: true, socialMedia: true },
     });
     if (!technician) throw new NotFoundException('美甲师不存在');
 
+    const social = this.socialMedia(technician.socialMedia);
+    const wechat = dto.wechat === undefined ? social.wechat : dto.wechat.trim();
+    if (dto.publicationStatus === 'published' && !wechat) {
+      throw new BadRequestException('请先填写客户沟通微信号，再开启美甲师主页');
+    }
     await this.prisma.$transaction(async (tx) => {
+      if (dto.wechat !== undefined) {
+        await tx.technician.update({ where: { id: technicianId }, data: {
+          socialMedia: JSON.stringify({ ...social, wechat }),
+        } });
+      }
       const data = {
         brandName: clean(dto.brandName) || technician.name || '美甲师',
         tagline: clean(dto.tagline),

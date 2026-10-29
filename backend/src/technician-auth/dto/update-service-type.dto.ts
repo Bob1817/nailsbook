@@ -4,6 +4,7 @@ import {
   IsBoolean,
   IsIn,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   Matches,
@@ -185,7 +186,31 @@ export class ShopAddressDto {
   photos?: string[];
 }
 
+class HomeServiceOriginDto {
+  @IsNumber() @Min(-90) @Max(90) latitude: number;
+  @IsNumber() @Min(-180) @Max(180) longitude: number;
+  @IsString() address: string;
+}
+class HomeServiceTierDto {
+  @IsNumber() @Min(0.01) @Max(200) maxKm: number;
+  @IsInt() @Min(0) @Max(10000000) feeFen: number;
+}
+export class HomeServiceSettingsDto {
+  @IsOptional() @IsString() province?: string;
+  @IsOptional() @IsString() city?: string;
+  @IsOptional() @IsString() district?: string;
+  @IsOptional() @ValidateNested() @Type(() => HomeServiceOriginDto) origin?: HomeServiceOriginDto;
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => HomeServiceTierDto) tiers?: HomeServiceTierDto[];
+  @IsOptional() @IsArray() @ArrayUnique() @IsIn(['mon','tue','wed','thu','fri','sat','sun'], { each: true }) days?: string[];
+  @IsOptional() @Matches(/^([01]\d|2[0-3]):[0-5]\d$/) startTime?: string;
+  @IsOptional() @Matches(/^([01]\d|2[0-3]):[0-5]\d$/) endTime?: string;
+}
+
 export class UpdateTechnicianServiceTypeDto {
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => HomeServiceSettingsDto)
+  homeServiceSettings?: HomeServiceSettingsDto;
   // 局部更新：各入口（上门设置 / 到店设置 / 店铺地址）只提交各自字段，
   // 未提交的字段保持不变，因此均为可选。
   @ApiPropertyOptional({ description: '是否提供上门服务', example: true })

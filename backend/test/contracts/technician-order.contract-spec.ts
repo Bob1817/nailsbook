@@ -113,6 +113,7 @@ describe('Technician operation HTTP contract', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           homeService: true,
+          homeServiceSettings:{ province:'Beijing', city:'Beijing', origin:{ latitude:39.9, longitude:116.4, address:'Service base' }, tiers:[{ maxKm:20, feeFen:0 }], days:['mon'], startTime:'09:00', endTime:'18:00' },
           shopService: true,
           shopAddresses: [
             {

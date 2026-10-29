@@ -69,6 +69,12 @@ export class ClientOrdersController {
     return this.clientOrdersService.findAll(request.user.clientUserId);
   }
 
+  @Get('home-service-quote/:techId/:addressId')
+  homeServiceQuote(@Req() request: { user: { clientUserId: number } },
+    @Param('techId', ParseIntPipe) techId: number, @Param('addressId', ParseIntPipe) addressId: number) {
+    return this.clientOrdersService.quoteHomeService(request.user.clientUserId, techId, addressId);
+  }
+
   @Get('trade-orders/list')
   findTradeOrders(
     @Req() request: { user: { clientUserId: number } },

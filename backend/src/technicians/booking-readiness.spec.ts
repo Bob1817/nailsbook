@@ -4,6 +4,7 @@ describe('bookingReadiness', () => {
   const complete = {
     status: 'active',
     homeService: true,
+    homeServiceSettings: JSON.stringify({ province:'浙江省', city:'杭州市', origin:{ latitude:30, longitude:120, address:'出发地点' }, tiers:[{ maxKm:10, feeFen:1000 }], days:['mon','wed'], startTime:'09:00', endTime:'18:00' }),
     shopService: false,
     serviceItems: JSON.stringify([
       {

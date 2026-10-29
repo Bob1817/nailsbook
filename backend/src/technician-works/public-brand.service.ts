@@ -45,6 +45,7 @@ export class PublicBrandService {
             city: true,
             serviceArea: true,
             homeService: true,
+        homeServiceSettings: true,
             shopService: true,
             serviceItems: true,
             serviceSchedule: true,
@@ -187,7 +188,7 @@ export class PublicBrandService {
                 }
               : null,
             serviceModes: {
-              home: isMiniProgramLaunchMode() ? false : technician.homeService,
+              home: technician.homeService,
               studio: technician.shopService,
             },
             bookingReady: bookingReadiness(technician).ready,
@@ -507,6 +508,7 @@ export class PublicBrandService {
       where: { id, status: 'active' },
       select: {
         homeService: true,
+        homeServiceSettings: true,
         shopService: true,
         serviceItems: true,
         serviceSchedule: true,

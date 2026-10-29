@@ -1,6 +1,7 @@
 import { IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 export class BookBookingQuoteDto {
+  @IsOptional() @IsInt() @Min(0) expectedHomeServiceFeeFen?: number;
   @IsInt()
   @Min(1)
   version: number;

@@ -388,6 +388,7 @@ export class BookingQuotesService {
           ? { name: quote.shopNameSnapshot }
           : undefined),
         addressId: quote.serviceType === '上门美甲' ? dto.addressId : undefined,
+        expectedHomeServiceFeeFen:dto.expectedHomeServiceFeeFen,
         applicationKey: `booking-quote-${quote.id}`,
         selectedServiceIds: serviceIds,
         customTitle: serviceIds.length ? undefined : `报价 ${quote.quoteNo}`,

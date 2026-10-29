@@ -3,7 +3,7 @@ import { BrandProfilesService } from './brand-profiles.service';
 
 describe('BrandProfilesService', () => {
   const prisma = {
-    technician: { findUnique: jest.fn() },
+    technician: { findUnique: jest.fn(), update:jest.fn() },
     brandProfile: {
       findUnique: jest.fn(),
       findFirst: jest.fn(),
@@ -23,6 +23,7 @@ describe('BrandProfilesService', () => {
   it('uses the authenticated technician id for owner writes', async () => {
     prisma.technician.findUnique.mockResolvedValue({
       id: 7,
+      socialMedia:JSON.stringify({ wechat:'luna_studio' }),
       avatarUrl: '/uploads/avatar.png',
       shopAddresses: JSON.stringify([
         {
@@ -68,24 +69,21 @@ describe('BrandProfilesService', () => {
     );
   });
 
-  it('允许发布所有展示资料均为空的主页', async () => {
-    prisma.technician.findUnique.mockResolvedValue({ id: 7, name: 'Luna' });
-    prisma.brandProfile.upsert.mockResolvedValue({ id: 20 });
-    prisma.brandProfile.findUnique.mockResolvedValue({
-      technicianId: 7,
-      brandName: 'Luna',
-      environmentPhotos: [],
-      faqs: [],
-    });
+  it('缺少客户沟通微信号时拒绝开启主页', async () => {
+    prisma.technician.findUnique.mockResolvedValue({ id:7, name:'Luna' });
+    await expect(service.update(7, { publicationStatus:'published' })).rejects.toThrow('微信号');
+    expect(prisma.brandProfile.upsert).not.toHaveBeenCalled();
+  });
 
-    await service.update(7, { publicationStatus: 'published' });
-
-    expect(prisma.brandProfile.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        create: expect.objectContaining({ brandName: 'Luna' }),
-        update: expect.objectContaining({ publicationStatus: 'published' }),
-      }),
-    );
+  it('开启主页时保存微信号并保留已有二维码配置', async () => {
+    prisma.technician.findUnique.mockResolvedValue({ id:7, socialMedia:JSON.stringify({ wechatQrCode:'/uploads/qr.png' }) });
+    prisma.brandProfile.upsert.mockResolvedValue({ id:20 });
+    prisma.brandProfile.findUnique.mockResolvedValue({ technicianId:7, environmentPhotos:[], faqs:[] });
+    await service.update(7, { publicationStatus:'published', wechat:' artist_wechat ' });
+    expect(prisma.technician.update).toHaveBeenCalledWith(expect.objectContaining({
+      where:{ id:7 }, data:{ socialMedia:JSON.stringify({ wechatQrCode:'/uploads/qr.png', wechat:'artist_wechat' }) },
+    }));
+    expect(prisma.brandProfile.upsert).toHaveBeenCalled();
   });
 
   it('rejects owner writes for a missing technician', async () => {

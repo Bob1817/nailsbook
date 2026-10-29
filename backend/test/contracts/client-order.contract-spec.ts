@@ -49,6 +49,30 @@ describe('Client booking and design HTTP contract', () => {
     }
   });
 
+  it('quotes distance fees, rejects stale prices and snapshots the confirmed home fee over HTTP', async () => {
+    const { accessToken, technician } = await setupClientAndBinding('home-fees');
+    const address = await createAddress(accessToken, 'Home Fee Address');
+    const server = testApp.app.getHttpServer();
+    const config = { province:'Shanghai', city:'Shanghai', origin:{ latitude:31.23, longitude:121.47, address:'Private base' }, tiers:[{ maxKm:20, feeFen:2500 }], days:['mon','tue','wed','thu','fri','sat','sun'], startTime:'08:00', endTime:'22:00' };
+    await testApp.prisma.technician.update({ where:{ id:technician.id }, data:{ homeServiceSettings:JSON.stringify(config) } });
+    const quotePath = `/api/client/orders/home-service-quote/${technician.id}/${address.id}`;
+    await request(server).get(quotePath).expect(401);
+    const quote = await request(server).get(quotePath).set('Authorization', `Bearer ${accessToken}`).expect(200);
+    expect(quote.body).toMatchObject({ feeFen:2500, distanceKm:0, distanceType:'straight_line' });
+    expect(quote.body).not.toHaveProperty('origin');
+    const payload = { techId:technician.id, addressId:address.id, serviceDate:'2026-06-15', startTime:'14:00', serviceType:'上门美甲', selectedServiceIds:['contract-basic'], expectedHomeServiceFeeFen:2500, expectedPriceFen:15300 };
+    const create = (body:any) => request(server).post('/api/client/orders').set('Authorization', `Bearer ${accessToken}`).send(body);
+    await create({ ...payload, expectedHomeServiceFeeFen:0 }).expect(400);
+    await create({ ...payload, expectedPriceFen:12800 }).expect(400);
+    const created = await create(payload).expect(201);
+    ownedOrderNos.push(created.body.orderNo);
+    expect(created.body).toMatchObject({ homeServiceFeeFen:2500, homeServiceDistanceKm:0, finalPriceFen:15300, quotePrice:153 });
+    await testApp.prisma.technician.update({ where:{ id:technician.id }, data:{ homeServiceSettings:JSON.stringify({ ...config, tiers:[{ maxKm:20, feeFen:3000 }] }) } });
+    const detail = await request(server).get(`/api/client/orders/${created.body.id}`).set('Authorization', `Bearer ${accessToken}`).expect(200);
+    expect(detail.body).toMatchObject({ homeServiceFeeFen:2500, finalPriceFen:15300 });
+    await request(server).patch(`/api/client/orders/${created.body.id}`).set('Authorization', `Bearer ${accessToken}`).send({ addressId:address.id, serviceDate:'2026-06-16', startTime:'14:00' }).expect(400);
+  });
+
   it('validates quick booking invitations and preserves existing binding decisions over HTTP', async () => {
     const client = await createClient('quick-share');
     const technician = await createTechnician('quick-share');
@@ -816,6 +840,7 @@ describe('Client booking and design HTTP contract', () => {
         status: overrides.status ?? 'active',
         invitationCode: inviteCode,
         homeService: true,
+        homeServiceSettings:JSON.stringify({ province:'Shanghai', city:'Shanghai', origin:{ latitude:31.23, longitude:121.47, address:'Service base' }, tiers:[{ maxKm:20, feeFen:0 }], days:['mon','tue','wed','thu','fri','sat','sun'], startTime:'08:00', endTime:'22:00' }),
         shopService: true,
         shopAddresses: JSON.stringify([
           {
@@ -888,6 +913,7 @@ describe('Client booking and design HTTP contract', () => {
         contactPhone: '13800000001',
         city: 'Shanghai',
         district: 'Pudong',
+        latitude:31.23, longitude:121.47,
         detailAddress: `${label} 88 Road`,
         isDefault: true,
       })
