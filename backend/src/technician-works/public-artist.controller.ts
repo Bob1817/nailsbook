@@ -9,7 +9,10 @@ import {
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { bookingReadiness } from '../technicians/booking-readiness';
-import { isLaunchTechnician } from '../common/miniprogram-launch-mode';
+import {
+  isLaunchTechnician,
+  isMiniProgramAuditMode,
+} from '../common/miniprogram-launch-mode';
 
 const UPLOAD_BASE_URL = process.env.UPLOAD_BASE_URL || 'http://localhost:3000';
 
@@ -205,6 +208,14 @@ export class PublicArtistController {
       where: { technicianId: technician.id },
     });
 
+    const auditMode = isMiniProgramAuditMode();
+    const socialMedia = parseJsonObject(technician.socialMedia) || {};
+    const protectWechat = socialMedia.protectWechat === true;
+    const qrCodeUrl = typeof socialMedia.wechatQrCodeUrl === 'string'
+      ? toAbsoluteUrl(socialMedia.wechatQrCodeUrl)
+      : null;
+    if (qrCodeUrl) socialMedia.wechatQrCodeUrl = qrCodeUrl;
+
     return {
       artist: {
         acceptingBookings: technician.status === 'active',
@@ -219,8 +230,10 @@ export class PublicArtistController {
         bookingNotes: technician.bookingNotes,
         styleTags: parseJsonArray(technician.styleTags),
         isVerified: technician.isVerified,
-        homeService: technician.homeService,
+        homeService: auditMode ? false : technician.homeService,
         shopService: technician.shopService,
+        protectWechat,
+        auditMode,
         invitationCode: technician.invitationCode,
         serviceItems: parseJsonArray(technician.serviceItems).filter(
           (item: any) => item && item.isActive !== false,
@@ -240,7 +253,7 @@ export class PublicArtistController {
               : [],
           })),
         serviceSchedule: parseJsonObject(technician.serviceSchedule),
-        socialMedia: parseJsonObject(technician.socialMedia),
+        socialMedia,
         followerCount,
         stats: {
           followerCount,
@@ -253,6 +266,7 @@ export class PublicArtistController {
         bookingReady: readiness.ready,
         bookingReadinessIssues: readiness.issues,
       },
+      auditMode,
       works,
       qualifications: qualifications.map((q) => ({
         id: q.id,

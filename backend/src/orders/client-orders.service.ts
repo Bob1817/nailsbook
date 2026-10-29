@@ -598,6 +598,7 @@ export class ClientOrdersService {
     });
     void this.wechatSubscribe?.sendBookingEvent(order, 'technician_new');
 
+    this.chatGateway.broadcastBookingChanged?.(order);
     return this.mapOrder(order);
   }
 
@@ -904,6 +905,7 @@ export class ClientOrdersService {
     });
     void this.wechatSubscribe?.sendBookingEvent(order, 'technician_new');
 
+    this.chatGateway.broadcastBookingChanged?.(order);
     return this.mapOrder(order);
   }
 
@@ -1211,6 +1213,7 @@ export class ClientOrdersService {
       '客户修改了预约时间，请及时查看',
     );
 
+    this.chatGateway.broadcastBookingChanged?.(updatedOrder);
     return this.mapOrder(updatedOrder);
   }
 
@@ -1347,6 +1350,7 @@ export class ClientOrdersService {
       '客户已确认预约方案，请及时查看',
     );
 
+    this.chatGateway.broadcastBookingChanged?.(updatedOrder);
     return this.mapOrder(updatedOrder);
   }
 
@@ -1480,6 +1484,7 @@ export class ClientOrdersService {
       '客户拒绝了报价，请重新处理',
     );
 
+    this.chatGateway.broadcastBookingChanged?.(updatedOrder);
     return this.mapOrder(updatedOrder);
   }
 
@@ -1555,6 +1560,7 @@ export class ClientOrdersService {
         });
       });
 
+      this.chatGateway.broadcastBookingChanged?.(updatedOrder);
       return this.mapOrder(updatedOrder);
     }
 
@@ -1619,6 +1625,7 @@ export class ClientOrdersService {
       '客户取消了预约，请及时查看',
     );
 
+    this.chatGateway.broadcastBookingChanged?.(updatedOrder);
     return this.mapOrder(updatedOrder);
   }
 
@@ -1777,6 +1784,7 @@ export class ClientOrdersService {
       );
     }
 
+    this.chatGateway.broadcastBookingChanged?.(updatedOrder);
     return this.mapOrder(updatedOrder);
   }
 

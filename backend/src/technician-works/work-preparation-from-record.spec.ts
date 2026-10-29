@@ -4,6 +4,7 @@ import { TechnicianWorksService } from './technician-works.service';
 describe('TechnicianWorksService work preparation from service record', () => {
   function setup() {
     const prisma = {
+      $transaction: jest.fn((fn) => fn(prisma)),
       nailWork: {
         findFirst: jest.fn().mockResolvedValue({ id: 11 }),
       },
@@ -29,8 +30,12 @@ describe('TechnicianWorksService work preparation from service record', () => {
           estimatedMinutes: 80,
           sourceRecordId: 20,
           sourceRecordCount: 2,
+          version: 2,
         }),
         upsert: jest.fn().mockResolvedValue({ id: 1 }),
+      },
+      workPreparationRevision: {
+        create: jest.fn().mockResolvedValue({ id: 1 }),
       },
     };
     const service = new TechnicianWorksService(
@@ -57,10 +62,19 @@ describe('TechnicianWorksService work preparation from service record', () => {
         estimatedMinutes: 90,
         sourceRecordId: 31,
         sourceRecordCount: 3,
+        version: 3,
       }),
       update: expect.not.objectContaining({
         riskNotes: expect.anything(),
         preparation: expect.anything(),
+      }),
+    });
+    expect(prisma.workPreparationRevision.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        workId: 11,
+        technicianId: 7,
+        sourceRecordId: 31,
+        version: 3,
       }),
     });
   });
@@ -88,9 +102,21 @@ describe('TechnicianWorksService work preparation from service record', () => {
           steps: '原步骤',
           estimatedMinutes: 80,
           sourceRecordCount: 2,
+          version: 2,
         }),
       }),
     );
+    expect(prisma.workPreparationRevision.create).not.toHaveBeenCalled();
+  });
+
+  it('updates the preparation and revision in one transaction', async () => {
+    const { service, prisma } = setup();
+
+    await service.updatePreparationFromRecord(7, 11, 31);
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(prisma.workPreparation.upsert).toHaveBeenCalledTimes(1);
+    expect(prisma.workPreparationRevision.create).toHaveBeenCalledTimes(1);
   });
 
   it('rejects an unfinished service record', async () => {
@@ -137,6 +163,9 @@ describe('TechnicianWorksService work preparation from service record', () => {
           order: { orderNo: 'NB2026102042' },
         }),
       },
+      workPreparationRevision: {
+        findMany: jest.fn().mockResolvedValue([{ id: 2, version: 2 }]),
+      },
     };
     const service = new TechnicianWorksService(prisma as never, {} as never, {} as never);
 
@@ -151,5 +180,6 @@ describe('TechnicianWorksService work preparation from service record', () => {
       recordId: 31,
       recordStatus: 'complete',
     }));
+    expect(result.preparationRevisions).toEqual([{ id: 2, version: 2 }]);
   });
 });

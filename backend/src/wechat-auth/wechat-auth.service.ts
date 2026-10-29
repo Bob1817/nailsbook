@@ -121,8 +121,19 @@ export class WechatAuthService {
     let client = account.client;
     const isNewClient = !client;
 
+    let resolvedInviteCode = dto.inviteCode;
+    if (!resolvedInviteCode && dto.quickBookingTechId) {
+      const tech = await this.prisma.technician.findUnique({
+        where: { id: dto.quickBookingTechId },
+        select: { invitationCode: true, status: true },
+      });
+      if (tech && tech.status === 'active' && tech.invitationCode) {
+        resolvedInviteCode = tech.invitationCode;
+      }
+    }
+
     if (!client) {
-      if (!dto.inviteCode) {
+      if (!resolvedInviteCode) {
         // 手机号已由微信侧验证，但账号未注册：返回可识别状态，由前端提示并跳转注册
         return {
           authenticated: false,
@@ -134,13 +145,13 @@ export class WechatAuthService {
       if (dto.quickBookingTechId) {
         await this.clientAuth.validateQuickBookingInvite(
           dto.quickBookingTechId,
-          dto.inviteCode,
+          resolvedInviteCode,
         );
       }
       const registered = await this.clientAuth.registerClientByWechatInvite(
         {
           phone,
-          inviteCode: dto.inviteCode,
+          inviteCode: resolvedInviteCode,
           source: dto.source === 'card' ? 'card' : 'invite',
         },
         session,
@@ -164,9 +175,16 @@ export class WechatAuthService {
     // 已有账号但未绑定微信 → 关联身份
     if (!isNewClient) await this.linkIdentity(session, 'client', client.id);
 
-    if (!isNewClient && dto.quickBookingTechId) {
+    if (!isNewClient && (dto.quickBookingTechId || resolvedInviteCode)) {
       try {
-        await this.clientAuth.bindQuickBookingInvite(client.id, dto.quickBookingTechId, dto.inviteCode!);
+        let techId = dto.quickBookingTechId;
+        if (!techId && resolvedInviteCode) {
+          const tech = await this.clientAuth.findTechnicianByInviteCode(resolvedInviteCode);
+          techId = tech?.id;
+        }
+        if (techId && resolvedInviteCode) {
+          await this.clientAuth.bindQuickBookingInvite(client.id, techId, resolvedInviteCode);
+        }
       } catch {
         // 邀请上下文失效不能阻断已有账号登录。
       }

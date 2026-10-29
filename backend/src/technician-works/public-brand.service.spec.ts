@@ -234,4 +234,33 @@ describe('PublicBrandService public DTO snapshots', () => {
       }),
     );
   });
+
+  it('公开作品详情不选择或返回私密制作档案', async () => {
+    const prisma = {
+      technician: { count: jest.fn().mockResolvedValue(1) },
+      nailWork: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 18,
+          title: '公开作品',
+          coverUrl: '/uploads/work-medium.webp',
+          images: '[]',
+          tags: '[]',
+          suitableSkinTones: '[]',
+          scenes: '[]',
+          createdAt: new Date('2026-10-26T00:00:00.000Z'),
+          isReproducible: true,
+          reproductionNotes: '可复刻',
+          service: null,
+        }),
+      },
+    };
+    const service = new PublicBrandService(prisma as never);
+
+    const result = await service.workDetail(7, 18, {});
+    const select = prisma.nailWork.findFirst.mock.calls[0][0].select;
+
+    expect(select.preparation).toBeUndefined();
+    expect(result.work).not.toHaveProperty('preparation');
+    expect(JSON.stringify(result)).not.toContain('sourceRecordId');
+  });
 });

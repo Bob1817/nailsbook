@@ -49,7 +49,7 @@ export class UpdateTechnicianProfileDto {
   @ApiPropertyOptional({ description: '社交媒体链接' })
   @IsOptional()
   @IsObject()
-  socialMedia?: Record<string, string>;
+  socialMedia?: Record<string, any>;
 
   // 工作时间方案（含 schemes/activeSchemeId/restDays 或旧版 days/selectedDates）。
   // 必须在此声明，否则全局 ValidationPipe(whitelist:true) 会剥离该字段导致排期无法保存。

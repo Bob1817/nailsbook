@@ -334,6 +334,7 @@ export class OrdersScheduler {
 
         // 系统自动操作（无人工操作者），客户与美甲师双方均通知
         await this.broadcastOrderExpired(order);
+        this.chatGateway.broadcastBookingChanged?.(order);
 
         this.logger.log(
           `预约 #${order.id} 自动从 ${order.status} 置为 expired`,
@@ -508,6 +509,8 @@ export class OrdersScheduler {
 
         if (!transitioned) continue;
 
+        this.chatGateway.broadcastBookingChanged?.(order);
+
         if (systemMessages.length > 0 && conversationId) {
           try {
             const updatedConversation =
@@ -568,6 +571,8 @@ export class OrdersScheduler {
           },
           'automatic',
         );
+
+        this.chatGateway.broadcastBookingChanged?.(order);
 
         this.logger.log(
           `订单 #${order.id} 自动从 in_progress 转换为 completed`,

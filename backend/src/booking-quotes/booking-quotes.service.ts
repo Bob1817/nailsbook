@@ -108,6 +108,7 @@ export class BookingQuotesService {
       totals.surchargeSubtotalFen;
     const finalPriceFen = dto.finalPriceFen ?? calculatedFen;
     if (finalPriceFen < 1) throw new BadRequestException('最终报价必须大于 0');
+    const isHome = dto.serviceType === '上门美甲';
     const shops = this.parseJson<ShopAddress[]>(technician.shopAddresses, []);
     const shop = shops.find((item) => item.enabled !== false) ?? shops[0];
     const shopAddress = shop
@@ -131,10 +132,10 @@ export class BookingQuotesService {
         technicianNameSnapshot: technician.name,
         technicianAvatarSnapshot: technician.avatarUrl,
         invitationCodeSnapshot: technician.invitationCode,
-        shopNameSnapshot: shop?.name || null,
-        shopAddressSnapshot: shopAddress,
-        shopLatitudeSnapshot: this.coordinate(shop?.latitude),
-        shopLongitudeSnapshot: this.coordinate(shop?.longitude),
+        shopNameSnapshot: isHome ? null : (shop?.name || null),
+        shopAddressSnapshot: isHome ? null : shopAddress,
+        shopLatitudeSnapshot: isHome ? null : this.coordinate(shop?.latitude),
+        shopLongitudeSnapshot: isHome ? null : this.coordinate(shop?.longitude),
         bookingRulesSnapshot: this.bookingRules(technician),
         ...totals,
         discountAmountFen: Math.max(0, calculatedFen - finalPriceFen),
@@ -266,11 +267,12 @@ export class BookingQuotesService {
     let quote = await this.findByToken(token);
     quote = await this.refreshState(quote);
     if (quote.status === 'issued') {
-      quote = await this.prisma.bookingQuote.update({
+      const viewedQuote = await this.prisma.bookingQuote.update({
         where: { id: quote.id },
         data: { status: 'viewed', viewedAt: quote.viewedAt ?? new Date() },
         include: { lines: { orderBy: { sortOrder: 'asc' } }, order: true },
       });
+      quote = { ...quote, ...viewedQuote };
     }
     return this.mapQuote(quote, false);
   }
@@ -348,10 +350,10 @@ export class BookingQuotesService {
         status: { in: ['issued', 'viewed'] },
         clientUserId: null,
       },
-      data: { declinedAt: new Date(), declineReason: reason },
+      data: { status: 'declined', declinedAt: new Date(), declineReason: reason },
     });
     if (!result.count) throw new BadRequestException('当前报价不能提交反馈');
-    return { saved: true };
+    return { saved: true, status: 'declined' };
   }
 
   async book(clientUserId: number, token: string, dto: BookBookingQuoteDto) {
@@ -366,6 +368,9 @@ export class BookingQuotesService {
     }
     if (quote.version !== dto.version)
       throw new BadRequestException('报价已更新，请重新确认');
+    if (quote.serviceType === '上门美甲' && !dto.addressId) {
+      throw new BadRequestException('上门美甲请选择服务地址');
+    }
 
     const serviceIds = quote.lines
       .filter(
@@ -379,9 +384,10 @@ export class BookingQuotesService {
         serviceDate: dto.serviceDate,
         startTime: dto.startTime,
         serviceType: quote.serviceType,
-        shopAddress: quote.shopNameSnapshot
+        shopAddress: quote.serviceType === '上门美甲' ? undefined : (quote.shopNameSnapshot
           ? { name: quote.shopNameSnapshot }
-          : undefined,
+          : undefined),
+        addressId: quote.serviceType === '上门美甲' ? dto.addressId : undefined,
         applicationKey: `booking-quote-${quote.id}`,
         selectedServiceIds: serviceIds,
         customTitle: serviceIds.length ? undefined : `报价 ${quote.quoteNo}`,
@@ -484,7 +490,19 @@ export class BookingQuotesService {
       throw new NotFoundException('报价不存在');
     const quote = await this.prisma.bookingQuote.findUnique({
       where: { publicToken: token },
-      include: { lines: { orderBy: { sortOrder: 'asc' } }, order: true },
+      include: {
+        lines: { orderBy: { sortOrder: 'asc' } },
+        order: true,
+        technician: {
+          select: {
+            id: true,
+            city: true,
+            province: true,
+            serviceArea: true,
+            homeServiceRadius: true,
+          },
+        },
+      },
     });
     if (!quote) throw new NotFoundException('报价不存在');
     return quote;
@@ -533,6 +551,7 @@ export class BookingQuotesService {
           }
         : {}),
       status: quote.status,
+      clientUserId: quote.clientUserId,
       version: quote.version,
       clientName: quote.clientName,
       requirement: quote.requirement,
@@ -541,6 +560,9 @@ export class BookingQuotesService {
       technicianId: quote.technicianId,
       technicianName: quote.technicianNameSnapshot,
       technicianAvatarUrl: quote.technicianAvatarSnapshot,
+      technicianCity: quote.technician?.city || null,
+      technicianProvince: quote.technician?.province || null,
+      technicianServiceArea: quote.technician?.serviceArea || null,
       invitationCode: quote.invitationCodeSnapshot,
       shopName: quote.shopNameSnapshot,
       shopAddress: quote.shopAddressSnapshot,

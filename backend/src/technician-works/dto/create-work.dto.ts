@@ -26,6 +26,20 @@ export class CreateWorkDto {
   @IsString()
   coverUrl?: string;
 
+  @ApiPropertyOptional({ description: '封面图片宽度(px)' })
+  @Transform(({ value }) => Number(value))
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  coverWidth?: number;
+
+  @ApiPropertyOptional({ description: '封面图片高度(px)' })
+  @Transform(({ value }) => Number(value))
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  coverHeight?: number;
+
   @ApiPropertyOptional({ description: '图片列表(JSON字符串)' })
   @Transform(({ value }) => {
     if (typeof value === 'string') return value;
@@ -115,6 +129,20 @@ export class UpdateWorkDto {
   @IsOptional()
   @IsString()
   coverUrl?: string;
+
+  @ApiPropertyOptional({ description: '封面图片宽度(px)' })
+  @Transform(({ value }) => Number(value))
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  coverWidth?: number;
+
+  @ApiPropertyOptional({ description: '封面图片高度(px)' })
+  @Transform(({ value }) => Number(value))
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  coverHeight?: number;
 
   @ApiPropertyOptional({ description: '图片列表(JSON字符串)' })
   @Transform(({ value }) => {

@@ -39,6 +39,7 @@ import {
 } from './booking-pricing';
 import { WechatSubscribeMessagesService } from '../wechat-subscribe-messages/wechat-subscribe-messages.service';
 import { UpdateServiceRecordDto } from './dto/update-service-record.dto';
+import { CorrectServiceRecordAssociationDto } from './dto/correct-service-record-association.dto';
 
 export type OrderStatus =
   | 'pending_quote'
@@ -640,6 +641,8 @@ export class OrdersService {
             name: true,
             phone: true,
             avatarUrl: true,
+            tags: true,
+            notes: true,
             allergies: true,
             contraindications: true,
             specialReminders: true,
@@ -656,6 +659,7 @@ export class OrdersService {
                 content: true,
                 status: true,
                 sourceRecordId: true,
+                confirmationCount: true,
                 firstObservedAt: true,
                 lastConfirmedAt: true,
               },
@@ -737,6 +741,7 @@ export class OrdersService {
             coverUrl: true,
             assetStatus: true,
             publicationStatus: true,
+            preparation: true,
           },
           take: 1,
         },
@@ -976,6 +981,7 @@ export class OrdersService {
             sourceRecordId: record.id,
             confirmedById: technicianId,
             lastConfirmedAt: new Date(),
+            confirmationCount: { increment: 1 },
           },
         });
       }
@@ -1019,6 +1025,55 @@ export class OrdersService {
         ? { ...savedRecord, missing: this.serviceRecordMissing(savedRecord) }
         : null;
     });
+  }
+
+  async correctServiceRecordAssociation(
+    orderId: number,
+    technicianId: number,
+    dto: CorrectServiceRecordAssociationDto,
+  ) {
+    const order = await this.findOneForTechnician(orderId, technicianId);
+    const record = order.serviceRecord;
+    if (!record) throw new BadRequestException('美甲记录尚未创建');
+    const reason = dto.reason.trim();
+
+    if (dto.entityType === 'customer') {
+      if (record.customerId === dto.targetId) return order;
+      const customer = await this.prisma.customer.findFirst({
+        where: { id: dto.targetId, technicianId },
+        select: { id: true },
+      });
+      if (!customer) throw new NotFoundException('目标客户不存在');
+      const syncedFactCount = await this.prisma.customerProfileFact.count({
+        where: { sourceRecordId: record.id },
+      });
+      if (syncedFactCount > 0) {
+        throw new BadRequestException('本记录已同步客户档案，请先处理已同步档案后再更正客户');
+      }
+      await this.prisma.$transaction(async (tx) => {
+        await tx.order.update({ where: { id: orderId }, data: { customerId: dto.targetId } });
+        await tx.serviceRecord.update({ where: { id: record.id }, data: { customerId: dto.targetId } });
+        await tx.serviceRecordAssociationCorrection.create({ data: {
+          orderId, recordId: record.id, technicianId, entityType: 'customer',
+          fromId: record.customerId, toId: dto.targetId, reason,
+        } });
+      });
+    } else {
+      const work = await this.prisma.nailWork.findFirst({
+        where: { id: dto.targetId, techId: technicianId },
+        select: { id: true },
+      });
+      if (!work) throw new NotFoundException('目标作品不存在');
+      if (order.sourceWorkId === dto.targetId) return order;
+      await this.prisma.$transaction(async (tx) => {
+        await tx.order.update({ where: { id: orderId }, data: { sourceWorkId: dto.targetId } });
+        await tx.serviceRecordAssociationCorrection.create({ data: {
+          orderId, recordId: record.id, technicianId, entityType: 'work',
+          fromId: order.sourceWorkId, toId: dto.targetId, reason,
+        } });
+      });
+    }
+    return this.findOneForTechnician(orderId, technicianId);
   }
 
   async updateForTechnician(
@@ -2012,6 +2067,7 @@ export class OrdersService {
             sourceRecordId: completedRecord.id,
             confirmedById: order.technicianId,
             lastConfirmedAt: actualEnd,
+            confirmationCount: { increment: 1 },
           },
         });
       }

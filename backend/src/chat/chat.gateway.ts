@@ -41,6 +41,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private prisma: PrismaService,
   ) {}
 
+  broadcastBookingChanged(order: { id: number; technicianId: number }) {
+    try {
+      this.server?.to(`account:technician:${order.technicianId}`)
+        .emit('booking:changed', { orderId: order.id });
+    } catch {
+      console.warn('[ChatGateway] Booking invalidation could not be delivered');
+    }
+  }
+
   broadcastMessage(message: Message, conversation: Conversation, excludeSocket?: string) {
     const audience = this.server?.to([
       `account:client:${conversation.clientId}`,
@@ -75,6 +84,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       let userId: number | null = null;
       let userType: 'client' | 'technician' | null = null;
       let tokenVersion = 0;
+      let expiresAt = 0;
 
       const clientSecret =
         process.env.CLIENT_JWT_SECRET || process.env.JWT_SECRET || '';
@@ -87,6 +97,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           userId = payload.sub;
           userType = 'client';
           tokenVersion = payload.tv ?? 0;
+          expiresAt = Number(payload.exp || 0) * 1000;
         }
       } catch {
         // Intentionally empty - try next JWT strategy
@@ -99,6 +110,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             userId = payload.sub;
             userType = 'technician';
             tokenVersion = payload.tv ?? 0;
+          expiresAt = Number(payload.exp || 0) * 1000;
           }
         } catch {
           // Intentionally empty - invalid token
@@ -123,8 +135,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       (client as any).userId = userId;
       (client as any).userType = userType;
       (client as any).tokenVersion = tokenVersion;
+      if (expiresAt) {
+        const expiryTimer = setTimeout(() => client.disconnect(true), Math.max(0, Math.min(2147483647, expiresAt - Date.now())));
+        expiryTimer.unref();
+        client.once('disconnect', () => clearTimeout(expiryTimer));
+      }
       await client.join(`account:${userType}:${userId}`);
       await this.assertSession(client);
+      // Emitted only after authentication and room membership are ready.
+      client.emit('booking:ready');
 
       // Join all conversation rooms
       const conversationIds = await this.chatService.getUserConversationIds(

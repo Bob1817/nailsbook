@@ -5,6 +5,7 @@ import {
 import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RewardFundService } from '../referrals/reward-fund.service';
+import { ChatGateway } from '../chat/chat.gateway';
 
 @ApiTags('公开-预约确认')
 @Controller('orders/confirm')
@@ -12,6 +13,7 @@ export class PublicOrdersController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly rewardFunds: RewardFundService,
+    private readonly chatGateway: ChatGateway,
   ) {}
 
   @Get(':token')
@@ -75,6 +77,7 @@ export class PublicOrdersController {
       },
     });
     if (result.count === 0) throw new BadRequestException('该链接已使用');
+    this.chatGateway.broadcastBookingChanged?.(order);
     return { success: true, message: '预约已确认' };
   }
 
@@ -105,6 +108,7 @@ export class PublicOrdersController {
       return claimed;
     });
     if (result.count === 0) throw new BadRequestException('该链接已使用');
+    this.chatGateway.broadcastBookingChanged?.(order);
     return { success: true, message: '预约已取消' };
   }
 }

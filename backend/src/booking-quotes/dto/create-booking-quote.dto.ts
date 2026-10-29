@@ -63,7 +63,7 @@ export class CreateBookingQuoteDto {
   referenceImages?: string[];
 
   @IsOptional()
-  @IsIn(['到店美甲'])
+  @IsIn(['到店美甲', '上门美甲'])
   serviceType?: string;
 
   @IsArray()

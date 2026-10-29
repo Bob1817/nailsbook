@@ -1,6 +1,28 @@
 import { BookingQuotesService } from './booking-quotes.service';
 
 describe('BookingQuotesService', () => {
+  it('retains technician service area when marking a public quote as viewed', async () => {
+    const quote = {
+      id: 1,
+      status: 'issued',
+      expiresAt: new Date(Date.now() + 60000),
+      lines: [],
+      technician: { id: 7, city: '杭州', province: '浙江', serviceArea: '西湖区' },
+    };
+    const prisma: any = {
+      bookingQuote: {
+        findUnique: jest.fn().mockResolvedValue(quote),
+        update: jest.fn().mockResolvedValue({ id: 1, status: 'viewed', lines: [] }),
+      },
+    };
+    const service = new BookingQuotesService(prisma, {} as never, {} as never);
+    const result = await service.publicDetail('a'.repeat(48));
+    expect(result).toMatchObject({
+      status: 'viewed', technicianCity: '杭州', technicianProvince: '浙江',
+      technicianServiceArea: '西湖区',
+    });
+  });
+
   it('uses authoritative service price and technician attribution', async () => {
     const prisma: any = {
       technician: {
@@ -80,6 +102,7 @@ describe('BookingQuotesService', () => {
     const service = new BookingQuotesService(prisma, {} as never, {} as never);
     await expect(service.decline('c'.repeat(48), '最近没空')).resolves.toEqual({
       saved: true,
+      status: 'declined',
     });
     expect(prisma.bookingQuote.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -239,4 +262,70 @@ describe('BookingQuotesService', () => {
       }),
     );
   });
+
+  it('validates addressId and clears shopAddress for home service booking', async () => {
+    const homeQuote: any = {
+      id: 6,
+      quoteNo: 'ONQ6',
+      publicToken: 'd'.repeat(48),
+      clientUserId: 8,
+      status: 'accepted_pending_schedule',
+      version: 1,
+      technicianId: 3,
+      serviceType: '上门美甲',
+      shopNameSnapshot: null,
+      lines: [],
+      serviceSubtotalFen: 10000,
+      materialSubtotalFen: 0,
+      surchargeSubtotalFen: 0,
+      finalPriceFen: 10000,
+      totalDurationMinutes: 60,
+    };
+    const tx: any = {
+      order: { update: jest.fn() },
+      bookingQuote: {
+        update: jest.fn().mockResolvedValue({
+          ...homeQuote,
+          status: 'booked',
+          orderId: 34,
+          order: { id: 34, orderNo: 'O2' },
+        }),
+      },
+    };
+    const prisma: any = {
+      bookingQuote: { findUnique: jest.fn().mockResolvedValue(homeQuote) },
+      $transaction: jest.fn((fn) => fn(tx)),
+    };
+    const clientOrders: any = {
+      create: jest.fn().mockResolvedValue({ id: 34 }),
+    };
+    const service = new BookingQuotesService(prisma, clientOrders, {} as never);
+
+    await expect(
+      service.book(8, 'd'.repeat(48), {
+        version: 1,
+        serviceDate: '2099-01-01',
+        startTime: '10:00',
+      }),
+    ).rejects.toThrow('上门美甲请选择服务地址');
+
+    await service.book(8, 'd'.repeat(48), {
+      version: 1,
+      serviceDate: '2099-01-01',
+      startTime: '10:00',
+      addressId: 99,
+    });
+
+    expect(clientOrders.create).toHaveBeenCalledWith(
+      8,
+      expect.objectContaining({
+        techId: 3,
+        serviceType: '上门美甲',
+        addressId: 99,
+        shopAddress: undefined,
+      }),
+      expect.anything(),
+    );
+  });
 });
+

@@ -12,6 +12,11 @@ export class BookBookingQuoteDto {
   startTime: string;
 
   @IsOptional()
+  @IsInt()
+  @Min(1)
+  addressId?: number;
+
+  @IsOptional()
   @IsString()
   @MaxLength(500)
   remark?: string;

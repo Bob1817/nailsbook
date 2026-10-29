@@ -1,3 +1,4 @@
+import { BookingEventsInterceptor } from './booking-events.interceptor';
 import { BookingDaysService } from './booking-days.service';
 import { PublicBookingDaysController, TechnicianBookingDaysController } from './booking-days.controller';
 import { Module } from '@nestjs/common';
@@ -26,6 +27,7 @@ import { AdminOrdersService } from './admin-orders.service';
     AdminOrdersController,
   ],
   providers: [
+    BookingEventsInterceptor,
     OrdersService,
     ClientOrdersService,
     OrdersScheduler,

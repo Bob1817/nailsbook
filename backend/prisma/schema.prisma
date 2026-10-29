@@ -829,6 +829,9 @@ model NailWork {
   createRequestId            String?                @unique
   title                     String?
   coverUrl                  String?
+  // 封面原始像素尺寸，用于客户端按真实比例渲染作品卡（瀑布流）
+  coverWidth                Int?
+  coverHeight               Int?
   images                    String?
   description               String?
   designIdea                String?
@@ -1846,6 +1849,7 @@ model CustomerProfileFact {
   confirmedById   Int
   firstObservedAt DateTime @default(now())
   lastConfirmedAt DateTime @default(now())
+  confirmationCount Int    @default(1)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @default(now()) @updatedAt
   customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
@@ -1873,11 +1877,47 @@ model WorkPreparation {
   difficulty       String?
   sourceRecordId   Int?
   sourceRecordCount Int      @default(0)
+  version          Int      @default(1)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @default(now()) @updatedAt
   work             NailWork @relation(fields: [workId], references: [id], onDelete: Cascade)
 
   @@index([sourceRecordId])
+}
+
+model WorkPreparationRevision {
+  id               Int      @id @default(autoincrement())
+  workId           Int
+  technicianId     Int
+  sourceRecordId   Int
+  version          Int
+  tools            String?
+  materials        String?
+  preparation      String?
+  steps            String?
+  riskNotes        String?
+  estimatedMinutes Int?
+  createdAt        DateTime @default(now())
+
+  @@unique([workId, version])
+  @@index([workId, createdAt])
+  @@index([technicianId, createdAt])
+  @@index([sourceRecordId])
+}
+
+model ServiceRecordAssociationCorrection {
+  id           Int      @id @default(autoincrement())
+  orderId      Int
+  recordId     Int
+  technicianId Int
+  entityType   String
+  fromId       Int?
+  toId         Int
+  reason       String
+  createdAt    DateTime @default(now())
+
+  @@index([recordId, createdAt])
+  @@index([technicianId, createdAt])
 }
 
 model PublicationConsent {

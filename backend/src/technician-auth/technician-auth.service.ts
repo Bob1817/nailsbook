@@ -15,6 +15,7 @@ import type { Prisma } from '@prisma/client';
 import { buildDefaultServiceItems } from '../common/default-service-items';
 import {
   isLaunchTechnician,
+  isMiniProgramAuditMode,
   isMiniProgramLaunchMode,
 } from '../common/miniprogram-launch-mode';
 
@@ -599,6 +600,7 @@ export class TechnicianAuthService {
       isTourist: !technician.passwordHash,
       // 接单就绪：至少开启一种服务类型；未就绪则锁定邀请码/邀请链接
       bookingReady: technician.homeService || technician.shopService,
+      auditMode: isMiniProgramAuditMode(),
       shopAddresses: this.parseShopAddresses(technician.shopAddresses),
       socialMedia: this.parseSocialMedia(technician.socialMedia),
       serviceItems: this.parseServiceItems(technician.serviceItems),
@@ -672,7 +674,7 @@ export class TechnicianAuthService {
       serviceArea?: string;
       bio?: string;
       avatarUrl?: string;
-      socialMedia?: Record<string, string>;
+      socialMedia?: Record<string, any>;
       serviceSchedule?: any;
       customTags?: any[];
       coverImageUrl?: string;
@@ -718,7 +720,10 @@ export class TechnicianAuthService {
     if (dto.socialMedia !== undefined) {
       const normalizedSocialMedia = Object.fromEntries(
         Object.entries(dto.socialMedia).filter(
-          ([key, value]) => key && typeof value === 'string' && value.trim(),
+          ([key, value]) =>
+            key &&
+            ((typeof value === 'string' && value.trim()) ||
+              typeof value === 'boolean'),
         ),
       );
       updateData.socialMedia = Object.keys(normalizedSocialMedia).length

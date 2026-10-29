@@ -14,6 +14,13 @@ export function isMiniProgramLaunchMode() {
   return !DISABLED_VALUES.has(value);
 }
 
+export function isMiniProgramAuditMode(): boolean {
+  const value = String(process.env.MINIPROGRAM_AUDIT_MODE ?? 'false')
+    .trim()
+    .toLowerCase();
+  return ['1', 'true', 'on', 'yes'].includes(value);
+}
+
 export function assertMiniProgramFeatureDisabled(feature: string): never {
   throw new ServiceUnavailableException(`${feature}在小程序首期版本暂未开放`);
 }

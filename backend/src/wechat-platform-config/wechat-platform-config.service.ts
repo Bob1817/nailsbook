@@ -22,6 +22,7 @@ import {
 } from './dto/update-wechat-config.dto';
 import {
   configureLaunchTechnicianId,
+  isMiniProgramAuditMode,
   isMiniProgramLaunchMode,
 } from '../common/miniprogram-launch-mode';
 
@@ -132,6 +133,7 @@ export class WechatPlatformConfigService implements OnModuleInit {
       consultationReplyTemplateId: item.consultationReplyTemplateId ?? '',
       technician,
       launchModeLocked: isMiniProgramLaunchMode(),
+      auditMode: isMiniProgramAuditMode(),
       required,
       readyForReview: Object.values(required).every(Boolean),
       updatedAt: item.updatedAt,
@@ -222,6 +224,7 @@ export class WechatPlatformConfigService implements OnModuleInit {
       consultationReplyTemplateId: item.consultationReplyTemplateId ?? '',
       paymentEnabled: false,
       homeServiceEnabled: false,
+      auditMode: isMiniProgramAuditMode(),
     };
   }
 

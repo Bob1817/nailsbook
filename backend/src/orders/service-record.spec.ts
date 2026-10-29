@@ -66,6 +66,9 @@ describe('OrdersService service record', () => {
           category: 'allergy',
           sourceRecordId: 31,
         }),
+        update: expect.objectContaining({
+          confirmationCount: { increment: 1 },
+        }),
       }),
     );
     expect(prisma.actionTask.updateMany).toHaveBeenCalledWith(

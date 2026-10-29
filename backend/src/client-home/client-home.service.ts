@@ -629,6 +629,8 @@ export class ClientHomeService {
     id: number;
     title: string | null;
     coverUrl: string | null;
+    coverWidth?: number | null;
+    coverHeight?: number | null;
     images: string | null;
     description?: string | null;
     designIdea?: string | null;
@@ -701,6 +703,8 @@ export class ClientHomeService {
       title: work.title,
       coverUrl:
         toAbsoluteUrl(work.coverUrl) ?? toAbsoluteUrl(imageUrls[0]) ?? null,
+      coverWidth: work.coverWidth ?? null,
+      coverHeight: work.coverHeight ?? null,
       imageUrls: imageUrls
         .map((url) => toAbsoluteUrl(url))
         .filter(Boolean) as string[],

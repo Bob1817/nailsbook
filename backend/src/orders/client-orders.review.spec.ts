@@ -27,6 +27,14 @@ describe('ClientOrdersService 服务评价', () => {
     );
   });
 
+  it('客户订单查询不选择美甲师私密档案字段', () => {
+    const include = (service as any).orderInclude();
+    expect(include.customer.select).toEqual({ id: true, name: true, phone: true });
+    expect(include.customer.select.profileFacts).toBeUndefined();
+    expect(include.customer.select.serviceRecords).toBeUndefined();
+    expect(include.sourceWork.select.preparation).toBeUndefined();
+  });
+
   it('仅允许当前客户评价已完成订单', async () => {
     prisma.order.findFirst.mockResolvedValueOnce(null);
     await expect(

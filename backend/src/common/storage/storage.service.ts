@@ -57,12 +57,15 @@ export class StorageService {
     mediumUrl: string;
     thumbnailUrl: string;
     bytesStored: number;
+    width: number | null;
+    height: number | null;
   }> {
     if (!file || !file.buffer || file.buffer.length === 0) {
       throw new BadRequestException('请选择图片文件');
     }
     const baseName = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
-    const [high, medium, thumbnail] = await Promise.all([
+    const [{ width, height }, high, medium, thumbnail] = await Promise.all([
+      this.readImageSize(file.buffer),
       this.optimizeImage(file.buffer, 2048, 84),
       this.optimizeImage(file.buffer, 1080, 82),
       this.optimizeImage(file.buffer, 480, 78),
@@ -78,7 +81,25 @@ export class StorageService {
       mediumUrl,
       thumbnailUrl,
       bytesStored: high.length + medium.length + thumbnail.length,
+      width,
+      height,
     };
+  }
+
+  private async readImageSize(buffer: Buffer) {
+    try {
+      const meta = await sharp(buffer).metadata();
+      // EXIF 方向 5-8 会交换宽高
+      const swapped =
+        typeof meta.orientation === 'number' &&
+        meta.orientation >= 5 &&
+        meta.orientation <= 8;
+      const width = swapped ? meta.height : meta.width;
+      const height = swapped ? meta.width : meta.height;
+      return { width: width || null, height: height || null };
+    } catch {
+      return { width: null, height: null };
+    }
   }
 
   async uploadAudio(file: UploadFile): Promise<{ url: string }> {

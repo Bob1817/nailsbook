@@ -1,3 +1,4 @@
+import { ChatGateway } from '../chat/chat.gateway';
 import {
   BadRequestException,
   ConflictException,
@@ -31,6 +32,7 @@ export class PaymentsService {
     private readonly platformConfig?: WechatPlatformConfigService,
     @Optional()
     private readonly wechatPay?: WechatPayService,
+    @Optional() private readonly chatGateway?: ChatGateway,
   ) {}
 
   async createOrderPayment(
@@ -209,6 +211,7 @@ export class PaymentsService {
       throw new BadRequestException('当前支付单不能确认成功');
     }
 
+    let changedBooking: { id: number; technicianId: number } | undefined;
     const updated = await this.prisma.$transaction(async (tx) => {
       const paidAt = new Date();
       const claimed = await tx.paymentOrder.updateMany({
@@ -322,6 +325,7 @@ export class PaymentsService {
             ],
           });
         }
+        changedBooking = settledOrder;
         if (settledOrder.status === 'completed') {
           const accounting = revenueSnapshot(settledOrder);
           await tx.revenue.updateMany({
@@ -338,6 +342,7 @@ export class PaymentsService {
       }
       return tx.paymentOrder.findUniqueOrThrow({ where: { id: payment.id } });
     });
+    if (changedBooking) this.chatGateway?.broadcastBookingChanged(changedBooking);
     return this.mapPayment(updated);
   }
 

@@ -1,3 +1,4 @@
+import { ChatModule } from '../chat/chat.module';
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../common/prisma/prisma.module';
 import {
@@ -9,7 +10,7 @@ import { ReferralsModule } from '../referrals/referrals.module';
 import { WechatPayService } from './wechat-pay.service';
 
 @Module({
-  imports: [PrismaModule, ReferralsModule],
+  imports: [PrismaModule, ReferralsModule, ChatModule],
   controllers: [ClientPaymentsController, WechatPaymentNotificationController],
   providers: [PaymentsService, WechatPayService],
   exports: [PaymentsService],

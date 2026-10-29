@@ -68,6 +68,13 @@ export class TechnicianWorksService {
           },
         },
         _count: { select: { shareEvents: true } },
+        sourceOrders: {
+          where: { status: 'completed' },
+          select: { id: true, status: true },
+        },
+        sourceOrder: {
+          select: { id: true, status: true },
+        },
         serviceLines: { orderBy: { sortOrder: 'asc' } },
         promotion: true,
         preparation: true,
@@ -100,10 +107,14 @@ export class TechnicianWorksService {
           },
         },
         _count: { select: { shareEvents: true } },
+        sourceOrders: {
+          where: { status: 'completed' },
+          select: { id: true, status: true },
+        },
         serviceLines: { orderBy: { sortOrder: 'asc' } },
         promotion: true,
         preparation: true,
-        sourceOrder: { select: { id: true, orderNo: true } },
+        sourceOrder: { select: { id: true, orderNo: true, status: true } },
       },
     });
 
@@ -125,9 +136,17 @@ export class TechnicianWorksService {
         })
       : null;
     const sourceOrderId = sourceRecord?.orderId || work.sourceOrder?.id;
+    const preparationRevisions = this.prisma.workPreparationRevision
+      ? await this.prisma.workPreparationRevision.findMany({
+          where: { workId: id, technicianId },
+          orderBy: { version: 'desc' },
+          take: 5,
+        })
+      : [];
     const mapped = this.mapWork(work, technicianId);
     return {
       ...mapped,
+      preparationRevisions,
       sourceService: sourceOrderId
         ? {
             orderId: sourceOrderId,
@@ -256,6 +275,8 @@ export class TechnicianWorksService {
           createRequestId,
           title: dto.title,
           coverUrl: dto.coverUrl ?? null,
+          coverWidth: dto.coverWidth ?? null,
+          coverHeight: dto.coverHeight ?? null,
           images: dto.images ?? null,
           description: dto.description ?? null,
           designIdea: dto.designIdea ?? null,
@@ -302,6 +323,8 @@ export class TechnicianWorksService {
         techId: technicianId,
         title: dto.title?.trim() || null,
         coverUrl: dto.coverUrl ?? null,
+        coverWidth: dto.coverWidth ?? null,
+        coverHeight: dto.coverHeight ?? null,
         images: dto.images ?? null,
         description: dto.description ?? null,
         designIdea: dto.designIdea ?? null,
@@ -448,6 +471,8 @@ export class TechnicianWorksService {
         data: {
           ...(dto.title !== undefined && { title: dto.title }),
           ...(dto.coverUrl !== undefined && { coverUrl: dto.coverUrl }),
+          ...(dto.coverWidth !== undefined && { coverWidth: dto.coverWidth }),
+          ...(dto.coverHeight !== undefined && { coverHeight: dto.coverHeight }),
           ...(dto.images !== undefined && { images: dto.images }),
           ...(dto.description !== undefined && {
             description: dto.description,
@@ -500,6 +525,8 @@ export class TechnicianWorksService {
       data: {
         ...(dto.title !== undefined && { title: dto.title.trim() || null }),
         ...(dto.coverUrl !== undefined && { coverUrl: dto.coverUrl || null }),
+        ...(dto.coverWidth !== undefined && { coverWidth: dto.coverWidth ?? null }),
+        ...(dto.coverHeight !== undefined && { coverHeight: dto.coverHeight ?? null }),
         ...(dto.images !== undefined && { images: dto.images }),
         ...(dto.description !== undefined && {
           description: dto.description || null,
@@ -721,32 +748,57 @@ export class TechnicianWorksService {
             ),
           )
         : null;
-    const existing = await this.prisma.workPreparation.findUnique({
-      where: { workId },
-      select: {
-        tools: true,
-        materials: true,
-        steps: true,
-        estimatedMinutes: true,
-        sourceRecordId: true,
-        sourceRecordCount: true,
-      },
-    });
-    const sourceRecordCount =
-      (existing?.sourceRecordCount || 0) +
-      (existing?.sourceRecordId === record.id ? 0 : 1);
-    const data = {
-      tools: mergeReusableList(existing?.tools, record.tools),
-      materials: mergeReusableList(existing?.materials, record.materials),
-      steps: record.techniques?.trim() || existing?.steps || null,
-      estimatedMinutes: estimatedMinutes || existing?.estimatedMinutes || null,
-      sourceRecordId: record.id,
-    };
+    await this.prisma.$transaction(async (tx) => {
+      const existing = await tx.workPreparation.findUnique({
+        where: { workId },
+        select: {
+          tools: true,
+          materials: true,
+          preparation: true,
+          steps: true,
+          riskNotes: true,
+          estimatedMinutes: true,
+          sourceRecordId: true,
+          sourceRecordCount: true,
+          version: true,
+        },
+      });
+      const isNewSource = existing?.sourceRecordId !== record.id;
+      const sourceRecordCount =
+        (existing?.sourceRecordCount || 0) +
+        (isNewSource ? 1 : 0);
+      const version = existing ? (existing.version || 1) + (isNewSource ? 1 : 0) : 1;
+      const data = {
+        tools: mergeReusableList(existing?.tools, record.tools),
+        materials: mergeReusableList(existing?.materials, record.materials),
+        steps: record.techniques?.trim() || existing?.steps || null,
+        estimatedMinutes: estimatedMinutes || existing?.estimatedMinutes || null,
+        sourceRecordId: record.id,
+        version,
+      };
 
-    await this.prisma.workPreparation.upsert({
-      where: { workId },
-      create: { workId, ...data, sourceRecordCount },
-      update: { ...data, sourceRecordCount },
+      await tx.workPreparation.upsert({
+        where: { workId },
+        create: { workId, ...data, sourceRecordCount },
+        update: { ...data, sourceRecordCount },
+      });
+
+      if (isNewSource) {
+        await tx.workPreparationRevision.create({
+          data: {
+            workId,
+            technicianId,
+            sourceRecordId: record.id,
+            version,
+            tools: data.tools,
+            materials: data.materials,
+            preparation: existing?.preparation || null,
+            steps: data.steps,
+            riskNotes: existing?.riskNotes || null,
+            estimatedMinutes: data.estimatedMinutes,
+          },
+        });
+      }
     });
 
     return this.findOne(technicianId, workId);
@@ -1288,6 +1340,8 @@ export class TechnicianWorksService {
       id: number;
       title: string | null;
       coverUrl: string | null;
+      coverWidth?: number | null;
+      coverHeight?: number | null;
       images: string | null;
       description: string | null;
       designIdea?: string | null;
@@ -1332,6 +1386,8 @@ export class TechnicianWorksService {
       serviceLines?: any[];
       promotion?: any;
       preparation?: any;
+      sourceOrders?: any[];
+      sourceOrder?: any;
     },
     currentTechnicianId?: number,
   ) {
@@ -1340,6 +1396,18 @@ export class TechnicianWorksService {
       .map((url) => this.toAbsoluteUrl(url))
       .filter(Boolean) as string[];
     const coverUrl = this.toAbsoluteUrl(work.coverUrl) ?? imageUrls[0] ?? null;
+
+    const completedOrderIds = new Set<number>();
+    if (work.sourceOrder?.status === 'completed' && work.sourceOrder.id) {
+      completedOrderIds.add(work.sourceOrder.id);
+    }
+    (work.sourceOrders || []).forEach((o: any) => {
+      if (o.id && (o.status === 'completed' || !o.status)) completedOrderIds.add(o.id);
+    });
+    (work.clientAccesses || []).forEach((ca: any) => {
+      if (ca.order?.status === 'completed' && ca.order.id) completedOrderIds.add(ca.order.id);
+    });
+    const completedBookingsCount = completedOrderIds.size;
 
     // Check if current technician has liked/favorited this work
     const isLiked = currentTechnicianId
@@ -1364,6 +1432,8 @@ export class TechnicianWorksService {
       id: work.id,
       title: work.title,
       coverUrl,
+      coverWidth: work.coverWidth ?? null,
+      coverHeight: work.coverHeight ?? null,
       imageUrls,
       description: work.description ?? null,
       designIdea: work.designIdea ?? null,
@@ -1410,6 +1480,9 @@ export class TechnicianWorksService {
       unreadFavorites,
       isLiked,
       isFavorited,
+      completedBookingsCount,
+      doneCount: completedBookingsCount,
+      doneCountText: completedBookingsCount > 0 ? `${completedBookingsCount}人做过` : '',
       technicianName: work.technician?.name ?? '美甲师',
       createdAt: work.createdAt,
       updatedAt: work.updatedAt,

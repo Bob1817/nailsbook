@@ -194,4 +194,105 @@ export class BookingDaysService {
   update(technicianId: number, serviceDate: string, accepting: boolean, version: number) {
     return this.mutex.runExclusive(technicianId, () => this.prisma.$transaction(tx => this.save(tx, technicianId, serviceDate, accepting, version)));
   }
+
+  async listBlockedSlots(technicianId: number, date?: string) {
+    const where: Prisma.BlockedTimeSlotWhereInput = {
+      techId: technicianId,
+      orderId: null,
+    };
+    if (date) {
+      assertBookingDate(date);
+      const start = parseBusinessDateTime(date, '00:00');
+      const end = nextBusinessDate(date);
+      where.startTime = { gte: start, lt: end };
+    } else {
+      where.endTime = { gte: new Date() };
+    }
+    return this.prisma.blockedTimeSlot.findMany({
+      where,
+      select: {
+        id: true,
+        startTime: true,
+        endTime: true,
+        reason: true,
+        createdAt: true,
+      },
+      orderBy: { startTime: 'asc' },
+    });
+  }
+
+  async createBlockedSlot(
+    technicianId: number,
+    dto: { startTime: string | Date; endTime: string | Date; reason?: string },
+  ) {
+    const start = new Date(dto.startTime);
+    const end = new Date(dto.endTime);
+    if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime())) {
+      throw new BadRequestException('锁档时间格式无效');
+    }
+    if (start >= end) {
+      throw new BadRequestException('开始时间必须早于结束时间');
+    }
+    const durationMs = end.getTime() - start.getTime();
+    if (durationMs < 15 * 60 * 1000) {
+      throw new BadRequestException('锁档时长至少需 15 分钟');
+    }
+    if (durationMs > 24 * 60 * 60 * 1000) {
+      throw new BadRequestException('单次锁档时长不能超过 24 小时');
+    }
+
+    const conflictingOrder = await this.prisma.order.findFirst({
+      where: {
+        technicianId,
+        status: { notIn: ['cancelled'] },
+        startTime: { lt: end },
+        endTime: { gt: start },
+      },
+      select: { id: true, orderNo: true, startTime: true, endTime: true },
+    });
+    if (conflictingOrder) {
+      throw new BadRequestException('该时段已有预约订单，无法重复锁档');
+    }
+
+    const overlappingSlot = await this.prisma.blockedTimeSlot.findFirst({
+      where: {
+        techId: technicianId,
+        orderId: null,
+        startTime: { lt: end },
+        endTime: { gt: start },
+      },
+    });
+    if (overlappingSlot) {
+      throw new BadRequestException('该时段已有锁档记录，请勿重复锁定');
+    }
+
+    return this.prisma.blockedTimeSlot.create({
+      data: {
+        techId: technicianId,
+        startTime: start,
+        endTime: end,
+        reason: dto.reason?.trim() || '临时锁档',
+        orderId: null,
+      },
+      select: {
+        id: true,
+        techId: true,
+        startTime: true,
+        endTime: true,
+        reason: true,
+        createdAt: true,
+      },
+    });
+  }
+
+  async deleteBlockedSlot(technicianId: number, id: number) {
+    const slot = await this.prisma.blockedTimeSlot.findFirst({
+      where: { id, techId: technicianId, orderId: null },
+    });
+    if (!slot) {
+      throw new NotFoundException('锁档记录不存在或无法解锁');
+    }
+    await this.prisma.blockedTimeSlot.delete({ where: { id } });
+    return { success: true };
+  }
 }

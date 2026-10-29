@@ -44,6 +44,15 @@ function parseImageUrls(
   return coverUrl ? [coverUrl] : [];
 }
 
+function parseSocialMedia(value: string | null): Record<string, string> {
+  try {
+    const parsed = JSON.parse(value || '{}');
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
 @ApiTags('公开-作品')
 @Controller('public/works')
 export class PublicWorksController {
@@ -85,7 +94,7 @@ export class PublicWorksController {
         technician: {
           select: { id: true, name: true, avatarUrl: true, city: true },
         },
-        _count: { select: { likes: true, comments: true } },
+        _count: { select: { likes: true, comments: true, sourceOrders: { where: { status: 'completed' } } } },
         serviceLines: { orderBy: { sortOrder: 'asc' } },
         promotion: true,
       },
@@ -121,6 +130,9 @@ export class PublicWorksController {
         totalDurationMinutes: work.totalDurationMinutes,
         likeCount: work._count.likes,
         commentCount: work._count.comments,
+        completedBookingsCount: work._count?.sourceOrders ?? 0,
+        doneCount: work._count?.sourceOrders ?? 0,
+        doneCountText: (work._count?.sourceOrders ?? 0) > 0 ? `${work._count.sourceOrders}人做过` : '',
         createdAt: work.createdAt,
       };
     });
@@ -276,7 +288,7 @@ export class PublicWorksController {
     const work = await this.prisma.nailWork.findFirst({
       where,
       include: {
-        _count: { select: { likes: true, comments: true } },
+        _count: { select: { likes: true, comments: true, sourceOrders: { where: { status: 'completed' } } } },
         technician: {
           select: {
             id: true,
@@ -287,6 +299,7 @@ export class PublicWorksController {
             bio: true,
             status: true,
             shopAddresses: true,
+            socialMedia: true,
           },
         },
         serviceLines: { orderBy: { sortOrder: 'asc' } },
@@ -317,6 +330,11 @@ export class PublicWorksController {
       }
     } catch { /* 未配置有效店铺时不展示虚构地址。 */ }
 
+    const socialMedia = parseSocialMedia(work.technician.socialMedia);
+    if (socialMedia.wechatQrCodeUrl) {
+      socialMedia.wechatQrCodeUrl = toAbsoluteUrl(socialMedia.wechatQrCodeUrl) || '';
+    }
+
     return {
       id: work.id,
       title: work.title,
@@ -346,6 +364,9 @@ export class PublicWorksController {
       promotion: this.mapActivePromotion(work.promotion),
       likeCount: work._count?.likes ?? 0,
       commentCount: work._count?.comments ?? 0,
+      completedBookingsCount: work._count?.sourceOrders ?? 0,
+      doneCount: work._count?.sourceOrders ?? 0,
+      doneCountText: (work._count?.sourceOrders ?? 0) > 0 ? `${work._count.sourceOrders}人做过` : '',
       technician: {
         id: work.technician.id,
         name: work.technician.name,
@@ -354,6 +375,7 @@ export class PublicWorksController {
         city: work.technician.city,
         bio: work.technician.bio,
         acceptingBookings: work.technician.status === 'active',
+        socialMedia,
       },
       shops,
       comments: [],

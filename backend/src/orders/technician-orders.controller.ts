@@ -1,3 +1,4 @@
+import { BookingEventsInterceptor } from './booking-events.interceptor';
 import {
   Body,
   Controller,
@@ -9,6 +10,7 @@ import {
   Query,
   Req,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -31,9 +33,11 @@ import { CloseBookingDto } from './dto/close-booking.dto';
 import { RepeatBookingDto } from './dto/repeat-booking.dto';
 import { UpdateActualAmountDto } from './dto/update-actual-amount.dto';
 import { UpdateServiceRecordDto } from './dto/update-service-record.dto';
+import { CorrectServiceRecordAssociationDto } from './dto/correct-service-record-association.dto';
 
 @ApiTags('美甲师-订单')
 @ApiBearerAuth()
+@UseInterceptors(BookingEventsInterceptor)
 @Controller('technician/orders')
 @UseGuards(TechnicianJwtAuthGuard, TouristGuard)
 export class TechnicianOrdersController {
@@ -158,6 +162,19 @@ export class TechnicianOrdersController {
     @Body() body: UpdateServiceRecordDto,
   ) {
     return this.ordersService.saveServiceRecord(
+      id,
+      request.user.technicianId,
+      body,
+    );
+  }
+
+  @Post(':id/service-record/correct-association')
+  correctServiceRecordAssociation(
+    @Req() request: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: CorrectServiceRecordAssociationDto,
+  ) {
+    return this.ordersService.correctServiceRecordAssociation(
       id,
       request.user.technicianId,
       body,

@@ -18,7 +18,7 @@ describe('PublicWorksController publication filter', () => {
     const controller = new PublicWorksController({ nailWork: { findFirst: jest.fn().mockResolvedValue({
       id: 88, title: '作品', images: null, coverUrl: null, tags: null,
       serviceLines: [], comments: [], likes: [],
-      technician: { id: 7, name: '美甲师', status, shopAddresses: JSON.stringify([
+      technician: { id: 7, name: '美甲师', status, socialMedia: JSON.stringify({ wechat: 'artist7', wechatQrCodeUrl: '/uploads/wechat-7.png' }), shopAddresses: JSON.stringify([
         { name: '工作室', city: '杭州', detailAddress: '测试路1号', doorInfo: '内部门禁', phone: '私密号码' },
         { name: '停用店铺', enabled: false },
       ]) },
@@ -26,6 +26,7 @@ describe('PublicWorksController publication filter', () => {
     const detail = await controller.getDetail(88);
     expect(detail.shops).toEqual([{ name: '工作室', address: '杭州 测试路1号' }]);
     expect(detail.technician.acceptingBookings).toBe(status === 'active');
+    expect(detail.technician.socialMedia).toEqual({ wechat: 'artist7', wechatQrCodeUrl: 'http://localhost:3000/uploads/wechat-7.png' });
   });
 
   it('失效授权不查询作品，隐藏或待审核作品不计成功打开事件', async () => {

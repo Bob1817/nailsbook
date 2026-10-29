@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Req, UseGuards } from '@nestjs/common';
-import { IsBoolean, IsInt, Max, Min } from 'class-validator';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
 import { TouristGuard } from '../technician-auth/tourist.guard';
 import { BookingDaysService } from './booking-days.service';
@@ -18,6 +18,18 @@ class UpdateBookingCapacityDto {
   @IsInt() @Min(15) @Max(180) appointmentBufferMinutes: number;
 }
 
+class CreateBlockedSlotDto {
+  @IsNotEmpty()
+  startTime: string;
+
+  @IsNotEmpty()
+  endTime: string;
+
+  @IsOptional()
+  @IsString()
+  reason?: string;
+}
+
 @Controller('public/booking-settings')
 export class PublicBookingDaysController {
   constructor(private readonly days: BookingDaysService) {}
@@ -31,6 +43,27 @@ export class TechnicianBookingDaysController {
   constructor(private readonly days: BookingDaysService) {}
   @Get()
   settings(@Req() req: { user: { technicianId: number } }) { return this.days.settings(req.user.technicianId); }
+  @Get('blocked-slots')
+  listBlockedSlots(
+    @Req() req: { user: { technicianId: number } },
+    @Query('date') date?: string,
+  ) {
+    return this.days.listBlockedSlots(req.user.technicianId, date);
+  }
+  @Post('blocked-slots')
+  createBlockedSlot(
+    @Req() req: { user: { technicianId: number } },
+    @Body() dto: CreateBlockedSlotDto,
+  ) {
+    return this.days.createBlockedSlot(req.user.technicianId, dto);
+  }
+  @Delete('blocked-slots/:id')
+  deleteBlockedSlot(
+    @Req() req: { user: { technicianId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.days.deleteBlockedSlot(req.user.technicianId, id);
+  }
   @Patch('settings')
   updateSettings(@Req() req: { user: { technicianId: number } }, @Body() dto: UpdateBookingSettingsDto) {
     return this.days.updateSettings(req.user.technicianId, dto.quickBookingEnabled);

@@ -58,4 +58,55 @@ describe('BookingDaysService capacity policy', () => {
     await expect(service.updateCapacity(7, 2, 22)).rejects.toBeInstanceOf(BadRequestException);
     await expect(service.updateCapacity(7, 2, 195)).rejects.toBeInstanceOf(BadRequestException);
   });
+
+  describe('manual blocked slots management', () => {
+    it('creates a manual blocked slot when valid and non-conflicting', async () => {
+      const prisma = {
+        order: { findFirst: jest.fn().mockResolvedValue(null) },
+        blockedTimeSlot: {
+          findFirst: jest.fn().mockResolvedValue(null),
+          create: jest.fn().mockImplementation(({ data }) => Promise.resolve({ id: 101, ...data })),
+        },
+      };
+      const service = new BookingDaysService(prisma as never, mutex as never);
+      const res = await service.createBlockedSlot(7, {
+        startTime: '2026-10-30T14:00:00.000Z',
+        endTime: '2026-10-30T16:00:00.000Z',
+        reason: '私人事项',
+      });
+      expect(res.id).toBe(101);
+      expect(res.reason).toBe('私人事项');
+      expect(prisma.blockedTimeSlot.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ techId: 7, reason: '私人事项', orderId: null }),
+      }));
+    });
+
+    it('rejects slot creation if conflicting with existing order', async () => {
+      const prisma = {
+        order: { findFirst: jest.fn().mockResolvedValue({ id: 50, orderNo: 'ORD-50' }) },
+        blockedTimeSlot: { findFirst: jest.fn() },
+      };
+      const service = new BookingDaysService(prisma as never, mutex as never);
+      await expect(
+        service.createBlockedSlot(7, {
+          startTime: '2026-10-30T14:00:00.000Z',
+          endTime: '2026-10-30T16:00:00.000Z',
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('deletes an existing manual slot owned by the technician', async () => {
+      const prisma = {
+        blockedTimeSlot: {
+          findFirst: jest.fn().mockResolvedValue({ id: 101, techId: 7, orderId: null }),
+          delete: jest.fn().mockResolvedValue({ id: 101 }),
+        },
+      };
+      const service = new BookingDaysService(prisma as never, mutex as never);
+      const res = await service.deleteBlockedSlot(7, 101);
+      expect(res).toEqual({ success: true });
+      expect(prisma.blockedTimeSlot.delete).toHaveBeenCalledWith({ where: { id: 101 } });
+    });
+  });
 });
+
