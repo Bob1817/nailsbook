@@ -41,7 +41,11 @@ export class StorageService {
   private readonly logger = new Logger(StorageService.name);
   private ossClient?: OSS;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) {
+    // 限制 sharp 缓存与线程并发，防止低内存容器（512MB 限制）在生成多尺寸变体时触发 OOM
+    sharp.cache(false);
+    sharp.concurrency(1);
+  }
 
   private get useOss(): boolean {
     const provider = this.configService

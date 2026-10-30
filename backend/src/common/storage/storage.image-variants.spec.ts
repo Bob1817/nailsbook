@@ -26,6 +26,8 @@ describe('StorageService image variants', () => {
         get: jest.fn((_key: string, fallback?: unknown) => fallback),
       };
       const service = new StorageService(config as never);
+      expect(sharp.concurrency()).toBe(1);
+      expect(sharp.cache().memory.max).toBe(0);
 
       const result = await service.uploadImage({
         buffer: source,

@@ -44,6 +44,9 @@ export class PrismaService
 
   async onModuleInit() {
     await this.$connect();
+    // SQLite 并发写保护：busy_timeout 防止 SQLITE_BUSY 立即失败，WAL 允许读写并发
+    await this.$queryRawUnsafe('PRAGMA busy_timeout = 5000');
+    await this.$queryRawUnsafe('PRAGMA journal_mode = WAL');
   }
 
   async onModuleDestroy() {
