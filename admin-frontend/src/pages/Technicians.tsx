@@ -4,6 +4,7 @@ import { PlusOutlined, SearchOutlined, EditOutlined, KeyOutlined, CopyOutlined, 
 import { technicianService } from '../services/technician';
 import type { Technician, PaginatedResponse } from '../services/technician';
 import { useAuth } from '../contexts/AuthContext';
+import AdminPageHeader from '../components/AdminPageHeader';
 
 const { Text } = Typography;
 
@@ -204,9 +205,9 @@ const Technicians: React.FC = () => {
       key: 'status',
       render: (status: string) => {
         const colorMap: Record<string, string> = {
-          active: 'default',
+          active: 'success',
           inactive: 'default',
-          suspended: 'default',
+          suspended: 'error',
           deleted: 'default',
         };
         const textMap: Record<string, string> = {
@@ -284,7 +285,18 @@ const Technicians: React.FC = () => {
 
   return (
     <div>
-      <Card>
+      <AdminPageHeader
+        title="美甲师管理"
+        description="管理平台入驻美甲师档案、服务区域、账号状态与邀请码。"
+        extra={
+          hasPermission('technician:create') ? (
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalVisible(true)}>
+              新增美甲师
+            </Button>
+          ) : null
+        }
+      />
+      <Card className="admin-list-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
           <Space>
             <Input

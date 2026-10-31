@@ -21,8 +21,9 @@ import {
   type OfficialEncryptMode,
   type WechatOfficialConfig,
 } from '../services/wechatOfficial';
+import AdminPageHeader from '../components/AdminPageHeader';
 
-const { Title, Paragraph, Text } = Typography;
+const { Paragraph, Text } = Typography;
 const { TextArea } = Input;
 
 /** 生产环境 API 域名，用于把后端返回的相对回调路径补全为可粘贴的完整 URL。 */
@@ -204,13 +205,16 @@ export default function WechatOfficial() {
 
   return (
     <div>
-      <Title level={4}>
-        公众号配置{' '}
-        <StatusTag
-          validAt={data?.validatedAt || null}
-          error={data?.validationError || null}
-        />
-      </Title>
+      <AdminPageHeader
+        title="公众号配置"
+        description="配置微信服务号/订阅号消息推送、自定义菜单与自动回复规则。"
+        extra={
+          <StatusTag
+            validAt={data?.validatedAt || null}
+            error={data?.validationError || null}
+          />
+        }
+      />
       <Alert
         type="info"
         showIcon

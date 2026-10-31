@@ -5,6 +5,7 @@ import { subscriptionService } from '../services/subscription';
 import type { SubscriptionMetrics, SubscriptionPlan, SubscriptionPlanInput, TechnicianSubscription } from '../services/subscription';
 import { technicianService } from '../services/technician';
 import type { Technician } from '../services/technician';
+import AdminPageHeader from '../components/AdminPageHeader';
 
 const Subscriptions: React.FC = () => {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
@@ -189,7 +190,8 @@ const Subscriptions: React.FC = () => {
 
   return (
     <div>
-      <Card>
+      <AdminPageHeader title="订阅管理" description="管理美甲师 SaaS 订阅计划、资源配额与升级指标。" />
+      <Card className="admin-list-card">
         <Tabs items={tabItems} />
       </Card>
 

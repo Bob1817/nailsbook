@@ -4,6 +4,7 @@ import type { ColumnsType } from 'antd/es/table';
 import { CheckOutlined, CloseOutlined, DeleteOutlined, EyeOutlined, StarOutlined } from '@ant-design/icons';
 import { adminWorkService } from '../services/adminWork';
 import type { AdminWork } from '../services/adminWork';
+import AdminPageHeader from '../components/AdminPageHeader';
 
 const placeholderStyle: React.CSSProperties = {
   width: 48,
@@ -12,12 +13,15 @@ const placeholderStyle: React.CSSProperties = {
   background: 'var(--nb-line)',
 };
 
-const publicationLabels: Record<AdminWork['publicationStatus'], string> = {
-  draft: '草稿',
-  pending: '待审核',
-  approved: '已通过',
-  rejected: '已驳回',
+const publicationConfig: Record<AdminWork['publicationStatus'], { label: string; color: string }> = {
+  draft: { label: '草稿', color: 'default' },
+  pending: { label: '待审核', color: 'processing' },
+  approved: { label: '已通过', color: 'success' },
+  rejected: { label: '已驳回', color: 'error' },
 };
+const publicationLabels: Record<AdminWork['publicationStatus'], string> = Object.fromEntries(
+  Object.entries(publicationConfig).map(([k, v]) => [k, v.label])
+) as Record<AdminWork['publicationStatus'], string>;
 
 const Works: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -190,7 +194,10 @@ const Works: React.FC = () => {
       title: '发布状态',
       key: 'publicationStatus',
       width: 96,
-      render: (_, record) => <Tag>{publicationLabels[record.publicationStatus] || record.publicationStatus}</Tag>,
+      render: (_, record) => {
+        const conf = publicationConfig[record.publicationStatus];
+        return <Tag color={conf?.color || 'default'}>{conf?.label || record.publicationStatus}</Tag>;
+      },
     },
     {
       title: '可见',
@@ -244,7 +251,8 @@ const Works: React.FC = () => {
 
   return (
     <div>
-      <Card>
+      <AdminPageHeader title="作品管理" description="审核平台美甲作品、管理首页推荐与可见状态。" />
+      <Card className="admin-list-card">
         <div style={{ marginBottom: 16 }}>
           <Space wrap>
             <Input.Search

@@ -890,7 +890,10 @@ export class TechnicianAuthService {
     if (dto.shopAddresses !== undefined && dto.shopService !== true && serviceFormIssues({ ...technician, ...updateData }, 'shop').length) updateData.shopService = false;
     const next = { ...technician, ...updateData };
     for (const type of ['shop', 'home'] as const) {
-      if ((type === 'shop' ? next.shopService : next.homeService)) {
+      const changed = type === 'shop'
+        ? dto.shopService !== undefined || dto.shopAddresses !== undefined
+        : dto.homeService !== undefined || dto.homeServiceSettings !== undefined;
+      if (changed && (type === 'shop' ? next.shopService : next.homeService)) {
         const issues = serviceFormIssues(next, type);
         if (issues.length) throw new BadRequestException(issues[0]);
       }

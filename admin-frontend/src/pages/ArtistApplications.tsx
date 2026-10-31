@@ -3,11 +3,12 @@ import { Table, Button, Space, Modal, Tabs, Tag, Descriptions, message, Card } f
 import type { ColumnsType } from 'antd/es/table';
 import { artistApplicationService } from '../services/artistApplication';
 import type { ArtistApplication, ApplicationListResponse } from '../services/artistApplication';
+import AdminPageHeader from '../components/AdminPageHeader';
 
 const statusColor: Record<string, string> = {
-  pending: 'default',
-  approved: 'default',
-  rejected: 'default',
+  pending: 'processing',
+  approved: 'success',
+  rejected: 'error',
 };
 
 const statusText: Record<string, string> = {
@@ -151,7 +152,8 @@ const ArtistApplications: React.FC = () => {
 
   return (
     <div>
-      <Card>
+      <AdminPageHeader title="美甲师申请" description="审核外部独立美甲师的入驻申请与资料认证。" />
+      <Card className="admin-list-card">
         <Tabs
           activeKey={status}
           onChange={handleTabChange}

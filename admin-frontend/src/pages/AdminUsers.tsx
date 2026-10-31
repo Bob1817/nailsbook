@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Card, Form, Grid, Input, Modal, Select, Space, Table, Tag, message } from 'antd';
 import { Link } from 'react-router-dom';
+import { PlusOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
 import { adminUserService, type AdminUser, type AdminUserInput } from '../services/adminUser';
 import { adminRoleService, type AdminRole } from '../services/adminRole';
+import AdminPageHeader from '../components/AdminPageHeader';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -48,26 +50,70 @@ export default function AdminUsers() {
       message.error(Array.isArray(detail) ? detail.join('；') : detail || '保存失败，请重试');
     } finally { setSaving(false); }
   };
-  return <div>
-    <Space wrap style={{ marginBottom: 16 }}>
-      <h2 style={{ margin: 0 }}>账号管理</h2>
-      <Button type="primary" onClick={() => edit(null)}>新增子管理员</Button>
-      <Link to="/roles" style={{ display: 'inline-flex', alignItems: 'center', minHeight: 44 }}>配置角色权限</Link>
-      <Button onClick={load} loading={loading}>刷新</Button>
-    </Space>
-    <p>为子管理员分配角色，功能权限由角色统一控制。停用账号或重置密码后，原登录立即失效。</p>
-    {screens.md ? <Table rowKey="id" loading={loading} dataSource={users} columns={[
-      { title: '账号', dataIndex: 'username' },
-      { title: '姓名', dataIndex: 'realName' },
-      { title: '角色', render: (_, user) => user.role.name },
-      { title: '状态', render: (_, user) => user.status === 'active' ? '启用' : '停用' },
-      { title: '操作', render: (_, user) => <Button onClick={() => edit(user)}>编辑</Button> },
-    ]} /> : <Space orientation="vertical" style={{ width: '100%' }}>
-      {users.map(user => <Card key={user.id} title={user.username} extra={<Button onClick={() => edit(user)}>编辑</Button>}>
-        <Space wrap><span>{user.realName}</span><Tag>{user.role.name}</Tag><span>{user.status === 'active' ? '启用' : '停用'}</span></Space>
-      </Card>)}
-      {!loading && users.length === 0 && <p>暂无账号</p>}
-    </Space>}
+  return (
+    <div>
+      <AdminPageHeader
+        title="管理员账号"
+        description="为子管理员分配角色，功能权限由角色统一控制。停用账号或重置密码后，原登录立即失效。"
+        extra={
+          <Space>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => edit(null)}>
+              新增子管理员
+            </Button>
+            <Link to="/roles">
+              <Button icon={<SettingOutlined />}>配置角色权限</Button>
+            </Link>
+            <Button icon={<ReloadOutlined />} onClick={load} loading={loading}>
+              刷新
+            </Button>
+          </Space>
+        }
+      />
+      <Card className="admin-list-card">
+        {screens.md ? (
+          <Table
+            rowKey="id"
+            loading={loading}
+            dataSource={users}
+            columns={[
+              { title: '账号', dataIndex: 'username', render: (text) => <strong>{text}</strong> },
+              { title: '姓名', dataIndex: 'realName' },
+              { title: '角色', render: (_, user) => <Tag color="blue">{user.role.name}</Tag> },
+              {
+                title: '状态',
+                render: (_, user) => (
+                  <Tag color={user.status === 'active' ? 'success' : 'default'}>
+                    {user.status === 'active' ? '启用' : '停用'}
+                  </Tag>
+                ),
+              },
+              {
+                title: '操作',
+                render: (_, user) => (
+                  <Button type="link" size="small" onClick={() => edit(user)}>
+                    编辑
+                  </Button>
+                ),
+              },
+            ]}
+          />
+        ) : (
+          <Space direction="vertical" style={{ width: '100%' }}>
+            {users.map(user => (
+              <Card key={user.id} title={user.username} extra={<Button type="link" size="small" onClick={() => edit(user)}>编辑</Button>}>
+                <Space wrap>
+                  <span>{user.realName}</span>
+                  <Tag color="blue">{user.role.name}</Tag>
+                  <Tag color={user.status === 'active' ? 'success' : 'default'}>
+                    {user.status === 'active' ? '启用' : '停用'}
+                  </Tag>
+                </Space>
+              </Card>
+            ))}
+            {!loading && users.length === 0 && <p style={{ color: 'var(--nb-muted)', textAlign: 'center', margin: '20px 0' }}>暂无账号</p>}
+          </Space>
+        )}
+      </Card>
     <Modal title={editing ? `编辑账号 · ${editing.username}` : '新增子管理员'} open={open}
       onCancel={() => setOpen(false)} onOk={save} confirmLoading={saving} okText="保存" cancelText="取消">
       <Form form={form} layout="vertical">
@@ -82,5 +128,6 @@ export default function AdminUsers() {
         </>}
       </Form>
     </Modal>
-  </div>;
+    </div>
+  );
 }

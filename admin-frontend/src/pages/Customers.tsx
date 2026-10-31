@@ -7,6 +7,7 @@ import type { PaginatedResponse } from '../services/technician';
 import { technicianService } from '../services/technician';
 import type { Technician } from '../services/technician';
 import { useAuth } from '../contexts/AuthContext';
+import AdminPageHeader from '../components/AdminPageHeader';
 
 const { Text } = Typography;
 
@@ -163,7 +164,8 @@ const Customers: React.FC = () => {
 
   return (
     <div>
-      <Card>
+      <AdminPageHeader title="客户管理" description="管理客户档案、绑定美甲师与账号安全状态。" />
+      <Card className="admin-list-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
           <Space>
             <Input

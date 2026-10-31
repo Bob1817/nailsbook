@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Card, Descriptions, Drawer, Empty, Grid, Input, Pagination, Select, Space, Spin, Table, Tag, Typography, message } from 'antd';
+import { Button, Card, Descriptions, Drawer, Empty, Grid, Input, Pagination, Select, Space, Spin, Table, Tag, Typography, message } from 'antd';
 import { useSearchParams } from 'react-router-dom';
 import AdminPageHeader from '../components/AdminPageHeader';
 import { orderService } from '../services/order';
@@ -7,12 +7,24 @@ import type { AdminOrder } from '../services/order';
 import type { PaginatedResponse } from '../services/technician';
 
 const { Text } = Typography;
-const statusLabels: Record<string, string> = {
-  pending_quote: '待美甲师报价', pending_confirm: '待美甲师确认', pending_agree: '待客户确认',
-  pending_client_confirm: '待客户确认', pending_home: '待上门', pending_shop: '待到店',
-  confirmed: '已确认', in_progress: '服务中', completed: '已完成', cancelled: '已取消',
-  rejected: '已拒绝', expired: '已过期', no_show: '未到店',
+const statusConfig: Record<string, { label: string; color: string }> = {
+  pending_quote: { label: '待美甲师报价', color: 'blue' },
+  pending_confirm: { label: '待美甲师确认', color: 'processing' },
+  pending_agree: { label: '待客户确认', color: 'geekblue' },
+  pending_client_confirm: { label: '待客户确认', color: 'geekblue' },
+  pending_home: { label: '待上门', color: 'cyan' },
+  pending_shop: { label: '待到店', color: 'purple' },
+  confirmed: { label: '已确认', color: 'processing' },
+  in_progress: { label: '服务中', color: 'orange' },
+  completed: { label: '已完成', color: 'success' },
+  cancelled: { label: '已取消', color: 'default' },
+  rejected: { label: '已拒绝', color: 'error' },
+  expired: { label: '已过期', color: 'default' },
+  no_show: { label: '未到店', color: 'warning' },
 };
+const statusLabels: Record<string, string> = Object.fromEntries(
+  Object.entries(statusConfig).map(([k, v]) => [k, v.label])
+);
 const money = (fen?: number | null) => fen == null ? '待报价' : `¥${(fen / 100).toFixed(2)}`;
 const dateTime = (value: string) => new Date(value).toLocaleString('zh-CN');
 
@@ -67,10 +79,15 @@ const Orders: React.FC = () => {
     { title: '客户', dataIndex: ['customer', 'name'], key: 'customer' },
     { title: '美甲师', dataIndex: ['technician', 'name'], key: 'technician' },
     { title: '预约时间', dataIndex: 'startTime', key: 'startTime', render: dateTime },
-    { title: '状态', dataIndex: 'status', key: 'status', render: (value: string) => <Tag>{statusLabels[value] || value}</Tag> },
+    { title: '状态', dataIndex: 'status', key: 'status', render: (value: string) => {
+      const conf = statusConfig[value];
+      return <Tag color={conf?.color || 'default'}>{conf?.label || value}</Tag>;
+    } },
     { title: '最终金额', dataIndex: 'finalPriceFen', key: 'finalPriceFen', render: (value: number | null) => <Text strong>{money(value)}</Text> },
     { title: '定金', key: 'deposit', render: (_: unknown, row: AdminOrder) => <span>{row.depositAmount == null ? '-' : `¥${row.depositAmount.toFixed(2)}`} · {row.isDepositPaid ? '已收' : '未收'}</span> },
-    { title: '操作', key: 'action', render: (_: unknown, row: AdminOrder) => <a onClick={() => openDetail(row.id)}>详情</a> },
+    { title: '操作', key: 'action', render: (_: unknown, row: AdminOrder) => (
+      <Button type="link" size="small" onClick={() => openDetail(row.id)}>详情</Button>
+    ) },
   ];
 
   return <div>
@@ -89,7 +106,9 @@ const Orders: React.FC = () => {
                 <button key={order.id} type="button" className="admin-order-mobile" onClick={() => openDetail(order.id)}>
                   <span className="admin-order-mobile__top">
                     <strong>{order.orderNo}</strong>
-                    <Tag>{statusLabels[order.status] || order.status}</Tag>
+                    <Tag color={statusConfig[order.status]?.color || 'default'}>
+                      {statusConfig[order.status]?.label || order.status}
+                    </Tag>
                   </span>
                   <span className="admin-order-mobile__time">{dateTime(order.startTime)}</span>
                   <span className="admin-order-mobile__people">{order.customer.name} · {order.technician.name}</span>

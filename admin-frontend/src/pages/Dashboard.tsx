@@ -20,16 +20,16 @@ const { Text, Title } = Typography;
 
 echarts.use([LineChart, PieChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer]);
 
-const ORDER_STATUS_LABELS: Record<string, string> = {
-  pending_quote: '待报价',
-  pending_agree: '待客户同意',
-  pending_confirm: '待美甲师确认',
-  pending_home: '待上门',
-  pending_shop: '待到店',
-  in_progress: '服务中',
-  completed: '已完成',
-  cancelled: '已取消',
-  expired: '已过期',
+const ORDER_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  pending_quote: { label: '待报价', color: 'blue' },
+  pending_agree: { label: '待客户同意', color: 'geekblue' },
+  pending_confirm: { label: '待确认', color: 'processing' },
+  pending_home: { label: '待上门', color: 'cyan' },
+  pending_shop: { label: '待到店', color: 'purple' },
+  in_progress: { label: '服务中', color: 'orange' },
+  completed: { label: '已完成', color: 'success' },
+  cancelled: { label: '已取消', color: 'default' },
+  expired: { label: '已过期', color: 'default' },
 };
 
 const Dashboard: React.FC = () => {
@@ -110,7 +110,10 @@ const Dashboard: React.FC = () => {
     { title: '美甲师', dataIndex: ['technician', 'name'], key: 'technician' },
     { title: '客户', dataIndex: ['customer', 'name'], key: 'customer' },
     { title: '预约时间', dataIndex: 'startTime', key: 'startTime', render: (value: string) => new Date(value).toLocaleString('zh-CN') },
-    { title: '状态', dataIndex: 'status', key: 'status', render: (status: string) => <Tag>{ORDER_STATUS_LABELS[status] || status}</Tag> },
+    { title: '状态', dataIndex: 'status', key: 'status', render: (status: string) => {
+      const conf = ORDER_STATUS_CONFIG[status];
+      return <Tag color={conf?.color || 'default'}>{conf?.label || status}</Tag>;
+    } },
   ];
   const revenueColumns = [
     { title: '收入编号', dataIndex: 'revenueNo', key: 'revenueNo' },

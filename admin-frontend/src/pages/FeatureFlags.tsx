@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Table, Card, Switch, Tag, Button, Modal, Form, Input, message, Typography } from 'antd';
+import { Table, Card, Switch, Tag, Button, Modal, Form, Input, message } from 'antd';
 import { featureFlagService } from '../services/featureFlag';
 import type { FeatureFlag } from '../services/featureFlag';
-
-const { Title } = Typography;
+import AdminPageHeader from '../components/AdminPageHeader';
 
 export default function FeatureFlags() {
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
@@ -92,8 +91,11 @@ export default function FeatureFlags() {
 
   return (
     <div>
-      <Title level={4} style={{ marginBottom: 16 }}>功能开关管理</Title>
-      <Card>
+      <AdminPageHeader
+        title="功能开关"
+        description="基于订阅套餐或全局控制平台特性的灰度放量与功能可用性。"
+      />
+      <Card className="admin-list-card">
         <Table
           columns={columns}
           dataSource={flags}

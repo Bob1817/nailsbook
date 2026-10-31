@@ -8,6 +8,7 @@ import { adminRoleService } from '../services/adminRole';
 import type { AdminRole } from '../services/adminRole';
 import { adminPermissionService } from '../services/adminPermission';
 import type { GroupedPermissions } from '../services/adminPermission';
+import AdminPageHeader from '../components/AdminPageHeader';
 
 const moduleNameMap: Record<string, string> = {
   account: '账号管理',
@@ -189,13 +190,16 @@ const Roles: React.FC = () => {
 
   return (
     <div>
-      <Card>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-          <span style={{ fontSize: 16, fontWeight: 600 }}>角色管理</span>
+      <AdminPageHeader
+        title="角色权限"
+        description="管理平台管理角色与功能权限树，实现细粒度 RBAC 权限隔离。"
+        extra={
           <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>
             新增角色
           </Button>
-        </div>
+        }
+      />
+      <Card className="admin-list-card">
 
         <Table
           scroll={{ x: 640 }}

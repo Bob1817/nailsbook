@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Alert, Button, Card, Checkbox, Input, Modal, Pagination, Space, Spin, Typography, message } from 'antd';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import AdminPageHeader from '../components/AdminPageHeader';
 
 interface DeletionRequest { id: number; accountId: number; accountType: string; status: string; reason: string; decision?: string; requestedAt: string; events: string }
 interface Detail { request: DeletionRequest; account: { nickname?: string; name?: string; phone: string; status: string } | null; blockers: string[] }
@@ -44,8 +45,11 @@ const AccountDeletions: React.FC = () => {
     } catch (e) { message.error(errorText(e)); }
     finally { setBusy(false); }
   };
-  return <>
-    <Typography.Title level={3}>账号注销申请</Typography.Title>
+  return <div>
+    <AdminPageHeader
+      title="账号注销"
+      description="审核美甲师与客户提交的注销申请，核验履约与未结资金状态后执行。"
+    />
     <Alert message="仅处理本人提交的申请。执行前请通过运营核验流程确认申请人身份，并处理未完成预约和资金事项。普通反馈的“已处理”不代表账号注销。" type="info" />
     {error && <Alert style={{ marginTop: 16 }} message={error} action={<Button onClick={load}>重试</Button>} />}
     <Spin spinning={loading}>
@@ -79,6 +83,6 @@ const AccountDeletions: React.FC = () => {
         </>}
       </Space>}
     </Modal>
-  </>;
+  </div>;
 };
 export default AccountDeletions;

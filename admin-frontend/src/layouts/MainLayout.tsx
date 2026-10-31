@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Avatar, Button, Drawer, Dropdown, Grid, Layout, Menu } from 'antd';
+import { Avatar, Breadcrumb, Button, Drawer, Dropdown, Grid, Layout, Menu, Space, Tag } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   AppstoreOutlined,
@@ -7,6 +7,7 @@ import {
   CrownOutlined,
   DashboardOutlined,
   DollarOutlined,
+  DownOutlined,
   FlagOutlined,
   FormOutlined,
   HistoryOutlined,
@@ -109,6 +110,14 @@ const MainLayout: React.FC = () => {
     if (activeGroup) setOpenGroups([activeGroup]);
   }, [activeGroup, location.pathname]);
 
+  const currentRoute = useMemo(() => {
+    for (const group of navigationGroups) {
+      const item = group.children.find(child => child.key === location.pathname);
+      if (item) return { group, item };
+    }
+    return null;
+  }, [location.pathname]);
+
   const menuItems = useMemo<MenuProps['items']>(() => navigationGroups
     .map(group => {
       const children = group.children.filter(item => {
@@ -125,7 +134,23 @@ const MainLayout: React.FC = () => {
     })
     .filter(Boolean) as MenuProps['items'], [hasPermission, user?.roleCode]);
 
-  const brand = <div className="admin-brand">{collapsed && !mobile ? 'ON' : 'OnlyNail 管理后台'}</div>;
+  const brand = (
+    <div
+      className={`admin-brand ${collapsed && !mobile ? 'is-collapsed' : ''}`}
+      onClick={() => navigate('/')}
+      role="button"
+      tabIndex={0}
+    >
+      <div className="admin-brand-badge">ON</div>
+      {(!collapsed || mobile) && (
+        <div className="admin-brand-info">
+          <span className="admin-brand-title">OnlyNail</span>
+          <span className="admin-brand-tag">SaaS 管理后台</span>
+        </div>
+      )}
+    </div>
+  );
+
   const navigation = (
     <Menu
       theme="dark"
@@ -137,6 +162,7 @@ const MainLayout: React.FC = () => {
       onClick={({ key }) => navigate(key)}
     />
   );
+
   const userMenuItems = {
     items: [
       { key: 'profile', label: user?.realName || user?.username },
@@ -151,7 +177,12 @@ const MainLayout: React.FC = () => {
       {!mobile && (
         <Sider trigger={null} collapsible collapsed={collapsed} width={224} collapsedWidth={80} className="admin-sidebar">
           {brand}
-          {navigation}
+          <div className="admin-sidebar-nav">
+            {navigation}
+          </div>
+          <div className="admin-sidebar-footer">
+            {!collapsed ? <span className="admin-sidebar-ver">v2.4 Pro</span> : null}
+          </div>
         </Sider>
       )}
       <Drawer
@@ -166,18 +197,42 @@ const MainLayout: React.FC = () => {
       </Drawer>
       <Layout className="admin-main" style={{ marginLeft: mobile ? 0 : collapsed ? 80 : 224 }}>
         <Header className="admin-topbar">
-          <Button
-            type="text"
-            aria-label={mobile ? '打开导航' : collapsed ? '展开导航' : '收起导航'}
-            icon={mobile || collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            onClick={() => mobile ? setMobileMenuOpen(true) : setCollapsed(current => !current)}
-          />
-          <Dropdown menu={userMenuItems} placement="bottomRight">
-            <button type="button" className="admin-user-menu">
-              <Avatar icon={<UserOutlined />} />
-              {!mobile && <span>{user?.realName || user?.username}</span>}
-            </button>
-          </Dropdown>
+          <div className="admin-topbar-left">
+            <Button
+              type="text"
+              aria-label={mobile ? '打开导航' : collapsed ? '展开导航' : '收起导航'}
+              icon={mobile || collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() => mobile ? setMobileMenuOpen(true) : setCollapsed(current => !current)}
+              className="admin-collapse-btn"
+            />
+            {!mobile && currentRoute && (
+              <Breadcrumb
+                className="admin-breadcrumb"
+                items={[
+                  { title: currentRoute.group.label },
+                  { title: currentRoute.item.label },
+                ]}
+              />
+            )}
+          </div>
+          <div className="admin-topbar-right">
+            {user?.roleName && !mobile && (
+              <Tag color="default" className="admin-role-badge">
+                {user.roleName}
+              </Tag>
+            )}
+            <Dropdown menu={userMenuItems} placement="bottomRight" arrow>
+              <button type="button" className="admin-user-menu">
+                <Avatar style={{ backgroundColor: 'var(--nb-action)' }} icon={<UserOutlined />} />
+                {!mobile && (
+                  <Space size={4} className="admin-user-name">
+                    <span>{user?.realName || user?.username}</span>
+                    <DownOutlined style={{ fontSize: 10, color: 'var(--nb-control)' }} />
+                  </Space>
+                )}
+              </button>
+            </Dropdown>
+          </div>
         </Header>
         <Content className="admin-content">
           <Outlet />

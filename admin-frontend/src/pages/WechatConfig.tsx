@@ -16,8 +16,9 @@ import {
   wechatConfigService,
   type WechatConfig as WechatConfigData,
 } from '../services/wechatConfig';
+import AdminPageHeader from '../components/AdminPageHeader';
 
-const { Title, Paragraph, Text } = Typography;
+const { Paragraph, Text } = Typography;
 
 function apiErrorMessage(error: unknown) {
   const value = error as { response?: { data?: { message?: string } }; errorFields?: unknown };
@@ -106,7 +107,10 @@ export default function WechatConfig() {
 
   return (
     <div>
-      <Title level={4}>微信能力配置</Title>
+      <AdminPageHeader
+        title="微信能力配置"
+        description="管理微信小程序授权登录与支付商户凭证，提供安全加密存储与连通性自检。"
+      />
       <Alert
         type="info"
         showIcon

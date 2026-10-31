@@ -5,6 +5,7 @@ import type { Revenue, RevenueStatistics } from '../services/revenue';
 import type { PaginatedResponse } from '../services/technician';
 import { technicianService } from '../services/technician';
 import type { Technician } from '../services/technician';
+import AdminPageHeader from '../components/AdminPageHeader';
 
 const { RangePicker } = DatePicker;
 
@@ -83,7 +84,7 @@ const Revenues: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => (
-        <Tag color={status === 'confirmed' ? 'default' : 'default'}>
+        <Tag color={status === 'confirmed' ? 'success' : 'default'}>
           {status === 'confirmed' ? '已确认' : '已作废'}
         </Tag>
       ),
@@ -98,32 +99,60 @@ const Revenues: React.FC = () => {
       title: '操作',
       key: 'action',
       render: (_: unknown, record: Revenue) => (
-        <a onClick={() => { setSelectedRevenue(record); setDetailVisible(true); }}>详情</a>
+        <Button
+          type="link"
+          size="small"
+          onClick={() => {
+            setSelectedRevenue(record);
+            setDetailVisible(true);
+          }}
+        >
+          详情
+        </Button>
       ),
     },
   ];
 
+  const handleExport = () => {
+    const params = new URLSearchParams();
+    if (filters.technicianId) params.set('technicianId', String(filters.technicianId));
+    if (filters.startDate) params.set('startDate', filters.startDate);
+    if (filters.endDate) params.set('endDate', filters.endDate);
+    const base = import.meta.env.VITE_API_URL || '/api/admin';
+    window.open(`${base}/revenues/export?${params.toString()}`, '_blank');
+  };
+
   return (
     <div>
-      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+      <AdminPageHeader
+        title="收入管理"
+        description="按美甲师与结算周期汇总营收数据，支持财务对账与导出。"
+        extra={
+          <Button onClick={handleExport}>
+            导出数据
+          </Button>
+        }
+      />
+
+      <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
         <Col xs={24} sm={8}>
-          <Card>
+          <Card className="admin-metric-card">
             <Statistic title="总收入" value={statistics?.totalRevenue || 0} precision={2} prefix="¥" styles={{ content: { color: 'var(--nb-ink)' } }} />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card>
+          <Card className="admin-metric-card">
             <Statistic title="收入笔数" value={statistics?.count || 0} suffix="笔" />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card>
+          <Card className="admin-metric-card">
             <Statistic title="平均金额" value={statistics?.avgAmount || 0} precision={2} prefix="¥" />
           </Card>
         </Col>
       </Row>
 
-      <Card>
+      <Card className="admin-list-card">
         <div style={{ marginBottom: 16 }}>
           <Space>
             <Select
@@ -142,16 +171,7 @@ const Revenues: React.FC = () => {
                 endDate: dates?.[1]?.format('YYYY-MM-DD'),
               })}
             />
-            <Button
-              onClick={() => {
-                const params = new URLSearchParams();
-                if (filters.technicianId) params.set('technicianId', String(filters.technicianId));
-                if (filters.startDate) params.set('startDate', filters.startDate);
-                if (filters.endDate) params.set('endDate', filters.endDate);
-                const base = import.meta.env.VITE_API_URL || '/api/admin';
-                window.open(`${base}/revenues/export?${params.toString()}`, '_blank');
-              }}
-            >
+            <Button onClick={handleExport}>
               导出 CSV
             </Button>
           </Space>

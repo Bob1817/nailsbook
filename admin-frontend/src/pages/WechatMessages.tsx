@@ -23,8 +23,9 @@ import {
   type WechatOfficialMessageItem,
   type WechatOfficialThread,
 } from '../services/wechatOfficial';
+import AdminPageHeader from '../components/AdminPageHeader';
 
-const { Title, Paragraph, Text } = Typography;
+const { Paragraph, Text } = Typography;
 
 /** 后台列表自动刷新间隔：公众号咨询靠人工看，别让它悄悄堆积。 */
 const REFRESH_INTERVAL_MS = 30_000;
@@ -306,42 +307,17 @@ export default function WechatMessages() {
   );
 
   return (
-    <div style={{ padding: 24 }}>
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <Space
-          align="center"
-          style={{ width: '100%', justifyContent: 'space-between' }}
-        >
-          <Space align="center" size="middle">
-            <Title level={4} style={{ margin: 0 }}>
-              公众号消息
-            </Title>
+    <div>
+      <AdminPageHeader
+        title="公众号消息"
+        description="查看并人工回复微信公众号接入的用户咨询，支持 48 小时窗口客服互动。"
+        extra={
+          <Space>
             <Badge
               count={pendingCount}
               overflowCount={99}
               showZero={false}
               color={colors.action}
-            />
-            <Text type="secondary">
-              {pendingCount > 0
-                ? `${pendingCount} 条待人工处理`
-                : '暂无待处理消息'}
-            </Text>
-          </Space>
-          <Space>
-            <Segmented
-              value={status}
-              onChange={(value) => {
-                setStatus(String(value));
-                setPage(1);
-              }}
-              options={[
-                { label: '待处理', value: 'pending' },
-                { label: '已自动回复', value: 'auto_replied' },
-                { label: '已处理', value: 'handled' },
-                { label: '仅记录', value: 'note' },
-                { label: '全部', value: 'all' },
-              ]}
             />
             <Button
               icon={<ReloadOutlined />}
@@ -351,7 +327,36 @@ export default function WechatMessages() {
               刷新
             </Button>
           </Space>
-        </Space>
+        }
+      />
+      <Card className="admin-list-card">
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <Space
+            align="center"
+            style={{ width: '100%', justifyContent: 'space-between' }}
+          >
+            <Text type="secondary">
+              {pendingCount > 0
+                ? `${pendingCount} 条待人工处理`
+                : '暂无待处理消息'}
+            </Text>
+            <Space>
+              <Segmented
+                value={status}
+                onChange={(value) => {
+                  setStatus(String(value));
+                  setPage(1);
+                }}
+                options={[
+                  { label: '待处理', value: 'pending' },
+                  { label: '已自动回复', value: 'auto_replied' },
+                  { label: '已处理', value: 'handled' },
+                  { label: '仅记录', value: 'note' },
+                  { label: '全部', value: 'all' },
+                ]}
+              />
+            </Space>
+          </Space>
 
         <Alert
           type="info"
@@ -380,6 +385,7 @@ export default function WechatMessages() {
           />
         </Card>
       </Space>
+      </Card>
 
       <Drawer
         title={thread ? `会话 · ${shortOpenId(thread.openId)}` : '会话'}

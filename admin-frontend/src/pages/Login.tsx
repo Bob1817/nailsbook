@@ -30,45 +30,105 @@ const Login: React.FC = () => {
     <div style={{
       minHeight: '100vh',
       display: 'flex',
+      flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
-      background: 'var(--nb-action)',
+      background: 'var(--nb-page)',
+      padding: '24px',
     }}>
-      <Card
-        style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
-        title={
-          <div style={{ textAlign: 'center', fontSize: 24, fontWeight: 'bold' }}>
-            美甲管理系统
+      <div style={{ width: '100%', maxWidth: 420 }}>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{
+            width: 48,
+            height: 48,
+            margin: '0 auto 14px',
+            borderRadius: 12,
+            background: 'var(--nb-action)',
+            color: '#FFFFFF',
+            display: 'grid',
+            placeItems: 'center',
+            fontSize: 20,
+            fontWeight: 800,
+            letterSpacing: -0.5,
+            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15)',
+          }}>
+            ON
           </div>
-        }
-      >
-        <Form
-          name="login"
-          onFinish={handleSubmit}
-          autoComplete="off"
-          size="large"
+          <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--nb-ink)', letterSpacing: -0.4 }}>
+            OnlyNail SaaS
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--nb-secondary)', marginTop: 4 }}>
+            美甲师预约管理系统 · 运营中台
+          </div>
+        </div>
+
+        <Card
+          style={{
+            borderRadius: 16,
+            border: '1px solid var(--nb-line)',
+            boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+          }}
+          styles={{ body: { padding: '32px 28px 24px' } }}
         >
-          <Form.Item
-            name="username"
-            rules={[{ required: true, message: '请输入用户名' }]}
+          <Form
+            name="login"
+            onFinish={handleSubmit}
+            autoComplete="off"
+            layout="vertical"
+            size="large"
           >
-            <Input prefix={<UserOutlined />} placeholder="用户名" />
-          </Form.Item>
+            <Form.Item
+              name="username"
+              label={<span style={{ fontWeight: 500, fontSize: 13 }}>账号</span>}
+              rules={[{ required: true, message: '请输入管理员账号' }]}
+            >
+              <Input
+                prefix={<UserOutlined style={{ color: 'var(--nb-control)' }} />}
+                placeholder="请输入管理员账号"
+                style={{ borderRadius: 8 }}
+              />
+            </Form.Item>
 
-          <Form.Item
-            name="password"
-            rules={[{ required: true, message: '请输入密码' }]}
-          >
-            <Input.Password prefix={<LockOutlined />} placeholder="密码" />
-          </Form.Item>
+            <Form.Item
+              name="password"
+              label={<span style={{ fontWeight: 500, fontSize: 13 }}>密码</span>}
+              rules={[{ required: true, message: '请输入登录密码' }]}
+            >
+              <Input.Password
+                prefix={<LockOutlined style={{ color: 'var(--nb-control)' }} />}
+                placeholder="请输入登录密码"
+                style={{ borderRadius: 8 }}
+              />
+            </Form.Item>
 
-          <Form.Item>
-            <Button type="primary" htmlType="submit" loading={loading} block>
-              登录
-            </Button>
-          </Form.Item>
-        </Form>
-      </Card>
+            <Form.Item style={{ marginTop: 28, marginBottom: 8 }}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={loading}
+                block
+                style={{
+                  height: 42,
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  fontSize: 15,
+                }}
+              >
+                登 录
+              </Button>
+            </Form.Item>
+          </Form>
+        </Card>
+
+        <div style={{
+          textAlign: 'center',
+          marginTop: 24,
+          fontSize: 12,
+          color: 'var(--nb-muted)',
+        }}>
+          OnlyNail Platform © 2026 · 独立美甲师私域预约管理平台
+        </div>
+      </div>
     </div>
   );
 };

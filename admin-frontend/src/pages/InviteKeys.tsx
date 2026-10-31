@@ -19,8 +19,9 @@ import { CopyOutlined, ReloadOutlined, PlusOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { inviteKeyService } from '../services/inviteKey';
 import type { TechnicianInviteKey } from '../services/inviteKey';
+import AdminPageHeader from '../components/AdminPageHeader';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 export default function InviteKeys() {
   const [items, setItems] = useState<TechnicianInviteKey[]>([]);
@@ -186,18 +187,23 @@ export default function InviteKeys() {
 
   return (
     <div>
-      <Card>
+      <AdminPageHeader
+        title="邀请密钥"
+        description="生成一次性邀请密钥发放给美甲师，用于自主注册与账号激活。"
+        extra={
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setCreateOpen(true)}
+          >
+            生成密钥
+          </Button>
+        }
+      />
+      <Card className="admin-list-card">
         <Space
           style={{ marginBottom: 16, justifyContent: 'space-between', width: '100%' }}
         >
-          <Space>
-            <Title level={4} style={{ margin: 0 }}>
-              美甲师邀请密钥
-            </Title>
-            <Text type="secondary">
-              生成密钥发送给已付款的美甲师，用于注册账号（一次性）
-            </Text>
-          </Space>
           <Space>
             <Select
               value={usedFilter}
@@ -214,13 +220,6 @@ export default function InviteKeys() {
             />
             <Button icon={<ReloadOutlined />} onClick={fetchList}>
               刷新
-            </Button>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => setCreateOpen(true)}
-            >
-              生成密钥
             </Button>
           </Space>
         </Space>

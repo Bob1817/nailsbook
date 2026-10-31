@@ -3,6 +3,7 @@ import { Table, Select, message, Card, Modal, Descriptions, DatePicker, Space } 
 import { operationLogService } from '../services/operationLog';
 import type { OperationLog } from '../services/operationLog';
 import type { PaginatedResponse } from '../services/technician';
+import AdminPageHeader from '../components/AdminPageHeader';
 
 const { RangePicker } = DatePicker;
 
@@ -113,7 +114,11 @@ const OperationLogs: React.FC = () => {
 
   return (
     <div>
-      <Card>
+      <AdminPageHeader
+        title="操作日志"
+        description="全量记录管理员与运营人员的关键变更审计日志，支持追踪前后数据对比。"
+      />
+      <Card className="admin-list-card">
         <div style={{ marginBottom: 16 }}>
           <Space wrap>
             <Select

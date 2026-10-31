@@ -4,6 +4,7 @@ import { DeleteOutlined, EyeInvisibleOutlined, EyeOutlined } from '@ant-design/i
 import type { ColumnsType } from 'antd/es/table';
 import { adminCommentService } from '../services/adminComment';
 import type { AdminComment } from '../services/adminComment';
+import AdminPageHeader from '../components/AdminPageHeader';
 
 const { Text } = Typography;
 
@@ -140,7 +141,8 @@ const Comments: React.FC = () => {
 
   return (
     <div>
-      <Card>
+      <AdminPageHeader title="评论管理" description="审核与治理作品评论互动，维护社区良好氛围。" />
+      <Card className="admin-list-card">
         <div style={{ marginBottom: 16 }}>
           <Space>
             <Input.Search

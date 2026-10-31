@@ -43,4 +43,22 @@ describe('service forms and distance pricing', () => {
     await service.updateServiceType(7, { homeService:false });
     expect(prisma.technician.update).toHaveBeenCalledWith(expect.objectContaining({ data: { homeService:false, status:'inactive' } }));
   });
+  it('saves service forms independently without validating or overwriting the other form', async () => {
+    const prisma:any = { technician:{
+      findUnique:jest.fn().mockResolvedValue({id:7,status:'active',homeService:true,shopService:false,shopAddresses:JSON.stringify([{name:'工作室',detailAddress:'服务地址'}])}),
+      update:jest.fn().mockResolvedValue({shopAddresses:null,socialMedia:null})
+    } };
+    const service = new TechnicianAuthService(prisma, {} as never, {} as never, {} as never);
+    await service.updateServiceType(7,{shopService:true});
+    expect(prisma.technician.update).toHaveBeenLastCalledWith(expect.objectContaining({data:{shopService:true}}));
+    prisma.technician.findUnique.mockResolvedValue({id:7,status:'inactive',homeService:false,shopService:true,shopAddresses:'[]'});
+    await service.updateServiceType(7,{homeService:true,homeServiceSettings:config});
+    expect(prisma.technician.update).toHaveBeenLastCalledWith(expect.objectContaining({data:{homeService:true,homeServiceSettings:JSON.stringify(config)}}));
+    await expect(service.updateServiceType(7,{shopService:true})).rejects.toThrow('店铺');
+  });
+  it('publishes fee tiers and coverage without exposing the private origin', () => {
+    expect(publicHomeSettings(config)).toMatchObject({tiers:config.tiers,city:config.city});
+    expect(publicHomeSettings(config)).not.toHaveProperty('origin');
+  });
+
 });

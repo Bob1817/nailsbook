@@ -32,19 +32,73 @@ import Orders from './pages/Orders';
 
 const App: React.FC = () => {
   return (
-    <ConfigProvider locale={zhCN} theme={{ token: {
-      colorPrimary: colors.action,
-      colorInfo: colors.link,
-      colorSuccess: colors.ink,
-      colorWarning: colors.ink,
-      colorError: colors.ink,
-      colorText: colors.ink,
-      colorTextSecondary: colors.secondary,
-      colorBgLayout: colors.page,
-      colorBgContainer: colors.surface,
-      colorBorder: colors.control,
-      controlHeight: 44,
-    } }}>
+    <ConfigProvider
+      locale={zhCN}
+      theme={{
+        token: {
+          colorPrimary: colors.action,
+          colorInfo: '#245EA8',
+          colorSuccess: '#287A4B',
+          colorWarning: '#D4A017',
+          colorError: '#B42332',
+          colorText: colors.ink,
+          colorTextSecondary: colors.secondary,
+          colorBgLayout: colors.page,
+          colorBgContainer: colors.surface,
+          colorBorder: colors.line,
+          colorBorderSecondary: '#ECECEF',
+          borderRadius: 8,
+          borderRadiusLG: 12,
+          borderRadiusSM: 6,
+          controlHeight: 36,
+          controlHeightLG: 42,
+          controlHeightSM: 28,
+          fontSize: 14,
+          fontFamily: `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif`,
+        },
+        components: {
+          Layout: {
+            siderBg: colors.action,
+            headerBg: colors.surface,
+            bodyBg: colors.page,
+          },
+          Menu: {
+            darkItemBg: 'transparent',
+            darkSubMenuItemBg: 'transparent',
+            darkItemSelectedBg: 'rgba(255, 255, 255, 0.12)',
+            darkItemHoverBg: 'rgba(255, 255, 255, 0.06)',
+            darkItemSelectedColor: colors.surface,
+            itemBorderRadius: 8,
+            itemMarginInline: 10,
+            itemHeight: 40,
+          },
+          Card: {
+            borderRadiusLG: 12,
+            headerHeight: 52,
+          },
+          Table: {
+            headerBg: colors.page,
+            headerColor: colors.ink,
+            headerSplitColor: 'transparent',
+            rowHoverBg: colors.pressed,
+            borderRadius: 8,
+          },
+          Button: {
+            borderRadius: 8,
+            fontWeight: 500,
+          },
+          Input: {
+            borderRadius: 8,
+          },
+          Select: {
+            borderRadius: 8,
+          },
+          Tag: {
+            borderRadiusSM: 4,
+          },
+        },
+      }}
+    >
       <BrowserRouter>
         <AuthProvider>
           <Routes>

@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Table, Button, Space, Tag, Tabs, Badge, Typography, message } from 'antd';
+import { Table, Button, Space, Tag, Tabs, Badge, Typography, message, Card } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { adminReportService, REASON_MAP } from '../services/adminReport';
 import type { AdminReport } from '../services/adminReport';
+import AdminPageHeader from '../components/AdminPageHeader';
 
 const { Text } = Typography;
 
@@ -101,40 +102,43 @@ const Reports: React.FC = () => {
 
   return (
     <div>
-      <Tabs
-        activeKey={status}
-        onChange={(key) => {
-          setStatus(key as 'pending' | 'dismissed');
-          setPage(1);
-        }}
-        items={[
-          {
-            key: 'pending',
-            label: (
-              <Badge count={pendingCount} offset={[8, 0]}>
-                待处理
-              </Badge>
-            ),
-          },
-          {
-            key: 'dismissed',
-            label: '已驳回',
-          },
-        ]}
-      />
-      <Table
-        columns={columns}
-        dataSource={items}
-        rowKey="id"
-        loading={loading}
-        pagination={{
-          current: page,
-          pageSize: 20,
-          total,
-          showTotal: (t) => `共 ${t} 条`,
-          onChange: (p) => setPage(p),
-        }}
-      />
+      <AdminPageHeader title="举报队列" description="审核并处理客户关于作品或违规内容的举报投诉。" />
+      <Card className="admin-list-card">
+        <Tabs
+          activeKey={status}
+          onChange={(key) => {
+            setStatus(key as 'pending' | 'dismissed');
+            setPage(1);
+          }}
+          items={[
+            {
+              key: 'pending',
+              label: (
+                <Badge count={pendingCount} offset={[8, 0]}>
+                  待处理
+                </Badge>
+              ),
+            },
+            {
+              key: 'dismissed',
+              label: '已驳回',
+            },
+          ]}
+        />
+        <Table
+          columns={columns}
+          dataSource={items}
+          rowKey="id"
+          loading={loading}
+          pagination={{
+            current: page,
+            pageSize: 20,
+            total,
+            showTotal: (t) => `共 ${t} 条`,
+            onChange: (p) => setPage(p),
+          }}
+        />
+      </Card>
     </div>
   );
 };

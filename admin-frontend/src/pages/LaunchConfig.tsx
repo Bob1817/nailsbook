@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Card, Col, Descriptions, Form, Input, Row, Select, Space, Tag, Typography, message } from 'antd';
 import { technicianService, type Technician } from '../services/technician';
 import { wechatConfigService, type LaunchConfig as LaunchConfigData, type UpdateLaunchConfig } from '../services/wechatConfig';
+import AdminPageHeader from '../components/AdminPageHeader';
 
-const { Title, Paragraph, Text } = Typography;
+const { Paragraph, Text } = Typography;
 
 const CHECK_LABELS: Record<string, string> = {
   operatorName: '运营主体', storeName: '门店主体', storeAddress: '门店地址',
@@ -77,7 +78,16 @@ export default function LaunchConfig() {
   };
 
   return <div>
-    <Title level={4}>首期上线配置</Title>
+    <AdminPageHeader
+      title="首期上线配置"
+      description="配置小程序合规主体信息、单美甲师绑定与订阅消息通知模板 ID。"
+      extra={
+        <Space>
+          <Button onClick={load} loading={loading}>刷新</Button>
+          <Button type="primary" onClick={save} loading={saving} disabled={!config?.launchModeLocked}>保存配置</Button>
+        </Space>
+      }
+    />
     <Alert showIcon type={config?.launchModeLocked ? 'info' : 'error'}
       message={config?.launchModeLocked ? '服务器已锁定首期合规模式' : '服务器未启用首期合规模式，禁止保存'}
       description="此页不能开启支付、上门服务或多商户。AppSecret 仍在“微信能力配置”中加密管理。"

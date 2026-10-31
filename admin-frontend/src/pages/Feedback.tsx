@@ -11,10 +11,12 @@ import {
   Modal,
   Input,
   Descriptions,
+  Card,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { adminFeedbackService, SOURCE_MAP } from '../services/adminFeedback';
 import type { AdminFeedback } from '../services/adminFeedback';
+import AdminPageHeader from '../components/AdminPageHeader';
 
 const { Text, Paragraph } = Typography;
 
@@ -99,7 +101,7 @@ const Feedback: React.FC = () => {
       key: 'sourceType',
       width: 90,
       render: (s: string) => (
-        <Tag color={s === 'technician' ? 'default' : 'default'}>
+        <Tag color={s === 'technician' ? 'purple' : 'blue'}>
           {SOURCE_MAP[s] ?? s}
         </Tag>
       ),
@@ -195,53 +197,57 @@ const Feedback: React.FC = () => {
 
   return (
     <div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <Tabs
-          activeKey={status}
-          onChange={(key) => {
-            setStatus(key as 'pending' | 'processing' | 'resolved');
-            setPage(1);
+      <AdminPageHeader title="问题反馈" description="查看美甲师和客户提交的使用反馈、建议与技术咨询。" />
+      <Card className="admin-list-card">
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 16,
           }}
-          items={[
-            { key: 'pending', label: '待处理' },
-            { key: 'processing', label: '处理中' },
-            { key: 'resolved', label: '已回复' },
-          ]}
-        />
-        <Select
-          allowClear
-          placeholder="来源筛选"
-          style={{ width: 140 }}
-          value={sourceType}
-          onChange={(v) => {
-            setSourceType(v);
-            setPage(1);
+        >
+          <Tabs
+            activeKey={status}
+            onChange={(key) => {
+              setStatus(key as 'pending' | 'processing' | 'resolved');
+              setPage(1);
+            }}
+            items={[
+              { key: 'pending', label: '待处理' },
+              { key: 'processing', label: '处理中' },
+              { key: 'resolved', label: '已回复' },
+            ]}
+          />
+          <Select
+            allowClear
+            placeholder="来源筛选"
+            style={{ width: 140 }}
+            value={sourceType}
+            onChange={(v) => {
+              setSourceType(v);
+              setPage(1);
+            }}
+            options={[
+              { value: 'client', label: '用户' },
+              { value: 'technician', label: '美甲师' },
+            ]}
+          />
+        </div>
+        <Table
+          columns={columns}
+          dataSource={items}
+          rowKey="id"
+          loading={loading}
+          pagination={{
+            current: page,
+            pageSize: 20,
+            total,
+            showTotal: (t) => `共 ${t} 条`,
+            onChange: (p) => setPage(p),
           }}
-          options={[
-            { value: 'client', label: '用户' },
-            { value: 'technician', label: '美甲师' },
-          ]}
         />
-      </div>
-      <Table
-        columns={columns}
-        dataSource={items}
-        rowKey="id"
-        loading={loading}
-        pagination={{
-          current: page,
-          pageSize: 20,
-          total,
-          showTotal: (t) => `共 ${t} 条`,
-          onChange: (p) => setPage(p),
-        }}
-      />
+      </Card>
       <Modal title="反馈详情与回复" open={!!detail} onCancel={() => !saving && setDetail(null)}
         onOk={saveReply} okText="保存并回传" cancelText="取消" confirmLoading={saving} width={720}>
         {detail && (
