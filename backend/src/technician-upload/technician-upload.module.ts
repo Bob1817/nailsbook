@@ -8,5 +8,6 @@ import { PrismaModule } from '../common/prisma/prisma.module';
   imports: [SubscriptionsModule, PrismaModule],
   controllers: [TechnicianUploadController],
   providers: [TechnicianUploadService],
+  exports: [TechnicianUploadService],
 })
 export class TechnicianUploadModule {}

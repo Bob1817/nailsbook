@@ -1,3 +1,6 @@
+import { WorkSyncController } from './work-sync.controller';
+import { WorkSyncService } from './work-sync.service';
+import { TechnicianUploadModule } from '../technician-upload/technician-upload.module';
 import { ArtistInvitationController } from './artist-invitation.controller';
 import { ArtistInteractionsController } from './artist-interactions.controller';
 import { Module } from '@nestjs/common';
@@ -16,9 +19,10 @@ import { PublicBrandService } from './public-brand.service';
 import { ClientArtistHomepageInteractionsController } from './client-artist-homepage-interactions.controller';
 
 @Module({
-  imports: [PrismaModule, SubscriptionsModule],
+  imports: [PrismaModule, SubscriptionsModule, TechnicianUploadModule],
   controllers: [
     TechnicianWorksController,
+    WorkSyncController,
     ArtistInteractionsController,
     ArtistInvitationController,
     PublicWorksController,
@@ -29,7 +33,7 @@ import { ClientArtistHomepageInteractionsController } from './client-artist-home
     ReviewsController,
     PublicBrandController,
   ],
-  providers: [TechnicianWorksService, WorkShareCodeService, PublicBrandService],
+  providers: [WorkSyncService, TechnicianWorksService, WorkShareCodeService, PublicBrandService],
   exports: [WorkShareCodeService],
 })
 export class TechnicianWorksModule {}
