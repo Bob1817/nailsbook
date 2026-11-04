@@ -1,0 +1,245 @@
+@import '../../../styles/booking-actions.wxss';
+
+page { background: var(--bg-page); }
+
+.page {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: var(--space-md) var(--space-md) calc(var(--space-2xl) + env(safe-area-inset-bottom));
+}
+
+.poster-intro,
+.editor-card,
+.history-card {
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+}
+
+.tool-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.section-title,
+.tool-title {
+  display: block;
+  color: var(--text-primary);
+  font-weight: var(--weight-semibold);
+}
+
+.section-title {
+  font-size: var(--font-md);
+}
+
+.tool-desc {
+  display: block;
+  color: var(--text-muted);
+  font-size: var(--font-xs);
+  line-height: 1.5;
+}
+
+.reload-btn,
+.text-btn,
+.material-row {
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+
+.reload-btn::after,
+.text-btn::after,
+.secondary-btn::after,
+.primary-btn::after,
+.material-row::after {
+  border: 0;
+}
+
+.reload-btn,
+.text-btn {
+  min-height: 44px;
+  padding: 0 20rpx;
+  color: var(--nb-text-link);
+  font-size: var(--font-sm);
+  line-height: 44px;
+}
+
+.tool-icon {
+  width: 64rpx;
+  height: 64rpx;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--nb-soft-surface);
+}
+
+.tool-icon-image {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+.tool-title {
+  font-size: var(--font-sm);
+}
+
+.tool-desc {
+  margin-top: 6rpx;
+}
+
+.poster-intro {
+  min-height: 112rpx;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: var(--space-md) 28rpx;
+}
+
+.editor-card,
+.history-card {
+  margin-top: 20rpx;
+  padding: var(--space-lg);
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.text-btn {
+  padding-right: 0;
+}
+
+.field-label {
+  display: block;
+  margin: 28rpx 0 12rpx;
+  color: var(--text-body);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.field-input {
+  height: var(--input-height);
+  min-height: 44px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: var(--input-radius);
+  background: var(--nb-soft-surface);
+  padding: 0 var(--input-padding-h);
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+}
+
+.form-placeholder {
+  color: var(--nb-muted);
+  font-size: var(--font-sm);
+}
+
+.field-row,
+.editor-actions {
+  display: flex;
+  gap: 20rpx;
+}
+
+.field-half {
+  flex: 1;
+  min-width: 0;
+}
+
+.poster-preview {
+  display: block;
+  width: 100%;
+  margin-top: 28rpx;
+  border-radius: var(--radius-md);
+  background: var(--bg-page);
+}
+
+.editor-actions {
+  margin-top: var(--space-lg);
+}
+
+.secondary-btn,
+.primary-btn {
+  flex: 1;
+  min-height: 44px;
+  margin: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
+  line-height: 44px;
+}
+
+.secondary-btn {
+  background: var(--nb-soft-surface);
+  color: var(--text-primary);
+}
+
+.primary-btn {
+  background: var(--nb-action);
+  color: var(--text-inverse);
+}
+
+.history-card .section-title {
+  margin-bottom: 20rpx;
+}
+
+.empty-text {
+  display: block;
+  color: var(--text-muted);
+  font-size: var(--font-sm);
+  line-height: 1.6;
+}
+
+.empty-text .reload-btn {
+  margin-top: 12rpx;
+  padding-left: 0;
+}
+
+.material-row {
+  width: 100%;
+  min-height: 104rpx;
+  padding: var(--space-sm) 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.material-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.material-title {
+  display: block;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.material-meta {
+  display: block;
+  margin-top: var(--space-xs);
+  color: var(--text-muted);
+  font-size: var(--font-sm);
+}
+
+.material-edit {
+  margin-left: 20rpx;
+  color: var(--nb-text-link);
+  font-size: var(--font-sm);
+}
+
+@media (max-width: 360px) {.field-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}

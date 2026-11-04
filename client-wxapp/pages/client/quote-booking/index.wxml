@@ -3,9 +3,27 @@
   <view wx:if="{{loading}}" class="state">正在准备预约信息…</view>
   <view wx:elif="{{error}}" class="state error"><text>{{error}}</text><button bindtap="load">重新加载</button><text class="state-exit" hover-class="link-pressed" bindtap="goHome">进入小程序首页 ›</text></view>
   <block wx:else>
-    <view class="quote-summary"><text class="summary-eyebrow">已确认 OnlyNail 报价</text><text class="summary-title">{{quote.technicianName}} · {{quote.shopName || '美甲工作室'}}</text><view class="summary-lines"><view wx:for="{{quote.lines}}" wx:key="id" class="summary-line"><text>{{item.nameSnapshot}} × {{item.quantity}}</text><text>¥{{item.subtotalFen / 100}}</text></view></view><view class="summary-row"><text>客户</text><text>{{client ? client.displayName : '授权登录后自动带入'}}</text></view><text class="summary-total">¥{{quote.finalPriceFen / 100}} · 预计 {{quote.totalDurationMinutes}} 分钟</text></view>
-    <view class="time-card"><view class="heading"><text>选择日期和时间</text><text>项目、店铺和价格已由报价单带入</text></view><booking-time-picker horizontal tech-id="{{quote.technicianId}}" service-date="{{serviceDate}}" start-time="{{startTime}}" service-type="shop" shop-name="{{quote.shopName}}" duration-minutes="{{quote.totalDurationMinutes}}" bindchange="onBookingTimeChange"/></view>
+    <view class="quote-summary"><text class="summary-eyebrow">已确认 OnlyNail 报价</text><text class="summary-title">{{quote.technicianName}} · {{quote.serviceType === '上门美甲' ? '上门美甲服务' : (quote.shopName || '美甲工作室')}}</text><view class="summary-lines"><view wx:for="{{quote.lines}}" wx:key="id" class="summary-line"><text>{{item.nameSnapshot}} × {{item.quantity}}</text><text>¥{{item.subtotalFen / 100}}</text></view></view><view class="summary-row"><text>客户</text><text>{{client ? client.displayName : '授权登录后自动带入'}}</text></view><text class="summary-total">¥{{quote.finalPriceFen / 100}} · 预计 {{quote.totalDurationMinutes}} 分钟</text></view>
+    <view wx:if="{{quote.serviceType === '上门美甲'}}" class="address-card">
+      <view class="heading">
+        <text>上门服务地址</text>
+        <text class="address-change-btn" bindtap="chooseAddress" hover-class="link-pressed">{{selectedAddress ? '更换地址' : '选择地址'}}</text>
+      </view>
+      <address-card wx:if="{{selectedAddress}}" address="{{selectedAddress}}" edit-action bindselect="chooseAddress" bindedit="editSelectedAddress"/>
+      <view wx:else class="address-empty" bindtap="chooseAddress" hover-class="control-pressed">
+        <image class="address-icon" src="/static/icons/pin.svg" mode="aspectFit" />
+        <text class="address-empty-text">点击添加或选择上门服务地址</text>
+        <image class="address-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
+      </view>
+      <view class="home-city-hint-bar"><text>{{homeQuoteLoading ? '正在计算上门费…' : (homeQuote ? '直线 ' + homeQuote.distanceKm + 'km，上门费 ¥' + homeQuote.feeText + '，含上门费合计 ¥' + homeQuote.totalText : homeQuoteError)}}</text></view>
+      <button wx:if="{{homeQuoteError}}" bindtap="refreshHomeQuote">重新计算上门费</button>
+      <view wx:if="{{homeCityHint && homeCityHint.hintText && !homeQuote}}" class="home-city-hint-bar {{homeCityHint.isCrossCity ? 'is-cross' : (homeCityHint.isSameCity ? 'is-same' : '')}}">
+        <image class="home-city-hint-icon" src="/static/icons/pin.svg" mode="aspectFit" />
+        <text class="home-city-hint-text">{{homeCityHint.hintText}}</text>
+      </view>
+    </view>
+    <view class="time-card"><view class="heading"><text>选择日期和时间</text><text>{{quote.serviceType === '上门美甲' ? '按美甲师可预约时间选择' : '项目、店铺和价格已由报价单带入'}}</text></view><booking-time-picker horizontal tech-id="{{quote.technicianId}}" service-date="{{serviceDate}}" start-time="{{startTime}}" service-type="{{quote.serviceType === '上门美甲' ? 'home' : 'shop'}}" shop-name="{{quote.serviceType === '上门美甲' ? '' : quote.shopName}}" duration-minutes="{{quote.totalDurationMinutes}}" bindchange="onBookingTimeChange"/></view>
     <view class="home-exit"><text class="state-exit" hover-class="link-pressed" bindtap="goHome">进入小程序首页 ›</text></view>
   </block>
 </view>
-<view wx:if="{{quote}}" class="submit-bar"><button class="primary" bindtap="submit" loading="{{submitting}}" disabled="{{!startTime || submitting}}">确认预约</button></view>
+<bottom-action-bar class="page-actions" wx:if="{{quote}}" primary-label="确认预约" loading="{{submitting}}" disabled="{{!startTime || (quote.serviceType === '上门美甲' && (!selectedAddressId || !homeQuote || homeQuoteLoading || homeQuoteError))}}" bindprimary="submit"/>

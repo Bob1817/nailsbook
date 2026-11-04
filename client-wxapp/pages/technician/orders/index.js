@@ -1,3 +1,4 @@
+const bookingRealtime = require('../../../utils/booking-realtime');
 const api = require('../../../services/api');
 const {
   parseDate,
@@ -38,6 +39,7 @@ function periodTotals(relation, totals) {
 }
 
 Page({
+  onBookingChanged() { return this.loadOrders({ silent: true }); },
   onBookingCardOpen: technicianBookingCardHandlers.onBookingCardOpen,
   onBookingCardQuote: technicianBookingCardHandlers.onBookingCardQuote,
   onBookingCardWithdrawQuote: technicianBookingCardHandlers.onBookingCardWithdrawQuote,
@@ -47,6 +49,9 @@ Page({
   onBookingCardComplete: technicianBookingCardHandlers.onBookingCardComplete,
   onBookingCardRebook: technicianBookingCardHandlers.onBookingCardRebook,
   onBookingCardConfirmed: technicianBookingCardHandlers.onBookingCardConfirmed,
+  onBookingCardRecord: technicianBookingCardHandlers.onBookingCardRecord,
+  onBookingCardUploadWork: technicianBookingCardHandlers.onBookingCardUploadWork,
+  onBookingCardViewWork: technicianBookingCardHandlers.onBookingCardViewWork,
   data: {
     bookingDayReady: false,
     dayAccepting: true,
@@ -102,6 +107,7 @@ Page({
   },
 
   onShow() {
+    bookingRealtime.start();
     if (wx.getStorageSync('role') !== 'technician') return;
     if (!this.data.loading) this.loadOrders();
   },
@@ -111,13 +117,13 @@ Page({
   },
 
   // ---------- 数据加载 ----------
-  async loadOrders() {
+  async loadOrders(options = {}) {
     if (wx.getStorageSync('role') !== 'technician') {
       this.setData({ loading: false });
       wx.reLaunch({ url: '/pages/login/index' });
       return;
     }
-    this.setData({ loading: true });
+    if (!options.silent) this.setData({ loading: true });
     this.loadBookingDays();
     try {
       const [res, calendarResult, technicianProfile] = await Promise.all([
@@ -176,6 +182,7 @@ Page({
       });
       this._recompute();
     } catch (err) {
+      if (options.silent) throw err;
       this.setData({ loading: false });
       wx.showToast({ title: err.message || '加载失败', icon: 'none' });
     }

@@ -21,9 +21,9 @@ assert(homeWxml.includes('wx:if="{{isOwner}}" class="owner-menu"'), '本人编�
 assert(homeWxml.includes('class="artist-hero-sticky" style="top: {{navBarHeight}}px;"'), '主页背景图与美甲师信息必须按实际导航栏高度整体吸顶');
 assert.match(homeWxml, /class="artist-hero-sticky"[\s\S]*class="banner-section"[\s\S]*class="artist-sticky \{\{isOwner \? 'has-owner-menu' : ''\}\}"/, '整体吸顶容器必须同时包含主页背景图和美甲师信息');
 assert.match(homeWxss, /\.artist-hero-sticky\s*\{[^}]*position:\s*sticky;[^}]*z-index:\s*90;/s, '主页头部整体必须保持吸顶');
-assert.match(homeWxss, /\.artist-sticky\s*\{[^}]*min-height:\s*156rpx;[^}]*margin-top:\s*-156rpx;[^}]*padding:\s*12rpx\s+40rpx\s+32rpx;/s, '美甲师信息必须覆盖背景图并与底部边界保留明确间距');
+assert.match(homeWxss, /\.artist-sticky\s*\{[^}]*min-height:\s*168rpx;[^}]*margin-top:\s*-168rpx;[^}]*padding:\s*12rpx\s+var\(--space-xl\)\s+44rpx;/s, '美甲师信息必须覆盖背景图并与底部边界保留明确间距');
 assert.match(homeWxss, /\.artist-sticky\s*\{[^}]*background:\s*transparent;/s, '美甲师信息区必须融入背景图，不得使用独立纯色块');
-assert.match(homeWxss, /\.banner-gradient\s*\{[^}]*linear-gradient\([^;]*rgba\(0, 0, 0, 0\.82\) 100%\);/s, '背景图底部必须使用渐深遮罩保证信息可读性');
+assert.match(homeWxss, /\.banner-gradient\s*\{[^}]*linear-gradient\([^;]*rgba\(0, 0, 0, 0\.86\) 100%\);/s, '背景图底部必须使用渐深遮罩保证信息可读性');
 assert(homeJs.includes('wx.getMenuButtonBoundingClientRect()') && homeJs.includes('this.setData({ navBarHeight })'), '吸顶位置必须适配微信导航栏和设备安全区');
 assert(!homeJs.includes('wx.showActionSheet'), '主页管理菜单不得继续使用字号和留白不可控的系统 ActionSheet');
 assert(homeJs.includes('showOwnerMenuSheet: false') && homeWxml.includes('wx:if="{{showOwnerMenuSheet}}"'), '主页管理操作必须使用项目内的紧凑底部菜单');
@@ -79,8 +79,8 @@ assert(homeWxml.includes('class="shop-actions"') && homeWxml.includes('bindtap="
 assert.match(homeWxss, /\.shop-summary-image\s*\{[^}]*height:\s*360rpx;/s, '店铺摘要必须优先展示足够高度的环境图片');
 assert.equal((homeWxml.match(/class="detail-icon-wrap"/g) || []).length, 2, '店铺地址与营业时间图标必须使用统一固定列');
 assert.match(homeWxss, /\.detail-icon-wrap\s*\{[^}]*width:\s*32rpx;[^}]*min-height:\s*38rpx;[^}]*align-items:\s*center;/s, '店铺图标必须与首行文字垂直居中');
-assert.match(homeWxss, /\.shop-info\s*\{[^}]*padding:\s*24rpx\s+32rpx\s+20rpx;/s, '店铺按钮下方必须使用紧凑留白');
-assert.match(homeWxss, /\.shop-detail-row\s*\{[^}]*margin-bottom:\s*16rpx;/s, '店铺信息行之间必须保留可读间距');
+assert.match(homeWxss, /\.shop-info\s*\{[^}]*padding:\s*var\(--space-md\)\s+var\(--space-lg\)\s+20rpx;/s, '店铺按钮下方必须使用紧凑留白');
+assert.match(homeWxss, /\.shop-detail-row\s*\{[^}]*margin-bottom:\s*var\(--space-sm\);/s, '店铺信息行之间必须保留可读间距');
 assert.match(homeWxss, /\.shop-actions\s*\{[^}]*margin-top:\s*20rpx;/s, '店铺信息与操作按钮之间必须保留明确间距');
 assert.match(homeWxss, /\.profile-detail-panel\s*\{[^}]*max-height:\s*82vh;/s, '主页详情弹窗必须限制高度并在内部滚动');
 assert.match(homeWxss, /\.profile-detail-close\s*\{[^}]*min-height:\s*44px;/s, '主页详情弹窗关闭入口必须满足触控尺寸');
@@ -93,7 +93,7 @@ assert(editorWxml.includes('均为选填') && editorWxml.includes('未填写的�
 assert(homeWxml.includes('wx:if="{{timeline.length || qualifications.length}}"'), '空的履历模块不得展示');
 assert(homeWxml.includes('wx:if="{{featuredComments.length}}"'), '空的精选评论模块不得展示');
 assert(homeWxml.includes('wx:if="{{works.length}}"'), '空的精选作品模块不得展示');
-assert(homeWxml.includes('<work-card work="{{item}}" show-artist="{{false}}" bind:cardtap="viewWork"'), '主页精选作品必须复用标准作品卡片的公开展示形态');
+assert(homeWxml.includes('<work-card variant="minimal" work="{{item}}" bind:cardtap="viewWork"'), '主页精选作品必须复用标准作品卡片的公开展示形态');
 assert(!homeWxml.includes('gallery-item') && !homeWxss.includes('.gallery-item'), '主页不得继续维护独立作品卡片结构和样式');
 assert(homeJs.includes('const useHomepageDefaults = brand.featuredServiceIds == null'), '公开主页必须识别尚未配置展示选择的状态');
 assert(homeJs.includes('api.public.brands.works(this.data.artistId') && homeJs.includes('worksRes.items || worksRes.works'), '主页精选作品必须从支持美甲师身份的品牌作品接口读取并兼容分页结构');

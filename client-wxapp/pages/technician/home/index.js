@@ -1,3 +1,4 @@
+const bookingRealtime = require('../../../utils/booking-realtime');
 const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
 const {
@@ -24,16 +25,21 @@ const {
   hasAddressIssue,
   buildDashboardSummary
 } = require('../../../utils/order');
+const { buildThumbnail } = require('../../../utils/cdn-image');
 
 Page({
+  onBookingChanged() { return this.loadDashboard({ silent: true }); },
   data: {
     loading: true,
     isTourist: false,
     nextOrder: null,
 
     todoItems: [],
+    todoSummaryItems: [],
     confirmationTodos: [],
     todoTotal: 0,
+    pendingTotal: 0,
+    todoSummaryText: '',
     actionTasks: [],
     businessOverview: null,
 
@@ -60,6 +66,7 @@ Page({
   },
 
   onShow() {
+    bookingRealtime.start();
     if (wx.getStorageSync('role') !== 'technician') return;
     const tourist = isTouristTechnician();
     const shareProfile = wx.getStorageSync('technician_userInfo') || wx.getStorageSync('userInfo') || {};
@@ -81,15 +88,15 @@ Page({
   },
 
   // ---------- 主数据加载 ----------
-  async loadDashboard() {
+  async loadDashboard(options = {}) {
     if (this._dashboardLoading) return;
     this._dashboardLoading = true;
-    this.setData({ loading: true });
+    if (!options.silent) this.setData({ loading: true });
 
     try {
       const [tripsResult, ordersResult, convResult, worksResult, insights, incomeCalendar, reminderResult, actionTasksResult] = await Promise.all([
-        api.technician.orders.trips().catch(() => []),
-        api.technician.orders.list().catch(() => []),
+        api.technician.orders.trips().catch(error => { if (options.silent) throw error; return []; }),
+        api.technician.orders.list().catch(error => { if (options.silent) throw error; return []; }),
         api.chat.technician.conversations().catch(() => []),
         api.technician.works.list().catch(() => []),
         api.technician.insights.overview().catch(() => null),
@@ -118,6 +125,45 @@ Page({
         : null;
 
       const unread = convs.reduce((s, c) => s + (c.unreadCount || 0), 0);
+      const unreadConversations = convs
+        .filter((c) => (c.unreadCount || 0) > 0)
+        .sort((a, b) => {
+          const ta = new Date(a.lastMessage?.createdAt || a.updatedAt || 0).getTime();
+          const tb = new Date(b.lastMessage?.createdAt || b.updatedAt || 0).getTime();
+          return tb - ta;
+        })
+        .slice(0, 2)
+        .map((c) => {
+          const client = c.client || {};
+          const clientName = client.nickname || client.phone || '客户';
+          const last = c.lastMessage || {};
+          let preview = '点击查看消息';
+          if (last.messageType === 'image') {
+            preview = '[图片]';
+          } else if (last.content) {
+            preview = last.content;
+          }
+          let timeStr = '';
+          const timeVal = last.createdAt || c.updatedAt;
+          if (timeVal) {
+            const d = new Date(timeVal);
+            if (!isNaN(d.getTime())) {
+              const hours = String(d.getHours()).padStart(2, '0');
+              const mins = String(d.getMinutes()).padStart(2, '0');
+              timeStr = `${hours}:${mins}`;
+            }
+          }
+          return {
+            conversationId: c.id,
+            clientId: client.id || c.clientId || '',
+            clientName,
+            clientAvatar: client.avatarUrl || '',
+            _avatarChar: clientName.charAt(0) || '客',
+            preview,
+            time: timeStr,
+            unreadCount: c.unreadCount || 1
+          };
+        });
       const technicianProfile = wx.getStorageSync('userInfo') || wx.getStorageSync('technician_userInfo') || {};
       const configuredShops = Array.isArray(technicianProfile.shopAddresses) ? technicianProfile.shopAddresses : [];
       const configuredShop = configuredShops.find((shop) => shop && shop.enabled !== false);
@@ -137,20 +183,38 @@ Page({
         if (hours >= 1) return `还有 ${hours}小时${minutes}分`;
         return `还有 ${minutes}分钟`;
       };
+      function cleanDisplayAddress(addr, shopName) {
+        var s = String(addr || '')
+          .replace(/^(浙江省|广东省|江苏省|北京市|上海市|[\u4e00-\u9fa5]{2,6}(省|自治区|特别行政区))\s*/g, '')
+          .replace(/^([\u4e00-\u9fa5]{2,6}市)\s*/g, '')
+          .replace(/^([\u4e00-\u9fa5]{2,6}(区|县|市))\s*/g, '')
+          .replace(/^([\u4e00-\u9fa5]{2,6}市)\s*/g, '')
+          .trim();
+        if (shopName) {
+          return s ? `${shopName} · ${s}` : shopName;
+        }
+        return s || addr || '';
+      }
       const decorate = (o) => {
         const pres = resolveOrderPresentation(o);
         const stateMeta = getOrderStateMeta(o.status);
         const startDate = parseDate(o.startTime);
         const hoursUntilStart = startDate ? (startDate.getTime() - Date.now()) / 3600000 : Infinity;
         const depositAmount = Number(o.depositAmount || 0);
+        const rawCover = o.coverUrl || (o.sourceWork && (o.sourceWork.coverUrl || (Array.isArray(o.sourceWork.imageUrls) && o.sourceWork.imageUrls[0]))) || (Array.isArray(o.customImages) && o.customImages[0]) || (Array.isArray(o.imageUrls) && o.imageUrls[0]) || '';
+        const coverThumb = rawCover ? buildThumbnail(rawCover, 'avatar') : '';
+        const shopTitle = o.shopName || (configuredShop && configuredShop.name) || '';
+        const cleanAddr = cleanDisplayAddress(o.address, shopTitle);
         return {
           ...o,
           _clock: formatClock(o.startTime),
           _dateLabel: formatBookingDate(o.startTime),
           _dateMain: startDate ? `${startDate.getMonth() + 1}月${startDate.getDate()}日` : '',
+          _cardDate: startDate ? `${startDate.getMonth() + 1}月${startDate.getDate()}日` : '',
           _dateMonth: startDate ? MONTHS[startDate.getMonth()] : '',
           _dateDay: startDate ? String(startDate.getDate()) : '',
           _dateWeekday: startDate ? WEEKDAYS[startDate.getDay()] : '',
+          _cardWeekday: startDate ? WEEKDAYS[startDate.getDay()] : '',
           _weekday: startDate ? WEEKDAYS[startDate.getDay()] : '',
           _periodLabel: startDate && startDate.getHours() >= 12 ? 'PM' : 'AM',
           _typeLabel: pres.typeLabel,
@@ -160,8 +224,10 @@ Page({
           _stateTone: stateMeta.tone,
           _statusLabel: getStatusLabel(o.status),
           _statusTone: getStatusTone(o.status),
-          _priceText: formatMoney(o.price),
-          _shopName: o.shopName || (configuredShop && configuredShop.name) || '',
+          _priceText: o.status === 'pending_quote' ? '' : formatMoney(o.price),
+          _shopName: shopTitle,
+          _cleanAddress: cleanAddr,
+          _coverUrl: coverThumb,
           _urgencyLabel: hoursUntilStart > 0 && hoursUntilStart <= 24 ? '24小时内' : '',
           _priceAmount: formatMoney(o.price).replace('¥', ''),
           _serviceTypeLabel: formatClock(o.startTime) + ' - ' + formatClock(o.endTime),
@@ -189,22 +255,32 @@ Page({
 
       // 待处理项
       const confirmationTodos = allOrders
-        .filter((o) => o.status === 'pending_confirm')
+        .filter((o) => o.status === 'pending_confirm' || o.status === 'pending_quote')
         .map(decorate)
         .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-      const pendingActionCount = allOrders.filter((o) => o.status === 'pending_quote').length;
       const unpaidDepositOrders = allOrders.filter((o) => Number(o.depositAmount || 0) > 0 && !o.depositPaid && !['completed', 'cancelled', 'expired'].includes(o.status));
       const unpaidDepositCount = unpaidDepositOrders.length;
       const addressPendingCount = allOrders.filter((o) => hasAddressIssue(o) && !['completed', 'cancelled', 'expired'].includes(o.status)).length;
 
       const todoItemsRaw = [
-        { key: 'pending',  count: pendingActionCount,      label: '个预约待处理',     tone: 'tone-pink'   },
         { key: 'deposit',  count: unpaidDepositCount,      label: '个预约待支付定金', tone: 'tone-amber', targetId: unpaidDepositCount === 1 ? unpaidDepositOrders[0].id : '' },
-        { key: 'address',  count: addressPendingCount,     label: '个客户未确认地址', tone: 'tone-orange' },
-        { key: 'messages', count: unread,                  label: '条未读消息',       tone: 'tone-blue'   }
+        { key: 'address',  count: addressPendingCount,     label: '个客户未确认地址', tone: 'tone-orange' }
       ];
       const todoItems = todoItemsRaw.filter((t) => t.count > 0);
-      const todoTotal = confirmationTodos.length + todoItems.reduce((s, t) => s + t.count, 0) + actionTasks.length;
+      const todoTotal = confirmationTodos.length + todoItems.reduce((s, t) => s + t.count, 0);
+      const pendingTotal = todoTotal + unread;
+      const todoSummaryItems = [
+        { key: 'pending', count: confirmationTodos.length, label: '待处理预约' },
+        { key: 'deposit', count: unpaidDepositCount, label: '待支付定金' },
+        { key: 'address', count: addressPendingCount, label: '待确认地址' },
+        { key: 'messages', count: unread, label: '未读消息' }
+      ];
+      const summaryParts = [];
+      if (confirmationTodos.length > 0) summaryParts.push(`${confirmationTodos.length} 个预约待处理`);
+      if (unread > 0) summaryParts.push(`${unread} 条客户消息`);
+      const todoSummaryText = summaryParts.length > 0
+        ? summaryParts.join(' · ')
+        : (todoTotal > 0 ? '还有事项需要处理' : '今天没有待处理事项');
 
       // 热门作品 top 6（照片墙，按热度排序）
       const featuredWorks = [...worksRaw]
@@ -279,8 +355,11 @@ Page({
         loading: false,
         nextOrder,
         todoItems,
+        todoSummaryItems,
         confirmationTodos,
         todoTotal,
+        pendingTotal,
+        todoSummaryText,
         actionTasks,
         businessOverview,
         featuredWorks,
@@ -288,19 +367,21 @@ Page({
         worksLeft,
         worksRight,
         unreadMessageCount: unread,
+        unreadConversations,
         reminderStatus,
         bookingReminderNeeded,
         showSubscriptionOnboarding
       });
-      if (!showSubscriptionOnboarding) {
+      if (!options.silent && !showSubscriptionOnboarding) {
         this.maybeShowDailySummary({
-          todoTotal,
-          pendingActionCount: pendingActionCount + confirmationTodos.length,
+          todoTotal: todoTotal + unread,
+          pendingActionCount: confirmationTodos.length,
           unread,
           nextOrder
         });
       }
     } catch (e) {
+      if (options.silent) throw e;
       this.setData({ loading: false });
     } finally {
       this._dashboardLoading = false;
@@ -489,6 +570,11 @@ Page({
     if (id) wx.navigateTo({ url: `/pages/technician/order-detail/index?id=${id}` });
   },
 
+  onTodoQuote(e) {
+    const id = e.detail && e.detail.id;
+    if (id) wx.navigateTo({ url: `/pages/technician/order-detail/index?id=${id}&action=quote` });
+  },
+
   onBookingCardNavigate(e) {
     this.navigateToAddress({ currentTarget: { dataset: { orderId: e.detail && e.detail.id } } });
   },
@@ -507,6 +593,16 @@ Page({
 
   navigateToMessages() {
     wx.reLaunch({ url: '/pages/technician/chat/index' });
+  },
+
+  onOpenConversation(e) {
+    const item = (e && e.detail) || {};
+    const clientId = item.clientId;
+    if (clientId) {
+      wx.navigateTo({ url: `/pages/technician/chat-detail/index?clientId=${clientId}` });
+    } else {
+      this.navigateToMessages();
+    }
   },
 
   navigateToWorks() {

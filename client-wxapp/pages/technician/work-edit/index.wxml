@@ -4,17 +4,18 @@
 
   <view class="section photo-section">
     <view class="section-heading compact-heading"><view><text class="section-title">作品照片</text><text class="section-subtitle">首张作为封面，最多 10 张</text></view><button class="section-action" catchtap="addImage" disabled="{{uploading}}">{{uploading ? '上传中' : '批量选择'}}</button></view>
+    <text wx:if="{{uploadProgress}}" class="section-subtitle" aria-live="polite">{{uploadProgress}}</text>
+    <button wx:if="{{failedPhotoCount}}" class="section-action" bindtap="retryPhotos" disabled="{{uploading}}">重试 {{failedPhotoCount}} 张失败照片</button>
     <view class="photo-grid">
-      <button class="photo-tile cover-tile" catchtap="chooseCover" disabled="{{uploading}}"><image wx:if="{{coverUrl}}" class="photo-image" src="{{coverUrl}}" mode="aspectFill"/><view wx:else class="photo-placeholder"><image src="/static/icons/camera.svg" mode="aspectFit"/><text>添加封面</text></view><text wx:if="{{coverUrl}}" class="cover-badge">封面</text></button>
-      <view wx:if="{{item !== coverUrl}}" class="photo-tile" wx:for="{{images}}" wx:key="index"><image class="photo-image" src="{{item}}" mode="aspectFill"/><view class="img-remove" bindtap="removeImage" data-index="{{index}}" role="button" aria-label="移除第{{index + 1}}张作品图片"><text class="img-remove-symbol">×</text></view></view>
-      <button wx:if="{{photoCount < 10}}" class="photo-tile add-tile" catchtap="addImage" disabled="{{uploading}}"><text>＋</text><text>继续添加</text></button>
+      <button class="photo-tile cover-tile" catchtap="openCoverActions" data-url="{{coverUrl}}" disabled="{{uploading}}"><image wx:if="{{coverUrl}}" class="photo-image" src="{{coverUrl}}" mode="aspectFill"/><view wx:else class="photo-placeholder"><image src="/static/icons/camera.svg" mode="aspectFit"/><text>添加封面</text></view><text wx:if="{{coverUrl}}" class="cover-badge">封面</text></button>
+      <view wx:if="{{item !== coverUrl}}" class="photo-tile" wx:for="{{images}}" wx:key="index"><image class="photo-image" src="{{item}}" mode="aspectFill" bindtap="photoActions" data-url="{{item}}"/><view class="img-remove" bindtap="removeImage" data-index="{{index}}" role="button" aria-label="移除第{{index + 1}}张作品图片"><view class="img-remove-symbol"><image class="img-remove-icon" src="/static/icons/close-white.svg" mode="aspectFit" /></view></view></view>
+      <button wx:if="{{photoCount < 10}}" class="photo-tile add-tile" catchtap="addImage" disabled="{{uploading}}"><image class="add-tile-icon" src="/static/icons/plus.svg" mode="aspectFit" /><text>继续添加</text></button>
     </view>
   </view>
 
   <view class="section">
     <view class="section-heading"><view><text class="section-title">基本信息</text><text class="section-subtitle">用于客户浏览和预约同款</text></view><text class="required-mark">必填</text></view>
     <view class="compact-field"><text class="compact-label">标题</text><input class="compact-input" placeholder-class="form-placeholder" placeholder="例如：轻法式晕染" value="{{title}}" data-field="title" bindinput="onInput"/></view>
-    <view class="form-item"><text class="label">分类标签</text><view wx:if="{{workTagTemplates.length}}" class="template-tags"><view wx:for="{{workTagTemplates}}" wx:key="id" class="template-tag {{selectedWorkTagMap[item.name] ? 'selected' : ''}}" bindtap="toggleWorkTag" data-name="{{item.name}}">{{item.name}}</view></view><input class="input" placeholder-class="form-placeholder" placeholder="输入新分类，用逗号分隔" value="{{tags}}" data-field="tags" bindinput="onInput"/></view>
     <view class="form-item service-form-item">
       <view class="field-heading"><text class="label">关联服务</text><text wx:if="{{selectedServiceIds.length}}" class="selection-count">已选 {{selectedServiceIds.length}} 项</text></view>
       <view wx:if="{{hasInvalidServiceConfig}}" class="service-config-warning"><text>部分服务缺少有效时长</text><text class="service-config-action" bindtap="goServiceManagement">去完善</text></view>
@@ -31,8 +32,10 @@
   </view>
 
   <view class="section more-section">
-    <view class="more-trigger" bindtap="toggleMoreSettings" role="button"><view><text class="section-title">更多设置</text><text class="section-subtitle">介绍、分享优惠与客户权限</text></view><text class="more-arrow">{{moreExpanded ? '⌃' : '⌄'}}</text></view>
+    <view class="more-trigger" bindtap="toggleMoreSettings" role="button"><view><text class="section-title">更多设置</text><text class="section-subtitle">分类标签、介绍、分享优惠与客户权限</text></view><text class="more-arrow">{{moreExpanded ? '⌃' : '⌄'}}</text></view>
     <view wx:if="{{moreExpanded}}" class="more-content">
+    <view class="form-item"><text class="label">分类标签</text><view wx:if="{{workTagTemplates.length}}" class="template-tags"><view wx:for="{{workTagTemplates}}" wx:key="id" class="template-tag {{selectedWorkTagMap[item.name] ? 'selected' : ''}}" bindtap="toggleWorkTag" data-name="{{item.name}}">{{item.name}}</view></view><input class="input" placeholder-class="form-placeholder" placeholder="输入新分类，用逗号分隔" value="{{tags}}" data-field="tags" bindinput="onInput"/></view>
+
       <view class="form-item"><text class="label">作品介绍</text><textarea class="textarea short-textarea" placeholder-class="form-placeholder" placeholder="补充设计亮点（选填）" value="{{description}}" data-field="description" bindinput="onInput"/></view>
       <view class="form-item"><text class="label">设计理念</text><textarea class="textarea short-textarea" placeholder-class="form-placeholder" placeholder="灵感与设计思路（选填）" value="{{designIdea}}" data-field="designIdea" bindinput="onInput" maxlength="300"/></view>
       <view class="form-item"><text class="label">适合场景</text><input class="input" placeholder-class="form-placeholder" placeholder="职场、约会、婚礼" value="{{suitableScene}}" data-field="suitableScene" bindinput="onInput"/></view>

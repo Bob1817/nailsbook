@@ -19,7 +19,8 @@ Page({
     binding: false,
     visitorInfo: null,
     isLoggedIn: false,
-    isOwnerView: false
+    isOwnerView: false,
+    showContactModal: false
   },
 
   onLoad(options) {
@@ -81,6 +82,12 @@ Page({
               avatarUrl: artist.avatarUrl,
               city: artist.city || '',
               bio: artist.bio || '',
+              wechat: (artist.socialMedia && artist.socialMedia.wechat) || artist.wechat || '',
+              wechatQrCodeUrl: (artist.socialMedia && artist.socialMedia.wechatQrCodeUrl) || '',
+              protectWechat: Boolean(
+                (artist.socialMedia && artist.socialMedia.protectWechat) ||
+                artist.protectWechat
+              ),
               acceptingBookings: artist.acceptingBookings !== false,
               invitationCode: artist.invitationCode || workInviteCode,
               shops: (artist.shopAddresses || []).filter(shop => shop && shop.enabled !== false).map(shop => ({
@@ -135,6 +142,12 @@ Page({
       }));
       work.dateStr = this.formatDate(rawWork.createdAt);
 
+      if (visitorInfo) {
+        visitorInfo.wechatDisplay = (visitorInfo.protectWechat && !isLoggedIn)
+          ? '******已开启隐私保护'
+          : (visitorInfo.wechat || '');
+      }
+
       this.setData({
         work: work,
         visitorInfo,
@@ -158,7 +171,7 @@ Page({
       const unavailable = [403, 404, 410].includes(Number(err.statusCode || err.code));
       this.setData({ loading: false, error: true,
         errorMessage: unavailable ? '暂时无法查看这件作品' : '作品暂时无法加载',
-        errorDescription: unavailable ? '作品可能已下架、分享已失效，或当前链接没有访问权限。你可以返回浏览其他作品。' : '请检查网络连接后重试。如果仍无法打开，请联系开发运维反馈。',
+        errorDescription: unavailable ? '作品可能已下架、分享已失效，或当前链接没有访问权限。你可以返回浏览其他作品。' : '请检查网络连接后重试。如果仍无法打开，请联系平台客服协助反馈。',
         canRetry: !unavailable });
     }
   },
@@ -186,6 +199,10 @@ Page({
     else wx.reLaunch({ url: '/pages/client/home/index' });
   },
 
+  goHome() {
+    wx.reLaunch({ url: '/pages/client/home/index' });
+  },
+
   goToLogin() {
     wx.navigateTo({
       url: buildClientLoginUrl(this.publicWorkPath(false), {
@@ -195,10 +212,72 @@ Page({
     });
   },
 
-  // 未登录：联系该美甲师 → 跳转登录，登录后自动绑定并进入对话
+  // 联系美甲师：已登录直接进入端内对话；未登录游客展示微信咨询名片弹层
   contactArtist() {
     const techId = this._techId;
     if (!techId) return wx.showToast({ title: '美甲师信息不完整', icon: 'none' });
+    const app = getApp();
+    const token = (app && app.globalData && app.globalData.token) || wx.getStorageSync('token') || wx.getStorageSync('client_token');
+    const role = (app && app.globalData && app.globalData.role) || wx.getStorageSync('role');
+    const isLoggedIn = !!(token && role === 'client');
+    if (isLoggedIn) {
+      const techName = (this.data.visitorInfo && this.data.visitorInfo.name) || (this.data.work && this.data.work.technician && this.data.work.technician.name) || '美甲师';
+      return wx.navigateTo({
+        url: `/pages/client/chat-detail/index?techId=${techId}&techName=${encodeURIComponent(techName)}`
+      });
+    }
+    const visitorInfo = this.data.visitorInfo;
+    if (visitorInfo) {
+      visitorInfo.wechatDisplay = (visitorInfo.protectWechat && !isLoggedIn)
+        ? '******已开启隐私保护'
+        : (visitorInfo.wechat || '');
+    }
+    this.setData({ showContactModal: true, isLoggedIn, visitorInfo });
+  },
+
+  closeContactModal() {
+    this.setData({ showContactModal: false });
+  },
+
+  loginToViewWechat() {
+    const techId = this._techId;
+    if (!techId) return wx.showToast({ title: '美甲师信息不完整', icon: 'none' });
+    this.closeContactModal();
+    const returnPath = `/pages/client/public-work/index?id=${this.workId || ''}`;
+    wx.navigateTo({
+      url: buildClientLoginUrl(returnPath, {
+        source: 'work_share',
+        inviteCode: this.inviteCode
+      }) + '&techId=' + techId + '&action=view_wechat'
+    });
+  },
+
+  copyArtistWechat() {
+    const visitorInfo = this.data.visitorInfo || {};
+    const app = getApp();
+    const token = (app && app.globalData && app.globalData.token) || wx.getStorageSync('token') || wx.getStorageSync('client_token');
+    const role = (app && app.globalData && app.globalData.role) || wx.getStorageSync('role');
+    const isLoggedIn = !!(token && role === 'client');
+    if (visitorInfo.protectWechat && !isLoggedIn) {
+      return this.loginToViewWechat();
+    }
+    const wechat = visitorInfo.wechat || '';
+    if (!wechat) {
+      return wx.showToast({ title: '美甲师暂未填写微信号，可直接登录在线咨询', icon: 'none' });
+    }
+    wx.setClipboardData({
+      data: wechat,
+      success: () => {
+        wx.showToast({ title: '微信号已复制', icon: 'none' });
+      }
+    });
+  },
+
+  // 游客选择登录并在线咨询：保留返回路径
+  goOnlineChatAfterLogin() {
+    const techId = this._techId;
+    if (!techId) return wx.showToast({ title: '美甲师信息不完整', icon: 'none' });
+    this.closeContactModal();
     const returnPath = `/pages/client/chat-detail/index?techId=${techId}`;
     wx.navigateTo({
       url: buildClientLoginUrl(returnPath, {

@@ -11,6 +11,8 @@ for (const name of ['new-tag-btn']) {
 }
 assert(template.includes('action-btn action-primary booking-action {{savingTags'));
 assert(/class="new-tag-input"\s+placeholder-class="customer-form-placeholder"/.test(template));
+assert(styles.includes('grid-template-columns: minmax(0, 1fr) 112rpx'), '客户特征输入与添加按钮应在窄屏保持稳定两列');
+assert(styles.includes('.sheet-body {') && styles.includes('box-sizing: border-box'), '客户特征弹层内容区不得因内边距横向溢出');
 assert(/@import ['"]\.\.\/\.\.\/\.\.\/styles\/booking-actions\.wxss['"]/.test(styles));
 for (const rule of ['min-height: 44px', 'border-radius: 8px', 'font-size: var(--font-sm)', 'font-weight: var(--weight-semibold)']) {
   assert(shared.includes(rule), `公共按钮规格缺失：${rule}`);

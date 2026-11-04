@@ -1,5 +1,30 @@
 # Design QA
 
+## 2026-10-19 报价单预览与转发确认
+
+- Source visual: `/var/folders/s4/0wvnnhl92wq7h80zc4f7cz040000gn/T/TemporaryItems/NSIRD_screencaptureui_gAJaSf/截屏2026-10-19 16.23.54.png`.
+- Implementation: `/Users/shibo/Documents/Codex/nailBook/client-wxapp/qa-artifacts/quote-preview-20261019.png`.
+- Runtime: WeChat DevTools, iPhone simulator, `pages/client/quote-confirm/index`, technician-owner preview fixture using the real page template and styles.
+
+### Findings and fixes
+
+- P1: the quote result previously reused the older confirmation form and did not provide the supplied preview hierarchy. It now presents the OnlyNail identity, artist and studio entry points, total quote, line items, duration, and intent disclaimer in one restrained white card.
+- P1: the creator and customer used the same actions. The owner now sees `返回修改` and the native WeChat `确认转发` action; a public customer sees `我再想想` and `同意并预约`.
+- P1: the shared navigation slot rendered beside the back button in the real simulator. The slot now uses the measured WeChat menu capsule offset, placing the share control immediately to its left without covering the centered title.
+- P1: the customer path stopped after accepting a quote. It now binds the quote to the authenticated customer and technician, carries server-owned items, studio, price, and duration into a dedicated scheduling screen, and creates the order after a date/time is selected.
+
+### Fidelity and verification
+
+- The card follows the supplied reading order and scale: brand, artist, studio, prominent price, itemized services, duration, legal note, supporting explanation, and fixed dual actions.
+- The official `onlynail-logo.jpg` asset is copied from the website and rendered without recoloring; product colors remain within the NailBook neutral palette and semantic money/link colors.
+- The 44px minimum control height and bottom safe area are preserved for the fixed action bar and refusal-reason sheet.
+- Runtime capture confirms the page fits the simulator width with no horizontal clipping, the fixed controls remain visible, and the share icon no longer collides with the back action or WeChat capsule.
+- Focused quick-quote, preview-flow, and home-shortcut checks pass; the color synchronization and color gate pass; the booking-quote backend tests and Nest build pass.
+
+final result: passed
+
+---
+
 ## 2026-08-22 美甲师首页下一单参考图还原
 
 - Source visual: `/var/folders/s4/0wvnnhl92wq7h80zc4f7cz040000gn/T/TemporaryItems/NSIRD_screencaptureui_QoiVCP/截屏2026-08-22 22.59.10.png` (748 × 980 px).
@@ -502,5 +527,30 @@ final result: passed with runtime refresh pending
 - 底部操作：点赞与收藏操作组增加与预约按钮左侧相同的 `8rpx` 间距，点赞、收藏仍保持等宽。
 - 运行态：微信开发者工具重新编译后，截图确认点赞、收藏、预约三组操作的分隔间距一致。价格需要包含本次后端改动的版本部署到 `api.lunails.cn` 后才能在当前生产数据中显示。
 - 自动化：公开作品价格映射测试 2 项通过，Nest 构建、小程序静态检查与作品卡角色交互检查通过。
+
+---
+
+## 2026-10-17 客户端作品详情作品优先与底部互动栏
+
+- Reference: `/Users/shibo/Documents/Codex/nailBook/client-wxapp/qa-artifacts/work-detail-primary-media-20261017/xiaohongshu-reference.png`.
+- Before: `/Users/shibo/Documents/Codex/nailBook/client-wxapp/qa-artifacts/work-detail-primary-media-20261017/before.png`.
+- Implementation: `/Users/shibo/Documents/Codex/nailBook/client-wxapp/qa-artifacts/work-detail-primary-media-20261017/implementation.png`.
+- Runtime: WeChat DevTools, iPhone 15 Pro Max simulator, authenticated `pages/client/work-detail/index`.
+
+### Findings and fixes
+
+- P0: work photography did not dominate the first screen. The client detail swiper now occupies `70vh`, with an unobtrusive current/total counter for multi-image works.
+- P1: like, favorite, and share consumed a separate content row. They now sit beside the comment entry in a fixed bottom bar, following the reference's reading order.
+- P1: the first bottom-bar pass was cramped and visually unstable. The final bar uses a 44px light-gray writing pill with an edit icon, three explicit 44px-or-larger touch targets, restrained spacing, and a white safe-area surface with a shallow top shadow.
+- P1: send was permanently visible. It now replaces the social controls only while the input is focused, the keyboard is open, text exists, or a reply is active; the send action uses a compact 64px × 44px pill.
+
+### Runtime verification
+
+- Default state visually shows the writing pill, like count, favorite count, and share action on one aligned row without clipping.
+- Focusing the writing pill replaces the 182px social action group with the 64px send pill while preserving the input's minimum useful width.
+- Every interactive target remains at least 44px high and the bar includes the device safe area.
+- Component interaction contracts, comment submission checks, icon checks, Mini Program static validation, color-token checks, and `git diff --check` passed.
+
+final result: passed
 
 ---

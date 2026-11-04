@@ -32,17 +32,17 @@ const TERMINAL_STATUSES = new Set(['completed', 'expired', 'cancelled', 'rejecte
 const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
 const STATUS_MAP = {
-  pending_quote: { text: '待报价', class: 'status-amber' },
-  quoted: { text: '已报价', class: 'status-blue' },
-  pending_agree: { text: '待确认', class: 'status-blue' },
-  pending_confirm: { text: '待确认', class: 'status-purple' },
-  pending_client_confirm: { text: '待客户确认', class: 'status-blue' },
-  confirmed: { text: '已确认', class: 'status-purple' },
-  pending_shop: { text: '待到店', class: 'status-green' },
-  in_progress: { text: '进行中', class: 'status-orange' },
-  completed: { text: '已完成', class: 'status-gray' },
-  cancelled: { text: '已取消', class: 'status-red' },
-  rejected: { text: '已拒绝', class: 'status-red' },
+  pending_quote: { text: '待报价', class: 'status-red' },
+  quoted: { text: '已报价', class: 'status-red' },
+  pending_agree: { text: '待确认', class: 'status-red' },
+  pending_confirm: { text: '待确认', class: 'status-red' },
+  pending_client_confirm: { text: '待客户确认', class: 'status-red' },
+  confirmed: { text: '已确认', class: 'status-blue' },
+  pending_shop: { text: '待到店', class: 'status-blue' },
+  in_progress: { text: '进行中', class: 'status-blue' },
+  completed: { text: '已完成', class: 'status-green' },
+  cancelled: { text: '已取消', class: 'status-gray' },
+  rejected: { text: '已拒绝', class: 'status-gray' },
   expired: { text: '已过期', class: 'status-gray' }
 };
 
@@ -53,7 +53,7 @@ const NEXT_STEP_MAP = {
   pending_confirm: '美甲师正在确认最终排期',
   pending_client_confirm: '请确认本次预约安排',
   confirmed: '预约已确认，请按时到达',
-  pending_shop: '请按预约时间前往门店',
+  pending_shop: '排期已确认，请准时到店（档期保留15分钟）',
   in_progress: '服务正在进行，完成后可上传照片',
   completed: '可以评价并加入你的美甲记录',
   expired: '预约已过期，可重新发起预约',
@@ -209,6 +209,7 @@ function decorateOrder(order) {
 
 Page({
   data: {
+    navBarHeight: 88,
     tabs: TABS,
     currentStatus: 'all',
     allOrders: [],
@@ -223,6 +224,12 @@ Page({
   },
 
   onLoad(options) {
+    try {
+      const systemInfo = wx.getSystemInfoSync();
+      const menuButton = wx.getMenuButtonBoundingClientRect();
+      const navBarHeight = menuButton.top + menuButton.height + (menuButton.top - systemInfo.statusBarHeight);
+      this.setData({ navBarHeight: Math.round(navBarHeight) });
+    } catch (_) {}
     this.setData({ tradeView: options && options.view === 'trade' });
     this.startCountdownTimer();
     this.loadOrders();

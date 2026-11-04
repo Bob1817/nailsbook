@@ -1,5 +1,5 @@
 page {
-  background: var(--bg-gradient-entry);
+  background: var(--nb-page);
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -17,8 +17,11 @@ page {
 /* ===== 固定头部 ===== */
 .head {
   flex-shrink: 0;
-  background: var(--bg-card);
-  padding: var(--space-md) 40rpx 0;
+  background: rgba(255, 255, 255, 0.78);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.06);
+  padding: var(--space-md) var(--space-xl) 0;
   box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
 }
 
@@ -41,21 +44,23 @@ page {
   min-height: 126rpx;
   padding: 0;
   border-radius: var(--radius-lg);
-  background: var(--bg-input);
+  background: var(--nb-page);
+  border: 1rpx solid var(--nb-line);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1;
 }
-.more-btn:active { background: var(--bg-input); }
-.more-text { font-size: var(--font-sm); color: var(--text-muted); font-weight: var(--weight-medium); }
+.more-btn:active { background: var(--nb-pressed); }
+.more-text { font-size: var(--font-sm); color: var(--nb-muted); font-weight: var(--weight-medium); }
 
 .date-cell {
   flex-shrink: 0;
   width: 96rpx;
   padding: 14rpx 0;
   border-radius: var(--radius-lg);
-  background: var(--bg-input);
+  background: var(--nb-page);
+  border: 1rpx solid var(--nb-line);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -65,16 +70,17 @@ page {
   box-sizing: border-box;
 }
 .today-cell { flex-shrink: 0; }
-.date-week { font-size: var(--font-xs); color: var(--text-muted); }
-.date-day { font-size: var(--font-md); font-weight: var(--weight-bold); color: var(--text-primary); }
+.date-week { font-size: var(--font-xs); color: var(--nb-muted); }
+.date-day { font-size: var(--font-md); font-weight: var(--weight-bold); color: var(--nb-ink); }
 .date-cell-active {
-  background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-light) 100%);
+  background: var(--nb-action);
+  border-color: var(--nb-action);
 }
 .date-cell-active .date-week,
-.date-cell-active .date-day { color: var(--text-inverse); }
-.date-income { max-width:88rpx; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size: var(--font-xs); line-height: var(--leading-tight); font-weight: var(--weight-semibold); }
-.date-income-estimated { color:var(--nb-money); }
-.date-income-actual { color:var(--nb-money); }
+.date-cell-active .date-day { color: var(--nb-inverse); }
+.date-income { max-width: 88rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--font-xs); line-height: var(--leading-tight); font-weight: var(--weight-semibold); }
+.date-income-estimated { color: var(--nb-money); }
+.date-income-actual { color: var(--nb-money); }
 .date-cell-active .date-income-estimated { color:var(--nb-inverse); }
 .date-cell-active .date-income-actual { color:var(--nb-inverse); }
 
@@ -90,11 +96,11 @@ page {
 }
 .tabs-left {
   display: flex;
-  gap: 40rpx;
+  gap: var(--space-xl);
 }
 .tab {
   position: relative;
-  padding: 16rpx 4rpx;
+  padding: var(--space-sm) 4rpx;
   font-size: var(--font-md);
   color: var(--text-muted);
   font-weight: var(--weight-medium);
@@ -129,8 +135,8 @@ page {
 .tab-more-btn {
   display: flex;
   align-items: center;
-  gap: 8rpx;
-  padding: 10rpx 24rpx;
+  gap: var(--space-xs);
+  padding: 10rpx var(--space-md);
   border-radius: var(--radius-md);
   background: rgba(0, 0, 0, 0.08) /* brand-primary-alpha */;
   min-height: 88rpx;
@@ -169,7 +175,7 @@ page {
   z-index: 20;
 }
 .tab-more-item {
-  padding: var(--space-md) 32rpx;
+  padding: var(--space-md) var(--space-lg);
   font-size: var(--font-md);
   color: var(--text-primary);
   white-space: nowrap;
@@ -194,11 +200,11 @@ page {
 }
 
 .list-area {
-  padding: 16rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
+  padding: var(--space-sm) var(--space-lg) calc(140rpx + env(safe-area-inset-bottom));
 }
-.conflict-alert { margin-bottom: var(--space-sm); padding:20rpx 24rpx; border: 0; border-radius: var(--radius-sm); background:var(--nb-page); color:var(--nb-ink); font-size: var(--font-xs); line-height:1.55; }
+.conflict-alert { margin-bottom: var(--space-sm); padding:20rpx var(--space-md); border: 0; border-radius: var(--radius-sm); background:var(--nb-page); color:var(--nb-ink); font-size: var(--font-xs); line-height:1.55; }
 
-.skeleton-list { display: flex; flex-direction: column; gap: 16rpx; }
+.skeleton-list { display: flex; flex-direction: column; gap: var(--space-sm); }
 .skel-card {
   height: 200rpx;
   border-radius: var(--card-radius);
@@ -209,7 +215,7 @@ page {
 
 .empty-card {
   margin: 80rpx 0;
-  padding: 60rpx 40rpx;
+  padding: 60rpx var(--space-xl);
   background: var(--bg-card);
   border-radius: var(--card-radius);
   display: flex;
@@ -223,7 +229,7 @@ page {
 .empty-sub { font-size: var(--font-sm); color: var(--text-muted); text-align: center; }
 
 /* ===== 行程卡 ===== */
-.trip-list { display: flex; flex-direction: column; gap: 16rpx; }
+.trip-list { display: flex; flex-direction: column; gap: var(--space-sm); }
 
 /* ===== 日历弹窗 ===== */
 .calendar-overlay {
@@ -238,7 +244,7 @@ page {
 .calendar-panel {
   width: 100%;
   height: 88vh;
-  background: var(--bg-card);
+  background: var(--nb-page);
   border-radius: 36rpx 36rpx 0 0;
   box-shadow: 0 -20rpx 64rpx rgba(0, 0, 0, 0.16);
   overflow: hidden;
@@ -251,35 +257,248 @@ page {
   align-items: center;
   justify-content: space-between;
   gap: 20rpx;
-  padding: 20rpx 32rpx 12rpx;
+  padding: 24rpx var(--space-lg) 18rpx;
   flex-shrink: 0;
-  border-bottom: 0;
+  background: var(--nb-surface);
+  border-bottom: 1rpx solid var(--nb-line);
 }
-.calendar-close-icon { width:88rpx; height:88rpx; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--nb-page); color:var(--nb-secondary); font-size:42rpx; line-height:1; }
-.calendar-close-icon:active { background:var(--nb-page); }
-.calendar-legend { display:flex; justify-content:flex-start; gap:20rpx; padding:0; border:0; font-size: var(--font-xs); font-weight: var(--weight-semibold); }
-.calendar-legend text::before { content:''; display:inline-block; width:12rpx; height:12rpx; margin-right:8rpx; border-radius:50%; }
-.legend-actual { color:var(--nb-ink); }.legend-actual::before { background:var(--nb-action); }
-.legend-estimated { color:var(--nb-ink); }.legend-estimated::before { background:var(--nb-action); }
-.calendar-scroll { flex:1; min-height:0; }
-.calendar-year { padding:0 32rpx; }
-.year-header { position:sticky; top:0; z-index:3; min-height:96rpx; display:flex; align-items:center; justify-content:space-between; gap:20rpx; background:rgba(255,255,255,.96); border-bottom: 0; }
-.year-title { font-size: var(--font-lg); font-weight: var(--weight-bold); color: var(--text-primary); }
-.period-title { min-height:88rpx; display:flex; align-items:center; gap:14rpx; }
-.disclosure { width:14rpx; height:14rpx; border-right: 0; border-bottom: 0; transform:rotate(45deg); transition:transform .2s ease; }
-.disclosure-open { transform:rotate(225deg); }
-.disclosure-small { width:12rpx; height:12rpx; border-width:2rpx; }
-.period-totals { display:flex; align-items:center; justify-content:flex-end; gap:12rpx; min-width:0; }
-.period-totals text { padding:7rpx 12rpx; border-radius:999rpx; font-size: var(--font-xs); line-height:1.2; font-weight: var(--weight-bold); }
-.total-actual { color:var(--nb-ink); background:var(--nb-page); }
-.total-estimated { color:var(--nb-ink); background: var(--bg-tag); }
-.calendar-month { scroll-margin-top:96rpx; padding:26rpx 0 34rpx; border-bottom: 0; }
-.month-header { min-height:88rpx; display:flex; align-items:center; justify-content:space-between; gap:18rpx; }
-.month-title { font-size: var(--font-md); font-weight: var(--weight-bold); color:var(--nb-ink); }
+.calendar-close-icon {
+  width: 72rpx;
+  height: 72rpx;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--nb-page);
+  border: 1rpx solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+}
+.calendar-close-svg {
+  width: 24rpx;
+  height: 24rpx;
+}
+.calendar-close-icon:active {
+  background: var(--nb-pressed);
+}
+.calendar-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  padding: 0;
+  border: 0;
+  font-size: var(--font-xs);
+  font-weight: var(--weight-medium);
+  color: var(--nb-secondary);
+}
+.calendar-legend text {
+  display: inline-flex;
+  align-items: center;
+}
+.calendar-legend text::before {
+  content: '';
+  display: inline-block;
+  width: 12rpx;
+  height: 12rpx;
+  margin-right: 6rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.legend-actual { color: var(--nb-ink); }
+.legend-actual::before { background: var(--nb-success); }
+.legend-estimated { color: var(--nb-ink); }
+.legend-estimated::before { background: var(--nb-text-link); }
+.legend-cancelled { color: var(--nb-secondary); }
+.legend-cancelled::before { background: var(--nb-muted); }
+.legend-refunded { color: var(--nb-secondary); }
+.legend-refunded::before { background: var(--nb-danger); }
+
+.calendar-scroll {
+  flex: 1;
+  min-height: 0;
+  background: var(--nb-page);
+}
+.calendar-year {
+  padding: 0 var(--space-lg);
+  margin-bottom: var(--space-sm);
+}
+
+/* ===== 年份栏（吸顶、简洁层次） ===== */
+.year-header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  min-height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+  padding: 16rpx 0 16rpx;
+  background: rgba(245, 245, 247, 0.95);
+  backdrop-filter: blur(20rpx);
+}
+.year-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+.year-title {
+  font-size: 34rpx;
+  font-weight: var(--weight-bold);
+  color: var(--nb-ink);
+}
+.year-disclosure {
+  width: 14rpx;
+  height: 14rpx;
+  border-top: 3rpx solid var(--nb-muted);
+  border-right: 3rpx solid var(--nb-muted);
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.year-disclosure-open {
+  transform: rotate(135deg);
+  border-color: var(--nb-ink);
+}
+
+/* ===== 收入汇总胶囊 ===== */
+.period-totals {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10rpx;
+  min-width: 0;
+}
+.period-totals text {
+  display: inline-flex;
+  align-items: center;
+  padding: 6rpx 14rpx;
+  border-radius: var(--radius-full);
+  font-size: 22rpx;
+  line-height: 1.2;
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  box-sizing: border-box;
+}
+.total-tag-label {
+  font-size: 20rpx;
+  font-weight: var(--weight-normal);
+  margin-right: 4rpx;
+  opacity: 0.85;
+}
+.total-actual {
+  color: var(--nb-success);
+  background: var(--nb-success-surface);
+  border: 1rpx solid rgba(40, 122, 75, 0.15);
+}
+.total-estimated {
+  color: var(--nb-text-link);
+  background: var(--nb-soft-surface);
+  border: 1rpx solid rgba(36, 94, 168, 0.15);
+}
+
+/* ===== 月份卡片结构 ===== */
+.calendar-month {
+  scroll-margin-top: 88rpx;
+  box-sizing: border-box;
+  transition: all 0.2s ease-in-out;
+}
+
+/* 收起状态的月份卡片（紧凑实体卡片，告别空旷） */
+.calendar-month-collapsed {
+  background: var(--nb-surface);
+  border: 1rpx solid rgba(0, 0, 0, 0.06);
+  border-radius: var(--radius-lg);
+  margin-bottom: 14rpx;
+  padding: 0 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.02);
+}
+.calendar-month-collapsed:active {
+  background: var(--nb-pressed);
+  transform: scale(0.99);
+}
+.calendar-month-collapsed .month-header {
+  min-height: 96rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+/* 展开状态的月份卡片（独立凸起日历模块，层级清晰） */
+.calendar-month-expanded {
+  background: var(--nb-surface);
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 6rpx 24rpx rgba(0, 0, 0, 0.05);
+  margin-bottom: 24rpx;
+  padding: 0 16rpx 20rpx;
+}
+.calendar-month-expanded .month-header {
+  min-height: 96rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 20rpx 8rpx 18rpx;
+  border-bottom: 1rpx solid var(--nb-line);
+  margin-bottom: 8rpx;
+}
+
+/* 月份头部左右布局 */
+.month-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+.month-title {
+  font-size: 30rpx;
+  font-weight: var(--weight-bold);
+  color: var(--nb-ink);
+}
+.month-active-badge {
+  font-size: 20rpx;
+  font-weight: var(--weight-medium);
+  color: var(--nb-text-link);
+  background: var(--nb-soft-surface);
+  padding: 2rpx 12rpx;
+  border-radius: var(--radius-full);
+  line-height: 1.4;
+}
+.month-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+.month-empty-text {
+  font-size: 24rpx;
+  color: var(--nb-muted);
+  font-weight: var(--weight-normal);
+}
+.month-disclosure {
+  width: 14rpx;
+  height: 14rpx;
+  border-top: 3rpx solid var(--nb-muted);
+  border-right: 3rpx solid var(--nb-muted);
+  transform: rotate(45deg); /* › */
+  transition: transform 0.2s ease, border-color 0.15s ease;
+  flex-shrink: 0;
+  margin-left: 6rpx;
+}
+.month-disclosure-open {
+  transform: rotate(135deg); /* ⌄ */
+  border-color: var(--nb-ink);
+}
+
+.calendar-month-body {
+  width: 100%;
+}
 
 .calendar-weekdays {
   display: flex;
-  margin: 12rpx 0 8rpx;
+  margin: 12rpx 0 var(--space-xs);
 }
 
 .calendar-weekday {
@@ -350,14 +569,14 @@ page {
 .status-cancelled { background:var(--nb-muted); }
 .status-refunded { background:var(--nb-danger); }
 
-.calendar-legend { flex-wrap:wrap; gap:12rpx; }
-.legend-actual::before, .legend-estimated::before { background:var(--nb-success); }
-.legend-cancelled::before { background:var(--nb-muted); }
-.legend-refunded::before { background:var(--nb-danger); }
+.legend-actual::before { background: var(--nb-success); }
+.legend-estimated::before { background: var(--nb-text-link); }
+.legend-cancelled::before { background: var(--nb-muted); }
+.legend-refunded::before { background: var(--nb-danger); }
 
 .booking-day-control {
   min-height: 120rpx; box-sizing: border-box; display: flex; align-items: center; gap: 20rpx;
-  padding: 20rpx 22rpx; margin-bottom: 16rpx; border-radius: var(--radius-lg);
+  padding: 20rpx 22rpx; margin-bottom: var(--space-sm); border-radius: var(--radius-lg);
   background: var(--nb-surface);
 }
 .booking-day-control-paused { background: var(--nb-soft-surface); }
@@ -373,13 +592,13 @@ page {
 .booking-day-title-row { display: flex; align-items: center; gap: 12rpx; }
 .booking-day-title { color: var(--nb-ink); font-size: var(--font-sm); font-weight: var(--weight-semibold); }
 .booking-day-status {
-  padding: 3rpx 10rpx; border-radius: 999rpx; background: var(--nb-success-surface);
+  padding: 3rpx 10rpx; border-radius: var(--radius-full); background: var(--nb-success-surface);
   color: var(--nb-success); font-size: var(--font-xs); font-weight: var(--weight-medium); line-height: 1.4;
 }
 .booking-day-control-paused .booking-day-status { background: var(--nb-surface); color: var(--nb-muted); }
 .booking-day-description { display: block; margin-top: 6rpx; color: var(--nb-muted); font-size: var(--font-xs); line-height: 1.45; }
 .booking-day-switch {
-  position: relative; width: 76rpx; height: 44rpx; flex-shrink: 0; border-radius: 999rpx;
+  position: relative; width: 76rpx; height: 44rpx; flex-shrink: 0; border-radius: var(--radius-full);
   background: var(--nb-control); transition: background .18s ease;
 }
 .booking-day-switch-on { background: var(--nb-success); }
@@ -388,4 +607,4 @@ page {
   border-radius: 50%; background: var(--nb-surface); transition: transform .18s ease;
 }
 .booking-day-switch-on .booking-day-switch-knob { transform: translateX(32rpx); }
-.total-actual, .total-estimated { color:var(--nb-money); font-variant-numeric:tabular-nums; }
+.total-actual, .total-estimated { font-variant-numeric: tabular-nums; }

@@ -44,15 +44,7 @@
     </view>
   </view>
 
-  <view wx:if="{{order.sourceWork}}" class="card source-work-card" bindtap="viewSourceWork">
-        <image wx:if="{{order.sourceWork.coverUrl}}" class="source-work-cover" src="{{order.sourceWork.coverUrl}}" mode="aspectFill" aria-label="{{order.sourceWork.title || '预约来源作品'}}"/>
-    <view class="source-work-copy">
-      <text class="source-work-label">预约同款来源</text>
-      <text class="source-work-title">{{order.sourceWork.title || '美甲作品'}}</text>
-      <text wx:if="{{order.sourceWork._priceFen > 0}}" class="source-work-price semantic-money">¥{{order.sourceWork._priceFen / 100}}</text>
-    </view>
-    <text class="source-work-arrow">›</text>
-  </view>
+  <work-card wx:if="{{order.sourceWork}}" variant="compact-bar" work="{{order.sourceWork}}" bind:cardtap="viewSourceWork" class="source-work-card" />
 
   <!-- ============ 服务信息 ============ -->
   <view class="card">
@@ -65,19 +57,25 @@
 
     <view class="info-row">
       <text class="info-label">{{order.bookingPhase === 'application' ? '期望时间' : '预约时间'}}</text>
-      <text class="info-value">{{order._dateLabel}} {{order._timeRange}}</text>
+      <view class="info-value-block">
+        <text class="info-value">{{order._dateLabel}} {{order._timeRange}}</text>
+        <text wx:if="{{order.durationMinutes > 0}}" class="schedule-duration-hint">预计服务时长约 {{order.durationMinutes}} 分钟</text>
+        <text wx:elif="{{order.durationPending}}" class="schedule-duration-hint">预计时长待美甲师确认</text>
+        <text wx:if="{{order.status === 'pending_shop'}}" class="schedule-grace-hint">档期保留 15 分钟，如遇迟到请提前联系美甲师</text>
+      </view>
     </view>
 
     <view wx:if="{{order.address}}" class="info-row address-row">
       <text class="info-label">{{order._isShop ? '到店地址' : '上门地址'}}</text>
       <view class="info-value-block">
+        <text wx:if="{{order._isShop && order.shopName}}" class="shop-name-title">{{order.shopName}}</text>
         <view class="address-main-row">
           <text class="addr-text">{{order.address}}</text>
-          <view class="copy-link" catchtap="navigateToShop" role="button" aria-label="导航到店">
+          <view wx:if="{{order._isShop}}" class="copy-link" catchtap="navigateToShop" role="button" aria-label="导航到店">
             <view class="copy-link-label">导航</view>
           </view>
         </view>
-        <view wx:if="{{shopGuidance && shopGuidance.enabled}}" class="guidance-row" catchtap="openShopGuidance" role="button" aria-label="查看到店指引">
+        <view wx:if="{{order._isShop && shopGuidance && shopGuidance.enabled}}" class="guidance-row" catchtap="openShopGuidance" role="button" aria-label="查看到店指引">
           <text class="guidance-row-text">查看到店指引</text>
           <text class="guidance-row-arrow">›</text>
         </view>
@@ -101,6 +99,7 @@
     <text class="remark-text">原报价 ¥{{order.acceptedProposal.price / 100}} · 原定金 ¥{{order.acceptedProposal.deposit / 100}}。当前服务、时间及费用如下；确认后进入排期。</text>
   </view>
   <!-- ============ 价格信息 ============ -->
+  <view wx:if="{{order.homeServiceDistanceKm !== null && order.homeServiceDistanceKm !== undefined}}" class="section"><text>上门费 ¥{{order.homeServiceFeeFen / 100}} · 直线 {{order.homeServiceDistanceKm}}km（{{order.quotePrice == null ? '最终报价将包含此费用' : '已计入报价'}}）</text></view>
   <view wx:if="{{order._showPriceCard}}" class="card">
     <text class="card-title">{{order.status === 'pending_agree' ? '美甲师报价' : '费用信息'}}</text>
 
@@ -135,6 +134,7 @@
   <view wx:if="{{order.status === 'completed'}}" class="card" bindtap="openServiceRecord" role="button" aria-label="查看本次美甲记录与分享作品">
     <text class="card-title">本次美甲记录</text>
     <text class="review-hint">查看照片、备注与可分享作品 ›</text>
+    <text class="beauty-cycle-hint">美甲黄金保持期约 3~4 周，建议定期卸甲或换新</text>
   </view>
   <view wx:if="{{order.remark}}" class="card">
     <text class="card-title">备注</text>
@@ -152,9 +152,9 @@
     <view class="review-photos">
       <view wx:for="{{reviewPhotos}}" wx:key="*this" class="review-photo-wrap">
           <image src="{{item}}" mode="aspectFill" class="review-photo" lazy-load aria-label="本次服务评价照片"/>
-        <view class="review-photo-remove" bindtap="removeReviewPhoto" data-index="{{index}}"></view>
+        <view class="review-photo-remove" bindtap="removeReviewPhoto" data-index="{{index}}" role="button" aria-label="删除评价照片"><view class="review-photo-remove-badge"><image class="review-photo-remove-icon" src="/static/icons/close-white.svg" mode="aspectFit" /></view></view>
       </view>
-      <view wx:if="{{reviewPhotos.length < 6}}" class="review-photo-add" bindtap="chooseReviewPhotos"><text class="review-photo-plus">+</text><text>添加照片</text></view>
+      <view wx:if="{{reviewPhotos.length < 6}}" class="review-photo-add" bindtap="chooseReviewPhotos" role="button" aria-label="添加评价照片"><image class="review-photo-plus-icon" src="/static/icons/plus.svg" mode="aspectFit" /><text>添加照片</text></view>
     </view>
     <view wx:if="{{reviewPhotos.length}}" class="photo-consent">
       <view class="consent-copy"><text class="consent-title">授权美甲师用于作品展示</text><text class="consent-desc">开启后，美甲师可将这些照片用于作品集；关闭即可撤销后续使用授权。</text></view>
@@ -164,21 +164,17 @@
   </view>
 
   <!-- ============ 底部操作栏 ============ -->
-  <view wx:if="{{order._actions.length > 0}}" class="bottom-actions">
-    <!-- 操作项不足 3 个：水平展示全部 -->
-    <block wx:if="{{order._actions.length < 3}}">
-      <view
-        wx:for="{{order._actions}}"
-        wx:key="key"
-        class="booking-action action-btn {{item.style}} {{actionSubmitting ? 'is-disabled' : ''}}"
-        bindtap="onAction"
-        data-key="{{item.key}}"
-      >
-        {{actionSubmitting === item.key ? '处理中...' : item.label}}
-      </view>
-    </block>
-    <!-- 操作项 3 个及以上：仅展示「更多操作」 -->
-    <view wx:else class="booking-action action-btn action-ghost" bindtap="openActionsSheet">更多操作</view>
+  <view wx:if="{{order._visibleActions.length > 0}}" class="bottom-actions">
+    <view
+      wx:for="{{order._visibleActions}}"
+      wx:key="key"
+      class="booking-action action-btn {{item.style}} {{actionSubmitting ? 'is-disabled' : ''}}"
+      bindtap="onAction"
+      data-key="{{item.key}}"
+      data-is-more="{{item.isMore ? 'true' : 'false'}}"
+    >
+      {{actionSubmitting === item.key ? '处理中...' : item.label}}
+    </view>
   </view>
 </view>
 
@@ -268,7 +264,7 @@
   </view>
   <view class="sheet-body action-sheet-body">
     <view
-      wx:for="{{order._actions}}"
+      wx:for="{{order._overflowActions && order._overflowActions.length > 0 ? order._overflowActions : order._actions}}"
       wx:key="key"
       class="action-sheet-item {{item.style}} {{actionSubmitting === item.key ? 'is-disabled' : ''}}"
       bindtap="onAction"

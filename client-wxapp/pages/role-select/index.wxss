@@ -3,7 +3,7 @@
 /* ===== 页面容器 ===== */
 .wrap {
   min-height: 100vh;
-  background: var(--bg-gradient-entry);
+  background: var(--nb-page);
   padding: 20rpx var(--space-xl) calc(var(--space-2xl) + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
@@ -13,19 +13,19 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 40rpx 0 44rpx;
+  padding: var(--space-xl) 0 44rpx;
 }
 
 .hero-icon-wrap {
   width: 108rpx;
   height: 108rpx;
-  background: var(--brand-gradient);
+  background: var(--nb-action);
   border-radius: 54rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: var(--space-md);
-  box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.24);
+  box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.08);
 }
 
 .hero-icon {
@@ -36,14 +36,14 @@
 .hero-title {
   font-size: 40rpx;
   font-weight: var(--weight-bold);
-  color: var(--text-primary);
+  color: var(--nb-ink);
   margin-bottom: var(--space-xs);
   line-height: 1.25;
 }
 
 .hero-sub {
   font-size: var(--font-sm);
-  color: var(--text-muted);
+  color: var(--nb-muted);
   text-align: center;
   line-height: var(--leading-normal);
   max-width: 480rpx;
@@ -60,19 +60,19 @@
 .role-card {
   display: flex;
   align-items: center;
-  background: var(--bg-card);
-  border: 0;
-  border-radius: var(--card-radius);
+  background: var(--nb-surface);
+  border: 1rpx solid var(--nb-line);
+  border-radius: 24rpx;
   padding: 28rpx var(--space-lg);
   box-sizing: border-box;
   transition: all 0.18s;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
 }
 
 .role-card-active {
-  border-color: var(--brand-primary);
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.06));
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.14);
+  border: 2rpx solid var(--nb-action);
+  background: var(--nb-surface);
+  box-shadow: 0 6rpx 24rpx rgba(0, 0, 0, 0.08);
 }
 
 .role-card-hover {
@@ -92,11 +92,11 @@
 }
 
 .role-icon-pink {
-  background: var(--brand-gradient);
+  background: var(--nb-soft-surface);
 }
 
 .role-icon-purple {
-  background: var(--nb-action);
+  background: var(--nb-soft-surface);
 }
 
 .role-icon-img {
@@ -153,26 +153,27 @@
 
 /* ===== 展开流程面板 ===== */
 .flow-panel {
-  background: var(--bg-card);
-  border-radius: var(--card-radius);
-  padding: 32rpx var(--space-lg);
-  margin-bottom: 24rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  background: var(--nb-surface);
+  border: 1rpx solid var(--nb-line);
+  border-radius: 24rpx;
+  padding: var(--space-lg);
+  margin-bottom: var(--space-md);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
 }
 
 .flow-title {
   font-size: var(--font-md);
-  font-weight: var(--weight-semibold);
-  color: var(--text-primary);
+  font-weight: 700;
+  color: var(--nb-ink);
   display: block;
   margin-bottom: 6rpx;
 }
 
 .flow-sub {
   font-size: var(--font-sm);
-  color: var(--text-muted);
+  color: var(--nb-muted);
   display: block;
-  margin-bottom: 24rpx;
+  margin-bottom: var(--space-md);
   line-height: var(--leading-normal);
 }
 
@@ -188,26 +189,26 @@
   flex: 1;
   height: 88rpx;
   background: var(--nb-soft-surface);
-  border: 0;
+  border: 1rpx solid transparent;
   border-radius: 16rpx;
   padding: 0 var(--space-lg);
   font-size: var(--font-md);
-  color: var(--text-primary);
+  color: var(--nb-ink);
   box-sizing: border-box;
   transition: border-color 0.18s;
 }
 
 .input:focus {
-  border-color: var(--brand-primary);
-  background: var(--nb-soft-surface);
+  border-color: var(--border-focus);
+  background: var(--nb-surface);
 }
 
 .input-success {
-  border-color: var(--nb-link);
+  border-color: var(--nb-success);
 }
 
 .input-placeholder {
-  color: var(--text-faint);
+  color: var(--nb-muted);
   font-size: var(--font-md);
 }
 
@@ -217,8 +218,8 @@
   right: 24rpx;
   width: 36rpx;
   height: 36rpx;
-  border: 3rpx solid var(--border-light);
-  border-top-color: var(--brand-primary);
+  border: 3rpx solid var(--nb-line);
+  border-top-color: var(--nb-ink);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
@@ -234,19 +235,21 @@
   height: 44rpx;
   border-radius: 50%;
   background: var(--nb-action);
-  color: var(--nb-surface);
-  font-size: var(--font-md);
-  font-weight: var(--weight-bold);
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.check-icon-svg {
+  width: 24rpx;
+  height: 24rpx;
 }
 
 .eye {
   position: absolute;
   right: 24rpx;
   font-size: var(--font-sm);
-  color: var(--brand-primary);
+  color: var(--nb-text-link);
   padding: var(--space-sm);
 }
 
@@ -254,18 +257,18 @@
 .found-card {
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.06));
-  border: 0;
+  background: var(--nb-page);
+  border: 1rpx solid var(--nb-line);
   border-radius: 16rpx;
   padding: 20rpx var(--space-lg);
-  margin-bottom: 24rpx;
+  margin-bottom: var(--space-md);
 }
 
 .found-avatar {
   width: 76rpx;
   height: 76rpx;
   border-radius: 38rpx;
-  background: var(--brand-gradient);
+  background: var(--nb-soft-surface);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -282,7 +285,7 @@
 .found-avatar text {
   font-size: var(--font-lg);
   font-weight: var(--weight-bold);
-  color: var(--text-inverse);
+  color: var(--nb-ink);
 }
 
 .found-info {
@@ -292,8 +295,8 @@
 
 .found-name {
   font-size: var(--font-md);
-  font-weight: var(--weight-semibold);
-  color: var(--text-primary);
+  font-weight: 600;
+  color: var(--nb-ink);
   display: block;
   margin-bottom: 4rpx;
   line-height: var(--leading-tight);
@@ -301,7 +304,7 @@
 
 .found-city {
   font-size: var(--font-xs);
-  color: var(--text-muted);
+  color: var(--nb-muted);
   display: block;
 }
 
@@ -309,7 +312,7 @@
 .btn-group {
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  gap: var(--space-sm);
 }
 
 .btn {
@@ -331,9 +334,9 @@
 }
 
 .btn-primary {
-  background: var(--brand-gradient);
-  color: var(--text-inverse);
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.28);
+  background: var(--nb-action);
+  color: var(--nb-inverse);
+  box-shadow: none;
 }
 
 .btn-secondary {
@@ -351,8 +354,8 @@
 .hint {
   background: rgba(0, 0, 0, 0.06);
   border-radius: 12rpx;
-  padding: 16rpx var(--space-md);
-  margin-bottom: 24rpx;
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-md);
 }
 
 .hint text {

@@ -38,6 +38,9 @@
           bind:complete="onBookingCardComplete"
           bind:confirmed="onBookingCardConfirmed"
           bind:rebook="onBookingCardRebook"
+          bind:record="onBookingCardRecord"
+          bind:uploadwork="onBookingCardUploadWork"
+          bind:viewwork="onBookingCardViewWork"
         />
       </view>
     </view>

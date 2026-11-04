@@ -5,12 +5,12 @@
     <!-- 搜索栏 + 新建对话 -->
     <view class="search-row">
       <view class="search-bar">
-        <view class="search-icon"></view>
+        <image class="search-icon" src="/static/icons/search.svg" mode="aspectFit" />
         <input class="search-input" placeholder="搜索对话或提醒"
           value="{{searchText}}" bindinput="onSearchInput" confirm-type="search"/>
       </view>
       <view class="header-btn" bindtap="openNewChat">
-        <text class="header-btn-icon">+</text>
+        <image class="header-btn-icon" src="/static/icons/plus.svg" mode="aspectFit" />
         <text class="header-btn-text">对话</text>
       </view>
     </view>
@@ -91,7 +91,7 @@
         <!-- 空态 -->
         <view wx:else class="empty-card">
           <view class="empty-icon-wrap">
-            <view class="empty-icon-inner"></view>
+            <image class="empty-chat-icon" src="/static/icons/tab-chat.svg" mode="aspectFit" />
           </view>
           <text class="empty-title">没有匹配的消息提醒</text>
           <text class="empty-sub">预约提醒和服务通知会统一显示在这里</text>
@@ -109,7 +109,7 @@
         <text class="msg-type-badge-text">{{selectedNotification.badge}}</text>
       </view>
       <view class="modal-close" bindtap="closeNotification" aria-label="关闭消息详情">
-        <text class="modal-close-icon">X</text>
+        <image class="modal-close-icon" src="/static/icons/close.svg" mode="aspectFit" />
       </view>
     </view>
 
@@ -151,11 +151,11 @@
         <text class="modal-subtitle">选择一个客户开始聊天</text>
       </view>
       <view class="modal-close" bindtap="closeNewChat" aria-label="关闭客户选择">
-        <text class="modal-close-icon">X</text>
+        <image class="modal-close-icon" src="/static/icons/close.svg" mode="aspectFit" />
       </view>
     </view>
     <view class="search-bar modal-search">
-      <view class="search-icon"></view>
+      <image class="search-icon" src="/static/icons/search.svg" mode="aspectFit" />
       <input class="search-input" placeholder="搜索客户姓名或手机号"
         value="{{customerSearch}}" bindinput="onCustomerSearch" confirm-type="search"/>
     </view>
@@ -195,4 +195,4 @@
   </view>
 </view>
 
-<tab-bar selected="chat" unread-count="{{unreadCount}}" />
+<tab-bar selected="chat" unread-count="{{unreadCount}}" placeholder="{{false}}" />

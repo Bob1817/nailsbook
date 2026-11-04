@@ -2,6 +2,10 @@
   "navigationBarTitleText": "店铺管理",
   "navigationStyle": "custom",
   "usingComponents": {
-    "nav-bar": "/components/nav-bar/index"
+    "nav-bar": "/components/nav-bar/index",
+    "state-card": "/components/state-card/index",
+    "form-field": "/components/form-field/index",
+    "location-field": "/components/location-field/index",
+    "bottom-action-bar": "/components/bottom-action-bar/index"
   }
 }

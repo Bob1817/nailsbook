@@ -63,7 +63,9 @@
   <view class="modal-content" catchtap="preventBubble">
     <view class="modal-header">
       <text class="modal-title">绑定美甲师</text>
-      <view class="modal-close" bindtap="closeBindModal">×</view>
+      <view class="modal-close" bindtap="closeBindModal">
+        <image class="modal-close-icon" src="/static/icons/close.svg" mode="aspectFit" />
+      </view>
     </view>
 
     <view class="modal-body">

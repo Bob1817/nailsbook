@@ -3,9 +3,14 @@
 <view class="page">
   <!-- 内容区 -->
   <view class="content">
-    <!-- 加载中 -->
-    <view wx:if="{{loading}}" class="loading-wrap">
-      <view class="spinner"></view>
+    <!-- 加载中骨架屏 -->
+    <view wx:if="{{loading}}" class="waterfall skel-mode">
+      <view class="col">
+        <view wx:for="{{[1,2,3]}}" wx:key="*this" class="skel-card skel-tall"></view>
+      </view>
+      <view class="col">
+        <view wx:for="{{[1,2]}}" wx:key="*this" class="skel-card skel-mid"></view>
+      </view>
     </view>
 
     <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
@@ -13,6 +18,7 @@
       <text class="empty-title">作品加载失败</text>
       <text class="empty-sub">请检查网络后重试</text>
       <button class="retry-btn booking-action" bindtap="retryLoad">重新加载</button>
+      <button class="retry-btn booking-action" bindtap="goHome">进入小程序首页</button>
     </view>
 
     <block wx:else>
@@ -78,8 +84,7 @@
       <!-- 区域标题 -->
       <view class="section-head">
         <view class="section-titles">
-          <text class="section-title">{{galleryOnly ? '全部作品' : (businessPage ? '作品画册' : (keyword ? keyword + '灵感' : '精选作品'))}}</text>
-          <text class="section-sub">{{businessPage ? '浏览公开作品，选择喜欢的款式' : (keyword ? '为你筛选相关风格作品' : '来自你已绑定美甲师的作品画册')}}</text>
+          <text class="section-title">{{galleryOnly ? '全部作品' : (businessPage ? '作品画册' : (keyword ? keyword + '灵感' : '全部作品'))}}</text>
         </view>
         <view wx:if="{{totalCount > 0}}" class="count-badge">
           <text class="count-text">{{totalCount}} 条动态</text>
@@ -88,7 +93,7 @@
 
       <scroll-view wx:if="{{categoryFilters.length > 1}}" scroll-x class="tech-scroll category-scroll" enhanced show-scrollbar="{{false}}">
         <view class="tech-pills">
-          <view wx:for="{{categoryFilters}}" wx:key="*this" class="tech-pill {{selectedCategory === item ? 'tech-pill-active' : ''}}" bindtap="switchCategory" data-name="{{item}}">{{item}}</view>
+          <view wx:for="{{categoryFilters}}" wx:key="*this" class="tech-pill {{selectedCategory === item ? 'tech-pill-active' : ''}}" bindtap="switchCategory" data-name="{{item}}" role="button" aria-pressed="{{selectedCategory === item}}">{{item}}</view>
         </view>
       </scroll-view>
 
@@ -100,6 +105,8 @@
           class="sort-tab {{sortBy === item.key ? 'sort-tab-active' : ''}}"
           bindtap="switchSort"
           data-key="{{item.key}}"
+          role="button"
+          aria-pressed="{{sortBy === item.key}}"
         >
           <text>{{item.label}}</text>
           <view class="sort-arrow {{sortBy === item.key ? (sortDirs[item.key] === 'asc' ? 'sort-arrow-up' : 'sort-arrow-down') : 'sort-arrow-down'}}"></view>
@@ -115,6 +122,8 @@
             class="tech-pill {{selectedTech === item ? 'tech-pill-active' : ''}}"
             bindtap="switchTech"
             data-name="{{item}}"
+            role="button"
+            aria-pressed="{{selectedTech === item}}"
           >{{item}}</view>
         </view>
       </scroll-view>
@@ -126,14 +135,9 @@
 
       <!-- 瀑布流 -->
       <view wx:else class="waterfall">
-        <view class="col">
-          <view wx:for="{{leftCol}}" wx:key="id">
-            <work-card work="{{item}}" show-artist="{{!galleryOnly}}" bind:cardtap="viewWork" bind:artisttap="viewArtist" />
-          </view>
-        </view>
-        <view class="col">
-          <view wx:for="{{rightCol}}" wx:key="id">
-            <work-card work="{{item}}" show-artist="{{!galleryOnly}}" bind:cardtap="viewWork" bind:artisttap="viewArtist" />
+        <view class="col" wx:for="{{waterfallCols}}" wx:for-item="col" wx:key="id">
+          <view wx:for="{{col.items}}" wx:key="id">
+            <work-card variant="{{galleryOnly ? 'minimal' : 'editorial'}}" work="{{item}}" show-artist="{{!galleryOnly}}" bind:cardtap="viewWork" bind:artisttap="viewArtist" />
           </view>
         </view>
       </view>

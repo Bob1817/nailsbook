@@ -16,8 +16,34 @@
 
   <!-- Orders for selected day -->
   <view class="date-header">
-    <text class="date-text">{{selectedDate}}</text>
-    <text class="count-text">{{dayOrders.length}} 个预约</text>
+    <view class="date-header-left">
+      <text class="date-text">{{selectedDate}}</text>
+      <text class="count-text">{{dayOrders.length}} 个预约{{dayBlockedSlots.length > 0 ? ' · ' + dayBlockedSlots.length + ' 个锁档' : ''}}</text>
+    </view>
+    <button class="add-block-btn" bindtap="openBlockModal" hover-class="control-pressed" role="button" aria-label="添加临时锁档">
+      <image class="add-block-icon" src="/static/icons/plus.svg" mode="aspectFit" />
+      <text>临时锁档</text>
+    </button>
+  </view>
+
+  <!-- 手动锁档时段展示卡片 -->
+  <view wx:if="{{dayBlockedSlots.length > 0}}" class="blocked-slots-section">
+    <view class="blocked-slots-head">
+      <text class="blocked-slots-title">临时锁定不可约时段</text>
+      <text class="blocked-slots-sub">该时段在客户选时页面将置灰显示为已被占用</text>
+    </view>
+    <view wx:for="{{dayBlockedSlots}}" wx:key="id" class="blocked-slot-card">
+      <view class="blocked-slot-info">
+        <view class="blocked-slot-tag-row">
+          <text class="blocked-slot-badge">{{item.reason}}</text>
+          <text class="blocked-slot-time">{{item.timeRange}}</text>
+        </view>
+        <text class="blocked-slot-desc">此时间段已锁定，客户无法预约</text>
+      </view>
+      <button class="unlock-slot-btn" bindtap="onUnlockSlot" data-id="{{item.id}}" hover-class="control-pressed" role="button" aria-label="解锁 {{item.timeRange}} 时段">
+        <text>解锁</text>
+      </button>
+    </view>
   </view>
 
   <view wx:if="{{loading}}" class="empty">
@@ -29,8 +55,12 @@
     <view class="retry-button booking-action" bindtap="retryLoad">重新加载</view>
   </view>
 
-  <view wx:elif="{{dayOrders.length === 0}}" class="empty">
-    <text class="empty-text">今天暂无预约</text>
+  <view wx:elif="{{dayOrders.length === 0 && dayBlockedSlots.length === 0}}" class="empty">
+    <text class="empty-text">今天暂无预约及锁档</text>
+  </view>
+
+  <view wx:elif="{{dayOrders.length === 0 && dayBlockedSlots.length > 0}}" class="empty empty-has-blocks">
+    <text class="empty-text">今天暂无客户预约订单</text>
   </view>
 
   <view wx:else class="order-list">
@@ -47,7 +77,81 @@
       bind:cancel="onBookingCardCancel"
       bind:complete="onBookingCardComplete"
       bind:rebook="onBookingCardRebook"
+      bind:record="onBookingCardRecord"
+      bind:uploadwork="onBookingCardUploadWork"
+      bind:viewwork="onBookingCardViewWork"
     />
+  </view>
+
+  <!-- 临时锁档设置弹窗 -->
+  <view wx:if="{{showBlockModal}}" class="block-modal-mask" bindtap="closeBlockModal">
+    <view class="block-modal-content" catchtap="preventBubble">
+      <view class="block-modal-header">
+        <text class="block-modal-title">添加临时锁档</text>
+        <view class="block-modal-close" bindtap="closeBlockModal" role="button" aria-label="关闭">
+          <image class="modal-close-icon" src="/static/icons/close.svg" mode="aspectFit" />
+        </view>
+      </view>
+
+      <view class="block-modal-body">
+        <view class="block-field">
+          <text class="block-field-label">锁档日期</text>
+          <text class="block-field-value">{{selectedDate}}</text>
+        </view>
+
+        <view class="block-field">
+          <text class="block-field-label">时间范围</text>
+          <view class="block-time-pickers">
+            <picker mode="time" value="{{blockStartTime}}" bindchange="onBlockStartTimeChange">
+              <view class="picker-value-box">
+                <text class="picker-label">开始</text>
+                <text class="picker-text">{{blockStartTime}}</text>
+              </view>
+            </picker>
+            <text class="time-sep">至</text>
+            <picker mode="time" value="{{blockEndTime}}" bindchange="onBlockEndTimeChange">
+              <view class="picker-value-box">
+                <text class="picker-label">结束</text>
+                <text class="picker-text">{{blockEndTime}}</text>
+              </view>
+            </picker>
+          </view>
+        </view>
+
+        <view class="block-field">
+          <text class="block-field-label">锁档原因</text>
+          <view class="reason-chips">
+            <view
+              wx:for="{{blockReasonOptions}}"
+              wx:key="*this"
+              class="reason-chip {{blockReason === item && !customReason ? 'chip-active' : ''}}"
+              bindtap="selectBlockReason"
+              data-reason="{{item}}"
+            >
+              <text>{{item}}</text>
+            </view>
+          </view>
+          <input
+            class="custom-reason-input"
+            value="{{customReason}}"
+            bindinput="onCustomReasonInput"
+            placeholder="自定义锁档原因（选填）"
+            placeholder-class="form-placeholder"
+            maxlength="20"
+          />
+        </view>
+
+        <view class="block-hint">
+          <image class="hint-icon" src="/static/icons/pin.svg" mode="aspectFit" />
+          <text>锁档后，该时段在客户端预约日历和报价选时中将自动置灰不可约，随时可一键解锁恢复。</text>
+        </view>
+      </view>
+
+      <view class="block-modal-actions">
+        <button class="modal-cancel-btn" bindtap="closeBlockModal">取消</button>
+        <button class="modal-confirm-btn" bindtap="confirmCreateBlockedSlot" loading="{{submittingBlock}}" disabled="{{submittingBlock}}">确认锁档</button>
+      </view>
+    </view>
   </view>
 
 </view>

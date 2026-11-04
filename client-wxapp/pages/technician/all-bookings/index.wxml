@@ -1,26 +1,35 @@
 <nav-bar title="{{tradeView ? '我的订单' : '全部预约'}}" showBack="{{true}}"/>
 <view class="page">
-  <!-- 筛选标签栏 -->
-  <view class="filter-strip">
-    <scroll-view scroll-x class="filter-scroll" enhanced show-scrollbar="{{false}}">
-      <view class="filter-inner">
-        <view
-          class="filter-tab {{activeFilter === item.value ? 'active' : ''}}"
-          wx:for="{{filterTabs}}"
-          wx:key="value"
-          bindtap="selectFilter"
-          data-value="{{item.value}}"
-        >
-          <text>{{item.label}}</text>
+  <!-- 顶部控制面板（筛选栏 + 统计与操作栏统一白底沉浸） -->
+  <view class="filter-panel">
+    <!-- 筛选标签栏 -->
+    <view class="filter-strip">
+      <scroll-view scroll-x class="filter-scroll" enhanced show-scrollbar="{{false}}">
+        <view class="filter-inner">
+          <view
+            class="filter-tab {{activeFilter === item.value ? 'active' : ''}}"
+            wx:for="{{filterTabs}}"
+            wx:key="value"
+            bindtap="selectFilter"
+            data-value="{{item.value}}"
+            role="button"
+            aria-pressed="{{activeFilter === item.value}}"
+            aria-label="{{item.label}}筛选"
+          >
+            <text>{{item.label}}</text>
+          </view>
         </view>
-      </view>
-    </scroll-view>
-  </view>
+      </scroll-view>
+    </view>
 
-  <!-- 统计 -->
-  <view class="page-header">
-    <text class="page-count">共 {{activeFilter === 'pre_booking' ? filteredPreBookingItems.length : filteredOrders.length}} 个{{activeFilter === 'pre_booking' ? '待成单事项' : (tradeView ? '订单' : '预约')}}</text>
-    <view wx:if="{{!tradeView}}" class="quick-quote-entry" bindtap="openQuickQuote" hover-class="control-pressed" role="button">快速报价</view>
+    <!-- 统计与操作栏 -->
+    <view class="page-header">
+      <text class="page-count">共 {{activeFilter === 'pre_booking' ? filteredPreBookingItems.length : filteredOrders.length}} 个{{activeFilter === 'pre_booking' ? '待成单事项' : (tradeView ? '订单' : '预约')}}</text>
+      <view wx:if="{{!tradeView}}" class="quick-quote-btn quick-quote-entry" bindtap="openQuickQuote" role="button" aria-label="快速报价">
+        <image class="quick-quote-icon" src="/static/icons/quick-quote.svg" mode="aspectFit" />
+        <text class="quick-quote-text">快速报价</text>
+      </view>
+    </view>
   </view>
 
   <!-- 预约列表 -->
@@ -91,6 +100,9 @@
           bind:complete="onBookingCardComplete"
           bind:confirmed="onBookingCardConfirmed"
           bind:rebook="onBookingCardRebook"
+          bind:record="onBookingCardRecord"
+          bind:uploadwork="onBookingCardUploadWork"
+          bind:viewwork="onBookingCardViewWork"
         />
       </view>
     </view>

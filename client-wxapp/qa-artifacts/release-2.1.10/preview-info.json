@@ -1,0 +1,23 @@
+{
+  "size": {
+    "total": 1718183,
+    "packages": [
+      {
+        "name": "TOTAL",
+        "size": 1718183
+      },
+      {
+        "name": "main",
+        "size": 330914
+      },
+      {
+        "name": "/pages/client/",
+        "size": 689075
+      },
+      {
+        "name": "/pages/technician/",
+        "size": 698194
+      }
+    ]
+  }
+}

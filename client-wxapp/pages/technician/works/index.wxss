@@ -1,6 +1,6 @@
 .container {
   min-height: 100vh;
-  background: var(--bg-page);
+  background: var(--nb-page);
   padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
 }
 
@@ -31,43 +31,28 @@
 }
 
 .empty-icon-wrap {
-  margin-bottom: 24rpx;
+  margin-bottom: var(--space-md);
 }
 
-.icon-placeholder-circle {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 50%;
-  background: var(--bg-tag);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
-.icon-placeholder-inner {
-  width: 52rpx;
-  height: 52rpx;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.32);
-}
 
 .empty-title {
   font-size: var(--font-md);
   font-weight: var(--weight-semibold);
   color: var(--text-muted);
-  margin-bottom: 8rpx;
+  margin-bottom: var(--space-xs);
 }
 
 .empty-sub {
   font-size: var(--font-sm);
   color: var(--text-muted);
-  margin-bottom: 32rpx;
+  margin-bottom: var(--space-lg);
   text-align: center;
 }
 
 .btn-add-first {
   height: 88rpx;
-  padding: 0 64rpx;
+  padding: 0 var(--space-3xl);
   background: var(--brand-gradient);
   color: var(--text-inverse);
   border-radius: var(--btn-radius);
@@ -85,16 +70,17 @@
 /* 瀑布流 */
 .waterfall {
   display: flex;
-  gap: 16rpx;
-  padding: 16rpx 32rpx;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
   align-items: flex-start;
 }
 
 .col {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  gap: var(--space-sm);
 }
 .work-item { width:100%; overflow:hidden; border-radius:var(--radius-md); background:var(--nb-surface); box-shadow:var(--shadow-sm); }
 
@@ -156,7 +142,7 @@
   color: var(--text-inverse);
   font-weight: var(--weight-semibold);
   background: rgba(0, 0, 0, 0.3);
-  padding: 8rpx 40rpx;
+  padding: var(--space-xs) var(--space-xl);
   border-radius: var(--radius-sm);
 }
 
@@ -166,14 +152,14 @@
   top: 16rpx;
   left: 16rpx;
   display: flex;
-  gap: 8rpx;
+  gap: var(--space-xs);
   z-index: 2;
 }
 
 .tag-pill {
   font-size: var(--font-xs);
   font-weight: var(--weight-semibold);
-  padding: 4rpx 16rpx;
+  padding: 4rpx var(--space-sm);
   border-radius: var(--radius-md);
   backdrop-filter: blur(8px);
 }
@@ -217,7 +203,7 @@
 .card-bottom {
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  padding: 16rpx 20rpx;
+  padding: var(--space-sm) 20rpx;
   z-index: 1;
 }
 
@@ -243,7 +229,7 @@
 .card-stats-row {
   display: flex;
   align-items: center;
-  gap: 24rpx;
+  gap: var(--space-md);
   margin-top: 10rpx;
 }
 
@@ -271,12 +257,16 @@
   left: 0;
   right: 0;
   z-index: 50;
-  padding: 20rpx 40rpx calc(20rpx + env(safe-area-inset-bottom));
-  background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 30%, var(--nb-surface) 100%);
-  backdrop-filter: blur(10px);
+  padding: 20rpx var(--space-xl) calc(20rpx + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1rpx solid var(--nb-line);
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.04);
 }
 
 .btn-publish {
+  max-width: none;
   width: 100%;
   height: 88rpx;
   background: var(--brand-gradient);
@@ -296,20 +286,52 @@
 @import '../../../styles/booking-actions.wxss';
 .btn-add-first,.btn-publish { background:var(--nb-action); }
 .btn-add-first.booking-action,
-.btn-publish.booking-action { min-height:44px; height:44px; border-radius:8px; font-size:var(--font-sm); line-height:1.4; box-shadow:none; }
+.btn-publish.booking-action { min-height:44px; height:44px; border-radius:12rpx; font-size:var(--font-sm); font-weight:700; line-height:1.4; box-shadow:none; }
 
-.manage-tools { margin:16rpx 24rpx 0; padding:20rpx; border-radius:20rpx; background:var(--nb-surface); box-shadow:var(--shadow-sm); }
-.search-row { min-height:88rpx; padding:0 20rpx; display:flex; align-items:center; gap:14rpx; border-radius:16rpx; background:var(--nb-soft-surface); box-sizing:border-box; }
-.search-row image { width:32rpx; height:32rpx; opacity:.64; }
-.search-row input { flex:1; min-width:0; min-height:44px; font-size:var(--font-sm); color:var(--nb-ink); }
-.search-clear { width:44px; height:44px; display:flex; align-items:center; justify-content:center; color:var(--nb-muted); font-size:var(--font-md); }
-.filter-scroll { margin-top:16rpx; white-space:nowrap; }
-.filter-list { display:inline-flex; gap:12rpx; padding:2rpx 0; }
-.filter-chip,.status-chip { min-height:44px; padding:0 22rpx; display:flex; align-items:center; border-radius:999rpx; background:var(--nb-soft-surface); color:var(--nb-secondary); font-size:var(--font-xs); box-sizing:border-box; }
-.filter-chip.selected,.status-chip.selected { background:var(--nb-action); color:var(--text-inverse); }
-.status-row { margin-top:12rpx; display:flex; align-items:center; gap:12rpx; }
-.status-scroll { flex:1; min-width:0; white-space:nowrap; }
-.sort-action { min-height:44px; padding:0 14rpx; flex-shrink:0; display:flex; align-items:center; color:var(--nb-text-link); font-size:var(--font-xs); font-weight:var(--weight-medium); }
-.result-head { padding:20rpx 32rpx 0; display:flex; align-items:center; justify-content:space-between; color:var(--nb-muted); font-size:var(--font-xs); }
+
+.manage-tools { margin: 0 var(--space-lg); padding: var(--space-sm) 0 0; }
+.search-row { min-height: 44px; padding: 0 var(--space-sm); display: flex; align-items: center; gap: var(--space-sm); border-radius: 8px; background: var(--nb-surface); }
+.search-row image { width: 18px; height: 18px; }
+.search-row input { flex: 1; min-width: 0; min-height: 44px; font-size: var(--font-sm); }
+.search-clear { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; }
+.status-row, .secondary-tools { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); }
+.status-row { border-bottom: 1rpx solid var(--nb-line); }
+.simple-tabs { display: flex; gap: var(--space-lg); min-width: 0; }
+.simple-tab, .filter-action, .reset-filter { display: flex; align-items: center; min-height: 44px; font-size: var(--font-xs); color: var(--nb-secondary); }
+.simple-tab { border-bottom: 2px solid transparent; }
+.simple-tab.active { border-bottom-color: var(--nb-ink); color: var(--nb-ink); font-weight: var(--weight-semibold); }
+.simple-tab:active, .filter-action:active, .reset-filter:active { background: var(--nb-page); }
+.reset-filter { color: var(--nb-text-link); }
+page { background: var(--nb-page); }
+.result-head { padding:20rpx var(--space-lg) 0; display:flex; align-items:center; justify-content:space-between; color:var(--nb-muted); font-size:var(--font-xs); }
 .filter-empty { padding-top:72rpx; }
-.empty-work-icon { width:96rpx; height:96rpx; margin-bottom:24rpx; opacity:.5; }
+.empty-work-icon { width:96rpx; height:96rpx; margin-bottom:var(--space-md); opacity:.5; }
+
+/* ===== 瀑布流感知骨架屏 ===== */
+.skel-mode {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  align-items: flex-start;
+  box-sizing: border-box;
+}
+.skel-card {
+  width: 100%;
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    90deg,
+    var(--nb-page) 0%,
+    var(--nb-surface) 50%,
+    var(--nb-page) 100%
+  );
+  background-size: 200% 100%;
+  animation: techSkelShimmer 1.5s ease-in-out infinite;
+  margin-bottom: var(--space-sm);
+}
+.skel-tall { height: 440rpx; }
+.skel-mid  { height: 340rpx; }
+
+@keyframes techSkelShimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}

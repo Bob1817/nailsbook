@@ -140,6 +140,8 @@ Page({
 
   navigateToArchive() { wx.navigateTo({ url: '/pages/client/beauty-archive/index' }); },
 
+  navigateToAddresses() { wx.navigateTo({ url:'/pages/client/addresses/index' }); },
+
   navigateToOrders() {
     wx.navigateTo({ url: '/pages/client/orders/index' });
   },

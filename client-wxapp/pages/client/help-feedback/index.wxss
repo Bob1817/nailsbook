@@ -1,55 +1,63 @@
 .container {
   min-height: 100vh;
-  background: var(--bg-page);
-  padding: 32rpx;
+  background: var(--nb-page);
+  padding: var(--space-lg);
+  box-sizing: border-box;
 }
 
 .section {
-  margin-bottom: 40rpx;
+  margin-bottom: var(--space-xl);
 }
 
 .section-title {
   display: block;
   font-size: var(--font-md);
-  font-weight: var(--weight-semibold);
-  color: var(--text-primary);
+  font-weight: 700;
+  color: var(--nb-ink);
   margin-bottom: var(--space-sm);
   padding: 0 4rpx;
+  letter-spacing: -0.01em;
 }
 
+/* Airbnb FAQ Card */
 .faq-card {
-  background: var(--bg-page);
-  border-radius: var(--radius-md);
+  background: var(--nb-surface);
+  border: 1rpx solid var(--nb-line);
+  border-radius: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
   overflow: hidden;
 }
 
 .faq-item {
-  padding: 0 32rpx;
+  padding: 0 var(--space-lg);
 }
 
 .faq-border {
-  border-bottom: 0;
+  border-bottom: 1rpx solid var(--nb-line);
 }
 
 .faq-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 28rpx 0;
+  padding: 32rpx 0;
   gap: 20rpx;
+  min-height: 88rpx;
+  box-sizing: border-box;
 }
 
 .faq-q {
   flex: 1;
   font-size: var(--font-md);
-  color: var(--text-primary);
+  font-weight: 600;
+  color: var(--nb-ink);
   line-height: var(--leading-normal);
 }
 
 .faq-arrow {
   font-size: var(--font-lg);
-  color: var(--text-muted);
-  transition: transform 0.2s;
+  color: var(--nb-muted);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   display: inline-block;
 }
 
@@ -63,26 +71,31 @@
 
 .faq-a {
   font-size: var(--font-sm);
-  color: var(--text-body);
+  color: var(--nb-secondary);
   line-height: 1.7;
 }
 
+/* Airbnb Contact Card */
 .contact-card {
   display: flex;
   align-items: center;
-  background: var(--bg-page);
-  border-radius: var(--radius-md);
-  padding: 28rpx 40rpx;
-  gap: 24rpx;
+  background: var(--nb-surface);
+  border: 1rpx solid var(--nb-line);
+  border-radius: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  padding: 28rpx var(--space-xl);
+  gap: var(--space-md);
   margin-bottom: var(--space-sm);
 }
-.contact-card:active { opacity: 0.7; }
+.contact-card:active {
+  background: var(--nb-pressed);
+}
 
 .contact-icon-wrap {
   width: 80rpx;
   height: 80rpx;
-  border-radius: var(--radius-sm);
-  background: var(--bg-tag);
+  border-radius: 18rpx;
+  background: var(--nb-soft-surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -111,7 +124,7 @@
   right: 0;
   height: 18rpx;
   border-radius: 6rpx;
-  background: var(--brand-primary);
+  background: var(--nb-ink);
 }
 .icon-chat::after {
   content: '';
@@ -122,7 +135,7 @@
   height: 0;
   border-left: 5rpx solid transparent;
   border-right: 5rpx solid transparent;
-  border-top: 7rpx solid var(--brand-primary);
+  border-top: 7rpx solid var(--nb-ink);
 }
 
 .contact-info {
@@ -132,25 +145,26 @@
 .contact-title {
   display: block;
   font-size: var(--font-md);
-  color: var(--text-primary);
+  font-weight: 600;
+  color: var(--nb-ink);
   margin-bottom: 6rpx;
 }
 
 .contact-desc {
   display: block;
   font-size: var(--font-sm);
-  color: var(--text-muted);
+  color: var(--nb-muted);
 }
 
 .arrow {
   font-size: var(--font-xl);
-  color: var(--text-muted);
+  color: var(--nb-muted);
 }
 
 .contact-tip {
   display: block;
   font-size: var(--font-sm);
-  color: var(--text-muted);
+  color: var(--nb-muted);
   line-height: 1.6;
   padding: 0 4rpx;
 }

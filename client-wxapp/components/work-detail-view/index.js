@@ -1,6 +1,9 @@
 const { supportWechat = '' } = require('../../config');
 
 Component({
+  options: {
+    multipleSlots: true
+  },
   properties: {
     work: { type: Object, value: {} },
     imageUrls: { type: Array, value: [] },
@@ -31,16 +34,25 @@ Component({
     showHidden: false,
     inputFocused: false,
     keyboardHeight: 0,
-    topButtonStyle: 'top: 44px;'
+    topButtonStyle: 'top: 44px;',
+    hasHistory: false
   },
   lifetimes: {
     attached() {
       try {
         const menu = wx.getMenuButtonBoundingClientRect();
+        const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : [];
         this.setData({
-          topButtonStyle: `top:${menu.top}px;`
+          topButtonStyle: `top:${menu.top}px;`,
+          hasHistory: pages.length > 1
         });
       } catch (e) {}
+    }
+  },
+  pageLifetimes: {
+    show() {
+      const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : [];
+      this.setData({ hasHistory: pages.length > 1 });
     }
   },
   methods: {
@@ -49,8 +61,19 @@ Component({
       wx.setClipboardData({ data: this.data.supportWechat, success: () => wx.showToast({ title: '微信号已复制', icon: 'none' }), fail: () => wx.showToast({ title: '复制失败，请长按微信号复制', icon: 'none' }) });
     },
     onSupportError() { wx.showToast({ title: '客服暂不可用，请稍后再试', icon: 'none' }); },
-    emit(e) { this.triggerEvent(e.currentTarget.dataset.event, e.detail || {}); },
+    emit(e) {
+      const eventName = e.currentTarget.dataset.event;
+      if (eventName === 'home') {
+        this.triggerEvent('home', e.detail || {});
+        return;
+      }
+      this.triggerEvent(eventName, e.detail || {});
+    },
     retryShare() {
+      if (this.properties.isAuthor) {
+        this.triggerEvent('share');
+        return;
+      }
       if (!this.properties.canShare && this.properties.canRetryShare) this.triggerEvent('shareretry');
     },
     onSwiperChange(e) { this.setData({ currentImageIndex: e.detail.current }); },

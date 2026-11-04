@@ -1,4 +1,4 @@
-<nav-bar title="登录" transparent/>
+<nav-bar title="登录" showBack customBack bind:back="handleBack" transparent/>
 <view class="container">
 
   <view class="header">

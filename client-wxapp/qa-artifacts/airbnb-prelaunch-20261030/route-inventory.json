@@ -1,0 +1,899 @@
+[
+  {
+    "route": "pages/login/index",
+    "templateExists": true,
+    "styleLines": 373,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 2,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/booking/index",
+    "templateExists": true,
+    "styleLines": 1,
+    "sharedComponents": {},
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/register/index",
+    "templateExists": true,
+    "styleLines": 30,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 5,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/setup-password/index",
+    "templateExists": true,
+    "styleLines": 213,
+    "sharedComponents": {},
+    "rawInputCount": 2,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/account-deletion/index",
+    "templateExists": true,
+    "styleLines": 13,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/discover/index",
+    "templateExists": true,
+    "styleLines": 217,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "tab-bar": "/components/tab-bar/index",
+      "work-card": "/components/work-card/index"
+    },
+    "rawInputCount": 1,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/login/index",
+    "templateExists": true,
+    "styleLines": 164,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 2,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/register/index",
+    "templateExists": true,
+    "styleLines": 242,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 3,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/forgot-password/index",
+    "templateExists": true,
+    "styleLines": 49,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "secondary-page-header": "/components/secondary-page-header/index",
+      "form-field": "/components/form-field/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/welcome/index",
+    "templateExists": true,
+    "styleLines": 165,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 1,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/home/index",
+    "templateExists": true,
+    "styleLines": 437,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "tab-bar": "/components/tab-bar/index",
+      "work-card": "/components/work-card/index",
+      "subscription-onboarding": "/components/subscription-onboarding/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/works/index",
+    "templateExists": true,
+    "styleLines": 540,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "tab-bar": "/components/tab-bar/index",
+      "work-card": "/components/work-card/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/artist-home/index",
+    "templateExists": true,
+    "styleLines": 1370,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "work-card": "/components/work-card/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 2
+  },
+  {
+    "route": "pages/client/work-detail/index",
+    "templateExists": true,
+    "styleLines": 535,
+    "sharedComponents": {
+      "work-detail-view": "/components/work-detail-view/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 1
+  },
+  {
+    "route": "pages/client/beauty-archive/index",
+    "templateExists": true,
+    "styleLines": 162,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "filter-trigger": "/components/filter-trigger/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 1
+  },
+  {
+    "route": "pages/client/ai-photo/index",
+    "templateExists": true,
+    "styleLines": 3,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/public-work/index",
+    "templateExists": true,
+    "styleLines": 685,
+    "sharedComponents": {
+      "work-detail-view": "/components/work-detail-view/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 2
+  },
+  {
+    "route": "pages/client/quick-booking/index",
+    "templateExists": true,
+    "styleLines": 14,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "nb-switch": "/components/nb-switch/index",
+      "booking-time-picker": "/components/booking-time-picker/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/create-order/index",
+    "templateExists": true,
+    "styleLines": 1709,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "booking-time-picker": "/components/booking-time-picker/index",
+      "work-card": "/components/work-card/index",
+      "address-card": "/components/address-card/index"
+    },
+    "rawInputCount": 3,
+    "fixedDeclarationCount": 4
+  },
+  {
+    "route": "pages/client/orders/index",
+    "templateExists": true,
+    "styleLines": 382,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "tab-bar": "/components/tab-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/order-detail/index",
+    "templateExists": true,
+    "styleLines": 584,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "booking-time-picker": "/components/booking-time-picker/index",
+      "work-card": "/components/work-card/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 3
+  },
+  {
+    "route": "pages/client/designs/index",
+    "templateExists": true,
+    "styleLines": 395,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/create-design/index",
+    "templateExists": true,
+    "styleLines": 11,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/customize-design/index",
+    "templateExists": true,
+    "styleLines": 11,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/design-detail/index",
+    "templateExists": true,
+    "styleLines": 735,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 1,
+    "fixedDeclarationCount": 2
+  },
+  {
+    "route": "pages/client/chat/index",
+    "templateExists": true,
+    "styleLines": 505,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "tab-bar": "/components/tab-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 1
+  },
+  {
+    "route": "pages/client/chat-detail/index",
+    "templateExists": true,
+    "styleLines": 679,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 1,
+    "fixedDeclarationCount": 3
+  },
+  {
+    "route": "pages/client/profile/index",
+    "templateExists": true,
+    "styleLines": 1617,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "tab-bar": "/components/tab-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 2
+  },
+  {
+    "route": "pages/client/profile-completion/index",
+    "templateExists": true,
+    "styleLines": 27,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 1,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/my-technicians/index",
+    "templateExists": true,
+    "styleLines": 104,
+    "sharedComponents": {
+      "tab-bar": "/components/tab-bar/index",
+      "nav-bar": "/components/nav-bar/index",
+      "form-field": "/components/form-field/index",
+      "action-button": "/components/action-button/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 1
+  },
+  {
+    "route": "pages/client/settings/index",
+    "templateExists": true,
+    "styleLines": 21,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 1,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/my-favorites/index",
+    "templateExists": true,
+    "styleLines": 109,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "work-card": "/components/work-card/index",
+      "collection-overview": "/components/collection-overview/index",
+      "state-card": "/components/state-card/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/my-likes/index",
+    "templateExists": true,
+    "styleLines": 50,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "work-card": "/components/work-card/index",
+      "collection-overview": "/components/collection-overview/index",
+      "state-card": "/components/state-card/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/feedback/index",
+    "templateExists": true,
+    "styleLines": 59,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "secondary-page-header": "/components/secondary-page-header/index",
+      "action-button": "/components/action-button/index",
+      "form-field": "/components/form-field/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 2
+  },
+  {
+    "route": "pages/client/manual/index",
+    "templateExists": true,
+    "styleLines": 150,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/agreement/index",
+    "templateExists": true,
+    "styleLines": 77,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/help-feedback/index",
+    "templateExists": true,
+    "styleLines": 170,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/addresses/index",
+    "templateExists": true,
+    "styleLines": 2,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "address-card": "/components/address-card/index",
+      "bottom-action-bar": "/components/bottom-action-bar/index",
+      "state-card": "/components/state-card/index",
+      "secondary-page-header": "/components/secondary-page-header/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/address-edit/index",
+    "templateExists": true,
+    "styleLines": 8,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "form-field": "/components/form-field/index",
+      "location-field": "/components/location-field/index",
+      "bottom-action-bar": "/components/bottom-action-bar/index",
+      "secondary-page-header": "/components/secondary-page-header/index",
+      "nb-switch": "/components/nb-switch/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/client/shop-guidance/index",
+    "templateExists": true,
+    "styleLines": 208,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "state-card": "/components/state-card/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 1
+  },
+  {
+    "route": "pages/client/quote-confirm/index",
+    "templateExists": true,
+    "styleLines": 196,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 5
+  },
+  {
+    "route": "pages/client/quote-booking/index",
+    "templateExists": true,
+    "styleLines": 72,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "booking-time-picker": "/components/booking-time-picker/index",
+      "address-card": "/components/address-card/index",
+      "bottom-action-bar": "/components/bottom-action-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/technician/login/index",
+    "templateExists": true,
+    "styleLines": 322,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 6,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/technician/set-password/index",
+    "templateExists": true,
+    "styleLines": 52,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 2,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/technician/forgot-password/index",
+    "templateExists": true,
+    "styleLines": 44,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "secondary-page-header": "/components/secondary-page-header/index"
+    },
+    "rawInputCount": 3,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/technician/home/index",
+    "templateExists": true,
+    "styleLines": 301,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "tab-bar": "/components/tab-bar/index",
+      "work-card": "/components/work-card/index",
+      "technician-booking-card": "/components/technician-booking-card/index",
+      "booking-confirm": "/components/booking-confirm/index",
+      "subscription-onboarding": "/components/subscription-onboarding/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/technician/business-data/index",
+    "templateExists": true,
+    "styleLines": 794,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/technician/orders/index",
+    "templateExists": true,
+    "styleLines": 610,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "tab-bar": "/components/tab-bar/index",
+      "technician-booking-card": "/components/technician-booking-card/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 2
+  },
+  {
+    "route": "pages/technician/create-order/index",
+    "templateExists": true,
+    "styleLines": 17,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "booking-time-picker": "/components/booking-time-picker/index"
+    },
+    "rawInputCount": 4,
+    "fixedDeclarationCount": 1
+  },
+  {
+    "route": "pages/technician/order-detail/index",
+    "templateExists": true,
+    "styleLines": 949,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "booking-confirm": "/components/booking-confirm/index",
+      "work-card": "/components/work-card/index"
+    },
+    "rawInputCount": 6,
+    "fixedDeclarationCount": 3
+  },
+  {
+    "route": "pages/technician/complete-service/index",
+    "templateExists": true,
+    "styleLines": 1320,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 2,
+    "fixedDeclarationCount": 2
+  },
+  {
+    "route": "pages/technician/customers/index",
+    "templateExists": true,
+    "styleLines": 463,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "tab-bar": "/components/tab-bar/index"
+    },
+    "rawInputCount": 1,
+    "fixedDeclarationCount": 1
+  },
+  {
+    "route": "pages/technician/customer-detail/index",
+    "templateExists": true,
+    "styleLines": 416,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 2,
+    "fixedDeclarationCount": 4
+  },
+  {
+    "route": "pages/technician/works/index",
+    "templateExists": true,
+    "styleLines": 391,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "work-card": "/components/work-card/index"
+    },
+    "rawInputCount": 1,
+    "fixedDeclarationCount": 1
+  },
+  {
+    "route": "pages/technician/hero-recommendations/index",
+    "templateExists": true,
+    "styleLines": 31,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 1
+  },
+  {
+    "route": "pages/technician/work-edit/index",
+    "templateExists": true,
+    "styleLines": 289,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 6,
+    "fixedDeclarationCount": 1
+  },
+  {
+    "route": "pages/technician/work-detail/index",
+    "templateExists": true,
+    "styleLines": 805,
+    "sharedComponents": {
+      "work-detail-view": "/components/work-detail-view/index",
+      "work-share-poster": "/components/work-share-poster/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 8
+  },
+  {
+    "route": "pages/technician/design-requests/index",
+    "templateExists": true,
+    "styleLines": 2,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/technician/services/index",
+    "templateExists": true,
+    "styleLines": 445,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "state-card": "/components/state-card/index"
+    },
+    "rawInputCount": 5,
+    "fixedDeclarationCount": 4
+  },
+  {
+    "route": "pages/technician/schedule/index",
+    "templateExists": true,
+    "styleLines": 380,
+    "sharedComponents": {
+      "technician-booking-card": "/components/technician-booking-card/index"
+    },
+    "rawInputCount": 1,
+    "fixedDeclarationCount": 1
+  },
+  {
+    "route": "pages/technician/all-itineraries/index",
+    "templateExists": true,
+    "styleLines": 55,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "technician-booking-card": "/components/technician-booking-card/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/technician/all-bookings/index",
+    "templateExists": true,
+    "styleLines": 207,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "technician-booking-card": "/components/technician-booking-card/index"
+    },
+    "rawInputCount": 1,
+    "fixedDeclarationCount": 1
+  },
+  {
+    "route": "pages/technician/chat/index",
+    "templateExists": true,
+    "styleLines": 617,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "tab-bar": "/components/tab-bar/index"
+    },
+    "rawInputCount": 2,
+    "fixedDeclarationCount": 1
+  },
+  {
+    "route": "pages/technician/chat-detail/index",
+    "templateExists": true,
+    "styleLines": 389,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "technician-booking-card": "/components/technician-booking-card/index"
+    },
+    "rawInputCount": 1,
+    "fixedDeclarationCount": 1
+  },
+  {
+    "route": "pages/technician/artist-interactions/index",
+    "templateExists": true,
+    "styleLines": 22,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/technician/binding-applications/index",
+    "templateExists": true,
+    "styleLines": 24,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/technician/profile/index",
+    "templateExists": true,
+    "styleLines": 1344,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "tab-bar": "/components/tab-bar/index",
+      "rest-day-calendar": "/components/rest-day-calendar/index"
+    },
+    "rawInputCount": 4,
+    "fixedDeclarationCount": 4
+  },
+  {
+    "route": "pages/technician/profile-settings/index",
+    "templateExists": true,
+    "styleLines": 11,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "secondary-page-header": "/components/secondary-page-header/index"
+    },
+    "rawInputCount": 2,
+    "fixedDeclarationCount": 1
+  },
+  {
+    "route": "pages/technician/homepage-settings/index",
+    "templateExists": true,
+    "styleLines": 114,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "secondary-page-header": "/components/secondary-page-header/index"
+    },
+    "rawInputCount": 9,
+    "fixedDeclarationCount": 1
+  },
+  {
+    "route": "pages/technician/account-security/index",
+    "templateExists": true,
+    "styleLines": 2,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "secondary-page-header": "/components/secondary-page-header/index"
+    },
+    "rawInputCount": 3,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/technician/service-time/index",
+    "templateExists": true,
+    "styleLines": 24,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/technician/shop-management/index",
+    "templateExists": true,
+    "styleLines": 658,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "state-card": "/components/state-card/index",
+      "form-field": "/components/form-field/index",
+      "location-field": "/components/location-field/index",
+      "bottom-action-bar": "/components/bottom-action-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 3
+  },
+  {
+    "route": "pages/technician/tag-management/index",
+    "templateExists": true,
+    "styleLines": 22,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 1,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/technician/referral-campaign/index",
+    "templateExists": true,
+    "styleLines": 23,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/technician/marketing-materials/index",
+    "templateExists": true,
+    "styleLines": 410,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 4,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/technician/help-feedback/index",
+    "templateExists": true,
+    "styleLines": 1,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/technician/about/index",
+    "templateExists": true,
+    "styleLines": 1,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/technician/service-forms/index",
+    "templateExists": true,
+    "styleLines": 14,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "form-field": "/components/form-field/index",
+      "location-field": "/components/location-field/index",
+      "bottom-action-bar": "/components/bottom-action-bar/index",
+      "state-card": "/components/state-card/index",
+      "action-button": "/components/action-button/index",
+      "secondary-page-header": "/components/secondary-page-header/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  },
+  {
+    "route": "pages/technician/shop-guidance-edit/index",
+    "templateExists": true,
+    "styleLines": 216,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 1
+  },
+  {
+    "route": "pages/technician/edit-booking-time/index",
+    "templateExists": true,
+    "styleLines": 63,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index",
+      "booking-time-picker": "/components/booking-time-picker/index"
+    },
+    "rawInputCount": 1,
+    "fixedDeclarationCount": 1
+  },
+  {
+    "route": "pages/technician/quick-quote/index",
+    "templateExists": true,
+    "styleLines": 136,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 4,
+    "fixedDeclarationCount": 2
+  },
+  {
+    "route": "pages/technician/quote-records/index",
+    "templateExists": true,
+    "styleLines": 438,
+    "sharedComponents": {
+      "nav-bar": "/components/nav-bar/index"
+    },
+    "rawInputCount": 0,
+    "fixedDeclarationCount": 0
+  }
+]

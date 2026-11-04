@@ -1,3 +1,4 @@
+const bookingRealtime = require('../../../utils/booking-realtime');
 const api = require('../../../services/api');
 const {
   decorateTechnicianOrder,
@@ -85,6 +86,7 @@ function decorateCustomRequest(item) {
 }
 
 Page({
+  onBookingChanged() { return this.loadOrders({ silent: true }); },
   onBookingCardOpen: technicianBookingCardHandlers.onBookingCardOpen,
   onBookingCardQuote: technicianBookingCardHandlers.onBookingCardQuote,
   onBookingCardWithdrawQuote: technicianBookingCardHandlers.onBookingCardWithdrawQuote,
@@ -94,6 +96,9 @@ Page({
   onBookingCardComplete: technicianBookingCardHandlers.onBookingCardComplete,
   onBookingCardRebook: technicianBookingCardHandlers.onBookingCardRebook,
   onBookingCardConfirmed: technicianBookingCardHandlers.onBookingCardConfirmed,
+  onBookingCardRecord: technicianBookingCardHandlers.onBookingCardRecord,
+  onBookingCardUploadWork: technicianBookingCardHandlers.onBookingCardUploadWork,
+  onBookingCardViewWork: technicianBookingCardHandlers.onBookingCardViewWork,
   data: {
     activeFilter: '',
     filterTabs: ORDER_TABS,
@@ -134,12 +139,13 @@ Page({
   },
 
   onShow() {
+    bookingRealtime.start();
     this.loadOrders();
   },
 
-  async loadOrders() {
+  async loadOrders(options = {}) {
     const requestId = this._requestId = (this._requestId || 0) + 1;
-    this.setData({ loading: true, loadFailed: false, preBookingLoadFailed: false, preBookingPartialFailed: false });
+    if (!options.silent) this.setData({ loading: true, loadFailed: false, preBookingLoadFailed: false, preBookingPartialFailed: false });
     try {
       const [res, technicianProfile, quoteResult, designResult, customResult] = await Promise.all([
         api.technician.orders.list({}),
@@ -176,6 +182,7 @@ Page({
       });
       this.applyFilter(this.data.activeFilter);
     } catch (err) {
+      if (options.silent) throw err;
       if (requestId !== this._requestId) return;
       this.setData({ loadFailed: true });
     } finally {

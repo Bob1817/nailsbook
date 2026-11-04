@@ -1,27 +1,27 @@
-<nav-bar title="到店指引" showBack/>
+<nav-bar title="{{shopView ? '店铺信息' : '到店指引'}}" showBack/>
 
 <view class="container">
   <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
 
-  <view wx:elif="{{loadFailed}}" class="load-error">
-    <view class="load-error-mark">!</view>
-    <text class="empty-text">指引信息加载失败</text>
-    <text class="empty-sub">请检查网络后重试</text>
-    <button class="retry-btn booking-action" bindtap="loadGuidance">重新加载</button>
-  </view>
+  <state-card wx:elif="{{loadFailed}}" type="error" title="指引信息加载失败" description="请检查网络后重试" actionText="重新加载" bind:action="loadGuidance">
+    <button class="state-btn state-btn-secondary booking-action" bindtap="goHome">进入小程序首页</button>
+  </state-card>
 
-  <view wx:elif="{{!hasContent}}" class="empty">
-    <text class="empty-text">暂无到店指引</text>
-    <text class="empty-sub">美甲师尚未编辑到店指引信息</text>
-  </view>
+  <state-card wx:elif="{{!hasContent}}" icon="/static/icons/shop.svg" title="暂无到店指引" description="美甲师尚未编辑到店指引信息">
+    <button class="state-btn state-btn-primary booking-action" bindtap="goHome">进入小程序首页</button>
+  </state-card>
 
   <block wx:else>
     <view class="public-shop-head">
       <text class="public-shop-name">{{shopName}}</text>
       <text class="public-shop-address">{{shopAddress}}</text>
     </view>
+    <view wx:if="{{shopView}}" class="public-shop-head">
+      <button wx:if="{{guidance.enabled}}" class="btn-navigate booking-action" bindtap="openGuidance" hover-class="is-pressed">查看到店指引 ›</button>
+      <text wx:else class="public-shop-address">可通过下方地址导航到店</text>
+    </view>
     <!-- Tab 切换 -->
-    <view class="tabs">
+    <view wx:if="{{!shopView}}" class="tabs">
       <view
         wx:for="{{tabs}}"
         wx:key="key"
@@ -34,7 +34,7 @@
     </view>
 
     <!-- 按编辑顺序展示文字与图片 -->
-    <scroll-view scroll-y class="content-area">
+    <scroll-view wx:if="{{!shopView}}" scroll-y class="content-area">
       <view class="content-inner">
       <view class="section rich-guide">
         <block wx:for="{{activeBlocks}}" wx:key="id">
@@ -48,10 +48,10 @@
 
     <!-- 导航到店按钮 -->
     <view class="bottom-bar">
-      <button wx:if="{{shopLocation}}" class="btn-navigate btn-secondary booking-action" bindtap="navigateToShop">
-        <text>一键导航到店</text>
+      <button wx:if="{{shopAddress}}" class="btn-navigate btn-secondary booking-action" bindtap="navigateToShop">
+        <text>{{shopLocation ? '地图查看与导航' : '查看店铺地址'}}</text>
       </button>
-      <button class="btn-navigate booking-action" open-type="share"><text>分享给朋友</text></button>
+      <button class="btn-navigate booking-action" open-type="share"><text>{{shopView ? '发送店铺信息' : '发送到店指引'}}</text></button>
     </view>
   </block>
 </view>

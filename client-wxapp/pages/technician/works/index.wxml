@@ -1,20 +1,40 @@
 <nav-bar title="作品管理" showBack></nav-bar>
 <view class="container">
-  <view wx:if="{{loading}}" class="loading-wrap"><view class="spinner"></view></view>
+  <button wx:if="{{hasLocalDraft}}" class="btn-add-first booking-action" bindtap="goCreate">本机草稿 · {{localDraftTitle}} · 继续编辑</button>
+  <!-- 加载中骨架屏 -->
+  <view wx:if="{{loading}}" class="waterfall skel-mode">
+    <view class="col">
+      <view wx:for="{{[1,2,3]}}" wx:key="*this" class="skel-card skel-tall"></view>
+    </view>
+    <view class="col">
+      <view wx:for="{{[1,2]}}" wx:key="*this" class="skel-card skel-mid"></view>
+    </view>
+  </view>
   <view wx:elif="{{loadFailed}}" class="empty"><text class="empty-title">作品列表加载失败</text><text class="empty-sub">请检查网络后重试</text><button class="btn-add-first booking-action" bindtap="loadWorks">重新加载</button></view>
   <view wx:elif="{{works.length === 0}}" class="empty"><image class="empty-work-icon" src="/static/icons/image.svg" mode="aspectFit"/><text class="empty-title">还没有作品</text><text class="empty-sub">从照片开始，几步就能完成发布</text><button class="btn-add-first booking-action" bindtap="goCreate">上传第一个作品</button></view>
   <block wx:else>
     <view class="manage-tools">
-      <view class="search-row"><image src="/static/icons/search.svg" mode="aspectFit"/><input placeholder="搜索作品标题或分类" value="{{keyword}}" bindinput="onKeywordInput"/><view wx:if="{{keyword}}" class="search-clear" bindtap="clearKeyword">×</view></view>
-      <scroll-view scroll-x enhanced show-scrollbar="{{false}}" class="filter-scroll"><view class="filter-list"><view wx:for="{{categoryFilters}}" wx:key="*this" class="filter-chip {{selectedCategory === item ? 'selected' : ''}}" data-name="{{item}}" bindtap="selectCategory">{{item}}</view></view></scroll-view>
-      <view class="status-row"><scroll-view scroll-x enhanced show-scrollbar="{{false}}" class="status-scroll"><view class="filter-list"><view wx:for="{{statusFilters}}" wx:key="key" class="status-chip {{selectedStatus === item.key ? 'selected' : ''}}" data-key="{{item.key}}" bindtap="selectStatus">{{item.label}}</view></view></scroll-view><view class="sort-action" bindtap="chooseSort">{{sortLabel}}⌄</view></view>
+      <view class="search-row"><image src="/static/icons/search.svg" mode="aspectFit"/><input placeholder="搜索作品标题或分类" value="{{keyword}}" bindinput="onKeywordInput"/><view wx:if="{{keyword}}" class="search-clear" bindtap="clearKeyword"><image class="search-clear-icon" src="/static/icons/close.svg" mode="aspectFit" /></view></view>
+      <view class="status-row">
+        <view class="simple-tabs">
+          <view wx:for="{{primaryStatuses}}" wx:key="key" class="simple-tab {{selectedStatus === item.key ? 'active' : ''}}" data-key="{{item.key}}" bindtap="selectStatus" role="button" aria-pressed="{{selectedStatus === item.key}}">{{item.label}}</view>
+        </view>
+        <view class="filter-action" bindtap="chooseStatusFilter" role="button">{{selectedStatus !== 'all' && selectedStatus !== 'shareable' && selectedStatus !== 'draft' ? extraStatusLabel : '筛选'}}⌄</view>
+      </view>
+      <view class="secondary-tools">
+        <picker range="{{categoryFilters}}" bindchange="pickCategory"><view class="filter-action">{{selectedCategory}}⌄</view></picker>
+        <view class="filter-action" bindtap="chooseSort" role="button">{{sortLabel}}⌄</view>
+      </view>
     </view>
 
-    <view class="result-head"><text>{{filteredWorks.length}} 个作品</text><text>点击作品可查看详情</text></view>
-    <view wx:if="{{filteredWorks.length === 0}}" class="empty filter-empty"><text class="empty-title">没有匹配的作品</text><text class="empty-sub">换个关键词或筛选条件试试</text></view>
+    <view class="result-head"><text>{{filteredWorks.length}} 个作品</text><view wx:if="{{keyword || selectedCategory !== '全部分类' || selectedStatus !== 'all'}}" class="reset-filter" bindtap="resetFilters" role="button">清除筛选</view></view>
+    <view wx:if="{{filteredWorks.length === 0}}" class="empty filter-empty"><text class="empty-title">{{selectedStatus === 'draft' ? '暂无云端草稿' : '没有匹配的作品'}}</text><text class="empty-sub">{{selectedStatus === 'draft' ? '手动保存的草稿仅保存在本机，可从上方入口继续编辑' : '换个关键词或筛选条件试试'}}</text></view>
     <view wx:else class="waterfall">
-      <view class="col"><view wx:for="{{leftCol}}" wx:key="id" class="work-item"><work-card work="{{item}}" manageable bind:cardtap="goDetail" bind:actiontap="showActions"/></view></view>
-      <view class="col"><view wx:for="{{rightCol}}" wx:key="id" class="work-item"><work-card work="{{item}}" manageable bind:cardtap="goDetail" bind:actiontap="showActions"/></view></view>
+      <view class="col" wx:for="{{waterfallCols}}" wx:for-item="col" wx:key="id">
+        <view wx:for="{{col.items}}" wx:key="id" class="work-item">
+          <work-card work="{{item}}" management-minimal manageable bind:cardtap="goDetail" bind:actiontap="showActions"/>
+        </view>
+      </view>
     </view>
   </block>
 </view>

@@ -8,6 +8,7 @@
   <view wx:elif="{{loadFailed}}" class="state">
     <text class="state-title">主页加载失败</text>
     <view class="retry-btn booking-action" bindtap="loadHome">重新加载</view>
+    <view class="retry-btn booking-action" bindtap="goHome" role="button" aria-label="进入小程序首页">进入小程序首页</view>
   </view>
   <block wx:else>
 
@@ -40,7 +41,7 @@
               <view class="name-row">
                 <text class="artist-name">{{artist.name}}</text>
                 <view wx:if="{{artist.isVerified}}" class="badge-gold">
-                  <text class="badge-icon">✓</text>
+                  <image class="badge-icon-svg" src="/static/icons/check-white.svg" mode="aspectFit" />
                   <text>高级认证</text>
                 </view>
               </view>
@@ -112,6 +113,7 @@
           <view class="shop-actions">
             <button class="action-btn booking-action" bindtap="openNavigation"><image class="action-icon-svg" src="/static/icons/navigation.svg" mode="aspectFit"/><text>导航</text></button>
             <button class="action-btn booking-action" bindtap="callPhone"><image class="action-icon-svg" src="/static/icons/phone.svg" mode="aspectFit"/><text>电话</text></button>
+            <button class="action-btn booking-action" bindtap="contactArtist"><image class="action-icon-svg" src="/static/icons/message.svg" mode="aspectFit"/><text>微信咨询</text></button>
           </view>
         </view>
       </view>
@@ -125,8 +127,10 @@
         <text class="section-more" bindtap="viewAllWorks">查看全部 ›</text>
       </view>
       <view class="featured-work-grid">
-        <view wx:for="{{displayWorks}}" wx:key="id" class="featured-work-item">
-          <work-card work="{{item}}" show-artist="{{false}}" bind:cardtap="viewWork" />
+        <view class="featured-work-col" wx:for="{{workCols}}" wx:for-item="col" wx:key="id">
+          <view wx:for="{{col.items}}" wx:key="id" class="featured-work-item">
+            <work-card variant="minimal" work="{{item}}" bind:cardtap="viewWork" />
+          </view>
         </view>
       </view>
     </view>
@@ -257,3 +261,51 @@
     </view>
   </view>
 </view>
+
+<!-- 美甲师微信咨询名片弹层 -->
+<view wx:if="{{showContactModal}}" class="modal-mask" catchtap="closeContactModal" aria-modal="true" role="dialog">
+  <view class="nb-contact-sheet" catchtap="">
+    <view class="nb-contact-header">
+      <text class="nb-contact-title">联系美甲师</text>
+      <view class="nb-contact-close" catchtap="closeContactModal" role="button" aria-label="关闭">✕</view>
+    </view>
+
+    <view class="nb-contact-artist-card">
+      <image wx:if="{{artist.avatarUrl}}" class="nb-contact-avatar" src="{{artist.avatarUrl}}" mode="aspectFill" />
+      <view wx:else class="nb-contact-avatar fallback"><image src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" /></view>
+      <view class="nb-contact-info">
+        <text class="nb-contact-name">{{artist.name || '美甲师'}}</text>
+        <text class="nb-contact-sub">{{artist.city ? artist.city + ' · ' : ''}}在线咨询与款式沟通</text>
+      </view>
+    </view>
+
+    <!-- 微信号信息卡片 -->
+    <view wx:if="{{artist.wechat}}" class="nb-wechat-box">
+      <view class="nb-wechat-left">
+        <text class="nb-wechat-label">美甲师微信号</text>
+        <text class="nb-wechat-val {{artist.protectWechat && !isClientLoggedIn ? 'is-masked' : ''}}" user-select="{{!(artist.protectWechat && !isClientLoggedIn)}}">{{artist.wechatDisplay || artist.wechat}}</text>
+      </view>
+      <button wx:if="{{artist.protectWechat && !isClientLoggedIn}}" class="nb-wechat-copy-btn" catchtap="loginToViewWechat" hover-class="btn-hover">登录查看</button>
+      <button wx:else class="nb-wechat-copy-btn" catchtap="copyArtistWechat" hover-class="btn-hover">复制微信号</button>
+    </view>
+    <view wx:else class="nb-wechat-empty">
+      <text class="nb-wechat-empty-text">美甲师暂未填写微信号，推荐使用小程序在线咨询</text>
+    </view>
+
+    <!-- 操作按钮列表 -->
+    <view class="nb-contact-actions">
+      <button wx:if="{{!isClientLoggedIn}}" class="nb-action-btn nb-action-primary" catchtap="goOnlineChatAfterLogin" hover-class="btn-hover">
+        <image class="nb-action-icon" src="/static/icons/message.svg" mode="aspectFit" />
+        <text>登录小程序在线咨询</text>
+      </button>
+      <button wx:else class="nb-action-btn nb-action-primary" catchtap="goOnlineChat" hover-class="btn-hover">
+        <image class="nb-action-icon" src="/static/icons/message.svg" mode="aspectFit" />
+        <text>进入在线咨询</text>
+      </button>
+      <button class="nb-action-btn nb-action-ghost" catchtap="closeContactModal" hover-class="btn-hover">
+        <text>继续浏览主页</text>
+      </button>
+    </view>
+  </view>
+</view>
+

@@ -7,26 +7,6 @@ function formatDuration(minutes) {
   if (value > 0 && value % 60 === 0) return `${value / 60}小时`;
   return `${value}分钟`;
 }
-function formatDate(value) {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  return `${date.getMonth() + 1}月${date.getDate()}日`;
-}
-function decorateQuote(quote) {
-  const statusLabels = {
-    issued: '待查看', viewed: '已查看', accepted_pending_schedule: '待选时间',
-    booked: '已预约', withdrawn: '已撤回', expired: '已过期'
-  };
-  return {
-    ...quote,
-    _statusLabel: statusLabels[quote.status] || quote.status,
-    _priceText: money(quote.finalPriceFen),
-    _dateText: formatDate(quote.createdAt || quote.issuedAt),
-    _expiresText: formatDate(quote.expiresAt)
-  };
-}
-
 Page({
   data: {
     loading: true,
@@ -56,12 +36,30 @@ Page({
     feePriceError: false,
     showServicePicker: false,
     showMore: false,
-    quote: null
+    serviceType: '到店美甲',
+    canChooseServiceType: false
   },
 
   async onLoad(options = {}) {
     try {
-      const serviceResult = await api.technician.services.list();
+      const userInfoPromise = (api.technician && api.technician.auth && typeof api.technician.auth.getUserInfo === 'function')
+        ? api.technician.auth.getUserInfo().catch(() => ({}))
+        : Promise.resolve({});
+      const [serviceResult, userInfo] = await Promise.all([
+        api.technician.services.list(),
+        userInfoPromise
+      ]);
+      const isAuditMode = Boolean(userInfo && userInfo.auditMode);
+      const homeOn = Boolean(userInfo && userInfo.homeService) && !isAuditMode;
+      const shopOn = userInfo ? userInfo.shopService !== false : true;
+      let serviceType = '到店美甲';
+      let canChooseServiceType = false;
+      if (homeOn && shopOn) {
+        canChooseServiceType = true;
+        serviceType = '到店美甲';
+      } else if (homeOn && !shopOn) {
+        serviceType = '上门美甲';
+      }
       const services = (serviceResult.list || serviceResult.data || serviceResult || [])
         .filter(item => item.isActive !== false && item.isBookable !== false && item.price !== null && item.price !== undefined)
         .map(item => ({
@@ -70,7 +68,7 @@ Page({
           _pickerPriceText: String(Number(item.price || 0)),
           _pickerCategory: ({ basic_care: '基础服务', color_style: '美甲设计', extension_reinforcement: '进阶服务', removal: '基础服务', surcharge_home: '上门服务费', surcharge_night: '晚间服务费', surcharge_holiday: '假日服务费' })[item.category] || '美甲服务'
         }));
-      this.setData({ services, loading: false });
+      this.setData({ services, serviceType, canChooseServiceType, loading: false });
       if (options.quoteId) {
         const quote = await api.technician.bookingQuotes.detail(Number(options.quoteId));
         const serviceQuantities = {};
@@ -80,7 +78,8 @@ Page({
         this.setData({
           serviceQuantities,
           otherFees: quote.lines.filter(item => item.lineType !== 'service').map(item => ({ name: item.nameSnapshot, price: money(item.subtotalFen) })),
-          requirement: quote.requirement || ''
+          requirement: quote.requirement || '',
+          serviceType: quote.serviceType || serviceType
         });
         this.syncSelectedServices();
         this.recalculate();
@@ -98,31 +97,11 @@ Page({
   },
 
   noop() {},
-  newQuote() {
-    this.setData({
-      quote: null,
-      requirement: '',
-      serviceQuantities: {},
-      draftServiceQuantities: {},
-      temporaryFee: { name: '', price: '' },
-      selectedServices: [],
-      otherFees: [],
-      displayFees: [],
-      quoteLines: [],
-      calculatedFen: 0,
-      calculatedText: '0.00',
-      duration: 0,
-      durationText: '0分钟',
-      durationInput: '',
-      durationError: false,
-      quoteItemCount: 0,
-      finalPrice: '',
-      finalPriceError: false,
-      feeNameError: false,
-      feePriceError: false,
-      showServicePicker: false,
-      showMore: false
-    });
+  changeServiceType(e) {
+    const type = e.currentTarget.dataset.type;
+    if (type && type !== this.data.serviceType) {
+      this.setData({ serviceType: type });
+    }
   },
   toggleMore() { this.setData({ showMore: !this.data.showMore }); },
   input(e) {
@@ -131,7 +110,7 @@ Page({
     const patch = { [field]: value };
     if (field === 'finalPrice') {
       const num = Number(value);
-      patch.finalPriceError = value !== '' && (!Number.isFinite(num) || Math.round(num * 100) > this.data.calculatedFen);
+      patch.finalPriceError = value !== '' && (!Number.isFinite(num) || num <= 0);
     }
     this.setData(patch);
   },
@@ -324,29 +303,21 @@ Page({
     if (!this.data.duration) return wx.showToast({ title: '预计服务时长不能为 0', icon: 'none' });
     const finalPriceFen = this.data.finalPrice === '' ? this.data.calculatedFen : Math.round(Number(this.data.finalPrice) * 100);
     if (!(finalPriceFen > 0)) return wx.showToast({ title: '请输入有效的最终报价', icon: 'none' });
-    if (finalPriceFen > this.data.calculatedFen) {
-      this.setData({ finalPriceError: true });
-      return wx.showToast({ title: `最终报价不能高于项目合计 ¥${this.data.calculatedText}`, icon: 'none' });
-    }
     this.setData({ submitting: true });
     try {
       const quote = await api.technician.bookingQuotes.create({
         requirement: this.data.requirement.trim() || undefined,
+        serviceType: this.data.serviceType,
         lines: serviceLines.concat(feeLines),
         finalPriceFen,
         totalDurationMinutes: Number(this.data.duration)
       });
-      this.setData({ quote: decorateQuote(quote), submitting: false });
-      wx.navigateTo({ url: `/pages/client/quote-confirm/index?id=${quote.id}` });
+      this.setData({ submitting: false });
+      const url = `/pages/client/quote-confirm/index?id=${quote.id}`;
+      wx.redirectTo({ url, fail: () => wx.reLaunch({ url }) });
     } catch (err) {
       this.setData({ submitting: false });
       wx.showToast({ title: err.message || '生成失败', icon: 'none' });
     }
-  },
-
-  onShareAppMessage() {
-    const quote = this.data.quote;
-    if (!quote) return { title: 'OnlyNail 专属报价确认函', path: '/pages/technician/quick-quote/index' };
-    return { title: `${quote.technicianName} 为你准备了专属报价`, path: quote.sharePath };
   }
 });

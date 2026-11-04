@@ -20,7 +20,8 @@ Page({
     showPassword: false,
     canLogin: false,
     privacyAgreed: false,
-    invitationRegistration: false
+    invitationRegistration: false,
+    canGoBack: false
   },
 
   onLoad(options) {
@@ -34,7 +35,11 @@ Page({
     }
     if (this.redirect) rememberPostAuthRedirect(this.redirect);
     this.inviteCode = options.invite ? decodeURIComponent(options.invite) : '';
-    this.setData({ invitationRegistration: !!this.inviteCode });
+    const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : [];
+    this.setData({
+      invitationRegistration: !!this.inviteCode,
+      canGoBack: !!(this.redirect || pages.length > 1)
+    });
     this.registrationSource = options.source === 'card' ? 'card' : 'invite';
     this.quickBookingTechId = options.quickBookingTechId ? Number(options.quickBookingTechId) : undefined;
     // 作品详情页跳转登录时携带的美甲师ID和操作类型
@@ -157,6 +162,27 @@ Page({
   },
 
   // ========== 手机号 + 密码登录 ==========
+
+  onLoginBack() {
+    const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : [];
+    if (pages.length > 1) {
+      wx.navigateBack({ fail: () => this.fallbackToTarget() });
+      return;
+    }
+    this.fallbackToTarget();
+  },
+
+  fallbackToTarget() {
+    if (this.redirect) {
+      wx.reLaunch({ url: this.redirect });
+      return;
+    }
+    wx.reLaunch({ url: '/pages/client/home/index' });
+  },
+
+  skipToGuestExplore() {
+    this.fallbackToTarget();
+  },
 
   goPhoneLogin() {
     this.setData({ step: 'phone', phone: '', password: '', phoneValid: false, showPassword: false });
@@ -329,8 +355,9 @@ Page({
       ? '/pages/technician/home/index'
       : '/pages/client/home/index';
     const nextPage = require('../../utils/account-navigation').postLoginPath(activeRole, consumePostAuthRedirect(this.redirect || homePage));
+    const isDirectBookingFlow = nextPage.includes('quote-') || nextPage.includes('workId=');
     wx.reLaunch({
-      url: activeRole === 'client' && needsClientProfile(userInfo)
+      url: activeRole === 'client' && needsClientProfile(userInfo) && !isDirectBookingFlow
         ? completionUrl(nextPage)
         : nextPage
     });

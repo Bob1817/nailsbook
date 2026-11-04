@@ -27,12 +27,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 160rpx 40rpx 80rpx;
+  padding: 160rpx var(--space-xl) 80rpx;
 }
 .load-error-mark {
   width: 88rpx;
   height: 88rpx;
-  margin-bottom: 32rpx;
+  margin-bottom: var(--space-lg);
   border-radius: 50%;
   background: var(--nb-page);
   color: var(--nb-ink);
@@ -51,7 +51,7 @@
 }
 .retry-btn {
   min-height: 88rpx;
-  margin: 40rpx 0 0;
+  margin: var(--space-xl) 0 0;
   padding: 0 56rpx;
   border: 0;
   border-radius: var(--radius-xl);
@@ -61,16 +61,16 @@
   line-height: 88rpx;
 }
 .retry-btn::after { border: 0; }
-.retry-btn.booking-action { min-height:44px; height:44px; padding:0 24rpx; border-radius:8px; font-size:var(--font-sm); line-height:1.4; }
+.retry-btn.booking-action { min-height:44px; height:44px; padding:0 var(--space-md); border-radius:8px; font-size:var(--font-sm); line-height:1.4; }
 
 /* ===== Tab 切换 ===== */
-.public-shop-head { padding: 24rpx 32rpx 16rpx; background: var(--bg-card); }
+.public-shop-head { padding: var(--space-md) var(--space-lg) var(--space-sm); background: var(--bg-card); }
 .public-shop-name { display: block; color: var(--text-primary); font-size: var(--font-lg); font-weight: var(--weight-semibold); }
-.public-shop-address { display: block; margin-top: 8rpx; color: var(--text-muted); font-size: var(--font-sm); line-height: 1.5; }
+.public-shop-address { display: block; margin-top: var(--space-xs); color: var(--text-muted); font-size: var(--font-sm); line-height: 1.5; }
 .tabs {
   display: flex;
   gap: 12rpx;
-  padding: 20rpx 32rpx;
+  padding: 20rpx var(--space-lg);
   background: var(--bg-card);
 }
 .tab {
@@ -108,7 +108,7 @@
 .content-inner {
   width: 100%;
   box-sizing: border-box;
-  padding: 24rpx 32rpx 160rpx;
+  padding: var(--space-md) var(--space-lg) 160rpx;
 }
 .section {
   min-width: 0;
@@ -127,7 +127,7 @@
   font-size: var(--font-sm);
   font-weight: var(--weight-semibold);
   color: var(--text-muted);
-  margin-bottom: 16rpx;
+  margin-bottom: var(--space-sm);
 }
 .section-text {
   display: block;
@@ -139,12 +139,12 @@
 }
 
 .image-block {
-  margin-top: 8rpx;
+  margin-top: var(--space-xs);
 }
 .image-list {
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  gap: var(--space-sm);
 }
 .guide-img {
   width: 100%;
@@ -153,7 +153,7 @@
 .rich-guide {
   display: flex;
   flex-direction: column;
-  gap: 24rpx;
+  gap: var(--space-md);
 }
 .rich-guide-text {
   padding: 4rpx 0;
@@ -179,12 +179,12 @@
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+  padding: 20rpx var(--space-lg) calc(20rpx + env(safe-area-inset-bottom));
   background: var(--bg-card);
   box-shadow: 0 -2rpx 16rpx rgba(0, 0, 0, 0.04);
   z-index: 10;
   display: flex;
-  gap: 16rpx;
+  gap: var(--space-sm);
 }
 .btn-navigate {
   flex: 1;

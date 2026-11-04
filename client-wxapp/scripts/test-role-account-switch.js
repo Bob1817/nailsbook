@@ -21,7 +21,7 @@ assert(clientWxml.includes('class="logout-btn" bindtap="logout"'), '客户端退
 assert(!techWxml.includes('class="menu-item account-logout"'), '美甲师端退出登录不应混在账号设置列表中');
 assert(techWxml.includes('class="logout-btn" bindtap="logout"'), '美甲师端退出登录应独立置于页面底部');
 assert(techWxml.indexOf('class="version"') > techWxml.indexOf('class="logout-btn"'), '美甲师端版本信息应位于退出登录下方的页面最底部');
-assert(/\.logout-btn\s*\{[^}]*margin:\s*32rpx 32rpx 0[^}]*min-height:\s*88rpx[^}]*background:\s*var\(--nb-surface\)/s.test(techWxss), '美甲师端退出按钮应复用客户端的独立卡片间距、触控高度和背景');
+assert(/\.logout-btn\s*\{[^}]*margin:\s*var\(--space-lg\) var\(--space-lg\) 0[^}]*min-height:\s*88rpx[^}]*background:\s*var\(--nb-surface\)/s.test(techWxss), '美甲师端退出按钮应复用客户端的独立卡片间距、触控高度和背景');
 
 let definition;
 let loggedOut = 0;

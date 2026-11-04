@@ -1,0 +1,17 @@
+{
+  "success": true,
+  "result": {
+    "result": [
+      {
+        "id": "",
+        "dataset": {},
+        "left": 33,
+        "right": 397,
+        "top": 47.6953125,
+        "bottom": 97.6953125,
+        "width": 364,
+        "height": 50
+      }
+    ]
+  }
+}

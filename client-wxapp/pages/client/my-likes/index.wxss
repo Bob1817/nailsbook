@@ -2,7 +2,7 @@ page { background: var(--bg-page-alt); }
 
 .page {
   min-height: 100vh;
-  padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(var(--space-xl) + env(safe-area-inset-bottom));
 }
 
 /* ===== 加载中 ===== */
@@ -21,70 +21,9 @@ page { background: var(--bg-page-alt); }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ===== 空状态 ===== */
-.empty-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 160rpx 60rpx;
-}
-.empty-icon {
-  width: 140rpx;
-  height: 140rpx;
-  border-radius: 50%;
-  background: var(--nb-page);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 28rpx;
-}
-.empty-heart {
-  width: 40rpx;
-  height: 40rpx;
-  transform: rotate(-45deg);
-  background: var(--brand-primary);
-  position: relative;
-}
-.empty-heart::before,
-.empty-heart::after {
-  content: '';
-  position: absolute;
-  width: 40rpx;
-  height: 40rpx;
-  border-radius: 50%;
-  background: var(--brand-primary);
-}
-.empty-heart::before { top: -20rpx; left: 0; }
-.empty-heart::after { left: 20rpx; top: 0; }
-.empty-title {
-  font-size: var(--font-lg);
-  font-weight: var(--weight-semibold);
-  color: var(--text-primary);
-  margin-bottom: 12rpx;
-}
-.empty-desc {
-  font-size: var(--font-sm);
-  color: var(--text-muted);
-  margin-bottom: 36rpx;
-  text-align: center;
-}
-.go-btn {
-  min-height: 88rpx;
-  padding: 0 56rpx;
-  border-radius: 999rpx;
-  background: var(--brand-gradient);
-  color: var(--text-inverse);
-  font-size: var(--font-md);
-  font-weight: var(--weight-semibold);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.28) /* brand-primary-alpha */;
-}
-.go-btn:active { opacity: 0.85; }
 
 /* ===== 瀑布流（与发现/作品列表页一致）===== */
-.waterfall-wrap { padding: 24rpx 28rpx 0; }
+.waterfall-wrap { padding: var(--space-md) 28rpx 0; }
 
 .waterfall {
   width:100%; max-width:100%; min-width:0; overflow:hidden; box-sizing:border-box;
@@ -94,7 +33,7 @@ page { background: var(--bg-page-alt); }
 }
 
 .col {
-  flex: 1 1 0; width:calc((100% - 20rpx) / 2); min-width:0; max-width:calc((100% - 20rpx) / 2);
+  flex: 1 1 0; min-width:0;
   display: flex;
   flex-direction: column;
   gap: 20rpx;
@@ -104,8 +43,8 @@ page { background: var(--bg-page-alt); }
 .w-card { width:100%; box-sizing:border-box; }
 .w-card:active { transform: scale(0.984); opacity: 0.94; }
 
-.page-hint { padding:28rpx 0 40rpx; color:var(--nb-secondary); font-size: var(--font-xs); text-align:center; }
-.waterfall-wrap{padding-top:24rpx}.empty-wrap{margin:24rpx 32rpx;padding:96rpx 40rpx;border-radius:24rpx;background:var(--nb-surface)}.empty-icon{width:96rpx;height:96rpx;margin-bottom:22rpx;background:var(--nb-soft-surface)}.go-btn{border-radius:16rpx;background:var(--nb-action);box-shadow:none;font-size:var(--font-sm)}
+.page-hint { padding:28rpx 0 var(--space-xl); color:var(--nb-secondary); font-size: var(--font-xs); text-align:center; }
+.waterfall-wrap{padding-top:var(--space-md)}.empty-wrap{margin:var(--space-md) var(--space-lg);padding:96rpx var(--space-xl);border-radius:24rpx;background:var(--nb-surface)}.empty-icon{width:96rpx;height:96rpx;margin-bottom:22rpx;background:var(--nb-soft-surface)}.go-btn{border-radius:16rpx;background:var(--nb-action);box-shadow:none;font-size:var(--font-sm)}
 
 @import '../../../styles/booking-actions.wxss';
-.go-btn.booking-action { min-height: 44px; height: var(--control-hit-height); border-radius: 8px; padding: 0 24rpx; font-size: var(--font-sm); box-shadow: none; }
+.go-btn.booking-action { min-height: 44px; height: var(--control-hit-height); border-radius: 8px; padding: 0 var(--space-md); font-size: var(--font-sm); box-shadow: none; }

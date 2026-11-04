@@ -3,11 +3,13 @@
 .tab-bar {
   position: fixed; right: 0; bottom: 0; left: 0; z-index: 999;
   min-height: 112rpx;
-  padding: 8rpx 18rpx calc(8rpx + env(safe-area-inset-bottom));
+  padding: var(--space-xs) 18rpx calc(var(--space-xs) + env(safe-area-inset-bottom));
   box-sizing: content-box;
   display: flex; align-items: center;
-  background: rgba(255, 255, 255, 0.97);
-  border-top: 0;
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1rpx solid rgba(0, 0, 0, 0.06);
   box-shadow: 0 -10rpx 32rpx rgba(0, 0, 0, 0.055);
 }
 
@@ -22,10 +24,19 @@
   transition: transform 0.16s ease, color var(--transition-normal), background-color var(--transition-normal);
   position: relative;
 }
-.tab-item:active { background: var(--bg-input); transform: scale(0.96); }
+.tab-item:active {
+  background: rgba(0, 0, 0, 0.05);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transform: scale(0.96);
+}
 .tab-item-active {
   color: var(--nb-text-link);
-  background: var(--nb-soft-surface);
+  background: rgba(36, 94, 168, 0.08);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  backdrop-filter: blur(12px) saturate(180%);
+  border: 1rpx solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
 }
 
 .tab-icon-wrap {
@@ -56,16 +67,16 @@
   z-index: 2;
   min-width: 30rpx;
   height: 30rpx;
-  padding: 0 8rpx;
+  padding: 0 var(--space-xs);
   box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 2rpx solid var(--nb-surface);
-  border-radius: 999rpx;
+  border-radius: var(--radius-full);
   background: var(--nb-danger);
   color: var(--nb-inverse);
-  font-size: 18rpx;
+  font-size: var(--font-xs);
   font-weight: var(--weight-semibold);
   line-height: 1;
   white-space: nowrap;

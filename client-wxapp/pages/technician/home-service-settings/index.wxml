@@ -30,6 +30,12 @@
       <nb-switch checked="{{enabled}}" bindchange="toggleEnabled" label="开启上门服务"/>
     </view>
 
+    <!-- ===== 微信审核静默保护提示 ===== -->
+    <view wx:if="{{auditMode}}" class="compliance-banner">
+      <text class="compliance-badge">审核合规模式</text>
+      <text class="compliance-text">当前已开启提审静默保护，上门选项在客户预约端暂时隐藏以符合微信类目审核要求</text>
+    </view>
+
     <!-- ===== 快速开启引导（仅未开启时显示）===== -->
     <view wx:if="{{!enabled}}" class="quick-banner">
       <view class="quick-banner-body">

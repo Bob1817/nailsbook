@@ -5,7 +5,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 48rpx;
+  padding: var(--space-2xl);
   box-sizing: border-box;
   background: rgba(0, 0, 0, 0.48);
 }
@@ -13,15 +13,15 @@
 .subscription-dialog {
   width: 100%;
   box-sizing: border-box;
-  padding: 40rpx 32rpx 32rpx;
-  border-radius: 28rpx;
+  padding: var(--space-xl) var(--space-lg) var(--space-lg);
+  border-radius: var(--radius-lg);
   background: var(--nb-surface);
 }
 
 .subscription-title {
   display: block;
   color: var(--nb-ink);
-  font-size: 36rpx;
+  font-size: var(--font-lg);
   line-height: 1.35;
   font-weight: 600;
   text-align: center;
@@ -29,17 +29,17 @@
 
 .subscription-desc {
   display: block;
-  margin-top: 16rpx;
+  margin-top: var(--space-sm);
   color: var(--nb-muted);
-  font-size: 28rpx;
+  font-size: var(--font-md);
   line-height: 1.6;
   text-align: center;
 }
 
 .subscription-actions {
   display: flex;
-  gap: 16rpx;
-  margin-top: 32rpx;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
 }
 
 .subscription-button {
@@ -53,7 +53,7 @@
   padding: 0;
   box-sizing: border-box;
   border-radius: 16rpx;
-  font-size: 28rpx;
+  font-size: var(--font-md);
   line-height: 1;
   font-weight: 600;
 }

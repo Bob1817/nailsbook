@@ -1,7 +1,7 @@
 .container {
   min-height: 100vh;
   background: var(--bg-page);
-  padding: 100rpx 48rpx;
+  padding: 100rpx var(--space-2xl);
   box-sizing: border-box;
 }
 
@@ -20,13 +20,13 @@
   background: var(--brand-gradient);
   border-radius: 32rpx;
   color: var(--text-inverse);
-  font-size: 28rpx;
+  font-size: var(--font-md);
   font-weight: var(--weight-semibold);
   letter-spacing: 1rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 32rpx;
+  margin-bottom: var(--space-lg);
 }
 
 .title {
@@ -35,13 +35,13 @@
   color: var(--text-primary);
 }
 
-.login-tabs { display: flex; padding: 8rpx; margin-bottom: 32rpx; border-radius: var(--card-radius); background: var(--nb-page); }
+.login-tabs { display: flex; padding: var(--space-xs); margin-bottom: var(--space-lg); border-radius: var(--card-radius); background: var(--nb-page); }
 .login-tab { flex: 1; min-height: 88rpx; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); color: var(--text-muted); font-size: var(--font-sm); }
 .login-tab-active { color: var(--text-primary); background: var(--bg-card); font-weight: var(--weight-semibold); box-shadow: 0 4rpx 14rpx rgba(0, 0, 0, 0.08); }
 .wechat-hint { display: block; color: var(--text-muted); font-size: var(--font-sm); line-height: 1.6; text-align: center; }
 
 .form-item {
-  margin-bottom: 32rpx;
+  margin-bottom: var(--space-lg);
 }
 
 .label {
@@ -56,7 +56,7 @@
   height: 96rpx;
   background: rgba(255, 255, 255, 0.96);
   border-radius: var(--radius-sm);
-  padding: 0 32rpx;
+  padding: 0 var(--space-lg);
   font-size: var(--font-md);
   color: var(--text-primary);
   box-sizing: border-box;
@@ -71,7 +71,7 @@
   height: 96rpx;
   background: var(--nb-page);
   border-radius: var(--radius-sm);
-  padding: 0 32rpx;
+  padding: 0 var(--space-lg);
   font-size: var(--font-md);
   color: var(--text-muted);
   display: flex;
@@ -93,16 +93,16 @@
   flex-shrink: 0;
   font-size: var(--font-sm);
   color: var(--nb-text-link);
-  margin-left: 16rpx;
+  margin-left: var(--space-sm);
 }
 
 .hint-banner {
   background: var(--nb-page);
   color: var(--nb-ink);
   font-size: var(--font-sm);
-  padding: 20rpx 40rpx;
+  padding: 20rpx var(--space-xl);
   border-radius: var(--radius-sm);
-  margin-bottom: 32rpx;
+  margin-bottom: var(--space-lg);
   line-height: var(--leading-normal);
 }
 
@@ -117,7 +117,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 48rpx;
+  margin-top: var(--space-2xl);
 }
 .btn-primary[disabled] {
   background-color: var(--text-muted);
@@ -135,8 +135,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 16rpx;
-  margin-top: 32rpx;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
 }
 
 .link-sep {
@@ -147,7 +147,7 @@
 .guest-row {
   display: flex;
   justify-content: center;
-  margin-top: 48rpx;
+  margin-top: var(--space-2xl);
 }
 
 .link-muted {
@@ -161,4 +161,4 @@
 @import '../../../styles/booking-actions.wxss';
 .input { height: var(--input-height); min-height: 44px; background: var(--bg-input); border-radius: var(--input-radius); padding: 0 var(--input-padding-h); font-size: var(--font-sm); }
 .readonly { height: var(--input-height); min-height: 44px; border-radius: var(--input-radius); padding: 0 var(--input-padding-h); font-size: var(--font-sm); }
-.btn-primary.booking-action { height: var(--control-hit-height); min-height: 44px; margin-top: 32rpx; border-radius: 8px; background: var(--nb-action); font-size: var(--font-sm); box-shadow: none; }
+.btn-primary.booking-action { height: var(--control-hit-height); min-height: 44px; margin-top: var(--space-lg); border-radius: 8px; background: var(--nb-action); font-size: var(--font-sm); box-shadow: none; }

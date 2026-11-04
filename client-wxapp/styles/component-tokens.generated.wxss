@@ -156,8 +156,17 @@
   --touch-min: 44px;
   --touch-tap: 44rpx;
 
+  /* ===== 图标尺寸规范 (Airbnb Icon Scale) ===== */
+  --icon-xs: 20rpx;
+  --icon-sm: 28rpx;
+  --icon-md: 36rpx;
+  --icon-lg: 44rpx;
+  --icon-xl: 56rpx;
+  --icon-display: 88rpx;
+  --icon-touch: 44px;
+
   /* ===== 卡片 ===== */
-  --card-radius: 18rpx;
+  --card-radius: 24rpx;
   --card-padding: 24rpx;
   --card-gap: 24rpx;
 

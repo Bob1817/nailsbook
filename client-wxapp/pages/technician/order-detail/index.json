@@ -5,6 +5,7 @@
   "navigationStyle": "custom",
   "usingComponents": {
     "nav-bar": "/components/nav-bar/index",
-    "booking-confirm": "/components/booking-confirm/index"
+    "booking-confirm": "/components/booking-confirm/index",
+    "work-card": "/components/work-card/index"
   }
 }

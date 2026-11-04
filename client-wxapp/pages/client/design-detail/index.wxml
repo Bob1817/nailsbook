@@ -188,17 +188,19 @@
               class="edit-img-item"
             >
               <image src="{{item}}" mode="aspectFill" class="edit-img" aria-label="待提交的私人设计参考图" />
-              <view class="edit-img-remove" bindtap="removeEditImage" data-index="{{index}}">
-                <text class="remove-icon">×</text>
+              <view class="edit-img-remove" bindtap="removeEditImage" data-index="{{index}}" role="button" aria-label="删除参考图">
+                <image class="remove-icon-svg" src="/static/icons/close-white.svg" mode="aspectFit" />
               </view>
             </view>
             <view
               wx:if="{{editImages.length < 5}}"
               class="edit-img-add {{uploadingImage ? 'uploading' : ''}}"
               bindtap="uploadEditImage"
+              role="button"
+              aria-label="上传参考图"
             >
               <view wx:if="{{uploadingImage}}" class="loading-spinner small"></view>
-              <text wx:else class="add-icon">+</text>
+              <image wx:else class="add-icon-svg" src="/static/icons/plus.svg" mode="aspectFit" />
             </view>
           </view>
           <text class="form-hint">最多可上传5张图片</text>

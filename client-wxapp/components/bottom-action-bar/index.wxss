@@ -1,0 +1,6 @@
+@import '../../styles/component-tokens.generated.wxss';
+:host{display:block;flex-shrink:0}
+.bottom-actions{display:flex;gap:var(--space-sm);padding:var(--space-md) var(--space-lg) calc(var(--space-md) + env(safe-area-inset-bottom));box-sizing:border-box;background:var(--nb-surface);border-top:1rpx solid var(--nb-line)}
+.bottom-actions.is-fixed{position:fixed;left:0;right:0;bottom:0;z-index:50}
+.bottom-action-item{flex:1;min-width:0}
+.bottom-actions.is-keyboard-visible{display:none}

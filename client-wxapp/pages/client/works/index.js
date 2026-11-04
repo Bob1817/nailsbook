@@ -1,6 +1,7 @@
 var api = require('../../../services/api');
 var { normalizeWork } = require('../../../utils/normalize-work');
 var { buildClientLoginUrl } = require('../../../utils/artist-navigation');
+var { getLayout, buildColumns } = require('../utils/waterfall');
 
 var SORT_TABS = [
   { key: 'latest', label: '最新' },
@@ -8,8 +9,6 @@ var SORT_TABS = [
   { key: 'comments', label: '评论' },
   { key: 'favorites', label: '收藏' }
 ];
-
-var ASPECT_PATTERNS = ['aspect-3-4', 'aspect-4-5', 'aspect-5-6', 'aspect-3-4'];
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
@@ -38,8 +37,7 @@ Page({
   data: {
     works: [],
     filteredWorks: [],
-    leftCol: [],
-    rightCol: [],
+    waterfallCols: [],
     loading: true,
     loadFailed: false,
     sortBy: 'latest',
@@ -63,18 +61,27 @@ Page({
   onLoad: function (options) {
     this.entrySource = options.source || (options.techId ? 'artist_home' : 'works');
     this.inviteCode = options.invite ? decodeURIComponent(options.invite) : '';
-    if (options.techId) wx.hideShareMenu();
-    else if (wx.showShareMenu) wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
+    wx.hideShareMenu();
     this.setData({
       keyword: options.keyword ? decodeURIComponent(options.keyword) : '',
       targetTechId: options.techId ? String(options.techId) : '',
       galleryOnly: options.mode === 'gallery'
     });
+    this.updateLayout();
     if (this.data.targetTechId) {
       this.loadBusinessPage();
     } else {
       this.loadWorks();
     }
+  },
+
+  onResize: function () {
+    this.updateLayout();
+    this.applyFilter();
+  },
+
+  updateLayout: function () {
+    this._layout = getLayout({ paddingRpx: 32, gapRpx: 16 });
   },
 
   loadBusinessPage: function () {
@@ -136,6 +143,8 @@ Page({
     if (this.data.businessPage) this.loadBusinessPage(); else this.loadWorks();
   },
 
+  goHome: require('../../../utils/entry-navigation').goHome,
+
   loadWorks: function () {
     var self = this;
     self.setData({ loading: true, loadFailed: false });
@@ -181,7 +190,7 @@ Page({
       })
       .catch(function (err) {
         console.error('loadWorks error:', err);
-        self.setData({ loading: false, loadFailed: true, works: [], filteredWorks: [], leftCol: [], rightCol: [] });
+        self.setData({ loading: false, loadFailed: true, works: [], filteredWorks: [], waterfallCols: [] });
       });
   },
 
@@ -204,15 +213,9 @@ Page({
       filtered = filtered.filter(function (w) { return (w.tags || []).indexOf(selectedCategory) >= 0; });
     }
 
-    var leftCol = [], rightCol = [];
-    filtered.forEach(function (w, i) {
-      var colIdx = i % 2;
-      var rowIdx = Math.floor(i / 2);
-      w.aspect = ASPECT_PATTERNS[(rowIdx + colIdx) % ASPECT_PATTERNS.length];
-      if (colIdx === 0) leftCol.push(w); else rightCol.push(w);
-    });
+    var waterfallCols = buildColumns(filtered, this._layout || getLayout({ paddingRpx: 32, gapRpx: 16 }));
 
-    this.setData({ filteredWorks: filtered, leftCol: leftCol, rightCol: rightCol });
+    this.setData({ filteredWorks: filtered, waterfallCols: waterfallCols });
   },
 
   switchSort: function (e) {
@@ -356,7 +359,7 @@ Page({
 
   onShareAppMessage: function () {
     var artist = this.data.artist;
-    if (!artist) return { title: '美甲作品', path: '/pages/client/works/index' };
+    if (!artist) return { title: 'OnlyNail', path: '/pages/client/home/index' };
     return {
       title: require('../../../utils/share-copy').buildArtistShareTitle(artist),
       path: '/pages/client/artist-home/index?id=' + artist.id + '&source=card' + (artist.invitationCode ? '&invite=' + encodeURIComponent(artist.invitationCode) : ''),

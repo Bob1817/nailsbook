@@ -30,9 +30,7 @@
     </swiper>
 
     <view wx:else class="hero-placeholder">
-      <view class="icon-placeholder-circle">
-        <view class="icon-placeholder-inner"></view>
-      </view>
+      <image class="hero-placeholder-icon" src="/static/icons/image.svg" mode="aspectFit" />
       <text class="hero-placeholder-text">{{heroLoadFailed ? '推荐作品加载失败' : (technicianCount > 0 ? '美甲师暂未设置首页推荐' : (clientLoggedIn ? '绑定美甲师后查看首页推荐' : '暂无公开推荐作品'))}}</text>
       <view class="booking-action hero-empty-action" bindtap="{{heroLoadFailed ? 'loadData' : 'navigateToWorks'}}" role="button">{{heroLoadFailed ? '重新加载' : '浏览作品'}}</view>
     </view>
@@ -54,26 +52,42 @@
       <text class="section-title">我的预约</text>
       <view wx:if="{{upcomingOrder}}" class="section-more semantic-link" bindtap="navigateToOrders">查看全部 ›</view>
     </view>
-    <text class="section-sub">{{upcomingOrder ? '距离最近的一次预约' : '快速发起你的下一次美甲'}}</text>
 
     <view wx:if="{{upcomingOrder}}" class="order-card">
       <view class="order-card-content">
-        <view class="order-card-top">
-          <view class="order-status-badge">{{upcomingOrder.statusText}}</view>
-          <view class="order-countdown"><text class="countdown-dot"></text><text class="countdown-value">{{upcomingOrder.countdown}}</text></view>
-        </view>
         <view class="order-card-body">
-          <view class="order-date-box"><text class="order-date-month">{{orderMonth}}</text><text class="order-date-day">{{orderDay}}</text><text class="order-date-weekday">{{orderWeekday}}</text></view>
+          <view class="order-date-box">
+            <text class="order-date-month order-date-sub">{{orderMonth}}</text>
+            <text class="order-date-day">{{orderDay}}</text>
+            <text class="order-date-weekday">{{orderWeekday}}</text>
+          </view>
           <view class="order-details">
-            <text class="order-time-range">{{upcomingOrder.timeStr}}</text>
-            <text wx:if="{{orderShopName}}" class="order-shop-name">{{orderShopName}}</text>
-            <view wx:if="{{upcomingOrder.technician}}" class="order-detail-row"><image class="icon icon-person" src="/static/icons/client.svg" mode="aspectFit" /><text class="order-detail-text order-detail-truncate">{{upcomingOrder.technician.name}}</text></view>
-            <view wx:if="{{orderAddress}}" class="order-detail-row order-address-row">
-              <image class="icon icon-pin" src="/static/icons/pin.svg" mode="aspectFit" />
-              <text class="order-detail-text order-detail-address">{{orderAddress}}</text>
-              <view class="address-nav-action" catchtap="navigateToShop" role="button" aria-label="导航到店"><image class="address-nav-icon" src="/static/icons/navigation.svg" mode="aspectFit" /><text>导航</text></view>
+            <view class="order-title-row">
+              <view class="info-row order-time-row">
+                <image class="info-icon" src="/static/icons/clock.svg" mode="aspectFit" />
+                <text class="order-time-title order-time-range">{{upcomingOrder.timeStr}}</text>
+              </view>
+              <view class="order-status-col">
+                <view class="status-badge {{upcomingOrder.statusClass}}">{{upcomingOrder.statusText}}</view>
+                <text wx:if="{{upcomingOrder.countdownText || upcomingOrder.countdown}}" class="order-countdown-text">{{upcomingOrder.countdownText || (upcomingOrder.countdown === '已开始' ? '已开始' : '还有 ' + upcomingOrder.countdown)}}</text>
+              </view>
             </view>
-            <view wx:if="{{orderShopGuidance}}" class="order-guidance-link" catchtap="openUpcomingGuidance" role="button" aria-label="查看到店指引"><text>查看到店指引</text><text>›</text></view>
+            <view wx:if="{{orderShopName}}" class="info-row">
+              <image class="info-icon" src="/static/icons/shop.svg" mode="aspectFit" />
+              <text class="info-text info-text-strong order-shop-name">{{orderShopName}}</text>
+            </view>
+            <view wx:if="{{upcomingOrder.technician}}" class="info-row">
+              <image class="info-icon" src="/static/icons/role-client.svg" mode="aspectFit" />
+              <text class="info-text">美甲师 {{upcomingOrder.technician.name}}</text>
+            </view>
+            <view wx:if="{{orderAddress}}" class="info-row info-row-address order-address-row">
+              <image class="info-icon" src="/static/icons/pin.svg" mode="aspectFit" />
+              <view class="order-detail-address-wrap">
+                <text class="info-text info-text-muted order-detail-address">{{orderAddress}}</text>
+                <text class="address-nav-action" catchtap="navigateToShop" role="button" aria-label="导航到店"><text class="guidance-sep"> · </text><text class="nav-link-text">导航 ›</text></text>
+                <text wx:if="{{orderShopGuidance}}" class="order-guidance-link" catchtap="openUpcomingGuidance" role="button" aria-label="查看到店指引"><text class="guidance-sep"> · </text><text class="guidance-link-text">查看到店指引 ›</text></text>
+              </view>
+            </view>
           </view>
         </view>
         <view class="order-card-actions" catchtap="">
@@ -86,8 +100,18 @@
 
     <view wx:else class="no-order-card" bindtap="navigateToBooking">
       <view class="no-order-content">
-        <view class="no-order-copy"><text class="no-order-title">当前暂无预约</text><text class="no-order-sub">挑选喜欢的款式，快速预约美甲师</text></view>
-        <view class="book-btn booking-action"><text>去预约</text><text class="book-btn-arrow">›</text></view>
+        <view class="no-order-copy" wx:if="{{technician}}">
+          <text class="no-order-title">预约专属美甲师 · {{technician.name}}</text>
+          <text class="no-order-sub">快捷锁定档期，款式与价格可稍后沟通</text>
+        </view>
+        <view class="no-order-copy" wx:else>
+          <text class="no-order-title">当前暂无预约</text>
+          <text class="no-order-sub">挑选喜欢的款式，快速预约美甲师</text>
+        </view>
+        <view class="book-btn booking-action">
+          <text>{{technician ? '快捷预约' : '去预约'}}</text>
+          <text class="book-btn-arrow">›</text>
+        </view>
       </view>
     </view>
   </view>
@@ -98,17 +122,11 @@
       <text class="section-title">精选作品</text>
       <view class="section-more semantic-link" bindtap="navigateToWorks">查看全部 ›</view>
     </view>
-    <text class="section-sub">设计能力、审美理念与适合你的场景</text>
 
     <view wx:if="{{featuredWorks.length}}" class="home-works-grid">
-      <view class="home-works-col">
-        <view wx:for="{{featuredLeftCol}}" wx:key="id" class="work-card">
-          <work-card work="{{item}}" bind:cardtap="onWorkCardTap" bind:artisttap="onArtistTap" bind:liketap="onLikeTap" bind:favoritetap="onFavoriteTap" bind:commenttap="onWorkCardTap" />
-        </view>
-      </view>
-      <view class="home-works-col">
-        <view wx:for="{{featuredRightCol}}" wx:key="id" class="work-card">
-          <work-card work="{{item}}" bind:cardtap="onWorkCardTap" bind:artisttap="onArtistTap" bind:liketap="onLikeTap" bind:favoritetap="onFavoriteTap" bind:commenttap="onWorkCardTap" />
+      <view class="home-works-col" wx:for="{{featuredCols}}" wx:for-item="col" wx:key="id">
+        <view wx:for="{{col.items}}" wx:key="id" class="work-card">
+          <work-card variant="editorial" work="{{item}}" bind:cardtap="onWorkCardTap" bind:artisttap="onArtistTap" bind:liketap="onLikeTap" bind:favoritetap="onFavoriteTap" bind:commenttap="onWorkCardTap" />
         </view>
       </view>
     </view>
@@ -122,7 +140,7 @@
 
     <view wx:if="{{featuredWorks.length === 0 && !worksLoading}}" class="works-empty">
       <view class="works-empty-icon-wrap">
-        <view class="icon icon-image-placeholder-lg"></view>
+        <image class="works-empty-icon" src="/static/icons/image.svg" mode="aspectFit" />
       </view>
       <text class="works-empty-text">暂无作品展示</text>
       <text class="works-empty-sub">绑定美甲师后，即可查看TA发布的最新作品</text>

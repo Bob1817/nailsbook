@@ -30,16 +30,20 @@ for (const name of ['action-button', 'form-field', 'filter-trigger', 'nb-switch'
 }
 
 const buttonCss = fs.readFileSync(path.join(componentsRoot, 'action-button/index.wxss'), 'utf8');
+const buttonWxml = fs.readFileSync(path.join(componentsRoot, 'action-button/index.wxml'), 'utf8');
 assert(buttonCss.includes('min-height: var(--btn-height)'), 'action-button: 必须使用统一按钮高度');
+assert(buttonWxml.includes('open-type="{{openType}}"'), 'action-button: 必须支持 openType 透传');
 for (const variant of ['primary', 'secondary', 'text', 'danger']) {
   assert(buttonCss.includes('.action-button-' + variant), 'action-button: 缺少 ' + variant + ' 状态');
 }
 
 const fieldCss = fs.readFileSync(path.join(componentsRoot, 'form-field/index.wxss'), 'utf8');
+const fieldWxml = fs.readFileSync(path.join(componentsRoot, 'form-field/index.wxml'), 'utf8');
 assert(fieldCss.includes('min-height: var(--input-height)'), 'form-field: 必须使用统一输入框高度');
 assert(fieldCss.includes('border-radius: var(--input-radius)'), 'form-field: 必须使用统一输入框圆角');
 assert(fieldCss.includes('.form-field-icon'), 'form-field: 必须支持统一的输入类型图标');
 assert(fieldCss.includes('font-size: var(--font-sm)'), 'form-field: 占位提示必须使用次级字号');
+assert(fieldWxml.includes('form-field-required'), 'form-field: 必须支持必填标记');
 for (const state of ['is-focused', 'is-disabled', 'has-error']) {
   assert(fieldCss.includes(state), 'form-field: 缺少 ' + state + ' 状态');
 }

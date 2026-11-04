@@ -1,36 +1,99 @@
 <view class="work-detail {{!visitorInfo && !loading && !loadFailed ? 'has-composer' : ''}}">
   <view wx:if="{{loading}}" class="state-screen"><view class="loading-spinner"></view></view>
   <view wx:elif="{{loadFailed}}" class="state-screen error-screen" aria-live="polite">
+    <!-- 顶部常驻导航胶囊按钮：与小程序胶囊高度对齐，保障随时安全退出 -->
+    <view wx:if="{{hasHistory}}" class="top-action top-back error-top-back" style="{{topButtonStyle}}" data-event="back" bindtap="emit" role="button" aria-label="返回上一页"><image class="top-back-icon" src="/static/icons/arrow-left-dark.svg" mode="aspectFit" /></view>
+    <view wx:else class="top-action top-back top-home error-top-back" style="{{topButtonStyle}}" data-event="home" bindtap="emit" role="button" aria-label="进入首页"><image class="top-home-icon" src="/static/icons/tab-home.svg" mode="aspectFit" /></view>
+
+    <!-- Airbnb 风格主信息卡片 (Hero Card) -->
     <view class="error-card">
-      <view class="error-symbol" aria-hidden="true">!</view>
-      <text class="state-title">{{loadErrorText || '作品暂时无法加载'}}</text>
-      <text class="state-description">{{loadErrorDescription || '暂时无法打开这件作品。你可以返回继续浏览，或稍后重新尝试。'}}</text>
+      <view class="error-badge" aria-hidden="true">
+        <image class="error-badge-icon" src="/static/icons/image.svg" mode="aspectFit" />
+      </view>
+      <text class="state-title error-title">{{loadErrorText || '作品暂时无法查看'}}</text>
+      <text class="state-description error-description">{{loadErrorDescription || '该作品可能已被作者设为私密、已下架，或网络连接稍有延迟。别担心，还有更多灵感等你发现。'}}</text>
+
+      <!-- 主行动按钮：主次分明胶囊 -->
       <view class="error-actions">
-        <button class="state-btn" hover-class="state-pressed" data-event="back" bindtap="emit">返回浏览</button>
-        <button wx:if="{{canRetryLoad}}" class="state-btn secondary" hover-class="state-pressed" data-event="retry" bindtap="emit">重新加载</button>
+        <button wx:if="{{hasHistory}}" class="error-btn-primary" hover-class="state-pressed" data-event="back" bindtap="emit">返回继续浏览</button>
+        <button wx:else class="error-btn-primary" hover-class="state-pressed" data-event="home" bindtap="emit">探索精选美甲</button>
+        <button wx:if="{{canRetryLoad}}" class="error-btn-secondary" hover-class="state-pressed" data-event="retry" bindtap="emit">重新加载</button>
       </view>
-      <view class="error-support">
-        <text class="support-title">需要帮助？联系开发运维</text>
-        <text class="support-description">请附上此页截图、出错时间及操作步骤，方便我们排查。</text>
-        <block wx:if="{{supportWechat}}">
-          <text class="support-account" user-select="true">微信号：{{supportWechat}}</text>
-          <button class="state-btn secondary" hover-class="state-pressed" bindtap="copySupportWechat">复制运维微信号</button>
-        </block>
-        <button wx:else class="state-btn secondary" hover-class="state-pressed" open-type="contact" binderror="onSupportError" send-message-title="作品页面加载异常" show-message-card="true">联系平台客服</button>
+    </view>
+
+    <!-- 下一步操作与去处推荐卡片组 (Airbnb 风格结构化引导) -->
+    <view class="error-guide-section">
+      <view class="error-guide-header">
+        <text class="error-guide-header-title">为你推荐以下去处</text>
       </view>
+
+      <!-- 引导 1：浏览精选美甲画廊 -->
+      <view class="error-guide-card" data-event="home" bindtap="emit" role="button" aria-label="浏览精选美甲画廊">
+        <view class="error-guide-icon-box">
+          <image class="error-guide-icon" src="/static/icons/tab-compass.svg" mode="aspectFit" />
+        </view>
+        <view class="error-guide-content">
+          <text class="error-guide-title">浏览精选美甲画廊</text>
+          <text class="error-guide-desc">发现当季流行设计与高分灵感款式</text>
+        </view>
+        <image class="error-guide-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
+      </view>
+
+      <!-- 引导 2：若有美甲师信息 (例如 visitorInfo)，引导查看美甲师其他作品 -->
+      <view wx:if="{{visitorInfo && visitorInfo.id}}" class="error-guide-card" data-event="artist" bindtap="emit" role="button" aria-label="查看美甲师主页">
+        <view class="error-guide-icon-box">
+          <image wx:if="{{visitorInfo.avatarUrl}}" class="error-guide-avatar" src="{{visitorInfo.avatarUrl}}" mode="aspectFill" />
+          <image wx:else class="error-guide-icon" src="/static/icons/technician.svg" mode="aspectFit" />
+        </view>
+        <view class="error-guide-content">
+          <text class="error-guide-title">{{visitorInfo.name || '美甲师'}} 的个人主页</text>
+          <text class="error-guide-desc">查看TA的其他精选作品与可约档期</text>
+        </view>
+        <image class="error-guide-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
+      </view>
+
+      <!-- 引导 3：专属客服顾问协助 -->
+      <view wx:if="{{supportWechat}}" class="error-guide-card" bindtap="copySupportWechat" role="button" aria-label="复制专属客服微信号">
+        <view class="error-guide-icon-box">
+          <image class="error-guide-icon" src="/static/icons/tab-chat.svg" mode="aspectFit" />
+        </view>
+        <view class="error-guide-content">
+          <text class="error-guide-title">联系专属客服顾问</text>
+          <text class="error-guide-desc">微信号：<text class="error-guide-account" user-select="true">{{supportWechat}}</text></text>
+        </view>
+        <view class="error-guide-action-tag">复制微信</view>
+      </view>
+      <button wx:else class="error-guide-card error-guide-btn" open-type="contact" binderror="onSupportError" send-message-title="作品无法查看咨询" show-message-card="true" aria-label="在线联系专属客服">
+        <view class="error-guide-icon-box">
+          <image class="error-guide-icon" src="/static/icons/tab-chat.svg" mode="aspectFit" />
+        </view>
+        <view class="error-guide-content">
+          <text class="error-guide-title">在线咨询平台客服</text>
+          <text class="error-guide-desc">专属客服解答预约疑问与获取最新款式</text>
+        </view>
+        <image class="error-guide-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
+      </button>
     </view>
   </view>
   <block wx:elif="{{work.id}}">
-    <view class="top-action top-back" style="{{topButtonStyle}}" data-event="back" bindtap="emit" role="button" aria-label="返回"><text class="top-back-glyph">‹</text></view>
+    <view wx:if="{{hasHistory}}" class="top-action top-back" style="{{topButtonStyle}}" data-event="back" bindtap="emit" role="button" aria-label="返回上一页"><image class="top-back-icon" src="/static/icons/arrow-left-dark.svg" mode="aspectFit" /></view>
+    <view wx:else class="top-action top-back top-home" style="{{topButtonStyle}}" data-event="home" bindtap="emit" role="button" aria-label="进入首页"><image class="top-home-icon" src="/static/icons/tab-home.svg" mode="aspectFit" /></view>
     <swiper class="image-swiper {{isClientView ? 'client-image-swiper' : ''}}" current="{{currentImageIndex}}" circular="{{imageUrls.length > 1}}" bindchange="onSwiperChange">
       <swiper-item wx:for="{{imageUrls}}" wx:key="*this" bindtap="previewImage" data-url="{{item}}"><image class="work-image" src="{{item}}" mode="aspectFill" aria-label="{{work.title || '美甲作品'}}第{{index + 1}}张图片" /></swiper-item>
     </swiper>
     <view wx:if="{{isClientView && imageUrls.length > 1}}" class="image-count" aria-label="第{{currentImageIndex + 1}}张，共{{imageUrls.length}}张">{{currentImageIndex + 1}} / {{imageUrls.length}}</view>
+    <view wx:if="{{isAuthor}}" class="detail-status-icons" aria-label="作品状态">
+      <view wx:if="{{!work.isVisible}}" class="detail-status-pill"><image src="/static/icons/eye-closed.svg" class="detail-status-icon"/><text>私密</text></view>
+      <view wx:if="{{work.isPinned}}" class="detail-status-pill"><image src="/static/icons/status-pin.svg" class="detail-status-icon"/><text>置顶</text></view>
+      <view wx:if="{{work.isFeatured}}" class="detail-status-pill"><image src="/static/icons/status-featured.svg" class="detail-status-icon"/><text>精选</text></view>
+      <view wx:if="{{work.heroSlot}}" class="detail-status-pill"><image src="/static/icons/crown.svg" class="detail-status-icon"/><text>主推</text></view>
+    </view>
+    <view wx:if="{{!isAuthor && work.heroSlot}}" class="detail-curated-badge"><image src="/static/icons/crown.svg"/><text>精选主推</text></view>
     <view class="info-panel {{visitorInfo ? 'visitor-panel' : ''}}">
       <view class="intro-section">
         <view class="title-row">
           <text class="work-title">{{work.title || '未命名作品'}}</text>
-          <view wx:if="{{!visitorInfo && showBookSame}}" class="booking-action" bindtap="bookSame" role="button" aria-label="预约同款"><view class="booking-action-face"><image class="booking-action-icon" src="/static/icons/calendar.svg"/><text>预约同款</text></view></view>
+          <view wx:if="{{!visitorInfo && showBookSame}}" class="booking-action" bindtap="bookSame" role="button" aria-label="预约同款"><view class="booking-action-face"><image class="booking-action-icon" src="/static/icons/calendar-white.svg"/><text>预约同款</text></view></view>
           <view wx:if="{{isAuthor}}" class="manage-button" bindtap="manageWork" role="button" aria-label="管理作品"><image class="manage-icon" src="/static/icons/more-horizontal.svg" /></view>
         </view>
         <view class="work-pricing-card">
@@ -43,6 +106,7 @@
             </view>
             <text wx:if="{{work._priceDiffType === 'discount'}}" class="work-price-note discount">已优惠 ¥{{work._priceDiffFen / 100}}</text>
             <text wx:elif="{{work._priceDiffType === 'surcharge'}}" class="work-price-note surcharge">其他 ¥{{work._priceDiffFen / 100}}</text>
+            <text wx:if="{{work.doneCountText}}" class="work-done-count">{{work.doneCountText}}</text>
           </view>
           <view wx:if="{{work._promotionDiscountAmount > 0}}" class="work-promotion" aria-label="{{work.promotion.title}}，优惠{{work._promotionDiscountAmount}}元">
             <view class="work-promotion-row"><text class="work-promotion-title">{{work.promotion.title}}</text><text class="work-promotion-amount">立减 ¥{{work._promotionDiscountAmount}}</text></view>
@@ -52,7 +116,7 @@
         <view wx:if="{{work.description || (work.tags && work.tags.length)}}" class="work-story">
           <text class="work-story-title">作品介绍</text>
           <text wx:if="{{work.description}}" class="work-desc">{{work.description}}</text>
-          <view wx:if="{{work.tags && work.tags.length}}" class="tags"><text wx:for="{{work.tags}}" wx:key="*this" class="tag">{{item}}</text></view>
+          <view wx:if="{{work.tags && work.tags.length}}" class="tags"><text wx:for="{{work.tags}}" wx:key="*this" class="tag">#{{item}}</text></view>
         </view>
       </view>
 
@@ -90,6 +154,8 @@
         <text wx:else class="visitor-hint">店铺信息待完善，预约前请确认服务地点</text>
       </view>
 
+      <slot wx:if="{{!visitorInfo}}" name="before-comments"></slot>
+
       <view wx:if="{{!visitorInfo}}" class="comments-section">
         <view class="comments-header"><text class="comments-title">评论</text><text class="comments-count">{{comments.length}} 条</text></view>
         <view wx:if="{{comments.length}}" class="comments">
@@ -123,13 +189,13 @@
         <view class="input-row">
           <view class="comment-entry">
             <image class="comment-entry-icon" src="/static/icons/edit.svg" mode="aspectFit" aria-hidden="true" />
-            <input class="comment-input" placeholder="{{canComment ? '写评论…' : '登录后参与评论'}}" value="{{commentText}}" focus="{{inputFocused}}" adjust-position="{{false}}" hold-keyboard="{{true}}" bindfocus="onInputFocus" bindkeyboardheightchange="onKeyboardHeightChange" bindblur="onInputBlur" bindinput="onInput" bindconfirm="submitComment" confirm-type="send"/>
+            <input class="comment-input" placeholder="{{canComment ? '写评论…' : '登录后参与评论'}}" placeholder-class="comment-placeholder" value="{{commentText}}" focus="{{inputFocused}}" adjust-position="{{false}}" hold-keyboard="{{true}}" bindfocus="onInputFocus" bindkeyboardheightchange="onKeyboardHeightChange" bindblur="onInputBlur" bindinput="onInput" bindconfirm="submitComment" confirm-type="send"/>
           </view>
           <button wx:if="{{inputFocused || keyboardHeight || commentText || replyingTo}}" disabled="{{submittingComment}}" loading="{{submittingComment}}" class="send" hover-class="send-pressed" bindtap="submitComment" aria-label="{{submittingComment ? '正在发送评论' : '发送评论'}}">{{submittingComment ? '发送中' : '发送'}}</button>
           <view wx:else class="composer-actions">
-            <view class="composer-action composer-stat {{work.isLiked ? 'is-active' : ''}}" data-event="like" bindtap="emit" role="button" aria-label="点赞，{{work.likeCount || 0}}次"><image class="composer-action-icon" src="{{work.isLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}"/><text class="composer-action-count">{{work.likeCount || 0}}</text></view>
-            <view class="composer-action composer-stat {{work.isFavorited ? 'is-active' : ''}}" data-event="favorite" bindtap="emit" role="button" aria-label="收藏，{{work.favoriteCount || 0}}次"><image class="composer-action-icon" src="{{work.isFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}"/><text class="composer-action-count">{{work.favoriteCount || 0}}</text></view>
-            <button class="composer-action composer-share" disabled="{{!canShare && !canRetryShare}}" open-type="{{canShare ? 'share' : ''}}" bindtap="retryShare" aria-label="{{canShare ? '分享作品' : (canRetryShare ? '重新检查作品分享状态' : '此作品暂不可分享')}}"><image class="composer-action-icon" src="/static/icons/share.svg"/></button>
+            <view class="composer-action composer-stat {{work.isLiked ? 'is-active is-liked' : ''}}" data-event="like" bindtap="emit" role="button" aria-label="点赞，{{work.likeCount || 0}}次"><image class="composer-action-icon" src="{{work.isLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}"/><text class="composer-action-count">{{work.likeCount || 0}}</text></view>
+            <view class="composer-action composer-stat {{work.isFavorited ? 'is-active is-favorited' : ''}}" data-event="favorite" bindtap="emit" role="button" aria-label="收藏，{{work.favoriteCount || 0}}次"><image class="composer-action-icon" src="{{work.isFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}"/><text class="composer-action-count">{{work.favoriteCount || 0}}</text></view>
+            <button class="composer-action composer-share" disabled="{{!canShare && !canRetryShare}}" open-type="{{isAuthor ? '' : (canShare ? 'share' : '')}}" bindtap="retryShare" aria-label="{{canShare ? '分享作品' : (canRetryShare ? '重新检查作品分享状态' : '此作品暂不可分享')}}"><image class="composer-action-icon" src="/static/icons/share.svg"/></button>
           </view>
         </view>
     </view>

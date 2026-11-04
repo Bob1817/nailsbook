@@ -1,11 +1,23 @@
-<nav-bar title="{{booked ? '预约成功' : '报价单预览'}}" showBack>
-  <button wx:if="{{owner && !booked}}" slot="right" class="nav-share" open-type="share" aria-label="转发报价单"><image src="/static/icons/share.svg" mode="aspectFit"/></button>
+<nav-bar title="{{isInvalid ? '报价已失效' : (booked ? '预约成功' : '报价单预览')}}" showBack>
+  <button wx:if="{{owner && !booked && !isInvalid}}" slot="right" class="nav-share" bindtap="openShareConfirm" aria-label="确认并分享报价单"><image src="/static/icons/share.svg" mode="aspectFit"/></button>
 </nav-bar>
 <view class="page">
   <view wx:if="{{loading}}" class="state">正在打开专属报价…</view>
   <view wx:elif="{{error}}" class="state error"><text>{{error}}</text><button bindtap="load">重新加载</button><text class="state-exit" hover-class="link-pressed" bindtap="goHome">进入小程序首页 ›</text></view>
   <block wx:else>
-    <view wx:if="{{booked}}" class="invitation-card">
+    <view wx:if="{{isInvalid}}" class="quote-invalid-card">
+      <view class="invalid-icon-wrap">
+        <image class="invalid-icon" src="/static/icons/info.svg" mode="aspectFit"/>
+      </view>
+      <text class="invalid-title">该报价已失效</text>
+      <text class="invalid-desc">{{invalidReason || '该报价已失效，请点击前往美甲师主页'}}</text>
+      <view class="invalid-actions">
+        <button class="primary quote-to-artist-btn" bindtap="viewArtist">前往美甲师主页</button>
+        <button class="secondary quote-to-home-btn" bindtap="goHome">返回首页</button>
+      </view>
+    </view>
+
+    <view wx:elif="{{booked}}" class="invitation-card">
       <view class="invitation-visual {{invitation.heroImage ? 'has-image' : 'no-image'}}">
         <image wx:if="{{invitation.heroImage}}" class="invitation-hero" src="{{invitation.heroImage}}" mode="aspectFill"/>
         <view wx:else class="invitation-brand-art">
@@ -27,7 +39,7 @@
 
         <view class="invitation-time">
           <view class="invitation-date"><text>{{invitation.date}}</text><text>{{invitation.weekday}}</text></view>
-          <view class="invitation-time-main"><text>{{invitation.time}}</text><text>已确认到店时间</text></view>
+          <view class="invitation-time-main"><text>{{invitation.time}}</text><text>{{quote.serviceType === '上门美甲' ? '已确认上门时间' : '已确认到店时间'}}</text></view>
         </view>
 
         <view class="invitation-facts">
@@ -45,18 +57,26 @@
         <text class="detail-label">服务项目</text>
         <view wx:for="{{quote.lines}}" wx:key="id" class="detail-line"><text>{{item.nameSnapshot}} × {{item.quantity}}</text><text>¥{{item.priceText}}</text></view>
       </view>
-      <view class="detail-section location">
+      <view wx:if="{{quote.serviceType !== '上门美甲'}}" class="detail-section location">
         <text class="detail-label">到店信息</text><text class="detail-primary">{{quote.shopName}}</text><text wx:if="{{quote.shopAddress}}" class="detail-secondary">{{quote.shopAddress}}</text>
         <button wx:if="{{quote.shopLatitude && quote.shopLongitude}}" class="text-link" bindtap="openNavigation">打开工作室导航 ›</button>
+      </view>
+      <view wx:else class="detail-section location">
+        <text class="detail-label">服务形式</text><text class="detail-primary">上门美甲</text><text class="detail-secondary">美甲师按约定时间提供上门服务</text>
       </view>
       <view wx:if="{{quote.bookingRules}}" class="detail-section rule"><text class="detail-label">温馨提示</text><text class="detail-secondary">{{quote.bookingRules}}</text></view>
     </view>
 
     <block wx:else>
       <view class="quote-hero-card">
-        <view class="preview-hero">
+        <view class="preview-hero {{coverImage ? 'has-cover' : 'no-cover'}}">
           <image wx:if="{{coverImage}}" class="preview-cover" src="{{coverImage}}" mode="aspectFill"/>
-          <view class="preview-cover-scrim"></view>
+          <view wx:else class="preview-brand-art">
+            <view class="preview-orbit orbit-one"></view>
+            <view class="preview-orbit orbit-two"></view>
+            <text class="preview-art-caption">ONLYNAIL · EXCLUSIVE DESIGN</text>
+          </view>
+          <view wx:if="{{coverImage}}" class="preview-cover-scrim"></view>
           <view class="preview-brand"><image src="/static/onlynail-logo.jpg" mode="aspectFit"/><text>专属美甲方案</text></view>
         </view>
       </view>
@@ -65,9 +85,13 @@
         <view wx:else class="tile-avatar tile-fallback">{{quote.avatarInitial}}</view>
         <view class="tile-copy"><text class="tile-title">{{quote.technicianName}}</text><text class="tile-sub tile-link">点击查看美甲师主页</text></view><text class="preview-chevron">›</text>
       </view>
-      <view class="quote-tile" bindtap="viewShop" role="button" aria-label="查看店铺信息">
+      <view wx:if="{{quote.serviceType !== '上门美甲'}}" class="quote-tile" bindtap="viewShop" role="button" aria-label="查看店铺信息">
         <image class="tile-icon" src="/static/icons/pin.svg" mode="aspectFit"/>
         <view class="tile-copy"><text class="tile-title">{{quote.shopName || '美甲工作室'}}</text><text class="tile-sub">{{quote.shopAddress || '点击查看店铺信息'}}</text></view><text class="preview-chevron">›</text>
+      </view>
+      <view wx:else class="quote-tile quote-tile-plain">
+        <image class="tile-icon" src="/static/icons/tab-home.svg" mode="aspectFit"/>
+        <view class="tile-copy"><text class="tile-title">上门美甲服务</text><text class="tile-sub">美甲师将按约定时间提供上门服务</text></view>
       </view>
       <view class="quote-tile quote-tile-plain">
         <view class="preview-price">
@@ -81,16 +105,44 @@
         <text class="preview-validity">报价有效期以双方沟通为准 · 仅作为意向参考</text>
       </view>
     </block>
-    <view wx:if="{{!booked && !accepted}}" class="preview-explain">同意后授权登录，系统将为你自动绑定美甲师并带入本报价内容，只需选择预约日期即可提交。</view>
-    <view wx:if="{{quote}}" class="preview-actions">
-      <block wx:if="{{owner && !booked}}"><button class="secondary" bindtap="returnToEdit">返回修改</button><button class="secondary" bindtap="downloadQuote" loading="{{downloading}}" disabled="{{downloading}}">下载报价单</button><button class="primary" open-type="share">确认转发</button></block>
-      <block wx:elif="{{!booked && (quote.status === 'issued' || quote.status === 'viewed')}}"><button class="secondary" bindtap="thinkLater" disabled="{{feedbackSent}}">{{feedbackSent ? '已记录想法' : '我再想想'}}</button><button class="primary" bindtap="accept" loading="{{submitting}}" disabled="{{submitting}}">同意并预约</button></block>
+    <view wx:if="{{owner && !booked && !isInvalid}}" class="owner-preview-guide"><view><text>这是客户将看到的最终报价</text><text>请确认服务项目、价格、时长和门店信息；需要调整时使用下方“修改报价”。</text></view></view>
+    <view wx:if="{{!booked && !accepted && !isInvalid}}" class="preview-explain">同意后授权登录，系统将为你自动绑定美甲师并带入本报价内容，只需选择预约日期即可提交。</view>
+    <view wx:if="{{quote && !isInvalid}}" class="preview-actions">
+      <block wx:if="{{owner && !booked}}"><button class="secondary" bindtap="returnToEdit">修改报价</button><button class="secondary" bindtap="downloadQuote" loading="{{downloading}}" disabled="{{downloading}}">下载报价单</button><button class="primary" bindtap="openShareConfirm">确认并分享</button></block>
+      <block wx:elif="{{!booked && (quote.status === 'issued' || quote.status === 'viewed')}}">
+        <button class="secondary" bindtap="thinkLater" disabled="{{feedbackSent}}">{{feedbackSent ? '已记录想法' : '我再想想'}}</button>
+        <button class="primary" bindtap="accept" loading="{{submitting}}" disabled="{{submitting}}">同意并预约</button>
+        <view wx:if="{{feedbackSent}}" class="home-exit"><text class="state-exit" hover-class="link-pressed" bindtap="goHome">进入小程序首页 ›</text></view>
+      </block>
       <block wx:elif="{{!booked && accepted}}"><button class="primary" bindtap="goBooking">选择预约时间，完成预约</button></block>
       <block wx:elif="{{booked}}"><button class="secondary" bindtap="downloadInvitation" loading="{{downloading}}" disabled="{{downloading}}">下载邀请卡</button><button class="primary" open-type="share">转发邀请卡</button></block>
-      <text wx:else class="status-note">该报价当前状态为 {{quote.status}}，如需调整请联系美甲师。</text>
-      <text class="home-exit" hover-class="link-pressed" bindtap="goHome">{{owner ? '返回美甲师工作台' : '进入小程序首页'}} ›</text>
+      <block wx:else>
+        <text class="status-note">该报价当前状态为 {{quote.status}}，如需调整请联系美甲师。</text>
+        <view class="home-exit"><text class="state-exit" hover-class="link-pressed" bindtap="goHome">进入小程序首页 ›</text></view>
+      </block>
     </view>
   </block>
 </view>
 
-<block wx:if="{{showReasons}}"><view class="reason-mask" bindtap="closeReasons" catchtouchmove="noop"></view><view class="reason-sheet"><view class="reason-head"><view><text>这次先不预约</text><text>选择一个原因，方便美甲师了解你的考虑</text></view><button size="mini" bindtap="closeReasons" aria-label="关闭">×</button></view><view class="reason-list"><button wx:for="{{reasons}}" wx:key="*this" data-reason="{{item}}" bindtap="selectReason" loading="{{submitting}}">{{item}}<text>›</text></button></view><view wx:if="{{customReason}}" class="reason-custom"><textarea class="reason-input" placeholder="写下你的考虑（最多 120 字）" maxlength="120" value="{{reasonText}}" bindinput="onReasonInput" auto-height/><button class="reason-submit" bindtap="submitCustomReason" loading="{{submitting}}" disabled="{{submitting || !reasonText}}">提交原因</button></view></view></block>
+<block wx:if="{{showShareConfirm}}">
+  <view class="share-mask" bindtap="closeShareConfirm" catchtouchmove="noop"></view>
+  <view class="share-sheet" role="dialog" aria-label="确认分享报价单">
+    <view class="share-sheet-head"><text>确认分享这份报价？</text><view class="share-sheet-close" bindtap="closeShareConfirm" role="button" aria-label="关闭"><image class="share-sheet-close-icon" src="/static/icons/close.svg" mode="aspectFit" /></view></view>
+    <text class="share-sheet-copy">分享后客户将看到当前预览内容，并可直接确认和预约。</text>
+    <view class="share-check-list"><view class="share-check-item"><image class="share-check-icon" src="/static/icons/check.svg" mode="aspectFit" /><text>服务项目、价格和时长已确认</text></view><view class="share-check-item"><image class="share-check-icon" src="/static/icons/check.svg" mode="aspectFit" /><text>门店和美甲师信息已确认</text></view></view>
+    <button class="share-sheet-edit" bindtap="returnToEdit">返回修改</button>
+    <button class="share-sheet-primary" open-type="share" bindtap="markShareStarted">确认并选择微信好友</button>
+  </view>
+</block>
+
+<block wx:if="{{showShareCompletion}}">
+  <view class="share-mask" catchtouchmove="noop"></view>
+  <view class="share-sheet" role="dialog" aria-label="确认分享结果">
+    <view class="share-sheet-head"><text>是否已完成分享？</text><view class="share-sheet-close" bindtap="closeShareCompletion" role="button" aria-label="关闭"><image class="share-sheet-close-icon" src="/static/icons/close.svg" mode="aspectFit" /></view></view>
+    <text class="share-sheet-copy">部分微信版本不会返回分享结果。确认已发送后，将返回报价列表。</text>
+    <button class="share-sheet-edit" bindtap="closeShareCompletion">继续查看报价</button>
+    <button class="share-sheet-primary" bindtap="completeQuoteShare">已完成分享，返回列表</button>
+  </view>
+</block>
+
+<block wx:if="{{showReasons}}"><view class="reason-mask" bindtap="closeReasons" catchtouchmove="noop"></view><view class="reason-sheet"><view class="reason-head"><view><text>这次先不预约</text><text>选择一个原因，方便美甲师了解你的考虑</text></view><view class="reason-head-close" bindtap="closeReasons" role="button" aria-label="关闭"><image class="reason-head-close-icon" src="/static/icons/close.svg" mode="aspectFit" /></view></view><view class="reason-list"><button wx:for="{{reasons}}" wx:key="*this" data-reason="{{item}}" bindtap="selectReason" loading="{{submitting}}">{{item}}<text class="reason-chevron">›</text></button></view><view wx:if="{{customReason}}" class="reason-custom"><textarea class="reason-input" placeholder="写下你的考虑（最多 120 字）" maxlength="120" value="{{reasonText}}" bindinput="onReasonInput" auto-height/><button class="reason-submit" bindtap="submitCustomReason" loading="{{submitting}}" disabled="{{submitting || !reasonText}}">提交原因</button></view></view></block>

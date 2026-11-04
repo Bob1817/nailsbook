@@ -120,6 +120,9 @@
           bind:complete="onBookingCardComplete"
           bind:confirmed="onBookingCardConfirmed"
           bind:rebook="onBookingCardRebook"
+          bind:record="onBookingCardRecord"
+          bind:uploadwork="onBookingCardUploadWork"
+          bind:viewwork="onBookingCardViewWork"
         />
       </view>
     </view>
@@ -131,35 +134,47 @@
   <view class="calendar-panel" catchtap="noop">
     <view class="calendar-header">
       <view class="calendar-legend"><text class="legend-actual">实际收入</text><text class="legend-estimated">预计收入</text><text class="legend-cancelled">取消</text><text class="legend-refunded">退款</text></view>
-      <view class="calendar-close-icon" bindtap="closeCalendar">×</view>
+      <view class="calendar-close-icon" bindtap="closeCalendar" role="button" aria-label="关闭"><image class="calendar-close-svg" src="/static/icons/close.svg" mode="aspectFit" /></view>
     </view>
 
     <scroll-view scroll-y enhanced show-scrollbar="{{false}}" class="calendar-scroll" scroll-into-view="{{calendarScrollTarget}}" scroll-with-animation>
       <view wx:for="{{calendarYears}}" wx:for-index="yearIndex" wx:key="year" class="calendar-year">
-        <view class="year-header" bindtap="toggleCalendarYear" data-year-index="{{yearIndex}}">
-          <view class="period-title"><text class="year-title">{{item.year}}年</text><view class="disclosure {{item.expanded ? 'disclosure-open' : ''}}"></view></view>
+        <view class="year-header" bindtap="toggleCalendarYear" data-year-index="{{yearIndex}}" role="button" aria-expanded="{{item.expanded}}" aria-label="{{item.year}}年排期与收入，点击{{item.expanded ? '收起' : '展开'}}">
+          <view class="year-header-left">
+            <text class="year-title">{{item.year}}年</text>
+            <view class="year-disclosure {{item.expanded ? 'year-disclosure-open' : ''}}"></view>
+          </view>
           <view class="period-totals">
-            <text wx:if="{{item.totals.actualText}}" class="total-actual">{{item.totals.actualText}}</text>
-            <text wx:if="{{item.totals.estimatedText}}" class="total-estimated">{{item.totals.estimatedText}}</text>
+            <text wx:if="{{item.totals.actualText}}" class="total-actual"><text class="total-tag-label">实收</text>{{item.totals.actualText}}</text>
+            <text wx:if="{{item.totals.estimatedText}}" class="total-estimated"><text class="total-tag-label">预估</text>{{item.totals.estimatedText}}</text>
           </view>
         </view>
         <block wx:if="{{item.expanded}}">
-        <view wx:for="{{item.months}}" wx:for-item="month" wx:for-index="monthIndex" wx:key="id" id="{{month.id}}" class="calendar-month">
-          <view class="month-header" bindtap="toggleCalendarMonth" data-year-index="{{yearIndex}}" data-month-index="{{monthIndex}}">
-            <view class="period-title"><text class="month-title">{{month.month}}月</text><view class="disclosure disclosure-small {{month.expanded ? 'disclosure-open' : ''}}"></view></view>
-            <view class="period-totals">
-              <text wx:if="{{month.totals.actualText}}" class="total-actual">{{month.totals.actualText}}</text>
-              <text wx:if="{{month.totals.estimatedText}}" class="total-estimated">{{month.totals.estimatedText}}</text>
+        <view wx:for="{{item.months}}" wx:for-item="month" wx:for-index="monthIndex" wx:key="id" id="{{month.id}}" class="calendar-month {{month.expanded ? 'calendar-month-expanded' : 'calendar-month-collapsed'}}">
+          <view class="month-header" bindtap="toggleCalendarMonth" data-year-index="{{yearIndex}}" data-month-index="{{monthIndex}}" role="button" aria-expanded="{{month.expanded}}" aria-label="{{month.month}}月排期与收入，点击{{month.expanded ? '收起' : '展开'}}">
+            <view class="month-header-left">
+              <text class="month-title">{{month.month}}月</text>
+              <text wx:if="{{month.expanded}}" class="month-active-badge">展开中</text>
+            </view>
+            <view class="month-header-right">
+              <view wx:if="{{month.totals.actualText || month.totals.estimatedText}}" class="period-totals">
+                <text wx:if="{{month.totals.actualText}}" class="total-actual"><text class="total-tag-label">实收</text>{{month.totals.actualText}}</text>
+                <text wx:if="{{month.totals.estimatedText}}" class="total-estimated"><text class="total-tag-label">预估</text>{{month.totals.estimatedText}}</text>
+              </view>
+              <text wx:else class="month-empty-text">暂无排期</text>
+              <view class="month-disclosure {{month.expanded ? 'month-disclosure-open' : ''}}"></view>
             </view>
           </view>
           <block wx:if="{{month.expanded}}">
-          <view class="calendar-weekdays"><text wx:for="{{weekdays}}" wx:key="*this" class="calendar-weekday">{{item}}</text></view>
-          <view class="calendar-days">
-            <view wx:for="{{month.days}}" wx:for-item="day" wx:key="key" class="calendar-day {{day.empty ? 'calendar-day-empty' : ''}} {{day.isToday ? 'calendar-today' : ''}} {{day.isSelected ? 'calendar-selected' : ''}} {{day.isBeforeRegistration ? 'calendar-before-registration' : ''}}" bindtap="onCalendarDayTap" data-date="{{day.date}}">
-              <block wx:if="{{!day.empty}}">
-                <view class="date-number-row"><text class="calendar-day-num">{{day.day}}</text><view class="date-statuses"><view wx:for="{{day.income.statuses}}" wx:for-item="status" wx:key="tone" class="date-status-dot status-{{status.tone}}" aria-label="{{status.label}}"></view></view></view>
-                <text wx:if="{{day.income.text}}" class="calendar-income {{day.income.type === 'actual' ? 'calendar-income-actual' : 'calendar-income-estimated'}}">{{day.income.text}}</text>
-              </block>
+          <view class="calendar-month-body">
+            <view class="calendar-weekdays"><text wx:for="{{weekdays}}" wx:key="*this" class="calendar-weekday">{{item}}</text></view>
+            <view class="calendar-days">
+              <view wx:for="{{month.days}}" wx:for-item="day" wx:key="key" class="calendar-day {{day.empty ? 'calendar-day-empty' : ''}} {{day.isToday ? 'calendar-today' : ''}} {{day.isSelected ? 'calendar-selected' : ''}} {{day.isBeforeRegistration ? 'calendar-before-registration' : ''}}" bindtap="onCalendarDayTap" data-date="{{day.date}}">
+                <block wx:if="{{!day.empty}}">
+                  <view class="date-number-row"><text class="calendar-day-num">{{day.day}}</text><view class="date-statuses"><view wx:for="{{day.income.statuses}}" wx:for-item="status" wx:key="tone" class="date-status-dot status-{{status.tone}}" aria-label="{{status.label}}"></view></view></view>
+                  <text wx:if="{{day.income.text}}" class="calendar-income {{day.income.type === 'actual' ? 'calendar-income-actual' : 'calendar-income-estimated'}}">{{day.income.text}}</text>
+                </block>
+              </view>
             </view>
           </view>
           </block>
@@ -171,4 +186,4 @@
   </view>
 </view>
 
-<tab-bar wx:if="{{!showCalendar}}" selected="orders" id="tabBar" />
+<tab-bar wx:if="{{!showCalendar}}" selected="orders" id="tabBar" placeholder="{{false}}" />

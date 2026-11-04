@@ -2,6 +2,12 @@
   "navigationBarTitleText": "编辑地址",
   "navigationStyle": "custom",
   "usingComponents": {
-    "nav-bar": "/components/nav-bar/index"
-  }
+    "nav-bar": "/components/nav-bar/index",
+    "form-field": "/components/form-field/index",
+    "location-field": "/components/location-field/index",
+    "bottom-action-bar": "/components/bottom-action-bar/index",
+    "secondary-page-header": "/components/secondary-page-header/index",
+    "nb-switch": "/components/nb-switch/index"
+  },
+  "backgroundColor": "#FFFFFF"
 }

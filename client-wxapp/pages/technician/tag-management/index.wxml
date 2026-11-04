@@ -17,7 +17,9 @@
     <view wx:else class="tag-cloud {{organizing ? 'organizing' : ''}}">
       <view wx:for="{{currentTags}}" wx:key="id" class="tag-chip">
         <text class="tag-hash">#</text><text class="tag-name">{{item.name}}</text>
-        <view wx:if="{{organizing}}" class="tag-remove semantic-danger" role="button" aria-label="删除{{item.name}}" bindtap="deleteTag" data-id="{{item.id}}" data-name="{{item.name}}">×</view>
+        <view wx:if="{{organizing}}" class="tag-remove semantic-danger" role="button" aria-label="删除{{item.name}}" bindtap="deleteTag" data-id="{{item.id}}" data-name="{{item.name}}">
+          <image class="tag-remove-icon" src="/static/icons/close.svg" mode="aspectFit" />
+        </view>
       </view>
     </view>
     <view wx:if="{{organizing}}" class="organize-tip">点击标签右侧的 × 删除。删除模板不会影响已经使用该标签的{{activeType === 'customer' ? '客户' : '作品'}}。</view>

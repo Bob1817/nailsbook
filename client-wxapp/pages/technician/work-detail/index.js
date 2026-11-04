@@ -2,6 +2,7 @@ const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
 const { normalizeWorkDetail } = require('../../../utils/normalize-work');
 const { trackConversion } = require('../../../utils/conversion-tracking');
+const { goHome } = require('../../../utils/entry-navigation');
 
 function canShareWork(work) {
   return work.publicationStatus === 'approved'
@@ -10,6 +11,40 @@ function canShareWork(work) {
     && work.assetStatus === 'public'
     && work.publicAuthorizationStatus === 'authorized'
     && !work.archivedAt;
+}
+
+function getMarketingState(work) {
+  if (canShareWork(work)) {
+    return {
+      available: true,
+      title: '作品营销与获客分发',
+      description: '生成朋友圈海报和小红书素材，客户扫码预约后自动绑定到你的账号。',
+      actionText: '生成素材',
+      disabled: false
+    };
+  }
+  if (work.archivedAt) {
+    return { available: false, title: '获客助手暂不可用', description: '该作品已归档，恢复后才能用于公开获客。', actionText: '已归档', disabled: true };
+  }
+  if (work.publicationStatus === 'pending') {
+    return { available: false, title: '获客助手审核中', description: '作品审核通过并公开后，即可生成获客素材。', actionText: '审核中', disabled: true };
+  }
+  if (work.publicationStatus === 'rejected') {
+    return { available: false, title: '完善作品后开启获客', description: '作品审核未通过，请根据审核意见修改后重新提交。', actionText: '查看并修改', disabled: false };
+  }
+  if (work.publicationStatus !== 'approved') {
+    return { available: false, title: '发布作品后开启获客', description: '作品需要先提交并通过审核，才能生成公开分发素材。', actionText: '完善作品', disabled: false };
+  }
+  if (work.isVisible === false) {
+    return { available: false, title: '公开作品后开启获客', description: '该作品当前已隐藏，公开展示后才能用于获客分发。', actionText: '去公开', disabled: false };
+  }
+  if (work.visibilityScope !== 'public') {
+    return { available: false, title: '公开作品后开启获客', description: '该作品仅指定客户可见，调整为公开作品后才能分发。', actionText: '调整范围', disabled: false };
+  }
+  if (work.assetStatus !== 'public') {
+    return { available: false, title: '完善公开素材', description: '作品图片尚未完成公开处理，请检查并重新保存作品。', actionText: '检查作品', disabled: false };
+  }
+  return { available: false, title: '完善公开授权', description: '作品的公开展示授权尚未完成，完善后即可生成获客素材。', actionText: '完善授权', disabled: false };
 }
 
 function formatTime(dateStr) {
@@ -40,6 +75,7 @@ Page({
   data: {
     sharePath: '',
     shareEligible: false,
+    marketingState: {},
     work: {},
     imageUrls: [],
     comments: [],
@@ -58,7 +94,8 @@ Page({
     submittingComment: false,
     replyingTo: null,
     scrollTarget: '',
-    socialLoading: false
+    socialLoading: false,
+    showShareSheet: false
   },
 
   onLoad(options) {
@@ -108,11 +145,21 @@ Page({
       const imageUrls = work.images ? (typeof work.images === 'string' ? JSON.parse(work.images) : work.images) : [];
       if (imageUrls.length === 0 && work.coverUrl) imageUrls.push(work.coverUrl);
 
-      this.setData({ work, imageUrls, shareEligible: canShareWork(work), loading: false, loadFailed: false });
+      this.setData({
+        work,
+        imageUrls,
+        shareEligible: canShareWork(work),
+        marketingState: getMarketingState(work),
+        loading: false,
+        loadFailed: false
+      });
       this.prepareSharePath();
       this.loadComments();
     } catch (err) {
-      this.setData({ loading: false, loadFailed: true, loadErrorText: '作品暂时无法加载', canRetryLoad: true });
+      const authFailed = [401, 403].includes(Number(err.code || err.statusCode));
+      this.setData({ loading: false, loadFailed: true,
+        loadErrorText: authFailed ? (err.message || '请重新登录后查看作品') : '作品暂时无法加载',
+        canRetryLoad: !authFailed });
     } finally {
       this._loadingWork = false;
     }
@@ -169,7 +216,7 @@ Page({
   },
 
   onShareAppMessage() {
-    if (!this.data.sharePath) return { title: '美甲作品', path: '/pages/client/works/index' };
+    if (!this.data.sharePath) return { title: 'OnlyNail', path: '/pages/client/home/index' };
     trackConversion({ eventType:'work_share_intent', workId:this.data.work.id || this.workId, technicianId:this.data.work.technicianId || (this.data.work.technician || {}).id, channel:'wechat_share', touchpoint:'work_share' });
     return {
       title: require('../../../utils/share-copy').buildWorkShareTitle(this.data.work),
@@ -227,7 +274,16 @@ Page({
   },
 
   goBack() {
-    wx.navigateBack();
+    const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : [];
+    if (pages.length > 1) {
+      wx.navigateBack({ fail: () => goHome() });
+      return;
+    }
+    goHome();
+  },
+
+  goHome() {
+    goHome();
   },
 
   editWork() {
@@ -412,5 +468,27 @@ Page({
 
   toggleHiddenComments() {
     this.setData({ showHidden: !this.data.showHidden });
+  },
+
+  openMarketingSheet() {
+    if (!this.data.shareEligible) {
+      wx.showToast({ title: '作品未公开发布，暂无法营销分发', icon: 'none' });
+      return;
+    }
+    this.setData({ showShareSheet: true });
+  },
+
+  handleMarketingAction() {
+    const state = this.data.marketingState || {};
+    if (state.disabled) return;
+    if (state.available) {
+      this.openMarketingSheet();
+      return;
+    }
+    this.editWork();
+  },
+
+  closeMarketingSheet() {
+    this.setData({ showShareSheet: false });
   }
 });

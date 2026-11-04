@@ -80,18 +80,36 @@
   </view>
 
   <view class="card customer-memory-card">
-    <view class="card-head"><text class="card-title">美甲档案</text><view class="card-action" bindtap="addProfileFact" role="button">新增</view></view>
-    <text class="memory-private">稳定信息 · 仅美甲师可见</text>
+    <view class="card-head">
+      <view class="memory-heading">
+        <text class="card-title">客户档案</text>
+        <text class="memory-private">服务相关稳定信息 · 仅美甲师可见</text>
+      </view>
+      <view class="card-action" bindtap="addProfileFact" role="button">新增信息</view>
+    </view>
     <view wx:for="{{customer._profileGroups}}" wx:key="key" class="memory-group">
       <text class="memory-group-title">{{item.title}}</text>
+      <view class="memory-facts">
       <view wx:for="{{item.items}}" wx:for-item="fact" wx:key="_key" class="memory-row">
         <view class="memory-copy">
           <text>{{fact.content}}</text>
           <text wx:if="{{fact._confirmedText}}" class="memory-date">最近确认 {{fact._confirmedText}}</text>
         </view>
       </view>
+      </view>
     </view>
-    <text wx:if="{{!customer._profileGroups.length}}" class="muted">暂无稳定档案，可新增或确认客户自述</text>
+    <view class="customer-traits">
+      <view class="memory-group-head">
+        <text class="memory-group-title">客户特征</text>
+        <view class="fact-action" bindtap="openTagEdit" role="button" aria-label="编辑客户特征">{{customer._tags.length ? '编辑' : '添加'}}</view>
+      </view>
+      <view wx:if="{{customer._tags.length}}" class="tag-list">
+        <text wx:for="{{customer._tags}}" wx:key="*this" class="tag">{{item}}</text>
+      </view>
+      <text wx:else class="muted">暂无客户特征</text>
+    </view>
+
+    <text wx:if="{{!customer._profileGroups.length && !customer._tags.length}}" class="memory-empty muted">暂无档案信息，可新增或确认客户自述</text>
 
     <view wx:if="{{customer._pendingFacts.length}}" class="memory-pending">
       <text class="memory-pending-title">待确认的新发现</text>
@@ -109,20 +127,6 @@
         <view class="fact-action" data-category="{{item.category}}" data-content="{{item.content}}" catchtap="confirmSelfReported" role="button" aria-label="确认客户自述并写入档案">确认</view>
       </view>
     </view>
-  </view>
-
-  <!-- ============ 标签 ============ -->
-  <view class="card card-gap">
-    <view class="card-head">
-      <text class="card-title">客户标签</text>
-      <view class="card-action" bindtap="openTagEdit">
-        {{customer._tags.length > 0 ? '编辑' : '+ 添加'}}
-      </view>
-    </view>
-    <view wx:if="{{customer._tags.length > 0}}" class="tag-list">
-      <text wx:for="{{customer._tags}}" wx:key="*this" class="tag">{{item}}</text>
-    </view>
-    <text wx:else class="muted">暂无标签，点击「+ 添加」为客户打标签</text>
   </view>
 
   <!-- ============ 基础信息 ============ -->
@@ -185,17 +189,21 @@
       <text class="card-title">美甲记录（{{customer._serviceRecords.length}}）</text>
     </view>
     <view wx:for="{{customer._serviceRecords}}" wx:key="id" class="service-history-row" bindtap="openServiceRecord" data-order-id="{{item.orderId}}" data-mode="{{item.status === 'complete' ? 'record' : 'edit'}}" role="button" aria-label="查看本次美甲记录">
-      <view class="service-history-head">
-        <view class="service-history-copy">
-          <text class="service-history-title">{{item._dateText}}</text>
-          <text class="service-history-desc">{{item._serviceTitle}}</text>
+      <view class="service-history-time">
+        <text class="service-history-label">美甲时间</text>
+        <text class="service-history-title">{{item._dateText}}</text>
+      </view>
+      <view class="service-history-metrics">
+        <view class="service-history-metric">
+          <text class="service-history-label">价格</text>
+          <text class="service-history-value service-history-price">{{item._priceText}}</text>
         </view>
-        <text class="record-status">{{item._statusText}}</text>
+        <view class="service-history-metric">
+          <text class="service-history-label">服务时长</text>
+          <text class="service-history-value">{{item._durationText}}</text>
+        </view>
       </view>
-      <view class="record-foot">
-        <text class="service-history-meta">{{item._photoCountsText}}</text>
-        <text wx:if="{{item._missingText}}" class="record-missing">{{item._missingText}} · 去补全</text>
-      </view>
+      <text class="service-history-arrow">›</text>
     </view>
   </view>
 
@@ -250,16 +258,18 @@
   </view>
 </view>
 
-<!-- ============ 标签编辑底部弹层 ============ -->
+<!-- ============ 客户特征编辑底部弹层 ============ -->
 <view wx:if="{{showTagEdit}}" class="sheet-mask" bindtap="closeTagEdit"></view>
 <view class="sheet {{showTagEdit ? 'sheet-show' : ''}}" catchtap="">
   <view class="sheet-header">
-    <text class="sheet-title">编辑标签</text>
-    <view class="sheet-close {{savingTags ? 'is-disabled' : ''}}" bindtap="closeTagEdit" role="button" aria-label="关闭标签编辑" aria-disabled="{{savingTags}}">✕</view>
+    <text class="sheet-title">编辑客户特征</text>
+    <view class="sheet-close {{savingTags ? 'is-disabled' : ''}}" bindtap="closeTagEdit" role="button" aria-label="关闭客户特征编辑" aria-disabled="{{savingTags}}">
+      <image class="sheet-close-icon" src="/static/icons/close.svg" mode="aspectFit" />
+    </view>
   </view>
 
   <scroll-view scroll-y class="sheet-body">
-    <text class="sub-label">当前标签（点击移除）</text>
+    <text class="sub-label">当前特征（点击移除）</text>
     <view class="tag-list editable">
       <view
         wx:for="{{editTags}}"
@@ -268,11 +278,11 @@
         role="button" aria-disabled="{{savingTags}}"
         bindtap="removeTag"
         data-tag="{{item}}"
-      >{{item}} ✕</view>
-      <text wx:if="{{editTags.length === 0}}" class="muted">暂无标签</text>
+      ><text>{{item}}</text><image class="tag-remove-icon" src="/static/icons/close.svg" mode="aspectFit" /></view>
+      <text wx:if="{{editTags.length === 0}}" class="muted">暂无客户特征</text>
     </view>
 
-    <text wx:if="{{availableTags.length > 0}}" class="sub-label">可选标签（点击添加）</text>
+    <text wx:if="{{availableTags.length > 0}}" class="sub-label">常用特征（点击添加）</text>
     <view wx:if="{{availableTags.length > 0}}" class="tag-list">
       <view
         wx:for="{{availableTags}}"
@@ -284,13 +294,13 @@
       >+ {{item}}</view>
     </view>
 
-    <text class="sub-label">新增客户标签</text>
+    <text class="sub-label">新增客户特征</text>
     <view class="new-tag-row">
       <input
         class="new-tag-input"
         placeholder-class="customer-form-placeholder"
         disabled="{{savingTags}}"
-        placeholder="输入新标签，保存后自动纳入标签管理"
+        placeholder="输入特征，例如偏好自然色"
         maxlength="12"
         value="{{newTag}}"
         bindinput="onNewTagInput"
@@ -301,7 +311,7 @@
 
   <view class="sheet-footer">
     <view class="action-btn action-primary booking-action {{savingTags ? 'is-disabled' : ''}}" role="button" aria-disabled="{{savingTags}}" bindtap="saveTags">
-      {{savingTags ? '保存中...' : '保存标签'}}
+      {{savingTags ? '保存中...' : '保存特征'}}
     </view>
   </view>
 </view>

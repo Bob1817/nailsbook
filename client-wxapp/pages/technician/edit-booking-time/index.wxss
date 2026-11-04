@@ -4,7 +4,7 @@
 page { background: var(--bg-page); }
 .page {
   box-sizing: border-box;
-  padding: var(--space-md) 32rpx calc(200rpx + env(safe-area-inset-bottom));
+  padding: var(--space-md) var(--space-lg) calc(200rpx + env(safe-area-inset-bottom));
   min-height: 100vh;
 }
 
@@ -12,7 +12,7 @@ page { background: var(--bg-page); }
 .section {
   background: rgba(255,255,255,0.88);
   border-radius: var(--radius-md);
-  padding: 32rpx;
+  padding: var(--space-lg);
   margin-bottom: var(--space-md);
   box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
 }
@@ -27,7 +27,7 @@ page { background: var(--bg-page); }
   line-height: var(--leading-normal);
 }
 .summary-line { display:block; margin-top:10rpx; color:var(--nb-secondary); font-size:var(--font-sm); line-height:1.5; }
-.field-group { margin-bottom:24rpx; }
+.field-group { margin-bottom:var(--space-md); }
 .field-group-last { margin-bottom:0; }
 .field-label { display:block; margin-bottom:12rpx; color:var(--nb-secondary); font-size:var(--font-sm); font-weight:var(--weight-medium); }
 .field-input,.field-textarea { width:100%; box-sizing:border-box; border-radius:var(--input-radius); background:var(--nb-soft-surface); color:var(--nb-ink); font-size:var(--font-sm); }
@@ -37,16 +37,19 @@ page { background: var(--bg-page); }
 /* ===== Submit Bar ===== */
 .submit-bar {
   position: fixed; bottom: 0; left: 0; right: 0;
-  background: rgba(255,255,255,0.92);
-  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
-  box-shadow: 0 -4rpx 20rpx rgba(0,0,0,0.04);
+  background: rgba(255, 255, 255, 0.86);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1rpx solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 -8rpx 32rpx rgba(0, 0, 0, 0.04);
+  padding: 20rpx var(--space-lg) calc(20rpx + env(safe-area-inset-bottom));
   z-index: 50;
 }
 .submit-btns {
-  display: flex; gap: 16rpx;
+  display: flex; gap: var(--space-sm);
 }
 .submit-btn {
-  flex: 1; text-align: center; padding: 12rpx 16rpx;
+  flex: 1; text-align: center; padding: 12rpx var(--space-sm);
 }
 .submit-btn-save {
   background: var(--nb-action); color: var(--nb-inverse);

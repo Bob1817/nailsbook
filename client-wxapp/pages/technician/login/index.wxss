@@ -1,12 +1,12 @@
 .container {
   min-height: 100vh;
   background: var(--bg-gradient-entry);
-  padding: 72rpx 48rpx 56rpx;
+  padding: 72rpx var(--space-2xl) 56rpx;
   box-sizing: border-box;
 }
 
 .register-container {
-  padding: 12rpx 40rpx 28rpx;
+  padding: 12rpx var(--space-xl) 28rpx;
 }
 
 .header {
@@ -29,13 +29,13 @@
   background: var(--nb-action);
   border-radius: 32rpx;
   color: var(--text-inverse);
-  font-size: 28rpx;
+  font-size: var(--font-md);
   font-weight: var(--weight-semibold);
   letter-spacing: 1rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 32rpx;
+  margin-bottom: var(--space-lg);
 }
 
 .title {
@@ -44,7 +44,7 @@
   color: var(--text-primary);
 }
 
-.login-tabs { display: flex; padding: 8rpx; margin-bottom: 32rpx; border-radius: var(--card-radius); background: var(--nb-page); }
+.login-tabs { display: flex; padding: var(--space-xs); margin-bottom: var(--space-lg); border-radius: var(--card-radius); background: var(--nb-page); }
 .login-tab { flex: 1; min-height: 88rpx; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); color: var(--text-muted); font-size: var(--font-sm); }
 .login-tab-active { color: var(--text-primary); background: var(--bg-card); font-weight: var(--weight-semibold); box-shadow: 0 4rpx 14rpx rgba(0, 0, 0, 0.08); }
 .wechat-hint { display: block; color: var(--text-muted); font-size: var(--font-sm); line-height: 1.6; text-align: center; }
@@ -57,7 +57,7 @@
 
 .subtitle {
   display: block;
-  margin-top: 8rpx;
+  margin-top: var(--space-xs);
   font-size: var(--font-sm);
   line-height: 1.45;
   color: var(--text-muted);
@@ -90,7 +90,7 @@
   background: rgba(255, 255, 255, 0.96);
   border: 0;
   border-radius: var(--radius-sm);
-  padding: 0 32rpx;
+  padding: 0 var(--space-lg);
   font-size: var(--font-md);
   color: var(--text-primary);
   box-sizing: border-box;
@@ -138,7 +138,7 @@
   flex-shrink: 0;
   font-size: var(--font-sm);
   color: var(--nb-text-link);
-  margin-left: 16rpx;
+  margin-left: var(--space-sm);
 }
 
 .invite-callout {
@@ -149,7 +149,7 @@
   background: var(--nb-page);
   border: 0;
   border-radius: var(--radius-sm);
-  padding: 14rpx 40rpx;
+  padding: 14rpx var(--space-xl);
   margin-bottom: 18rpx;
 }
 
@@ -184,7 +184,7 @@
 }
 
 .register-form .label {
-  margin-bottom: 8rpx;
+  margin-bottom: var(--space-xs);
   font-size: var(--font-sm);
 }
 
@@ -192,8 +192,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24rpx;
-  margin-bottom: 8rpx;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xs);
 }
 
 .field-head .label {
@@ -224,7 +224,7 @@
   min-height: 72rpx;
   font-size: var(--font-sm);
   border-radius: var(--radius-sm);
-  padding: 0 24rpx;
+  padding: 0 var(--space-md);
 }
 
 .register-form .helper-text {
@@ -249,7 +249,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 40rpx;
+  margin-top: var(--space-xl);
   box-shadow: 0 10rpx 26rpx rgba(0, 0, 0, 0.24);
 }
 
@@ -272,8 +272,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 16rpx;
-  margin-top: 32rpx;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
 }
 
 .link-sep {
@@ -317,6 +317,6 @@
 @import '../../../styles/booking-actions.wxss';
 .input { min-height: var(--input-height); height: var(--input-height); background: var(--bg-input); border-radius: var(--input-radius); padding: 0 var(--input-padding-h); font-size: var(--font-sm); }
 .readonly { min-height: var(--input-height); height: var(--input-height); border-radius: var(--input-radius); padding: 0 var(--input-padding-h); font-size: var(--font-sm); }
-.btn-primary.booking-action, .btn-secondary.booking-action { height: var(--control-hit-height); min-height: 44px; margin-top: 24rpx; border-radius: 8px; font-size: var(--font-sm); box-shadow: none; }
+.btn-primary.booking-action, .btn-secondary.booking-action { height: var(--control-hit-height); min-height: 44px; margin-top: var(--space-md); border-radius: 8px; font-size: var(--font-sm); box-shadow: none; }
 .btn-primary.booking-action { background: var(--nb-action); }
 .btn-secondary.booking-action { background: var(--nb-soft-surface); color: var(--nb-ink); }

@@ -1,7 +1,7 @@
 @import '../../../styles/booking-actions.wxss';
 
 page {
-  background: var(--bg-gradient-entry);
+  background: var(--nb-page);
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -19,16 +19,18 @@ page {
 /* ===== 固定头部 ===== */
 .header {
   flex-shrink: 0;
-  background: var(--bg-card);
-  padding: 16rpx 32rpx 12rpx;
-  border-bottom: 0;
+  background: rgba(255, 255, 255, 0.78);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.06);
+  padding: 12rpx var(--space-lg) 14rpx;
 }
 
 .search-row {
   display: flex;
   align-items: center;
-  gap: 12rpx;
-  margin-bottom: 8rpx;
+  gap: 14rpx;
+  margin-bottom: 10rpx;
 }
 
 /* 搜索框 */
@@ -36,123 +38,172 @@ page {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 14rpx;
+  gap: 12rpx;
+  height: 72rpx;
   min-height: 44px;
-  padding: 0 26rpx;
-  background: var(--nb-soft-surface);
-  border: 0;
-  border-radius: var(--input-radius);
+  padding: 0 24rpx;
+  background: var(--nb-page);
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-full);
   min-width: 0;
-}
-
-.btn-invite {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6rpx;
-  width: 116rpx;
-  min-width: 116rpx;
-  max-width: 116rpx;
-  min-height: 88rpx;
-  padding: 0;
-  margin: 0;
-  line-height: normal;
-  font: inherit;
-  background: var(--nb-soft-surface);
-  border: 0;
-  border-radius: var(--radius-lg);
-  flex: 0 0 116rpx;
   box-sizing: border-box;
 }
 
-.btn-invite::after {
+/* Airbnb 完整实体胶囊邀请按钮 */
+.btn-invite.btn-invite,
+.btn-invite.booking-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6rpx;
+  height: 72rpx;
+  min-height: 44px;
+  padding: 0 24rpx;
+  margin: 0;
+  background: var(--nb-page);
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-full);
+  box-sizing: border-box;
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.03);
+  flex-shrink: 0;
+  line-height: normal;
+  font: inherit;
+  width: auto;
+  min-width: 124rpx;
+  max-width: none;
+}
+
+.btn-invite.btn-invite::after,
+.btn-invite.booking-action::after {
   border: 0;
 }
 
-.btn-invite:active,
+.btn-invite.btn-invite:active,
+.btn-invite.booking-action:active,
 .btn-invite-pressed {
-  background: var(--bg-tag);
+  background: var(--nb-pressed);
+  opacity: 1;
+  transform: scale(0.97);
 }
 
 .invite-icon {
-  font-size: var(--font-md);
-  color: var(--nb-money);
-  font-weight: var(--weight-semibold);
+  width: 24rpx;
+  height: 24rpx;
+  flex-shrink: 0;
 }
 
 .invite-text {
-  font-size: var(--font-sm);
-  color: var(--brand-primary);
+  font-size: 26rpx;
+  color: var(--nb-ink);
   font-weight: var(--weight-semibold);
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .search-icon {
-  width: 24rpx; height: 24rpx; border: 3rpx solid var(--text-muted); border-radius: 50%; position: relative;
+  width: 28rpx;
+  height: 28rpx;
   flex-shrink: 0;
+  opacity: 0.6;
 }
-.search-icon::after { content: ''; position: absolute; width: 10rpx; height: 3rpx; right: -8rpx; bottom: -4rpx; background: var(--text-muted); transform: rotate(45deg); border-radius: 3rpx; }
 
 .search-input {
   flex: 1;
   min-width: 0;
+  height: 72rpx;
   min-height: 44px;
-  font-size: var(--font-sm);
-  color: var(--text-primary);
+  font-size: 26rpx;
+  color: var(--nb-ink);
 }
-.search-placeholder { font-size: var(--font-sm); color: var(--nb-muted); }
+.search-placeholder { font-size: 26rpx; color: var(--nb-muted); }
 
 .search-clear {
   min-width: 44px;
   min-height: 44px;
-  width: 88rpx;
-  height: 88rpx;
-  margin-right: -26rpx;
+  width: 56rpx;
+  height: 72rpx;
+  margin-right: -16rpx;
   border-radius: 50%;
   background: transparent;
-  color: var(--text-muted);
-  font-size: var(--font-xs);
+  color: var(--nb-muted);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
-.clear-line { width: 24rpx; height: 3rpx; background: var(--nb-muted); transform: rotate(45deg); position: relative; }.clear-line::after { content: ''; position: absolute; inset: 0; background: var(--nb-muted); transform: rotate(90deg); }
+.clear-icon { width: 24rpx; height: 24rpx; opacity: 0.6; }
 
-/* 轻量筛选工具栏 */
-.filter-row { min-height:88rpx; display:flex; align-items:center; gap:12rpx; }
-.filter-row-stage { gap:0; }
-.tab-scroll { flex:1; min-width:0; white-space:nowrap; }
-.filter-label { width:58rpx; flex-shrink:0; color:var(--nb-muted); font-size: var(--font-xs); font-weight: var(--weight-semibold); }
+/* 轻量筛选工具栏 - Airbnb Filter Chips */
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  height: 56rpx;
+  min-height: 56rpx;
+  margin-top: 8rpx;
+}
+
+.filter-row-stage {
+  margin-top: 0;
+  gap: 0;
+}
+
+.tab-scroll {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  height: 56rpx;
+}
+
+.filter-label {
+  width: 58rpx;
+  flex-shrink: 0;
+  color: var(--nb-muted);
+  font-size: 22rpx;
+  font-weight: var(--weight-semibold);
+  line-height: 56rpx;
+}
 
 .tab-list {
   display: inline-flex;
-  gap: 8rpx;
+  align-items: center;
+  gap: 12rpx;
+  height: 56rpx;
 }
 
+/* Airbnb Filter Chip 药丸紧凑规格 */
 .tab-item {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  height: 76rpx;
-  min-height: 44px;
-  padding: 0 24rpx;
-  border-radius: 999rpx;
-  background: transparent;
-  border: 0;
-  font-size: var(--font-sm);
-  color: var(--text-muted);
+  justify-content: center;
+  height: 54rpx;
+  min-height: 54rpx;
+  padding: 0 22rpx;
+  border-radius: var(--radius-full);
+  background: var(--nb-page);
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
+  font-size: 24rpx;
+  color: var(--nb-secondary);
   flex-shrink: 0;
   font-weight: var(--weight-medium);
+  transition: all 0.15s ease-in-out;
+  box-sizing: border-box;
+  line-height: 1;
 }
+.tab-item::after { content:''; position:absolute; top:-16rpx; bottom:-16rpx; left:0; right:0; }
 
+/* 触控无障碍扩展：热区上下扩展 16rpx 达到 44px+ */
 .tab-item:active {
-  background: var(--bg-tag);
+  background: var(--nb-pressed);
+  transform: scale(0.97);
 }
 
 .tab-active {
-  background: var(--bg-tag);
-  border-color: transparent;
-  color: var(--brand-primary);
-  font-weight: var(--weight-bold);
+  background: var(--nb-action);
+  border-color: var(--nb-action);
+  color: var(--nb-inverse);
+  font-weight: var(--weight-semibold);
 }
 
 /* ===== 可滚动列表区 ===== */
@@ -162,7 +213,7 @@ page {
 }
 
 .list-area {
-  padding: var(--space-md) 40rpx calc(24rpx + env(safe-area-inset-bottom));
+  padding: var(--space-md) var(--space-xl) calc(140rpx + env(safe-area-inset-bottom));
 }
 
 /* 骨架屏 */
@@ -188,9 +239,11 @@ page {
 /* 空状态 */
 .empty-card {
   margin: 80rpx 0;
-  padding: 80rpx 40rpx;
-  background: var(--bg-card);
+  padding: 80rpx var(--space-xl);
+  background: var(--nb-surface);
+  border: 1rpx solid var(--nb-line);
   border-radius: var(--radius-lg);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -198,20 +251,20 @@ page {
 }
 
 .empty-icon {
-  width: 112rpx; height: 112rpx; border-radius: 50%; background: var(--bg-tag); display: flex; align-items: center; justify-content: center;
+  width: 112rpx; height: 112rpx; border-radius: 50%; background: var(--nb-soft-surface); display: flex; align-items: center; justify-content: center;
 }
-.empty-avatar-mark { width: 42rpx; height: 42rpx; border-radius: 50%; background: var(--nb-action); position: relative; }.empty-avatar-mark::after { content: ''; position: absolute; left: -14rpx; right: -14rpx; top: 48rpx; height: 28rpx; border-radius: var(--radius-lg) 28rpx 10rpx 10rpx; background: var(--nb-action); }
+.empty-avatar-mark { width: 42rpx; height: 42rpx; border-radius: 50%; background: var(--nb-action); position: relative; }.empty-avatar-mark::after { content: ''; position: absolute; left: -14rpx; right: -14rpx; top: 48rpx; height: 28rpx; border-radius: var(--radius-lg) var(--radius-lg) 10rpx 10rpx; background: var(--nb-action); }
 .empty-reset { display: flex; min-height: 88rpx; margin-top: 20rpx; padding: 0 38rpx; align-items: center; justify-content: center; border-radius: var(--radius-xl); background: var(--nb-page); color: var(--nb-ink); font-size: var(--font-sm); font-weight: var(--weight-semibold); }
 
 .empty-title {
   font-size: var(--font-md);
-  font-weight: var(--weight-semibold);
-  color: var(--text-primary);
+  font-weight: var(--weight-bold);
+  color: var(--nb-ink);
 }
 
 .empty-sub {
   font-size: var(--font-sm);
-  color: var(--text-muted);
+  color: var(--nb-muted);
   text-align: center;
 }
 
@@ -223,12 +276,12 @@ page {
 }
 
 .customer-card {
-  padding: 24rpx;
+  padding: var(--space-md);
   overflow: hidden;
-  background: var(--bg-card);
-  border: 0;
+  background: var(--nb-surface);
+  border: 1rpx solid var(--nb-line);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
   transition: transform 120ms ease, box-shadow 120ms ease;
 }
 
@@ -248,7 +301,8 @@ page {
   width: 104rpx;
   height: 104rpx;
   border-radius: 50%;
-  background: var(--nb-page);
+  background: var(--nb-soft-surface);
+  border: 1rpx solid var(--nb-line);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -283,13 +337,13 @@ page {
   flex: 0 1 auto;
   min-width: 0;
   font-size: var(--font-lg);
-  font-weight: var(--weight-semibold);
-  color: var(--text-primary);
+  font-weight: var(--weight-bold);
+  color: var(--nb-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.lifecycle-badge { flex-shrink:0; display:flex; height:40rpx; padding:0 14rpx; align-items:center; justify-content:center; box-sizing:border-box; border-radius:999rpx; font-size: var(--font-xs); font-weight: var(--weight-semibold); line-height:1; white-space:nowrap; }
+.lifecycle-badge { flex-shrink:0; display:flex; height:40rpx; padding:0 14rpx; align-items:center; justify-content:center; box-sizing:border-box; border-radius:var(--radius-full); font-size: var(--font-xs); font-weight: var(--weight-semibold); line-height:1; white-space:nowrap; }
 .lifecycle-new { background: var(--nb-page); color: var(--nb-muted); }
 .lifecycle-active { background: var(--nb-success-surface); color: var(--nb-success); }
 .lifecycle-due { background: var(--nb-page); color: var(--nb-customer-due); }
@@ -310,7 +364,7 @@ page {
 .customer-addr {
   min-width: 0;
   font-size: var(--font-sm);
-  color: var(--text-muted);
+  color: var(--nb-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -318,8 +372,8 @@ page {
 
 .customer-status { display:flex; min-height:88rpx; margin-top:18rpx; padding:12rpx 18rpx; align-items:center; gap:12rpx; border-radius:var(--radius-md); box-sizing:border-box; font-size: var(--font-xs); }
 .status-dot { flex-shrink:0; width:12rpx; height:12rpx; border-radius:50%; }
-.status-copy { flex:1; min-width:0; color:var(--text-body); }
-.status-date { flex-shrink:0; color:var(--text-muted); }
+.status-copy { flex:1; min-width:0; color:var(--nb-ink); }
+.status-date { flex-shrink:0; color:var(--nb-muted); }
 .lifecycle-new-surface { background: var(--nb-page); }
 .lifecycle-active-surface { background: var(--nb-success-surface); }
 .lifecycle-due-surface { background: var(--nb-page); }
@@ -349,14 +403,14 @@ page {
   display: flex;
   margin-top: 20rpx;
   padding: 22rpx 0 0;
-  border-top: 0;
+  border-top: 1rpx solid var(--nb-line);
   border-bottom: 0;
 }
 
 .stat-item {
   flex: 1;
   min-width: 0;
-  padding: 0 8rpx;
+  padding: 0 var(--space-xs);
   text-align: center;
   box-sizing: border-box;
   border-left: 0;
@@ -365,7 +419,7 @@ page {
 .stat-label {
   display: block;
   font-size: var(--font-xs);
-  color: var(--text-muted);
+  color: var(--nb-muted);
   margin-bottom: 6rpx;
 }
 
@@ -373,11 +427,11 @@ page {
   display: block;
   font-size: var(--font-sm);
   font-weight: var(--weight-medium);
-  color: var(--text-body);
+  color: var(--nb-ink);
 }
 
 .stat-price {
-  color: var(--nb-money);
+  color: var(--nb-ink);
   font-size: var(--font-md);
   font-weight: var(--weight-bold);
 }
@@ -386,15 +440,15 @@ page {
 .lifecycle-deleted-surface, .lifecycle-unbound-surface { background:var(--nb-danger-surface); }
 .lifecycle-deleted-dot, .lifecycle-unbound-dot { background:var(--nb-danger); }
 
-.invite-guide-mask { position:fixed; z-index:1000; inset:0; padding:32rpx; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.52); box-sizing:border-box; }
-.invite-guide-dialog { width:100%; max-width:620rpx; padding:36rpx 32rpx 28rpx; border-radius:24rpx; background:var(--nb-surface); box-sizing:border-box; }
+.invite-guide-mask { position:fixed; z-index:1000; inset:0; padding:var(--space-lg); display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.52); box-sizing:border-box; }
+.invite-guide-dialog { width:100%; max-width:620rpx; padding:36rpx var(--space-lg) 28rpx; border-radius:24rpx; background:var(--nb-surface); box-sizing:border-box; }
 .invite-guide-title,.invite-guide-desc,.invite-guide-note { display:block; }
 .invite-guide-title { color:var(--nb-ink); font-size:var(--font-md); font-weight:var(--weight-semibold); text-align:center; }
-.invite-guide-desc { margin-top:16rpx; color:var(--nb-secondary); font-size:var(--font-sm); line-height:1.6; }
-.invite-guide-flow { margin-top:24rpx; display:grid; grid-template-columns:1fr 1fr; gap:12rpx; }
+.invite-guide-desc { margin-top:var(--space-sm); color:var(--nb-secondary); font-size:var(--font-sm); line-height:1.6; }
+.invite-guide-flow { margin-top:var(--space-md); display:grid; grid-template-columns:1fr 1fr; gap:12rpx; }
 .invite-guide-flow text { min-height:64rpx; padding:12rpx 14rpx; display:flex; align-items:center; border-radius:12rpx; background:var(--nb-page); color:var(--nb-ink); font-size:var(--font-xs); box-sizing:border-box; }
 .invite-guide-note { margin-top:18rpx; color:var(--nb-muted); font-size:var(--font-xs); line-height:1.5; }
-.invite-guide-actions { margin-top:28rpx; display:grid; grid-template-columns:1fr 1fr; gap:16rpx; }
+.invite-guide-actions { margin-top:28rpx; display:grid; grid-template-columns:1fr 1fr; gap:var(--space-sm); }
 .invite-guide-cancel,.invite-guide-share { min-height:44px; height:44px; margin:0; display:flex; align-items:center; justify-content:center; border-radius:8px; font-size:var(--font-sm); font-weight:var(--weight-semibold); box-sizing:border-box; }
 .invite-guide-cancel { background:var(--nb-soft-surface); color:var(--nb-secondary); }
 .invite-guide-share { padding:0; border:0; background:var(--nb-action); color:var(--text-inverse); line-height:1.4; }

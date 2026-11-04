@@ -18,9 +18,9 @@
     <view class="search-bar">
       <image class="search-icon" src="/static/icons/search.svg" mode="aspectFit" />
       <input class="search-input" value="{{keyword}}" placeholder="搜索作品或风格" placeholder-class="search-hint" confirm-type="search" bindinput="onSearchInput" bindconfirm="onSearchConfirm" />
-      <view wx:if="{{keyword}}" class="search-clear" bindtap="clearSearch" aria-label="清除搜索"><view class="clear-line clear-a"></view><view class="clear-line clear-b"></view></view>
+      <view wx:if="{{keyword}}" class="search-clear" bindtap="clearSearch" aria-label="清除搜索"><image class="clear-icon" src="/static/icons/close.svg" mode="aspectFit" /></view>
     </view>
-    <!-- 分类：编辑式文字导航 -->
+    <!-- 分类：Airbnb Filter Chip 药丸导航 -->
     <scroll-view scroll-x class="cats-scroll" enhanced show-scrollbar="{{false}}">
       <view class="cats-bar">
         <view
@@ -29,6 +29,8 @@
           class="cat-pill {{activeCategory === item ? 'cat-active' : ''}}"
           bindtap="switchCategory"
           data-cat="{{item}}"
+          role="button"
+          aria-pressed="{{activeCategory === item}}"
         >{{item}}</view>
       </view>
     </scroll-view>
@@ -66,7 +68,6 @@
   <view wx:else class="waterfall-wrap">
     <view wx:if="{{keyword}}" class="result-summary">找到 {{resultCount}} 个与“{{keyword}}”相关的作品</view>
     <view wx:if="{{featuredWorks.length}}" class="featured-work">
-      <text class="featured-kicker">本期精选</text>
       <swiper class="featured-swiper" autoplay="{{featuredWorks.length > 1}}" interval="4200" duration="520" circular="{{featuredWorks.length > 1}}" indicator-dots="{{false}}" bindchange="onFeaturedChange">
           <swiper-item wx:for="{{featuredWorks}}" wx:key="id" class="featured-slide">
             <view class="hero-work" bindtap="onHeroTap" data-id="{{item.id}}" role="button" aria-label="查看精选作品{{item.title}}详情">
@@ -81,7 +82,7 @@
                   <text wx:if="{{item.artistMetaText}}" class="hero-work-meta">· {{item.artistMetaText}}</text>
                 </view>
               </view>
-              <view class="hero-work-link semantic-link">查看详情</view>
+              <view class="hero-work-link">查看详情</view>
             </view>
           </swiper-item>
       </swiper>
@@ -98,24 +99,8 @@
       <text class="all-works-count">{{resultCount}} 款</text>
     </view>
     <view class="waterfall">
-      <!-- 左列 -->
-      <view class="col">
-        <view wx:for="{{leftCol}}" wx:key="id" class="work-card editorial-card">
-          <work-card
-            work="{{item}}"
-            variant="editorial"
-            bind:cardtap="onWorkCardTap"
-            bind:artisttap="onArtistTap"
-            bind:liketap="onLikeTap"
-            bind:favoritetap="onFavoriteTap"
-            bind:commenttap="onWorkCardTap"
-          />
-        </view>
-      </view>
-
-      <!-- 右列 -->
-      <view class="col">
-        <view wx:for="{{rightCol}}" wx:key="id" class="work-card editorial-card">
+      <view class="col" wx:for="{{waterfallCols}}" wx:for-item="col" wx:key="id">
+        <view wx:for="{{col.items}}" wx:key="id" class="work-card editorial-card">
           <work-card
             work="{{item}}"
             variant="editorial"

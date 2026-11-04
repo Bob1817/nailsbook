@@ -42,6 +42,10 @@ function request(options) {
   if (roleMismatch) {
     return Promise.reject({ code: 403, message: '当前身份无权访问此内容' });
   }
+  if (needAuth && (unauthorizedPromise || !token)) {
+    handleUnauthorized();
+    return Promise.reject({ code: 401, message: '登录已过期，请重新登录' });
+  }
   const apiBase = baseUrl || appInstance?.globalData?.apiBaseUrl || 'https://api.lunails.cn';
   if (needAuth && token && appInstance?.getTokenExpiresAt) {
     const expiresAt = appInstance.getTokenExpiresAt(token);
@@ -189,10 +193,17 @@ function normalizeResponseError(res, fallbackMessage) {
 
 function handleUnauthorized() {
   if (unauthorizedPromise) return unauthorizedPromise;
+  const { currentPagePath } = require('./entry-navigation');
+  const returnPath = currentPagePath();
+  if (returnPath) {
+    const { rememberPostAuthRedirect } = require('./artist-navigation');
+    rememberPostAuthRedirect(returnPath);
+  }
   clearAuthState();
   unauthorizedPromise = Promise.resolve();
+  const redirect = returnPath ? `&redirect=${encodeURIComponent(returnPath)}` : '';
   wx.reLaunch({
-    url: '/pages/login/index?sessionExpired=1',
+    url: `/pages/login/index?sessionExpired=1&source=session_expired${redirect}`,
     fail: () => { unauthorizedPromise = null; }
   });
   return unauthorizedPromise;

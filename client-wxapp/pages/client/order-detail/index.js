@@ -1,9 +1,11 @@
 const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
+const location = require('../utils/location');
 const { normalizeSourceWorkSummary } = require('../../../utils/normalize-work');
 const { parseDate, formatClock, formatBookingDate, formatMoney } = require('../../../utils/format');
 const { resolveOrderPresentation, getStatusLabel, getStatusTone } = require('../../../utils/order');
 const { requestBookingReminder } = require('../../../utils/wechat-subscription');
+const { resolveActionLayout } = require('../utils/action-layout-resolver');
 
 const STATUS_DESC = {
   pending_quote: '美甲师正在为你准备报价，请稍候',
@@ -27,11 +29,18 @@ function actionsForStatus(order) {
   const list = [];
   const s = order.status;
   if (s === 'pending_agree') {
-    list.push({ key:'reject', label:'拒绝报价', style:'action-ghost' });
-    list.push({ key:'agree', label:'同意报价', style:'action-primary' });
+    list.push({ key:'reject', label:'拒绝报价', style:'action-ghost', priority: 2 });
+    list.push({ key:'agree', label:'同意报价', style:'action-primary', priority: 1 });
+    list.push({ key:'edit', label:'修改预约', style:'action-ghost', priority: 3 });
+    list.push({ key:'cancel', label:'取消预约', style:'action-danger', priority: 4 });
+    return list;
   }
-  if (EDITABLE.indexOf(s) >= 0) list.push({ key:'edit', label:'修改预约', style:'action-ghost' });
-  if (CANCELLABLE.indexOf(s) >= 0) list.push({ key:'cancel', label:'取消预约', style:'action-danger' });
+  if (EDITABLE.indexOf(s) >= 0) list.push({ key:'edit', label:'修改预约', style:'action-ghost', priority: 1 });
+  if (s === 'pending_shop') {
+    list.push({ key:'reschedule', label:'沟通改期', style:'action-ghost', priority: 1 });
+  }
+  if (CANCELLABLE.indexOf(s) >= 0) list.push({ key:'cancel', label:'取消预约', style:'action-danger', priority: 2 });
+  if (s === 'completed') list.push({ key:'book_again', label:'再次预约', style:'action-primary', priority: 1 });
   return list;
 }
 
@@ -114,6 +123,7 @@ Page({
         pricingDetails: raw.pricingDetails,
         serviceLines: raw.serviceLines || [],
         serviceSubtotalFen,
+        homeServiceFeeFen:raw.homeServiceFeeFen || 0, homeServiceDistanceKm:raw.homeServiceDistanceKm,
         discountAmountFen: Number(raw.discountAmountFen || 0),
         finalPriceFen,
         priceDifferenceFen,
@@ -123,15 +133,20 @@ Page({
         servicePriceSuperseded: finalPriceFen > 0 && finalPriceFen !== serviceSubtotalFen,
         workPriceSuperseded: hasTechnicianQuote && workPriceFen > 0 && finalPriceFen !== workPriceFen
       };
-      order._actions = actionsForStatus(order);
+      const rawActions = actionsForStatus(order);
+      const actionLayout = resolveActionLayout(rawActions);
+      order._actions = rawActions;
+      order._visibleActions = actionLayout.visibleActions;
+      order._overflowActions = actionLayout.overflowActions;
+      order._hasMoreActions = actionLayout.hasMore;
 
       // 店铺订单：拉取美甲师公开信息，获取坐标与指引
       let shopLocation = null;
       let shopGuidance = null;
-      if (order.techId) {
+      if (order.techId && ['到店美甲', 'shop'].includes(order.serviceType)) {
         try {
           const publicGuidance = await api.public.artists.shopGuidance(order.techId, { address: order.address || '' });
-          const matchedShop = publicGuidance.shop || {};
+          const matchedShop = location.matchingShop([publicGuidance.shop || {}], order.address) || {};
           order.shopName = matchedShop.name || '';
           if (matchedShop.latitude && matchedShop.longitude) {
               shopLocation = {
@@ -143,6 +158,14 @@ Page({
           }
           shopGuidance = publicGuidance.guidance || null;
         } catch(e) { /* non-critical */ }
+      }
+
+      if (!shopLocation && order.techId && ['到店美甲', 'shop'].includes(order.serviceType)) {
+        try {
+          const result = await api.public.artists.detail(order.techId);
+          const matched = location.matchingShop((result.artist || result).shopAddresses, order.address);
+          if (matched && location.coordinates(matched)) shopLocation = { ...location.coordinates(matched), name:matched.name, address:order.address };
+        } catch (_) { /* 缺少地图坐标时保留地址复制入口 */ }
       }
 
       this.setData({
@@ -161,6 +184,11 @@ Page({
   },
 
   onAction(e) {
+    const isMore = e.currentTarget.dataset.isMore === 'true' || e.currentTarget.dataset.isMore === true || e.currentTarget.dataset.key === '__more__';
+    if (isMore) {
+      this.openActionsSheet();
+      return;
+    }
     const key = e.currentTarget.dataset.key;
     this.handleAction(key);
   },
@@ -172,6 +200,43 @@ Page({
     if (key === 'reject') return this.openReject();
     if (key === 'cancel') return this.cancelOrder();
     if (key === 'edit') return this.openEdit();
+    if (key === 'reschedule') return this.contactForReschedule();
+    if (key === 'book_again') return this.bookAgain();
+  },
+
+  bookAgain() {
+    const o = this.data.order;
+    const techId = o && (o.techId || (o.technician && o.technician.id));
+    const orderId = o && o.id;
+    const query = [
+      techId ? `techId=${techId}` : '',
+      orderId ? `sourceOrderId=${orderId}` : ''
+    ].filter(Boolean).join('&');
+    wx.navigateTo({ url: `/pages/client/create-order/index${query ? `?${query}` : ''}` });
+  },
+
+  contactForReschedule() {
+    const o = this.data.order;
+    if (!o || !o.techId) {
+      wx.showToast({ title: '美甲师信息不完整', icon: 'none' });
+      return;
+    }
+    const hasPhone = Boolean(o.techPhone);
+    wx.showModal({
+      title: '协商改期',
+      content: '当前排期已确认。如需调整时间，请直接与美甲师沟通，美甲师可直接在端内为你修改预约时间。',
+      confirmText: '去沟通',
+      cancelText: hasPhone ? '打电话' : '返回',
+      success: (res) => {
+        if (res.confirm) {
+          wx.navigateTo({
+            url: `/pages/client/chat-detail/index?techId=${o.techId}&techName=${encodeURIComponent(o.techName || '美甲师')}&orderId=${this.orderId}&intent=reschedule`
+          });
+        } else if (res.cancel && hasPhone) {
+          wx.makePhoneCall({ phoneNumber: String(o.techPhone) });
+        }
+      }
+    });
   },
 
   openActionsSheet() {
@@ -206,24 +271,7 @@ Page({
   },
 
   navigateToShop() {
-    const loc = this.data.shopLocation;
-    if (loc && loc.latitude && loc.longitude) {
-      wx.openLocation({
-        latitude: loc.latitude,
-        longitude: loc.longitude,
-        name: loc.name || '店铺位置',
-        address: loc.address || '',
-        scale: 18
-      });
-    } else {
-      // 无坐标时复制地址，用户可粘贴到导航 app
-      const addr = this.data.order?.address;
-      if (addr) {
-        wx.setClipboardData({ data: addr, success: () => wx.showToast({ title: '地址已复制，请打开导航 App 粘贴', icon: 'none', duration: 2500 }) });
-      } else {
-        wx.showToast({ title: '暂无地址信息', icon: 'none' });
-      }
-    }
+    location.openLocation(this.data.shopLocation || { address:this.data.order && this.data.order.address, name:'服务地点' });
   },
 
   openShopGuidance() {
@@ -314,9 +362,14 @@ Page({
 
   // ---- 取消 ----
   async cancelOrder() {
+    const o = this.data.order || {};
+    const hasPaidDeposit = (Number(o.depositAmount) > 0) && o.depositPaid;
+    const content = hasPaidDeposit
+      ? `确定要取消这个预约吗？包含已付定金 ¥${o.depositAmount}。取消后请与美甲师线下沟通退款或抵扣。`
+      : '确定要取消这个预约吗？取消后预约档期将被释放。';
     const r = await wx.showModal({
       title: '取消预约',
-      content: '确定要取消这个预约吗？如已与门店线下结算，请同时与门店沟通处理。',
+      content,
       confirmText: '确认取消',
       confirmColor: uiColors.danger
     });

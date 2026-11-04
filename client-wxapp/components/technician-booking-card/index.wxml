@@ -36,7 +36,7 @@
           <text class="hero-detail-text hero-detail-value">{{order._serviceTypeLabel || '待确认'}}</text>
         </view>
         <view class="hero-detail-row hero-customer-row">
-          <image class="hero-detail-icon" src="/static/icons/client.svg" mode="aspectFit" />
+          <image class="hero-detail-icon" src="/static/icons/role-client.svg" mode="aspectFit" />
           <text class="hero-detail-text hero-detail-value">{{order.customerName}}</text>
         </view>
         <view class="hero-detail-row hero-shop-row">
@@ -78,22 +78,85 @@
       </view>
       <view class="content">
         <view class="title-row">
-          <text class="customer">{{order.customerName || '客户'}}</text>
-          <text class="status">待我确认</text>
+          <view class="customer-row">
+            <text class="customer">{{order.customerName || '客户'}}</text>
+            <text class="service-type-tag {{order.serviceType === 'home' || order._typeLabel === '上门美甲' ? 'tag-home' : 'tag-shop'}}">{{order.serviceType === 'home' || order._typeLabel === '上门美甲' ? '上门美甲' : '到店美甲'}}</text>
+          </view>
+          <text class="status {{order._statusTone || 'tone-red'}}">{{order.status === 'pending_quote' ? '待报价' : '待我确认'}}</text>
         </view>
-        <text class="service">{{order.serviceName || order._serviceTypeLabel || '预约服务'}}</text>
-        <text wx:if="{{order._priceText}}" class="price semantic-money">{{order._priceText}}</text>
+        <view class="service-media-row">
+          <view class="service-info-col">
+            <text class="service">{{order.serviceName || order._serviceTypeLabel || '预约服务'}}</text>
+            <view class="price-deposit-line">
+              <text wx:if="{{order._priceText}}" class="price semantic-money">{{order._priceText}}</text>
+              <text wx:elif="{{order.status === 'pending_quote'}}" class="price price-pending">待报价</text>
+              <text wx:if="{{order._depositText}}" class="deposit-tag">{{order._depositText}}</text>
+            </view>
+          </view>
+          <image wx:if="{{order._coverUrl || order.coverUrl}}" class="confirmation-thumb" src="{{order._coverUrl || order.coverUrl}}" mode="aspectFill" lazy-load aria-label="预约款式参考图" />
+        </view>
       </view>
     </view>
-    <view wx:if="{{order._fullAddress || order.address || order._shopName}}" class="address-row">
-      <image class="meta-icon" src="/static/icons/pin.svg" mode="aspectFit" />
-      <text class="address">{{order._fullAddress || order.address || order._shopName}}</text>
+    <view wx:if="{{order.serviceType === 'home' ? (order._cleanAddress || order.address) : (order._shopName || order.shopName)}}" class="address-row">
+      <image class="meta-icon" src="{{order.serviceType === 'home' ? '/static/icons/pin.svg' : '/static/icons/shop.svg'}}" mode="aspectFit" />
+      <text class="address">{{order.serviceType === 'home' ? (order._cleanAddress || order.address) : (order._shopName || order.shopName)}}</text>
     </view>
   </view>
-  <view class="confirmation-actions">
-    <view class="confirmation-button confirmation-button-secondary" catchtap="refuse" role="button" aria-label="拒绝排期">拒绝排期</view>
-    <view class="confirmation-button confirmation-button-primary" catchtap="confirm" role="button" aria-label="确认排期">确认排期</view>
-    <view class="confirmation-button confirmation-button-tertiary" catchtap="open" role="button" aria-label="查看预约详情">查看详情</view>
+  <view class="confirmation-actions {{order.status === 'pending_quote' ? 'confirmation-actions-quote' : ''}}">
+    <block wx:if="{{order.status === 'pending_quote'}}">
+      <view class="confirmation-button confirmation-button-tertiary" catchtap="open" role="button" aria-label="查看预约详情">查看详情</view>
+      <view class="confirmation-button confirmation-button-primary" catchtap="quote" role="button" aria-label="立即报价">立即报价</view>
+    </block>
+    <block wx:else>
+      <view class="confirmation-button confirmation-button-secondary" catchtap="refuse" role="button" aria-label="拒绝排期">拒绝排期</view>
+      <view class="confirmation-button confirmation-button-primary" catchtap="confirm" role="button" aria-label="确认排期">确认排期</view>
+      <view class="confirmation-button confirmation-button-tertiary" catchtap="open" role="button" aria-label="查看预约详情">查看详情</view>
+    </block>
+  </view>
+</view>
+
+<view wx:elif="{{variant === 'unread-messages'}}" class="booking-card booking-card-compact booking-card-unread-messages">
+  <view class="msg-card-content">
+    <view class="msg-card-head">
+      <view class="msg-card-head-left">
+        <image class="msg-card-icon" src="/static/icons/tab-chat.svg" mode="aspectFit" />
+        <text class="msg-card-title">最新客户消息</text>
+      </view>
+    </view>
+
+    <view wx:if="{{unreadConversations && unreadConversations.length > 0}}" class="msg-conv-list">
+      <view
+        wx:for="{{unreadConversations}}"
+        wx:key="conversationId"
+        class="msg-conv-item"
+        catchtap="openConversation"
+        data-item="{{item}}"
+        role="button"
+        aria-label="{{item.clientName}}发来的消息"
+      >
+        <view class="msg-avatar-wrap">
+          <image wx:if="{{item.clientAvatar}}" class="msg-avatar" src="{{item.clientAvatar}}" mode="aspectFill" />
+          <view wx:else class="msg-avatar-fallback">{{item._avatarChar}}</view>
+          <view wx:if="{{item.unreadCount > 1}}" class="msg-conv-unread-dot">{{item.unreadCount}}</view>
+        </view>
+        <view class="msg-conv-body">
+          <view class="msg-conv-row">
+            <text class="msg-conv-name">{{item.clientName}}</text>
+            <text wx:if="{{item.time}}" class="msg-conv-time">{{item.time}}</text>
+          </view>
+          <text class="msg-conv-preview">{{item.preview}}</text>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="msg-conv-empty">
+      <text class="msg-empty-text">您有 {{unreadCount}} 条客户消息待回复，点击下方按钮立即处理。</text>
+    </view>
+  </view>
+
+  <view class="msg-card-actions">
+    <view class="msg-action-btn confirmation-button-primary" catchtap="openMessages" role="button" aria-label="查看全部消息">
+      查看全部消息 ›
+    </view>
   </view>
 </view>
 
@@ -108,6 +171,7 @@
       <view class="schedule-title-row">
         <text class="schedule-customer">{{order.customerName || '客户'}}</text>
         <text class="schedule-status {{order._statusTone}}">{{order._statusLabel}}</text>
+        <image wx:if="{{!order._hasScheduleActions}}" class="schedule-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
       </view>
       <view class="schedule-info-row">
         <text class="schedule-info-label">来源</text>
@@ -128,7 +192,7 @@
     </view>
   </view>
 
-  <view class="schedule-actions">
+  <view wx:if="{{order._hasScheduleActions}}" class="schedule-actions">
     <block wx:if="{{order._actionStatus === 'pending_quote'}}">
       <view class="schedule-action schedule-action-danger" catchtap="reject" role="button" aria-label="驳回预约">驳回预约</view>
       <view class="schedule-action schedule-action-primary" catchtap="quote" role="button" aria-label="立即报价">立即报价</view>
@@ -149,11 +213,12 @@
       <view class="schedule-action schedule-action-secondary" catchtap="open" role="button" aria-label="查看预约详情">预约详情</view>
       <view class="schedule-action schedule-action-primary" catchtap="complete" role="button" aria-label="确认完成">确认完成</view>
     </block>
-    <block wx:elif="{{order._canRebook}}">
+    <block wx:elif="{{order.status === 'completed'}}">
       <view class="schedule-action schedule-action-secondary" catchtap="open" role="button" aria-label="查看预约详情">预约详情</view>
-      <view class="schedule-action schedule-action-primary" catchtap="rebook" role="button" aria-label="再次预约">再次预约</view>
+      <view wx:if="{{!order._hasWork}}" class="schedule-action schedule-action-secondary" catchtap="uploadWork" role="button" aria-label="上传作品">上传作品</view>
+      <view wx:else class="schedule-action schedule-action-secondary" catchtap="viewWork" role="button" aria-label="查看作品">查看作品</view>
+      <view class="schedule-action schedule-action-primary" catchtap="record" role="button" aria-label="{{order._recordCompleted ? '美甲记录' : '完善美甲记录'}}">{{order._recordCompleted ? '美甲记录' : '完善美甲记录'}}</view>
     </block>
-    <view wx:else class="schedule-action schedule-action-primary schedule-action-single" catchtap="open" role="button" aria-label="查看预约详情">预约详情</view>
   </view>
   <booking-confirm wx:if="{{confirming}}" order="{{confirming}}" bind:close="closeConfirmDialog" bind:saved="onConfirmDialogSaved" />
 </view>

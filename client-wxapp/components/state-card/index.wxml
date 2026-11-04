@@ -1,0 +1,31 @@
+<view class="state-card {{compact ? 'is-compact' : ''}} {{fullHeight ? 'is-full-height' : ''}} state-card-{{type}}">
+  <view wx:if="{{type === 'loading'}}" class="state-spinner" aria-hidden="true"></view>
+  <view wx:if="{{resolvedIcon}}" class="state-icon-wrap">
+    <image class="state-icon" src="{{resolvedIcon}}" mode="aspectFit" aria-hidden="true" />
+  </view>
+  <text wx:if="{{displayTitle}}" class="state-title">{{displayTitle}}</text>
+  <text wx:if="{{displayDescription}}" class="state-desc">{{displayDescription}}</text>
+  <view wx:if="{{displayActionText || secondaryActionText}}" class="state-actions">
+    <button
+      wx:if="{{displayActionText}}"
+      class="state-btn state-btn-{{actionVariant}} booking-action"
+      bindtap="onAction"
+      hover-class="state-btn-hover"
+      role="button"
+      aria-label="{{displayActionText}}"
+    >
+      {{displayActionText}}
+    </button>
+    <button
+      wx:if="{{secondaryActionText}}"
+      class="state-btn state-btn-secondary booking-action"
+      bindtap="onSecondaryAction"
+      hover-class="state-btn-hover"
+      role="button"
+      aria-label="{{secondaryActionText}}"
+    >
+      {{secondaryActionText}}
+    </button>
+  </view>
+  <slot />
+</view>

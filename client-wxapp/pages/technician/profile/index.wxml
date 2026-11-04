@@ -144,19 +144,19 @@
     <text class="card-title">账号与设置</text>
     <view class="menu-list">
       <view class="menu-item" bindtap="editProfile">
-        <image class="menu-icon" src="/static/icons/tab-profile.svg" mode="aspectFit" aria-hidden="true" /><text class="menu-label">个人资料</text><text class="menu-arrow">›</text>
+        <image class="menu-icon" src="/static/icons/tab-profile.svg" mode="aspectFit" aria-hidden="true" /><text class="menu-label">个人资料</text><image class="menu-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
       </view>
       <view class="menu-item" bindtap="navigateToAccountSecurity">
-        <image class="menu-icon" src="/static/icons/shield.svg" mode="aspectFit" aria-hidden="true" /><text class="menu-label">账号与安全</text><text class="menu-arrow">›</text>
+        <image class="menu-icon" src="/static/icons/shield.svg" mode="aspectFit" aria-hidden="true" /><text class="menu-label">账号与安全</text><image class="menu-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
       </view>
       <view class="menu-item" bindtap="navigateToHelp">
-        <image class="menu-icon" src="/static/icons/tab-chat.svg" mode="aspectFit" aria-hidden="true" /><text class="menu-label">帮助与反馈</text><text class="menu-arrow">›</text>
+        <image class="menu-icon" src="/static/icons/tab-chat.svg" mode="aspectFit" aria-hidden="true" /><text class="menu-label">帮助与反馈</text><image class="menu-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
       </view>
       <view class="menu-item" bindtap="navigateToAbout">
-        <image class="menu-icon" src="/static/icons/info.svg" mode="aspectFit" aria-hidden="true" /><text class="menu-label">关于我们</text><text class="menu-arrow">›</text>
+        <image class="menu-icon" src="/static/icons/info.svg" mode="aspectFit" aria-hidden="true" /><text class="menu-label">关于我们</text><image class="menu-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
       </view>
       <view class="menu-item" bindtap="switchAccount">
-        <image class="menu-icon" src="/static/icons/tab-profile.svg" mode="aspectFit" aria-hidden="true" /><text class="menu-label">切换账号</text><text class="menu-arrow">›</text>
+        <image class="menu-icon" src="/static/icons/tab-profile.svg" mode="aspectFit" aria-hidden="true" /><text class="menu-label">切换账号</text><image class="menu-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
       </view>
     </view>
   </view>
@@ -180,7 +180,7 @@
   <view class="ws-sheet capacity-sheet" catchtap="preventBubble">
     <view class="ws-header settings-sheet-header">
       <text class="ws-title">接待能力</text>
-      <view class="ws-close settings-sheet-close" bindtap="closeCapacityModal" role="button" aria-label="关闭"><text class="ws-close-icon">✕</text></view>
+      <view class="ws-close settings-sheet-close" bindtap="closeCapacityModal" role="button" aria-label="关闭"><view class="ws-close-icon"><image class="ws-close-svg" src="/static/icons/close.svg" mode="aspectFit" /></view></view>
     </view>
     <view class="capacity-body">
       <text class="capacity-intro">为一对一服务保留充足时间，系统会在客户提交预约时立即锁定名额。</text>
@@ -323,7 +323,7 @@
     <view class="ws-header settings-sheet-header">
       <text class="ws-title">工作时间设置</text>
       <view class="ws-close settings-sheet-close" bindtap="closeScheduleModal" role="button" aria-label="关闭">
-        <text class="ws-close-icon">✕</text>
+        <view class="ws-close-icon"><image class="ws-close-svg" src="/static/icons/close.svg" mode="aspectFit" /></view>
       </view>
     </view>
 
@@ -367,7 +367,7 @@
         <view wx:if="{{schedule.restDays.length > 0}}" class="ws-rest-tags">
           <view wx:for="{{schedule.restDays}}" wx:key="*this" class="ws-rest-tag">
             <text class="ws-rest-tag-text">{{item}}</text>
-            <text class="ws-rest-tag-x" catchtap="removeRestDay" data-date="{{item}}">×</text>
+            <view class="ws-rest-tag-x" catchtap="removeRestDay" data-date="{{item}}" role="button" aria-label="移除休息日"><image class="ws-rest-tag-icon" src="/static/icons/close.svg" mode="aspectFit" /></view>
           </view>
         </view>
         <text wx:else class="ws-rest-empty">暂无设置休息日</text>
@@ -489,7 +489,7 @@
         <text class="st-subtitle">需要先开启到店服务，才能设置工作时间</text>
       </view>
       <view class="st-close" bindtap="closeServiceTypeModal">
-        <text class="st-close-icon">✕</text>
+        <image class="st-close-icon" src="/static/icons/close.svg" mode="aspectFit" />
       </view>
     </view>
 
@@ -524,7 +524,7 @@
 
           <!-- 添加店铺按钮 -->
           <view wx:if="{{!showShopForm}}" class="st-add-shop-btn" bindtap="openShopForm">
-            <text class="st-add-icon">+</text>
+            <image class="st-add-icon" src="/static/icons/plus.svg" mode="aspectFit" />
             <text>{{shopList.length > 0 ? '添加更多店铺' : '添加第一个店铺'}}</text>
           </view>
 
@@ -532,7 +532,9 @@
           <view wx:if="{{showShopForm}}" class="st-shop-form">
             <view class="st-form-header">
               <text class="st-form-title">{{editingShop ? '编辑店铺' : '添加店铺'}}</text>
-              <view class="st-form-close" bindtap="closeShopForm">✕</view>
+              <view class="st-form-close" bindtap="closeShopForm">
+                <image class="st-form-close-icon" src="/static/icons/close.svg" mode="aspectFit" />
+              </view>
             </view>
             <view class="st-field">
               <text class="st-field-label">店铺名称 *</text>

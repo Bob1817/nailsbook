@@ -56,6 +56,17 @@
 
 ## API 规则
 
+### 地址与服务形式页面（2026-10-30）
+
+- `form-field`：新地址类表单使用 `outlined`，原生地区和时间选择器使用 `custom-control` 与 `slot="control"`，复用同一标签、边界、高度和提示。`cursor-spacing` 可为门牌输入增加键盘留白。
+- `action-button`：业务卡片和表单使用 `compact`，44px 高、8px 圆角、`font-sm`；保留旧页面默认规格，按页迁移。内部原生点击截断冒泡，只向外发送一次操作事件。
+- `address-card`：`address` 传入展示数据；列表开启 `manage`，选择模式使用 `selectable/selected`。事件为 `select/edit/remove/defaultchange`，组件不调用接口；预约页复用摘要形态，使用 `edit-action` 提供“编辑此地址”入口。
+- `location-field`：使用 `value/confirmed/loading/disabled` 展示位置与选点状态，`choose` 事件交给页面处理；不在组件内申请权限或请求业务接口。
+- `bottom-action-bar`：使用 `primary-label/secondary-label`、`loading/disabled/secondary-disabled`，发送 `primary/secondary`。默认固定底部并测量实际高度作为占位，`fixed="{{false}}"` 用于店铺弹层。键盘展开时隐藏操作栏，收起后恢复并重新测量；卸载时释放监听。
+- `state-card type="loading"` 用于统一加载态；地址集合同时复用空态和错误态，不再手写另一套状态结构。
+
+页面不通过穿透选择器修改组件内部样式，不再另写固定 footer 高度。共用组件及事件隔离、键盘监听和页面接入由 `scripts/test-address-design-system.js` 验证。
+
 - 属性使用 camelCase，并提供明确默认值。
 - 用户操作通过 triggerEvent 对外暴露，组件不得直接调用业务接口。
 - 布尔属性必须同时影响视觉状态与实际交互。

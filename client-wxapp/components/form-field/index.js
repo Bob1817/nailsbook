@@ -9,10 +9,14 @@ Component({
     maxlength: { type: Number, value: 140 },
     placeholder: { type: String, value: '' },
     disabled: { type: Boolean, value: false },
+    required: { type: Boolean, value: false },
     actionText: { type: String, value: '' },
     actionDisabled: { type: Boolean, value: false },
     hint: { type: String, value: '' },
-    error: { type: String, value: '' }
+    error: { type: String, value: '' },
+    customControl: { type:Boolean, value:false },
+    outlined: { type:Boolean, value:false },
+    cursorSpacing: { type:Number, value:24 }
   },
   data: { focused: false },
   methods: {
@@ -27,7 +31,7 @@ Component({
     },
     onConfirm(event) { this.triggerEvent('confirm', event.detail); },
     onAction() {
-      if (!this.data.actionDisabled) this.triggerEvent('action');
+      if (!this.data.disabled && !this.data.actionDisabled) this.triggerEvent('action');
     }
   }
 });

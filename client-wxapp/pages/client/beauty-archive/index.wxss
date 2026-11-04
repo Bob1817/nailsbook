@@ -16,7 +16,7 @@ page { background: var(--bg-page); color: var(--text-primary); }
 
 /* ===== 时间线 ===== */
 .timeline { margin-top: var(--space-md); }
-.timeline-item { display: flex; align-items: flex-start; gap: 24rpx; padding: 0; margin-bottom: 30rpx; }
+.timeline-item { display: flex; align-items: flex-start; gap: var(--space-md); padding: 0; margin-bottom: 30rpx; }
 .timeline-item:last-child { margin-bottom: 0; }
 .moment-card { flex: 1; min-width: 0; padding: var(--space-md); border-radius: var(--radius-lg); background: var(--bg-card); box-shadow: var(--shadow-sm); }
 .moment-head { min-height: 72rpx; display: flex; align-items: flex-start; padding-bottom: var(--space-sm); border-bottom: 0; }
@@ -43,7 +43,7 @@ page { background: var(--bg-page); color: var(--text-primary); }
 .photo-manage-hint { display: block; margin-top: 12rpx; color: var(--text-muted); font-size: var(--font-xs); line-height: var(--leading-normal); }
 .load-more { padding: var(--space-md) 0 36rpx; color: var(--text-muted); font-size: var(--font-xs); text-align: center; }
 .sync-note { display: block; margin-top: 10rpx; color: var(--nb-success); font-size: var(--font-xs); }
-.record-note { display: flex; min-height: var(--touch-min); margin-top: var(--space-sm); padding: 14rpx 16rpx; align-items: center; gap: var(--space-sm); border-radius: var(--radius-md); background: var(--bg-input); box-sizing: border-box; }
+.record-note { display: flex; min-height: var(--touch-min); margin-top: var(--space-sm); padding: 14rpx var(--space-sm); align-items: center; gap: var(--space-sm); border-radius: var(--radius-md); background: var(--bg-input); box-sizing: border-box; }
 .record-note-content { flex: 1; min-width: 0; }
 .record-note-label, .record-note-text { display: block; }
 .record-note-label { color: var(--text-muted); font-size: var(--font-xs); font-weight: var(--weight-semibold); }
@@ -52,8 +52,8 @@ page { background: var(--bg-page); color: var(--text-primary); }
 .record-note-action-icon { width: 24rpx; height: 24rpx; }
 .moment-tags, .tag-row { display: flex; flex-wrap: wrap; gap: 10rpx; margin-top: var(--space-sm); }
 .moment-tag, .tag { padding: 7rpx 14rpx; border-radius: var(--card-radius); color: var(--text-body); background: var(--nb-page); font-size: var(--font-xs); }
-.moment-actions { display: flex; align-items: center; gap: 16rpx; margin-top: var(--space-md); }
-.moment-action { flex: 1; min-height: 72rpx; padding: 0 16rpx; border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; gap: 10rpx; font-size: var(--font-xs); font-weight: var(--weight-semibold); box-sizing: border-box; }
+.moment-actions { display: flex; align-items: center; gap: var(--space-sm); margin-top: var(--space-md); }
+.moment-action { flex: 1; min-height: 72rpx; padding: 0 var(--space-sm); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; gap: 10rpx; font-size: var(--font-xs); font-weight: var(--weight-semibold); box-sizing: border-box; }
 .moment-action:active { opacity: 0.85; }
 .action-primary { background: var(--brand-gradient); color: var(--text-inverse); }
 .action-secondary { background: var(--nb-page); color: var(--brand-primary); }
@@ -107,16 +107,16 @@ page { background: var(--bg-page); color: var(--text-primary); }
 .note-save { background: var(--brand-gradient); color: var(--text-inverse); }
 .note-button[disabled] { opacity: 0.48; }
 /* 记录照片与作品分享授权是独立能力。 */
-.record-share-hint { display: block; margin: 16rpx 0; color: var(--nb-muted); font-size: 24rpx; line-height: 1.6; }
+.record-share-hint { display: block; margin: var(--space-sm) 0; color: var(--nb-muted); font-size: var(--font-sm); line-height: 1.6; }
 
 /* 记录页采用统一的白色内容卡与清晰的主次信息。 */
-.record-header { min-height: 88rpx; padding: 0 8rpx; }
+.record-header { min-height: 88rpx; padding: 0 var(--space-xs); }
 .record-header-copy { color: var(--nb-ink); font-size: var(--font-md); font-weight: var(--weight-semibold); }
-.filter-card { min-height: 88rpx; gap: 8rpx; }
-.filter-reset { min-height: 72rpx; padding: 0 16rpx; border-radius: 18rpx; background: var(--nb-surface); }
-.timeline { margin-top: 16rpx; }
-.timeline-item { gap: 16rpx; margin-bottom: 16rpx; }
-.moment-card { padding: 24rpx; border-radius: 24rpx; box-shadow: none; }
+.filter-card { min-height: 88rpx; gap: var(--space-xs); }
+.filter-reset { min-height: 72rpx; padding: 0 var(--space-sm); border-radius: 18rpx; background: var(--nb-surface); }
+.timeline { margin-top: var(--space-sm); }
+.timeline-item { gap: var(--space-sm); margin-bottom: var(--space-sm); }
+.moment-card { padding: var(--space-md); border-radius: 24rpx; background: var(--nb-surface); border: 1rpx solid var(--nb-line); box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.03); }
 .moment-head { align-items: center; padding-bottom: 12rpx; }
 .moment-date-block { width: 68rpx; }
 .moment-title { color: var(--nb-ink); font-size: var(--font-md); font-weight: var(--weight-semibold); }
@@ -124,30 +124,30 @@ page { background: var(--bg-page); color: var(--text-primary); }
 .moment-arrow { width: 32rpx; color: var(--nb-muted); }
 .record-note { border-radius: 18rpx; background: var(--nb-page); }
 .moment-action { min-height: 88rpx; border-radius: 22rpx; }
-.empty-card,.portrait-card { margin-top: 16rpx; padding: 32rpx 28rpx; border-radius: 24rpx; }
+.empty-card,.portrait-card { margin-top: var(--space-sm); padding: var(--space-lg) 28rpx; border-radius: 24rpx; }
 .recommend-section { margin-top: 28rpx; }
-.recommend-card { border-radius: 20rpx; }
+.recommend-card { border-radius: var(--radius-md); }
 
 /* 概览与筛选合并成块；日期进入记录卡，释放横向内容空间。 */
-.record-overview { margin: 0 calc(0rpx - var(--page-padding-h)); padding: 28rpx calc(var(--page-padding-h) + 8rpx) 24rpx; background: var(--nb-surface); }
+.record-overview { margin: 0 calc(0rpx - var(--page-padding-h)); padding: 28rpx calc(var(--page-padding-h) + var(--space-xs)) var(--space-md); background: var(--nb-surface); }
 .record-header { min-height: 72rpx; padding: 0; }
 .record-heading { flex: 1; min-width: 0; }
 .record-title { display: block; color: var(--nb-ink); font-size: var(--font-lg); font-weight: var(--weight-semibold); line-height: 1.4; }
 .record-header-copy { display: block; margin-top: 4rpx; color: var(--nb-muted); font-size: var(--font-xs); font-weight: var(--weight-normal); }
-.record-count { flex-shrink: 0; padding: 8rpx 14rpx; border-radius: 14rpx; background: var(--nb-surface); }
+.record-count { flex-shrink: 0; padding: var(--space-xs) 14rpx; border-radius: var(--radius-sm); background: var(--nb-surface); }
 .record-count-value { color: var(--nb-ink); font-size: var(--font-sm); font-weight: var(--weight-semibold); }
-.record-overview .filter-card { min-height: 72rpx; margin-top: 16rpx; gap: 10rpx; }
+.record-overview .filter-card { min-height: 72rpx; margin-top: var(--space-sm); gap: 10rpx; }
 .record-overview .filter-reset { min-height: 64rpx; padding: 0 12rpx; color: var(--nb-text-link); background: transparent; }
 .timeline-item { display: block; }
 .moment-card { width: 100%; box-sizing: border-box; }
-.moment-head { gap: 16rpx; }
-.moment-date-block { display: flex; width: 76rpx; min-height: 80rpx; padding: 8rpx; flex-direction: column; align-items: center; justify-content: center; gap: 4rpx; border-radius: 16rpx; background: var(--nb-page); box-sizing: border-box; text-align: center; }
+.moment-head { gap: var(--space-sm); }
+.moment-date-block { display: flex; width: 76rpx; min-height: 80rpx; padding: var(--space-xs); flex-direction: column; align-items: center; justify-content: center; gap: 4rpx; border-radius: 16rpx; background: var(--nb-page); box-sizing: border-box; text-align: center; }
 .moment-month { order: 1; margin-top: 0; color: var(--nb-muted); font-size: var(--font-xs); line-height: 1.2; }
 .moment-day { order: 2; font-size: var(--font-lg); line-height: 1; }
 
 /* 操作尺寸与美甲师预约卡统一为 44px，深色按钮图标使用反白处理。 */
-.moment-actions { gap: 12rpx; margin-top: 16rpx; }
-.moment-action { min-height: 44px; height: 44px; padding: 0 12rpx; border-radius: 8px; gap: 6rpx; font-size: 24rpx; }
+.moment-actions { gap: 12rpx; margin-top: var(--space-sm); }
+.moment-action { min-height: 44px; height: 44px; padding: 0 12rpx; border-radius: 8px; gap: 6rpx; font-size: var(--font-sm); }
 .action-icon { width: 14px; height: 14px; }
 .action-primary { background: var(--nb-action); color: var(--nb-inverse); }
 .action-primary .action-icon { filter: brightness(0) invert(1); }

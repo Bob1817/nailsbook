@@ -1,5 +1,7 @@
 const api = require('../../../services/api');
+const location = require('../utils/location');
 const { normalizeWork } = require('../../../utils/normalize-work');
+const { getLayout, buildColumns } = require('../utils/waterfall');
 const bookingEngine = require('../../../utils/booking-time-engine');
 const { buildArtistShareTitle } = require('../../../utils/share-copy');
 const { buildClientLoginUrl } = require('../../../utils/artist-navigation');
@@ -67,7 +69,7 @@ Page({
     isOwner: false,
     artist: {},
     works: [],
-    displayWorks: [],
+    workCols: [],
     reviews: [],
     qualifications: [],
     timeline: [],
@@ -103,10 +105,24 @@ Page({
     navBarHeight: 88,
     loading: true,
     loadFailed: false,
-    showOwnerMenuSheet: false
+    showOwnerMenuSheet: false,
+    showContactModal: false
+  },
+
+  onResize() {
+    this.updateLayout();
+    const featuredWorks = (this.data.works || []).slice(0, 6);
+    this.setData({
+      workCols: buildColumns(featuredWorks, this._layout || getLayout({ paddingRpx: 40, gapRpx: 20 }))
+    });
+  },
+
+  updateLayout() {
+    this._layout = getLayout({ paddingRpx: 40, gapRpx: 20 });
   },
 
   onLoad(options) {
+    this.updateLayout();
     try {
       const systemInfo = wx.getSystemInfoSync();
       const menuButton = wx.getMenuButtonBoundingClientRect();
@@ -145,6 +161,8 @@ Page({
     this.setData({ showOwnerMenuSheet: false });
   },
 
+  goHome: require('../../../utils/entry-navigation').goHome,
+
   handleOwnerMenuAction(event) {
     const action = event.currentTarget.dataset.action;
     this.closeOwnerMenu();
@@ -159,6 +177,26 @@ Page({
     }
     if (this.data.artistId && !this.data.previewMode) {
       this.loadRelationship();
+    }
+    this.refreshLoginState();
+  },
+
+  refreshLoginState() {
+    const app = getApp();
+    const token = (app && app.globalData && app.globalData.token) || wx.getStorageSync('token') || wx.getStorageSync('client_token');
+    const role = (app && app.globalData && app.globalData.role) || wx.getStorageSync('role');
+    const isClientLoggedIn = !!(token && role === 'client');
+    const artist = this.data.artist;
+    if (artist) {
+      const wechatDisplay = (artist.protectWechat && !isClientLoggedIn)
+        ? '******已开启隐私保护'
+        : (artist.wechat || '');
+      this.setData({
+        isClientLoggedIn,
+        'artist.wechatDisplay': wechatDisplay
+      });
+    } else {
+      this.setData({ isClientLoggedIn });
     }
   },
 
@@ -261,6 +299,20 @@ Page({
       artist.shopAddress = formatAddress(shop) || '';
       artist.businessHours = formatBusinessHours(shop.businessHours) || '';
       artist.phone = shop.phone || '';
+      artist.wechat = (artist.socialMedia && artist.socialMedia.wechat) || (res.artist && res.artist.socialMedia && res.artist.socialMedia.wechat) || artist.wechat || '';
+      artist.protectWechat = Boolean(
+        (artist.socialMedia && artist.socialMedia.protectWechat) ||
+        (res.artist && res.artist.socialMedia && res.artist.socialMedia.protectWechat) ||
+        artist.protectWechat ||
+        (res.artist && res.artist.protectWechat)
+      );
+      const app = getApp();
+      const token = (app && app.globalData && app.globalData.token) || wx.getStorageSync('token') || wx.getStorageSync('client_token');
+      const role = (app && app.globalData && app.globalData.role) || wx.getStorageSync('role');
+      const isClientLoggedIn = !!(token && role === 'client');
+      artist.wechatDisplay = (artist.protectWechat && !isClientLoggedIn)
+        ? '******已开启隐私保护'
+        : (artist.wechat || '');
       artist._shopLatitude = parseFloat(shop.latitude) || 0;
       artist._shopLongitude = parseFloat(shop.longitude) || 0;
       artist._guidance = (shop.guidance && shop.guidance.enabled) ? shop.guidance : null;
@@ -370,10 +422,12 @@ Page({
       const featuredComments = mergeFeaturedComments(reviews, homepageComments);
       const availability = buildAvailabilitySummary(artist, bookingSettings);
 
+      const featuredWorks = works.slice(0, 6);
       this.setData({
         artist,
+        isClientLoggedIn,
         works,
-        displayWorks: works.slice(0, 6),
+        workCols: buildColumns(featuredWorks, this._layout || getLayout({ paddingRpx: 40, gapRpx: 20 })),
         reviews,
         featuredComments,
         displayComments: featuredComments.slice(0, 2),
@@ -589,18 +643,8 @@ Page({
   },
 
   openNavigation() {
-    const artist = this.data.artist;
-    if (!artist.shopAddress) { wx.showToast({ title: '暂无地址信息', icon: 'none' }); return; }
-    const lat = artist._shopLatitude || 0;
-    const lng = artist._shopLongitude || 0;
-    if (!lat && !lng) { wx.setClipboardData({ data: artist.shopAddress, success: () => wx.showToast({ title: '地址已复制，请手动导航', icon: 'none' }) }); return; }
-    wx.openLocation({
-      latitude: lat,
-      longitude: lng,
-      name: artist.shopName || '工作室',
-      address: artist.shopAddress,
-      scale: 18
-    });
+    const artist = this.data.artist || {};
+    location.openLocation({ latitude:artist._shopLatitude, longitude:artist._shopLongitude, name:artist.shopName || '工作室', address:artist.shopAddress || '' });
   },
 
   callPhone() {
@@ -610,6 +654,86 @@ Page({
     } else {
       wx.showToast({ title: '暂无联系电话', icon: 'none' });
     }
+  },
+
+  contactArtist() {
+    const artist = this.data.artist || {};
+    const techId = artist.id || this.data.artistId;
+    if (!techId) return wx.showToast({ title: '美甲师信息不完整', icon: 'none' });
+    const app = getApp();
+    const token = (app && app.globalData && app.globalData.token) || wx.getStorageSync('token') || wx.getStorageSync('client_token');
+    const role = (app && app.globalData && app.globalData.role) || wx.getStorageSync('role');
+    const isClientLoggedIn = !!(token && role === 'client');
+    const wechatDisplay = (artist.protectWechat && !isClientLoggedIn)
+      ? '******已开启隐私保护'
+      : (artist.wechat || '');
+    this.setData({
+      showContactModal: true,
+      isClientLoggedIn,
+      'artist.wechatDisplay': wechatDisplay
+    });
+  },
+
+  closeContactModal() {
+    this.setData({ showContactModal: false });
+  },
+
+  loginToViewWechat() {
+    const artist = this.data.artist || {};
+    const techId = artist.id || this.data.artistId;
+    if (!techId) return wx.showToast({ title: '美甲师信息不完整', icon: 'none' });
+    this.closeContactModal();
+    const returnPath = `/pages/client/artist-home/index?id=${techId}`;
+    const { buildClientLoginUrl } = require('../../../utils/artist-navigation');
+    wx.navigateTo({
+      url: buildClientLoginUrl(returnPath, {
+        source: this.data.entrySource || 'artist_home',
+        inviteCode: this.inviteCode
+      }) + '&techId=' + techId + '&action=view_wechat'
+    });
+  },
+
+  copyArtistWechat() {
+    const artist = this.data.artist || {};
+    const isClientLoggedIn = this.data.isClientLoggedIn;
+    if (artist.protectWechat && !isClientLoggedIn) {
+      return this.loginToViewWechat();
+    }
+    const wechat = artist.wechat || (artist.socialMedia && artist.socialMedia.wechat) || '';
+    if (!wechat) {
+      return wx.showToast({ title: '美甲师暂未填写微信号，可直接登录在线咨询', icon: 'none' });
+    }
+    wx.setClipboardData({
+      data: wechat,
+      success: () => {
+        wx.showToast({ title: '微信号已复制', icon: 'none' });
+      }
+    });
+  },
+
+  goOnlineChat() {
+    const artist = this.data.artist || {};
+    const techId = artist.id || this.data.artistId;
+    if (!techId) return wx.showToast({ title: '美甲师信息不完整', icon: 'none' });
+    this.closeContactModal();
+    wx.navigateTo({
+      url: `/pages/client/chat-detail/index?techId=${techId}&techName=${encodeURIComponent(artist.name || '美甲师')}`
+    });
+  },
+
+  goOnlineChatAfterLogin() {
+    const artist = this.data.artist || {};
+    const techId = artist.id || this.data.artistId;
+    if (!techId) return wx.showToast({ title: '美甲师信息不完整', icon: 'none' });
+    this.closeContactModal();
+    const returnPath = `/pages/client/chat-detail/index?techId=${techId}&techName=${encodeURIComponent(artist.name || '美甲师')}`;
+    const { buildClientLoginUrl } = require('../../../utils/artist-navigation');
+    wx.navigateTo({
+      url: buildClientLoginUrl(returnPath, {
+        source: this.data.entrySource || 'artist_home',
+        inviteCode: this.inviteCode
+      }) + '&techId=' + techId + '&action=chat'
+    });
   },
 
   previewEnvPhoto(e) {

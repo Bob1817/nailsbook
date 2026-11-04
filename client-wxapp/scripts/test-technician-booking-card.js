@@ -72,7 +72,7 @@ assert(component.includes("order.status === 'completed'") && component.includes(
 for (const page of ['all-bookings', 'all-itineraries', 'schedule']) {
   const pageWxml = read(`pages/technician/${page}/index.wxml`);
   assert(pageWxml.includes('variant="schedule"'), `${page} 必须使用统一的行程预约卡片`);
-  for (const event of ['quote', 'withdrawquote', 'editbooking', 'reject', 'cancel', 'complete', 'rebook']) {
+  for (const event of ['quote', 'withdrawquote', 'editbooking', 'reject', 'cancel', 'complete', 'record', 'uploadwork', 'viewwork']) {
     assert(pageWxml.includes(`bind:${event}=`), `${page} 缺少预约卡片操作：${event}`);
   }
 }
@@ -80,7 +80,8 @@ for (const field of ['order._sourceLabel', 'order._serviceLabel', 'order._shopNa
   assert(component.includes(field), `行程卡片缺少字段：${field}`);
 }
 assert(!component.split("variant === 'schedule'")[1].split('<view wx:else')[0].includes('order.address'), '行程卡片不得展示门店详细地址');
-for (const action of ['立即报价', '驳回预约', '编辑报价', '取消报价', '取消预约', '确认完成', '再次预约']) {
+assert(!component.split("variant === 'schedule'")[1].split('<view wx:else')[0].includes('再次预约'), '美甲师行程卡片不应高频展示再次预约操作');
+for (const action of ['立即报价', '驳回预约', '编辑报价', '取消报价', '取消预约', '确认完成', '完善美甲记录', '上传作品']) {
   assert(component.includes(action), `行程卡片缺少操作：${action}`);
 }
 console.log('预约日期、项目来源及已完成操作检查通过');
@@ -90,7 +91,14 @@ const customerDetail = read('pages/technician/customer-detail/index.wxml');
 const completeService = read('pages/technician/complete-service/index.wxml');
 assert(!customerDetail.includes('<technician-booking-card'), '客户详情不应展示预约卡片');
 assert(customerDetail.includes('美甲记录') && customerDetail.includes('bindtap="openServiceRecord"'), '客户详情应展示美甲记录列表入口');
+for (const coreField of ['美甲时间', '价格', '服务时长']) {
+  assert(customerDetail.includes(coreField), `客户详情美甲记录应展示${coreField}`);
+}
+for (const detailOnlyField of ['_photoCountsText', '_missingText', '_serviceTitle', '_statusText']) {
+  assert(!customerDetail.includes(detailOnlyField), `客户详情美甲记录不应展示详情字段：${detailOnlyField}`);
+}
 assert(!customerDetail.includes('新建作品'), '客户详情的美甲记录区域不应提供旁路作品创建入口');
 assert(completeService.includes('关联信息') && completeService.includes('openOrderDetail') && completeService.includes('openWorkDetail'), '记录详情页应聚合关联预约与作品');
+assert(completeService.includes('record-metrics') && completeService.includes('服务照片') && completeService.includes('record-groups') && completeService.includes('过程与反馈'), '记录详情页应使用摘要指标与分组明细结构');
 assert(!customerDetail.includes('客户跟进记录'), '客户详情不应继续展示重复的跟进记录');
 console.log('客户详情美甲记录边界检查通过');

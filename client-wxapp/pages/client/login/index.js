@@ -264,5 +264,22 @@ Page({
     wx.hideLoading();
     const nextPage = postLoginPath(role, consumePostAuthRedirect(this.redirect));
     wx.reLaunch({ url: needsClientProfile(userInfo) ? completionUrl(nextPage) : nextPage });
+  },
+
+  handleBack() {
+    const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : [];
+    if (pages.length > 1) {
+      wx.navigateBack({ fail: () => this.fallbackToTarget() });
+      return;
+    }
+    this.fallbackToTarget();
+  },
+
+  fallbackToTarget() {
+    if (this.redirect) {
+      wx.reLaunch({ url: this.redirect });
+      return;
+    }
+    wx.reLaunch({ url: '/pages/client/home/index' });
   }
 });

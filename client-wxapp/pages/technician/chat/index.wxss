@@ -17,7 +17,7 @@ page {
 /* ===== 固定头部 ===== */
 .header {
   flex-shrink: 0;
-  padding: 16rpx 32rpx 12rpx;
+  padding: var(--space-sm) var(--space-lg) 12rpx;
   background: var(--bg-card);
   border-bottom: 0;
 }
@@ -27,7 +27,7 @@ page {
   display: flex;
   align-items: center;
   gap: 12rpx;
-  margin-bottom: 8rpx;
+  margin-bottom: var(--space-xs);
 }
 
 .search-bar {
@@ -37,8 +37,9 @@ page {
   gap: 14rpx;
   background: var(--nb-page);
   border: 0;
-  border-radius: 22rpx;
+  border-radius: 24rpx;
   padding: 0 26rpx;
+  height: 88rpx;
   min-height: 88rpx;
   min-width: 0;
   box-sizing: border-box;
@@ -46,10 +47,11 @@ page {
 .header-btn {
   display: flex;
   align-items: center;
-  gap: 8rpx;
+  gap: var(--space-xs);
+  height: 88rpx;
   min-height: 88rpx;
   padding: 0 22rpx;
-  border-radius: 22rpx;
+  border-radius: 24rpx;
   background: var(--nb-soft-surface);
   border: 0;
   flex-shrink: 0;
@@ -58,9 +60,9 @@ page {
 .header-btn:active { background: var(--nb-page); }
 
 .header-btn-icon {
-  font-size: var(--font-md);
-  font-weight: var(--weight-semibold);
-  color: var(--nb-ink);
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  flex-shrink: 0;
 }
 
 .header-btn-text {
@@ -70,14 +72,11 @@ page {
 }
 
 .search-icon {
-  width: 24rpx;
-  height: 24rpx;
-  border: 3rpx solid var(--nb-control);
-  border-radius: 50%;
-  position: relative;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
   flex-shrink: 0;
+  opacity: 0.6;
 }
-.search-icon::after { content: ''; position: absolute; width: 10rpx; height: 3rpx; right: -8rpx; bottom: -4rpx; background: var(--nb-control); transform: rotate(45deg); border-radius: 3rpx; }
 
 .search-input {
   flex: 1;
@@ -93,62 +92,80 @@ page {
 }
 
 .content-area {
-  padding: 16rpx 40rpx calc(24rpx + env(safe-area-inset-bottom));
+  padding: var(--space-sm) var(--space-xl) calc(140rpx + env(safe-area-inset-bottom));
 }
 
 /* ===== Tab 栏（固定） ===== */
 .tab-scroll {
   flex-shrink: 0;
-  padding: 0 32rpx;
-  background: var(--bg-card);
+  padding: 14rpx var(--space-lg);
+  background: rgba(255, 255, 255, 0.78);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.06);
   white-space: nowrap;
-  border-bottom: 0;
 }
 
 .tab-bar {
   display: inline-flex;
-  gap: 8rpx;
+  align-items: center;
+  gap: 12rpx;
 }
 
 .tab-pill {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8rpx;
-  min-height: 88rpx;
+  height: 56rpx;
+  min-height: 56rpx;
   padding: 0 22rpx;
-  border-radius: 999rpx;
-  border: 0;
-  background: transparent;
+  border-radius: var(--radius-full);
+  background: var(--nb-page);
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
   flex-shrink: 0;
   box-sizing: border-box;
+  transition: all 0.15s ease-in-out;
+}
+.tab-pill::after { content:''; position:absolute; top:-16rpx; bottom:-16rpx; left:0; right:0; }
+
+/* 44px 移动端触控热区保证 */
+.tab-pill:active {
+  background: var(--nb-pressed);
+  transform: scale(0.97);
 }
 
-.tab-pill:active { background: var(--nb-page); }
-
 .tab-pill-active {
-  background: transparent;
-  border-color: transparent;
+  background: var(--nb-action);
+  border-color: var(--nb-action);
 }
 
 .tab-label {
-  font-size: var(--font-sm);
+  font-size: 24rpx;
   font-weight: var(--weight-medium);
   color: var(--nb-secondary);
+  line-height: 1;
 }
 
 .tab-pill-active .tab-label {
-  color: var(--nb-ink);
-  font-weight: var(--weight-bold);
+  color: var(--nb-inverse);
+  font-weight: var(--weight-semibold);
 }
 
 .tab-count {
-  font-size: var(--font-xs);
+  font-size: 20rpx;
   color: var(--nb-muted);
   font-weight: var(--weight-medium);
+  background: rgba(0, 0, 0, 0.06);
+  padding: 2rpx 10rpx;
+  border-radius: var(--radius-full);
+  line-height: 1.2;
 }
 
 .tab-pill-active .tab-count {
-  color: var(--nb-ink);
+  background: #FFFFFF;
+  color: var(--nb-action);
+  font-weight: var(--weight-semibold);
 }
 
 /* ===== 消息卡片 ===== */
@@ -219,7 +236,7 @@ page {
 }
 
 .msg-top-row {
-  display:flex; align-items:center; justify-content:space-between; gap:16rpx;
+  display:flex; align-items:center; justify-content:space-between; gap:var(--space-sm);
   margin-bottom:10rpx;
 }
 
@@ -274,17 +291,17 @@ page {
 /* ===== 空态 ===== */
 .empty-card {
   margin: 80rpx 0;
-  padding: 64rpx 40rpx;
+  padding: var(--space-3xl) var(--space-xl);
   background: var(--bg-card);
   border-radius: var(--card-radius);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16rpx;
+  gap: var(--space-sm);
   border: 0;
   box-shadow: var(--shadow-lg);
 }
-.load-error { margin:80rpx 0; padding:72rpx 48rpx; border: 0; border-radius: var(--radius-md); background: var(--bg-card); box-shadow:0 10rpx 26rpx rgba(0, 0, 0, .05); display:flex; flex-direction:column; align-items:center; gap:16rpx; text-align:center; }
+.load-error { margin:80rpx 0; padding:72rpx var(--space-2xl); border: 0; border-radius: var(--radius-md); background: var(--bg-card); box-shadow:0 10rpx 26rpx rgba(0, 0, 0, .05); display:flex; flex-direction:column; align-items:center; gap:var(--space-sm); text-align:center; }
 .load-error-mark { width:88rpx; height:88rpx; margin-bottom:12rpx; border-radius:50%; background:var(--nb-page); color:var(--nb-ink); font-size: var(--font-xl); line-height:88rpx; text-align:center; }
 .retry-btn { min-height:88rpx; margin:28rpx 0 0; padding:0 56rpx; border:0; border-radius: var(--radius-xl); background:var(--nb-ink); color: var(--text-inverse); font-size: var(--font-md); line-height:88rpx; }
 .retry-btn::after { border:0; }
@@ -298,15 +315,13 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 8rpx;
+  margin-bottom: var(--space-xs);
 }
 
-.empty-icon-inner {
-  width: 48rpx;
-  height: 48rpx;
-  border-radius: var(--radius-xs);
-  background: var(--brand-gradient);
-  opacity: 0.6;
+.empty-chat-icon {
+  width: var(--icon-xl);
+  height: var(--icon-xl);
+  opacity: 0.35;
 }
 
 .empty-title {
@@ -352,7 +367,7 @@ page {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  gap: var(--space-sm);
 }
 
 .skel-line {
@@ -387,9 +402,13 @@ page {
 
 .modal-sheet {
   width: 100%;
-  background: var(--bg-card);
-  border-radius: var(--btn-radius) 48rpx 0 0;
-  padding: 40rpx 40rpx calc(48rpx + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.94);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border-top: 1rpx solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 -16rpx 48rpx rgba(0, 0, 0, 0.08);
+  border-radius: var(--btn-radius) var(--radius-pill) 0 0;
+  padding: var(--space-xl) var(--space-xl) calc(var(--space-2xl) + env(safe-area-inset-bottom));
   max-height: 85vh;
   overflow-y: auto;
 }
@@ -402,7 +421,7 @@ page {
 }
 
 .modal-type-badge {
-  padding: 8rpx 24rpx;
+  padding: var(--space-xs) var(--space-md);
   border-radius: var(--radius-md);
 }
 
@@ -427,9 +446,8 @@ page {
 .modal-close:active { background: var(--nb-page); }
 
 .modal-close-icon {
-  font-size: var(--font-md);
-  color: var(--text-muted);
-  font-weight: var(--weight-semibold);
+  width: var(--icon-sm);
+  height: var(--icon-sm);
 }
 
 .modal-name {
@@ -469,7 +487,7 @@ page {
 .modal-actions {
   display: flex;
   gap: 20rpx;
-  margin-top: 40rpx;
+  margin-top: var(--space-xl);
 }
 
 .modal-btn {
@@ -560,7 +578,7 @@ page {
 }
 
 .customer-badge {
-  padding: 6rpx 16rpx;
+  padding: 6rpx var(--space-sm);
   border-radius: var(--radius-sm);
   background: var(--bg-input);
   flex-shrink: 0;
@@ -587,5 +605,5 @@ page {
 .is-unread .msg-name { color:var(--nb-ink); font-weight:var(--weight-semibold); }
 .is-unread .msg-preview { color:var(--nb-secondary); }
 .avatar-service, .avatar-system { background:transparent; }
- .retry-btn.booking-action { min-height:44px; height:44px; margin-top:28rpx; padding:0 24rpx; border-radius:8px; font-size:var(--font-sm); line-height:1.4; }
+ .retry-btn.booking-action { min-height:44px; height:44px; margin-top:28rpx; padding:0 var(--space-md); border-radius:8px; font-size:var(--font-sm); line-height:1.4; }
 @import '../../../styles/booking-actions.wxss';

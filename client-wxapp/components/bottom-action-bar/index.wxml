@@ -1,0 +1,5 @@
+<view wx:if="{{fixed}}" style="height:{{height}}px" aria-hidden="true"></view>
+<view class="bottom-actions {{fixed ? 'is-fixed' : ''}} {{keyboardVisible ? 'is-keyboard-visible' : ''}}">
+  <view wx:if="{{secondaryLabel}}" class="bottom-action-item"><action-button compact class="bar-button" variant="secondary" label="{{secondaryLabel}}" disabled="{{secondaryDisabled || loading}}" bindtap="onSecondary"/></view>
+  <view wx:if="{{primaryLabel}}" class="bottom-action-item"><action-button compact class="bar-button" label="{{primaryLabel}}" loading="{{loading}}" disabled="{{disabled}}" bindtap="onPrimary"/></view>
+</view>

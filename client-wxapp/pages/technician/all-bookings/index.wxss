@@ -1,7 +1,7 @@
 @import '../../../styles/booking-actions.wxss';
 
 page {
-  background: var(--bg-gradient-entry);
+  background: var(--nb-page);
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -16,120 +16,185 @@ page {
   overflow: hidden;
 }
 
-/* ===== 筛选标签栏 ===== */
-.filter-strip {
+/* ===== 筛选标签与操作控制面板（统一白色表面层 + 底部细边框） ===== */
+.filter-panel {
   flex-shrink: 0;
-  background: rgba(255,255,255,0.72);
-  backdrop-filter: blur(12rpx);
-  border-bottom: 0;
-  padding: 16rpx 0;
+  background: var(--nb-surface);
+  border-bottom: 1rpx solid var(--nb-line);
 }
-.filter-scroll { white-space: nowrap; }
+
+.filter-strip {
+  padding: 14rpx 0 6rpx;
+}
+.filter-scroll {
+  white-space: nowrap;
+  height: 56rpx;
+}
 .filter-inner {
   display: inline-flex;
-  padding: 0 24rpx;
-  gap: 16rpx;
+  align-items: center;
+  padding: 0 var(--space-lg);
+  gap: 12rpx;
+  height: 56rpx;
 }
 .filter-tab {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 12rpx 28rpx;
-  border-radius: var(--radius-lg);
-  font-size: var(--font-sm);
-  color: var(--text-muted);
-  background: var(--bg-input);
+  height: 54rpx;
+  min-height: 54rpx;
+  padding: 0 22rpx;
+  border-radius: var(--radius-full);
+  background: var(--nb-page);
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
+  font-size: 24rpx;
+  color: var(--nb-secondary);
+  font-weight: var(--weight-medium);
   white-space: nowrap;
   flex-shrink: 0;
+  box-sizing: border-box;
+  line-height: 1;
+  transition: all 0.15s ease-in-out;
+}
+.filter-tab::after { content:''; position:absolute; top:-16rpx; bottom:-16rpx; left:0; right:0; }
+/* 触控无障碍扩展：热区上下扩展 16rpx 达到 44px+ */
+.filter-tab:active {
+  background: var(--nb-pressed);
+  transform: scale(0.97);
 }
 .filter-tab.active {
-  background: var(--brand-gradient);
-  color: var(--text-inverse);
-  font-weight: var(--weight-medium);
+  background: var(--nb-action);
+  border-color: var(--nb-action);
+  color: var(--nb-inverse);
+  font-weight: var(--weight-semibold);
 }
 
-/* ===== 页面头部 ===== */
+/* ===== 统计与操作栏 ===== */
 .page-header {
   flex-shrink: 0;
-  padding: 16rpx 40rpx 8rpx;
+  padding: 8rpx var(--space-lg) 16rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
-.page-count { font-size: var(--font-sm); color: var(--text-muted); }
-.quick-quote-entry {
-  min-height: 88rpx;
-  padding: 0 24rpx;
-  display: flex;
-  align-items: center;
-  color: var(--nb-text-link);
-  font-size: var(--font-sm);
+.page-count {
+  font-size: 24rpx;
+  color: var(--nb-muted);
   font-weight: var(--weight-medium);
+  line-height: 1.3;
+}
+
+/* 快捷报价操作胶囊按钮（Airbnb Action Pill 规格） */
+.quick-quote-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  height: 52rpx;
+  min-height: 52rpx;
+  padding: 0 20rpx;
+  border-radius: var(--radius-full);
+  background: var(--nb-page);
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+  transition: all 0.15s ease-in-out;
+}
+/* 触控无障碍扩展：热区四周扩展达到 44px+ */
+.quick-quote-btn::after {
+  content: '';
+  position: absolute;
+  top: -16rpx;
+  bottom: -16rpx;
+  left: -12rpx;
+  right: -12rpx;
+}
+.quick-quote-btn:active {
+  background: var(--nb-pressed);
+  transform: scale(0.97);
+}
+.quick-quote-icon {
+  width: 24rpx;
+  height: 24rpx;
+  flex-shrink: 0;
+}
+.quick-quote-text {
+  font-size: 24rpx;
+  font-weight: var(--weight-medium);
+  color: var(--nb-ink);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* 兼容选择器 */
+.quick-quote-entry {
+  box-sizing: border-box;
 }
 
 /* ===== 列表 ===== */
 .list-scroll { flex: 1; min-height: 0; }
-.list-area { padding: 16rpx 32rpx calc(24rpx + env(safe-area-inset-bottom)); }
+.list-area { padding: 20rpx var(--space-lg) calc(var(--space-md) + env(safe-area-inset-bottom)); }
 
 /* ===== 骨架/空状态 ===== */
-.skeleton-list { display: flex; flex-direction: column; gap: 16rpx; }
+.skeleton-list { display: flex; flex-direction: column; gap: var(--space-sm); }
 .skel-card {
   height: 200rpx;
   border-radius: var(--card-radius);
-  background: var(--bg-input);
+  background: var(--nb-soft-surface);
   animation: skel 1.4s linear infinite;
 }
 @keyframes skel { 0%{opacity:1;} 50%{opacity:0.5;} 100%{opacity:1;} }
 
 .empty-card {
   margin: 80rpx 0;
-  padding: 60rpx 40rpx;
-  background: var(--bg-card);
-  border-radius: var(--card-radius);
+  padding: 60rpx var(--space-xl);
+  background: var(--nb-surface);
+  border-radius: 24rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12rpx;
-  border: 0;
-  box-shadow: var(--shadow-lg);
+  border: 1rpx solid var(--nb-line);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
 }
-.empty-title { font-size: var(--font-md); font-weight: var(--weight-semibold); color: var(--text-primary); }
-.empty-sub { font-size: var(--font-sm); color: var(--text-muted); text-align: center; }
-.retry-btn { min-width:112px; margin-top:22rpx; padding:0 24rpx; background: var(--bg-tag); color:var(--nb-ink); }
+.empty-title { font-size: var(--font-md); font-weight: var(--weight-semibold); color: var(--nb-ink); }
+.empty-sub { font-size: var(--font-sm); color: var(--nb-muted); text-align: center; }
+.retry-btn { min-width: 112px; min-height: 44px; margin-top: 22rpx; padding: 0 var(--space-md); border-radius: 9999rpx; background: var(--nb-action); color: var(--nb-inverse); }
 
 /* ===== 行程卡片 ===== */
-.trip-list { display: flex; flex-direction: column; gap: 16rpx; }
-.quote-list { display: flex; flex-direction: column; gap: 16rpx; }
-.partial-load-tip { min-height: 88rpx; padding: 0 24rpx; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-md); background: var(--bg-input); color: var(--text-muted); font-size: var(--font-sm); }
+.trip-list { display: flex; flex-direction: column; gap: var(--space-sm); }
+.quote-list { display: flex; flex-direction: column; gap: var(--space-sm); }
+.partial-load-tip { min-height: 88rpx; padding: 0 var(--space-md); display: flex; align-items: center; justify-content: center; border-radius: var(--radius-md); background: var(--nb-soft-surface); color: var(--nb-muted); font-size: var(--font-sm); }
 .quote-card {
   padding: 28rpx 30rpx;
-  border-radius: var(--card-radius);
-  background: var(--bg-card);
-  box-shadow: var(--shadow-sm);
+  border-radius: 24rpx;
+  background: var(--nb-surface);
+  border: 1rpx solid var(--nb-line);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
 }
 .quote-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20rpx; }
 .quote-title-group { min-width: 0; display: flex; flex-direction: column; gap: 6rpx; }
-.quote-title { color: var(--text-primary); font-size: var(--font-md); font-weight: var(--weight-semibold); }
-.quote-no { color: var(--text-muted); font-size: var(--font-xs); }
-.quote-status { flex-shrink: 0; padding: 8rpx 16rpx; border-radius: var(--radius-sm); font-size: var(--font-xs); }
-.quote-status.pending { background: var(--tone-gray-bg); color: var(--tone-gray-text); }
-.quote-status.done { background: var(--tone-emerald-bg); color: var(--tone-emerald-text); }
-.quote-status.muted { background: var(--bg-input); color: var(--text-muted); }
-.quote-summary { margin-top: 22rpx; display: block; color: var(--text-secondary); font-size: var(--font-sm); line-height: 1.55; }
-.quote-meta { margin-top: 20rpx; display: flex; flex-wrap: wrap; gap: 12rpx 24rpx; color: var(--text-muted); font-size: var(--font-xs); }
-.quote-meta text:first-child { color: var(--text-primary); font-weight: var(--weight-semibold); }
+.quote-title { color: var(--nb-ink); font-size: var(--font-md); font-weight: 600; }
+.quote-no { color: var(--nb-muted); font-size: var(--font-xs); }
+.quote-status { flex-shrink: 0; padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-sm); font-size: var(--font-xs); }
+.quote-status.pending { background: var(--nb-soft-surface); color: var(--nb-secondary); }
+.quote-status.done { background: var(--nb-success-surface); color: var(--nb-success); }
+.quote-status.muted { background: var(--nb-soft-surface); color: var(--nb-muted); }
+.quote-summary { margin-top: 22rpx; display: block; color: var(--nb-secondary); font-size: var(--font-sm); line-height: 1.55; }
+.quote-meta { margin-top: 20rpx; display: flex; flex-wrap: wrap; gap: 12rpx var(--space-md); color: var(--nb-muted); font-size: var(--font-xs); }
+.quote-meta text:first-child { color: var(--nb-ink); font-weight: 600; }
 .quote-order-link,
 .quote-next { min-height: 88rpx; margin-top: 12rpx; display: flex; align-items: center; justify-content: flex-end; color: var(--nb-text-link); font-size: var(--font-sm); }
 .request-quote-mask { position: fixed; z-index: 100; inset: 0; display: flex; align-items: flex-end; background: rgba(0,0,0,.48); }
-.request-quote-sheet { width: 100%; padding: 30rpx 30rpx calc(30rpx + env(safe-area-inset-bottom)); border-radius: 30rpx 30rpx 0 0; background: var(--bg-card); box-sizing: border-box; }
-.request-quote-title { display: block; color: var(--text-primary); font-size: var(--font-lg); font-weight: var(--weight-semibold); }
-.request-quote-label { display: block; margin: 24rpx 0 10rpx; color: var(--text-muted); font-size: var(--font-sm); }
+.request-quote-sheet { width: 100%; padding: 30rpx 30rpx calc(30rpx + env(safe-area-inset-bottom)); border-radius: 36rpx 36rpx 0 0; background: var(--nb-surface); box-sizing: border-box; }
+.request-quote-title { display: block; color: var(--nb-ink); font-size: var(--font-lg); font-weight: 700; }
+.request-quote-label { display: block; margin: var(--space-md) 0 10rpx; color: var(--nb-secondary); font-size: var(--font-sm); }
 .request-quote-input,
-.request-quote-textarea { width: 100%; padding: 0 22rpx; border: 0; border-radius: var(--radius-sm); background: var(--bg-input); box-sizing: border-box; }
+.request-quote-textarea { width: 100%; padding: 0 22rpx; border: 1rpx solid var(--nb-line); border-radius: var(--radius-sm); background: var(--nb-soft-surface); box-sizing: border-box; }
 .request-quote-input { height: 88rpx; }
 .request-quote-textarea { height: 150rpx; padding-top: 20rpx; }
 .request-quote-actions { display: flex; gap: 14rpx; margin-top: 26rpx; }
 .request-quote-cancel,
-.request-quote-submit { min-height: 88rpx; flex: 1; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-lg); font-size: var(--font-sm); font-weight: var(--weight-semibold); }
-.request-quote-cancel { background: var(--bg-input); color: var(--text-muted); }
-.request-quote-submit { background: var(--nb-action); color: var(--text-inverse); }
+.request-quote-submit { min-height: 88rpx; flex: 1; display: flex; align-items: center; justify-content: center; border-radius: 9999rpx; font-size: var(--font-sm); font-weight: 600; }
+.request-quote-cancel { background: var(--nb-page); color: var(--nb-secondary); border: 1rpx solid var(--nb-line); }
+.request-quote-submit { background: var(--nb-action); color: var(--nb-inverse); }

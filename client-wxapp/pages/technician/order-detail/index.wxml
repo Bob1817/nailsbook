@@ -12,17 +12,21 @@
 </view>
 
 <view wx:else class="page">
-  <!-- ============ 状态头 ============ -->
+  <!-- ============ P0: 状态与时间英雄头 ============ -->
   <view class="status-hero {{order._statusTone}}">
     <view class="hero-row">
       <text class="hero-status">{{order._statusLabel}}</text>
       <text class="hero-type">{{order._typeLabel}}</text>
     </view>
+    <view class="hero-schedule-bar">
+      <image class="hero-clock-icon" src="/static/icons/clock.svg" mode="aspectFit" />
+      <text class="hero-time-text">{{order._technicianScheduleText || (order._dateLabel + ' ' + order._timeRange)}}</text>
+    </view>
     <text class="hero-order-no">预约号 {{order.orderNo}}</text>
     <text wx:if="{{order._statusDesc}}" class="hero-desc">{{order._statusDesc}}</text>
   </view>
 
-  <!-- ============ 客户卡片 ============ -->
+  <!-- ============ P0: 客户卡片 ============ -->
   <view class="card customer-card">
     <view class="customer-row">
       <view class="cu-avatar">
@@ -30,8 +34,14 @@
         <image wx:else src="/static/icons/client.svg" mode="aspectFit" class="nb-default-avatar" aria-label="客户默认头像" />
       </view>
       <view class="cu-info">
-        <text class="cu-name">{{order.customerName}}</text>
+        <view class="cu-name-row">
+          <text class="cu-name">{{order.customerName}}</text>
+          <text wx:if="{{order._customerAlerts && order._customerAlerts.length}}" class="cu-alert-badge">有安全注意</text>
+        </view>
         <text class="cu-phone">{{order._customerPhoneMasked}}</text>
+        <view wx:if="{{order._customerTags && order._customerTags.length}}" class="cu-tags-wrap">
+          <text wx:for="{{order._customerTags}}" wx:key="*this" class="cu-tag-pill">{{item}}</text>
+        </view>
       </view>
       <view class="cu-actions">
         <view wx:if="{{order.customerPhone}}" class="round-btn" catchtap="callCustomer" role="button" aria-label="拨打客户电话">
@@ -41,49 +51,10 @@
     </view>
   </view>
 
-  <!-- 客户信息与作品经验只在存在有效内容时组合展示。 -->
-  <view wx:if="{{order._hasPreparationContext}}" class="card context-card preparation-context-card">
-    <view class="context-head"><text class="card-title">服务前准备</text><text class="context-private">仅美甲师可见</text></view>
+  <!-- ============ P0: 款式视觉凭证 (预约同款来源) ============ -->
+  <work-card wx:if="{{order.sourceWork}}" variant="compact-bar" work="{{order.sourceWork}}" promotion="{{order.promotion}}" label="预约同款来源" bind:cardtap="viewSourceWork" class="source-work-card" />
 
-    <view wx:if="{{order._customerAlerts.length}}" class="context-section">
-      <text class="context-section-title">客户注意</text>
-      <view class="alert-list">
-        <view wx:for="{{order._customerAlerts}}" wx:key="*this" class="alert-row"><text class="alert-mark">!</text><text>{{item}}</text></view>
-      </view>
-    </view>
-
-    <view wx:if="{{order._customerPreferences.length}}" class="context-section">
-      <text class="context-section-title">客户偏好</text>
-      <view class="preference-list">
-        <text wx:for="{{order._customerPreferences}}" wx:key="*this" class="context-line">{{item}}</text>
-      </view>
-    </view>
-
-    <view wx:if="{{order._customerHistoryInsights.length}}" class="context-section">
-      <text class="context-section-title">近期服务参考</text>
-      <view wx:for="{{order._customerHistoryInsights}}" wx:key="id" class="service-insight">
-        <text class="context-label">{{item.dateText}}</text>
-        <text wx:for="{{item.notes}}" wx:for-item="note" wx:key="*this" class="context-line">{{note}}</text>
-      </view>
-    </view>
-
-    <view wx:if="{{order._preparationWorks.length}}" class="context-section">
-      <text class="context-section-title">款式准备</text>
-      <view wx:for="{{order._preparationWorks}}" wx:key="id" class="preparation-work">
-        <view class="preparation-work-head" bindtap="viewPreparationWork" data-id="{{item.id}}" role="button" aria-label="查看{{item.title}}制作方案">
-          <text class="preparation-work-title">{{item.title}}</text><text class="preparation-work-arrow">›</text>
-        </view>
-        <view wx:if="{{item.preparation.tools}}" class="context-block"><text class="context-label">工具</text><text>{{item.preparation.tools}}</text></view>
-        <view wx:if="{{item.preparation.materials}}" class="context-block"><text class="context-label">材料</text><text>{{item.preparation.materials}}</text></view>
-        <view wx:if="{{item.preparation.preparation}}" class="context-block"><text class="context-label">前置准备</text><text>{{item.preparation.preparation}}</text></view>
-        <view wx:if="{{item.preparation.steps}}" class="context-block"><text class="context-label">关键步骤</text><text>{{item.preparation.steps}}</text></view>
-        <view wx:if="{{item.preparation.riskNotes}}" class="context-block"><text class="context-label">注意事项</text><text>{{item.preparation.riskNotes}}</text></view>
-        <text wx:if="{{item.preparation.estimatedMinutes}}" class="context-meta">历史制作约 {{item.preparation.estimatedMinutes}} 分钟</text>
-      </view>
-    </view>
-  </view>
-
-  <!-- ============ 服务信息 ============ -->
+  <!-- ============ P1: 履约信息 (服务时间与地址) ============ -->
   <view class="card">
     <text class="card-title">服务信息</text>
 
@@ -94,7 +65,7 @@
 
     <view class="info-row">
       <text class="info-label">{{order.bookingPhase === 'application' ? '客户期望时间' : '预约时间'}}</text>
-      <text class="info-value">{{order._dateLabel}} {{order._timeRange}}</text>
+      <text class="info-value">{{order._technicianScheduleText || (order._dateLabel + ' ' + order._timeRange)}}</text>
       <view class="info-actions">
         <view wx:if="{{order.status === 'pending_shop' || order.status === 'in_progress'}}" class="edit-link" bindtap="addBookingToCalendar" role="button" aria-label="加入手机日历">
           <view class="edit-link-label">加入日历</view>
@@ -114,7 +85,7 @@
             <view class="copy-link-label">导航</view>
           </view>
         </view>
-        <view wx:if="{{shopGuidance}}" class="guidance-row-main" bindtap="openShopGuidance" role="button" aria-label="查看到店指引">
+        <view wx:if="{{order._isShop && shopGuidance}}" class="guidance-row-main" bindtap="openShopGuidance" role="button" aria-label="查看到店指引">
           <text>查看到店指引</text><text>›</text>
         </view>
       </view>
@@ -127,23 +98,53 @@
         <view class="edit-link-label">编辑</view>
       </view>
     </view>
-
-    <view wx:if="{{order.durationPending}}" class="info-row"><text class="info-label">预计时长</text><text class="info-value">待确认</text></view>
-    <view wx:if="{{order.durationMinutes > 0}}" class="info-row">
-      <text class="info-label">预计时长</text>
-      <text class="info-value">{{order.durationMinutes}}分钟</text>
-    </view>
   </view>
 
-  <view wx:if="{{order.sourceWork}}" class="card source-work-card" bindtap="viewSourceWork" role="button" aria-label="查看来源作品">
-    <image wx:if="{{order.sourceWork.coverUrl}}" class="source-work-cover" src="{{order.sourceWork.coverUrl}}" mode="aspectFill" aria-label="{{order.sourceWork.title || '预约来源作品'}}"/>
-    <view class="source-work-copy">
-      <text class="source-work-label">预约同款来源</text>
-      <text class="source-work-title">{{order.sourceWork.title || '美甲作品'}}</text>
-      <text wx:if="{{order.sourceWork._priceFen > 0}}" class="source-work-price semantic-money">¥{{order.sourceWork._priceFen / 100}}</text>
-      <view wx:if="{{order.promotion}}" class="source-work-promotion"><text>{{order.promotion.title || '作品分享优惠'}}</text><text>报价时立减 ¥{{order.promotion.discountAmountFen / 100}}</text></view>
+  <!-- ============ P1: 履约准备 (服务前准备) ============ -->
+  <!-- 客户信息与作品经验只在存在有效内容时组合展示。 -->
+  <view wx:if="{{order._hasPreparationContext}}" class="card context-card preparation-context-card">
+    <view class="context-head"><text class="card-title">服务前准备</text><text class="context-private">仅美甲师可见</text></view>
+
+    <view wx:if="{{(order._customerTags && order._customerTags.length) || order._customerNotes}}" class="context-section">
+      <text class="context-section-title">客户画像与标签</text>
+      <view wx:if="{{order._customerTags && order._customerTags.length}}" class="prep-tags-list">
+        <text wx:for="{{order._customerTags}}" wx:key="*this" class="prep-tag-item">{{item}}</text>
+      </view>
+      <text wx:if="{{order._customerNotes}}" class="context-line customer-note-text">备注：{{order._customerNotes}}</text>
     </view>
-    <text class="source-work-arrow">›</text>
+
+    <view wx:if="{{order._customerAlerts.length}}" class="context-section alert-context-section">
+      <text class="context-section-title">客户注意</text>
+      <view class="alert-list">
+        <view wx:for="{{order._customerAlerts}}" wx:key="*this" class="alert-row"><text class="alert-mark">!</text><text>{{item}}</text></view>
+      </view>
+    </view>
+
+    <view wx:if="{{order._customerPreferences.length}}" class="context-section">
+      <text class="context-section-title">客户偏好</text>
+      <view class="preference-list">
+        <text wx:for="{{order._customerPreferences}}" wx:key="*this" class="context-line">{{item}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{order._preparationWorks.length}}" class="context-section">
+      <text class="context-section-title">款式制作准备</text>
+      <view class="prep-check-tip">
+        <image class="prep-check-icon" src="/static/icons/alert.svg" mode="aspectFit" />
+        <text class="prep-check-text">请提前检查设备与耗材，确认材料充足且固化灯正常工作</text>
+      </view>
+      <view wx:for="{{order._preparationWorks}}" wx:key="id" class="preparation-work">
+        <view class="preparation-work-head" bindtap="viewPreparationWork" data-id="{{item.id}}" role="button" aria-label="查看{{item.title}}制作方案">
+          <text class="preparation-work-title">{{item.title}}</text><text class="preparation-work-arrow">›</text>
+        </view>
+        <view wx:if="{{item.preparation.tools}}" class="context-block"><text class="context-label">工具</text><text>{{item.preparation.tools}}</text></view>
+        <view wx:if="{{item.preparation.materials}}" class="context-block"><text class="context-label">材料</text><text>{{item.preparation.materials}}</text></view>
+        <view wx:if="{{item.preparation.preparation}}" class="context-block"><text class="context-label">前置准备</text><text>{{item.preparation.preparation}}</text></view>
+        <view wx:if="{{item.preparation.steps}}" class="context-block"><text class="context-label">关键步骤</text><text>{{item.preparation.steps}}</text></view>
+        <view wx:if="{{item.preparation.riskNotes}}" class="context-block"><text class="context-label">注意事项</text><text>{{item.preparation.riskNotes}}</text></view>
+        <text wx:if="{{item.preparation.estimatedMinutes}}" class="context-meta">历史制作约 {{item.preparation.estimatedMinutes}} 分钟</text>
+      </view>
+    </view>
   </view>
 
   <view wx:if="{{order._recentRecords.length}}" class="card context-card">
@@ -173,6 +174,7 @@
 
   <!-- ============ 价格信息 ============ -->
   <view wx:if="{{order._showPriceCard}}" class="card">
+    <view wx:if="{{order.homeServiceDistanceKm !== null && order.homeServiceDistanceKm !== undefined}}" class="price-line"><text>上门费（直线 {{order.homeServiceDistanceKm}}km）</text><text>¥{{order.homeServiceFeeFen / 100}}</text></view>
     <text class="card-title">{{order.status === 'pending_agree' ? '报价信息' : '价格信息'}}</text>
 
     <view wx:if="{{order.serviceLines && order.serviceLines.length}}">
@@ -254,30 +256,42 @@
   </view>
 
   <!-- ============ 底部操作栏 ============ -->
-  <view wx:if="{{order._actions.length > 0}}" class="bottom-actions">
-    <view wx:if="{{order._actions.length === 1}}" class="booking-action action-btn {{order._actions[0].style}}" bindtap="onAction" data-key="{{order._actions[0].key}}">{{order._actions[0].label}}</view>
-    <view wx:elif="{{order._actions.length === 2}}" class="action-btns-row">
+  <view wx:if="{{order._visibleActions.length > 0}}" class="bottom-actions">
+    <view wx:if="{{order._visibleActions.length === 1}}" class="booking-action action-btn {{order._visibleActions[0].style}}" bindtap="onAction" data-key="{{order._visibleActions[0].key}}" data-is-more="{{order._visibleActions[0].isMore ? 'true' : 'false'}}">{{order._visibleActions[0].label}}</view>
+    <view wx:elif="{{order._visibleActions.length === 2}}" class="action-btns-row">
       <view
-        wx:for="{{order._actions}}"
+        wx:for="{{order._visibleActions}}"
         wx:key="key"
         class="booking-action action-btn {{item.style}}"
         bindtap="onAction"
         data-key="{{item.key}}"
+        data-is-more="{{item.isMore ? 'true' : 'false'}}"
       >{{item.label}}</view>
     </view>
-    <view wx:else class="booking-action action-btn action-primary" bindtap="openActionMenu">更多操作</view>
+    <view wx:else class="action-btns-row action-btns-row-3">
+      <view
+        wx:for="{{order._visibleActions}}"
+        wx:key="key"
+        class="booking-action action-btn {{item.style}}"
+        bindtap="onAction"
+        data-key="{{item.key}}"
+        data-is-more="{{item.isMore ? 'true' : 'false'}}"
+      >{{item.label}}</view>
+    </view>
   </view>
 </view>
 
-<!-- ============ 三项及以上操作菜单 ============ -->
+<!-- ============ 更多操作弹层 ============ -->
 <view wx:if="{{showActionMenu}}" class="sheet-mask" bindtap="closeActionMenu"></view>
 <view class="sheet {{showActionMenu ? 'sheet-show' : ''}}" catchtap="">
   <view class="sheet-header">
     <text class="sheet-title">更多操作</text>
-    <view class="sheet-close" bindtap="closeActionMenu">✕</view>
+    <view class="sheet-close" bindtap="closeActionMenu">
+      <image class="sheet-close-icon" src="/static/icons/close.svg" mode="aspectFit" />
+    </view>
   </view>
   <view class="sheet-body action-menu-list">
-    <view wx:for="{{order._actions}}" wx:key="key" class="booking-action action-menu-item {{item.style}}" bindtap="onAction" data-key="{{item.key}}">{{item.label}}</view>
+    <view wx:for="{{order._overflowActions}}" wx:key="key" class="booking-action action-menu-item {{item.style}}" bindtap="onAction" data-key="{{item.key}}">{{item.label}}</view>
   </view>
 </view>
 
@@ -286,7 +300,9 @@
 <view class="sheet {{showQuote ? 'sheet-show' : ''}}" catchtap="">
   <view class="sheet-header">
     <text class="sheet-title">{{quoteIsRevise ? '修改报价' : '发送报价'}}</text>
-    <view class="sheet-close" bindtap="closeQuote">✕</view>
+    <view class="sheet-close" bindtap="closeQuote">
+      <image class="sheet-close-icon" src="/static/icons/close.svg" mode="aspectFit" />
+    </view>
   </view>
 
   <scroll-view scroll-y class="sheet-body">
@@ -300,6 +316,7 @@
       <text class="form-label">附加服务（按需加入）</text>
       <view class="quote-service-list"><view wx:for="{{quoteSurcharges}}" wx:key="id" class="quote-service {{quoteSurchargeMap[item.id] ? 'selected' : ''}}" data-id="{{item.id}}" bindtap="toggleQuoteSurcharge" role="checkbox" aria-checked="{{!!quoteSurchargeMap[item.id]}}"><view class="quote-service-copy"><text class="quote-service-name">{{item.name}}</text><text class="quote-service-meta">¥{{item.price}}</text></view><text>{{quoteSurchargeMap[item.id] ? '已加入' : '加入'}}</text></view></view>
     </view>
+    <text wx:if="{{order.homeServiceFeeFen}}" class="quote-helper">上门费 ¥{{order.homeServiceFeeFen / 100}} 已单独计入附加费用，最终报价包含该费用。</text>
     <view class="form-item"><text class="form-label">基础组合报价（元）</text><input class="form-input" type="digit" value="{{quoteCorePrice}}" bindinput="onQuoteCoreInput" placeholder-class="form-placeholder" /><text class="quote-helper">基础原价 ¥{{quoteSubtotalFen / 100}} · 附加服务 ¥{{quoteExtraFen / 100}} · 预计 {{quoteTotalDuration}} 分钟</text></view>
     <view class="form-row-2">
       <view class="form-item form-half">
@@ -381,7 +398,9 @@
 <view class="sheet {{showCancel ? 'sheet-show' : ''}}" catchtap="">
   <view class="sheet-header">
     <text class="sheet-title semantic-danger">取消预约</text>
-    <view class="sheet-close" bindtap="closeCancel">✕</view>
+    <view class="sheet-close" bindtap="closeCancel">
+      <image class="sheet-close-icon" src="/static/icons/close.svg" mode="aspectFit" />
+    </view>
   </view>
 
   <view class="sheet-body">
@@ -431,7 +450,9 @@
 <view class="sheet {{showActualAmount ? 'sheet-show' : ''}}" catchtap="">
   <view class="sheet-header">
     <text class="sheet-title">{{actualAmountMode === 'edit' ? '修改实际支付金额' : '确认完成'}}</text>
-    <view class="sheet-close" bindtap="closeActualAmount">✕</view>
+    <view class="sheet-close" bindtap="closeActualAmount">
+      <image class="sheet-close-icon" src="/static/icons/close.svg" mode="aspectFit" />
+    </view>
   </view>
   <view class="sheet-body">
     <view class="form-item">
@@ -452,7 +473,9 @@
 <view class="sheet {{showServiceEdit ? 'sheet-show' : ''}}" catchtap="">
   <view class="sheet-header">
     <text class="sheet-title">编辑服务项目</text>
-    <view class="sheet-close" bindtap="closeServiceEdit">✕</view>
+    <view class="sheet-close" bindtap="closeServiceEdit">
+      <image class="sheet-close-icon" src="/static/icons/close.svg" mode="aspectFit" />
+    </view>
   </view>
 
   <scroll-view scroll-y class="sheet-body">
@@ -500,7 +523,9 @@
 <view class="sheet {{showEditPrice ? 'sheet-show' : ''}}" catchtap="">
   <view class="sheet-header">
     <text class="sheet-title">调整报价</text>
-    <view class="sheet-close" bindtap="closeEditPrice">✕</view>
+    <view class="sheet-close" bindtap="closeEditPrice">
+      <image class="sheet-close-icon" src="/static/icons/close.svg" mode="aspectFit" />
+    </view>
   </view>
 
   <scroll-view scroll-y class="sheet-body">

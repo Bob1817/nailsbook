@@ -7,8 +7,8 @@ page {
 }
 
 .wrap {
-  padding: 0 40rpx;
-  padding-bottom: calc(env(safe-area-inset-bottom) + 40rpx);
+  padding: 0 var(--space-xl);
+  padding-bottom: calc(env(safe-area-inset-bottom) + var(--space-xl));
 }
 
 /* ===== Hero ===== */
@@ -16,7 +16,7 @@ page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 60rpx 0 48rpx;
+  padding: 60rpx 0 var(--space-2xl);
 }
 
 .hero-icon-wrap {
@@ -27,7 +27,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 24rpx;
+  margin-bottom: var(--space-md);
 }
 
 .hero-icon {
@@ -40,7 +40,7 @@ page {
   font-size: var(--font-xl);
   font-weight: var(--weight-bold);
   color: var(--text-primary);
-  margin-bottom: 8rpx;
+  margin-bottom: var(--space-xs);
 }
 
 .hero-sub {
@@ -54,7 +54,7 @@ page {
   display: flex;
   align-items: center;
   gap: 20rpx;
-  padding: 28rpx 24rpx;
+  padding: 28rpx var(--space-md);
   border-radius: var(--radius-lg);
   margin-bottom: 20rpx;
   transition: transform 0.15s, opacity 0.15s;
@@ -128,13 +128,13 @@ page {
 .skip-row {
   display: flex;
   justify-content: center;
-  padding: 32rpx 0;
+  padding: var(--space-lg) 0;
 }
 
 .skip-text {
   font-size: var(--font-sm);
   color: var(--text-faint);
-  padding: 12rpx 32rpx;
+  padding: 12rpx var(--space-lg);
 }
 
 /* ===== 子面板（底部弹出） ===== */
@@ -157,7 +157,7 @@ page {
   width: 100%;
   background: var(--nb-surface);
   border-radius: 32rpx 32rpx 0 0;
-  padding: 32rpx 40rpx calc(env(safe-area-inset-bottom) + 32rpx);
+  padding: var(--space-lg) var(--space-xl) calc(env(safe-area-inset-bottom) + var(--space-lg));
   animation: panelUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
@@ -171,7 +171,7 @@ page {
   height: 6rpx;
   background: var(--nb-page);
   border-radius: 3rpx;
-  margin: 0 auto 24rpx;
+  margin: 0 auto var(--space-md);
 }
 
 .flow-title {
@@ -188,13 +188,13 @@ page {
   font-size: var(--font-sm);
   color: var(--text-faint);
   text-align: center;
-  margin-bottom: 32rpx;
+  margin-bottom: var(--space-lg);
 }
 
 /* 输入框 */
 .flow-input-wrap {
   position: relative;
-  margin-bottom: 16rpx;
+  margin-bottom: var(--space-sm);
 }
 
 .flow-input {
@@ -203,7 +203,7 @@ page {
   background: var(--nb-soft-surface);
   border: 0;
   border-radius: var(--radius-sm);
-  padding: 0 40rpx 0 24rpx;
+  padding: 0 var(--space-xl) 0 var(--space-md);
   font-size: var(--font-md);
   color: var(--text-primary);
   box-sizing: border-box;
@@ -250,16 +250,18 @@ page {
   right: 20rpx;
   top: 50%;
   transform: translateY(-50%);
-  width: 32rpx;
-  height: 32rpx;
+  width: 36rpx;
+  height: 36rpx;
   background: var(--nb-action);
   border-radius: 50%;
-  color: var(--nb-surface);
-  font-size: 18rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
+}
+
+.flow-check-icon {
+  width: 20rpx;
+  height: 20rpx;
 }
 
 .flow-eye {
@@ -269,18 +271,18 @@ page {
   transform: translateY(-50%);
   font-size: var(--font-sm);
   color: var(--brand-primary);
-  padding: 8rpx;
+  padding: var(--space-xs);
 }
 
 /* 找到的美甲师 */
 .found-card {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: var(--space-sm);
   padding: 20rpx;
   background: var(--nb-page);
   border-radius: var(--radius-sm);
-  margin-bottom: 16rpx;
+  margin-bottom: var(--space-sm);
 }
 
 .found-card-av {
@@ -332,18 +334,18 @@ page {
   background: var(--nb-soft-surface);
   border: 0;
   border-radius: var(--radius-sm);
-  padding: 20rpx 24rpx;
+  padding: 20rpx var(--space-md);
   font-size: var(--font-sm);
   color: var(--text-primary);
   box-sizing: border-box;
-  margin-bottom: 16rpx;
+  margin-bottom: var(--space-sm);
 }
 
 /* 错误提示 */
 .flow-error {
   font-size: var(--font-sm);
   color: var(--text-error);
-  margin-bottom: 16rpx;
+  margin-bottom: var(--space-sm);
   padding: 0 4rpx;
 }
 
@@ -352,10 +354,10 @@ page {
   display: flex;
   align-items: flex-start;
   gap: 10rpx;
-  padding: 16rpx;
+  padding: var(--space-sm);
   background: var(--nb-page);
   border-radius: var(--radius-sm);
-  margin-bottom: 24rpx;
+  margin-bottom: var(--space-md);
 }
 
 .flow-hint-icon {
@@ -375,14 +377,14 @@ page {
   width: 100%;
   height: 96rpx;
   background: var(--nb-action);
-  border-radius: 48rpx;
+  border-radius: var(--radius-pill);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: var(--font-md);
   font-weight: var(--weight-semibold);
   color: var(--nb-surface);
-  margin-bottom: 16rpx;
+  margin-bottom: var(--space-sm);
   transition: opacity 0.15s;
 }
 
@@ -395,7 +397,7 @@ page {
   text-align: center;
   font-size: var(--font-md);
   color: var(--text-muted);
-  padding: 16rpx 0;
+  padding: var(--space-sm) 0;
 }
 
 @import '../../styles/booking-actions.wxss';

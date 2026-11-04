@@ -19,7 +19,7 @@ assert(template.includes('bindtap="switchAccount"') && template.includes('切换
 assert(!template.includes('class="menu-item account-logout"'), '退出登录不应混在账户信息列表中');
 assert(template.includes('class="logout-btn" bindtap="logout"'), '退出登录应作为独立底部操作');
 assert(template.indexOf('class="version"') > template.indexOf('class="logout-btn"'), '版本信息应位于退出登录下方的页面最底部');
-assert(styles.includes('.logout-btn {\n  margin-top: 32rpx;'), '退出登录与账户信息卡片之间应保留独立分组间距');
+assert(styles.includes('.logout-btn {\n  margin-top: var(--space-lg);'), '退出登录与账户信息卡片之间应保留独立分组间距');
 assert(styles.includes('.version {'), '客户端页面底部应显示软件版本号');
 assert(template.indexOf('class="page-hero"') < template.indexOf('<scroll-view'));
 assert(!template.includes('profile-grid'));

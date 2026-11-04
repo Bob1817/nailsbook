@@ -1,8 +1,8 @@
 .container {
   min-height: 100vh;
   background: var(--bg-page);
-  padding: 0 40rpx;
-  padding-top: 40rpx;
+  padding: 0 var(--space-xl);
+  padding-top: var(--space-xl);
 }
 
 .menu-icon {
@@ -26,7 +26,7 @@
 /* 头部 */
 .header {
   text-align: center;
-  margin-bottom: 48rpx;
+  margin-bottom: var(--space-2xl);
 }
 
 .logo-circle {
@@ -37,13 +37,13 @@
   background: var(--brand-gradient);
   border-radius: 32rpx;
   color: var(--text-inverse);
-  font-size: 28rpx;
+  font-size: var(--font-md);
   font-weight: var(--weight-semibold);
   letter-spacing: 1rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 32rpx;
+  margin-bottom: var(--space-lg);
 }
 
 .title {
@@ -51,7 +51,7 @@
   font-size: var(--font-xl);
   font-weight: var(--weight-bold);
   color: var(--text-primary);
-  margin-bottom: 8rpx;
+  margin-bottom: var(--space-xs);
 }
 
 .subtitle {
@@ -65,7 +65,7 @@
   background: rgba(255, 255, 255, 0.92);
   border: 0;
   border-radius: var(--radius-md);
-  padding: 32rpx;
+  padding: var(--space-lg);
   box-shadow: 0 8rpx 28rpx rgba(0, 0, 0, 0.045);
 }
 
@@ -113,7 +113,7 @@
   height: 88rpx;
   background: var(--nb-soft-surface);
   border-radius: var(--radius-sm);
-  padding: 0 24rpx;
+  padding: 0 var(--space-md);
   font-size: var(--font-md);
   color: var(--text-primary);
   box-sizing: border-box;
@@ -137,7 +137,7 @@
   height: 88rpx;
   background: var(--bg-input);
   border-radius: var(--radius-sm);
-  padding: 0 24rpx;
+  padding: 0 var(--space-md);
   font-size: var(--font-md);
   color: var(--text-muted);
   display: flex;
@@ -168,20 +168,22 @@
   display: block;
   font-size: var(--font-sm);
   color: var(--text-error);
-  margin-top: 8rpx;
+  margin-top: var(--space-xs);
 }
 
 .success-text {
   display: flex;
   align-items: center;
-  gap: 8rpx;
+  gap: var(--space-xs);
   font-size: var(--font-sm);
   color: var(--nb-ink);
-  margin-top: 8rpx;
+  margin-top: var(--space-xs);
 }
 
-.success-icon {
-  font-weight: var(--weight-bold);
+.success-icon-svg {
+  width: var(--icon-sm, 28rpx);
+  height: var(--icon-sm, 28rpx);
+  flex-shrink: 0;
 }
 
 /* 按钮 */
@@ -196,7 +198,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 32rpx;
+  margin-top: var(--space-lg);
   box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
   border: none;
 }
@@ -214,7 +216,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 16rpx;
+  gap: var(--space-sm);
   margin-top: var(--space-md);
 }
 
@@ -237,4 +239,4 @@
 @import '../../../styles/booking-actions.wxss';
 .input { height: var(--input-height); min-height: 44px; background: var(--bg-input); border-radius: var(--input-radius); padding: 0 var(--input-padding-h); font-size: var(--font-sm); }
 .readonly { height: var(--input-height); min-height: 44px; border-radius: var(--input-radius); padding: 0 var(--input-padding-h); font-size: var(--font-sm); }
-.btn-primary.booking-action { height: var(--control-hit-height); min-height: 44px; margin-top: 24rpx; border-radius: 8px; background: var(--nb-action); font-size: var(--font-sm); box-shadow: none; }
+.btn-primary.booking-action { height: var(--control-hit-height); min-height: 44px; margin-top: var(--space-md); border-radius: 8px; background: var(--nb-action); font-size: var(--font-sm); box-shadow: none; }

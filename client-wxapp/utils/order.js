@@ -18,19 +18,19 @@ const ORDER_STATUS_LABELS = {
   expired:         '已过期'
 };
 
-// CSS 类名（在 wxss 里定义对应配色）
+// CSS 类名（在 wxss 里定义对应配色：Scheme A 行动优先级层级）
 const ORDER_STATUS_TONES = {
-  pending_quote:   'tone-orange',
-  pending_agree:   'tone-purple',
-  pending_confirm: 'tone-yellow',
-  pending_client_confirm: 'tone-purple',
-  quoted:          'tone-sky',
-  confirmed:       'tone-purple',
-  pending_shop:    'tone-teal',
+  pending_quote:   'tone-red',
+  pending_agree:   'tone-red',
+  pending_confirm: 'tone-red',
+  pending_client_confirm: 'tone-red',
+  quoted:          'tone-red',
+  confirmed:       'tone-sky',
+  pending_shop:    'tone-sky',
   in_progress:     'tone-sky',
-  completed:       'tone-gray',
-  cancelled:       'tone-red',
-  rejected:        'tone-red',
+  completed:       'tone-emerald',
+  cancelled:       'tone-gray',
+  rejected:        'tone-gray',
   expired:         'tone-gray'
 };
 
@@ -137,6 +137,29 @@ function decorateTechnicianOrder(raw, shops = []) {
   });
   const status = getActionStatus(order.status);
   const price = Number(order.price) || 0;
+  const hasWork = Boolean(
+    (Array.isArray(raw.worksFromOrder) && raw.worksFromOrder.length > 0) ||
+    (Array.isArray(raw.works) && raw.works.length > 0) ||
+    raw.workId ||
+    raw.createdWorkId ||
+    raw.sourceWorkId ||
+    raw.sourceWork
+  );
+  const workId = (Array.isArray(raw.worksFromOrder) && raw.worksFromOrder[0] && raw.worksFromOrder[0].id)
+    || (Array.isArray(raw.works) && raw.works[0] && raw.works[0].id)
+    || raw.createdWorkId
+    || raw.workId
+    || (raw.sourceWork && raw.sourceWork.id)
+    || raw.sourceWorkId
+    || null;
+  const recordCompleted = Boolean(raw.serviceRecord && raw.serviceRecord.status === 'complete');
+  const hasScheduleActions = [
+    'pending_quote',
+    'pending_agree',
+    'pending_confirm',
+    'pending_shop',
+    'in_progress'
+  ].includes(status) || order.status === 'completed';
   return {
     ...order,
     _clock: formatClock(order.startTime),
@@ -149,9 +172,13 @@ function decorateTechnicianOrder(raw, shops = []) {
     _serviceLabel: order.serviceName || '预约项目待确认',
     _shopName: order.shopName || (configuredShop && configuredShop.name) || '门店待确认',
     _notes: raw.remark && raw.remark !== order.serviceName ? raw.remark : (raw.note || ''),
-    _canRebook: REBOOKABLE_STATUSES.includes(order.status),
+    _canRebook: false,
+    _hasWork: hasWork,
+    _workId: workId,
+    _recordCompleted: recordCompleted,
     _depositPaid: !!raw.isDepositPaid,
-    _actionStatus: status
+    _actionStatus: status,
+    _hasScheduleActions: hasScheduleActions
   };
 }
 
@@ -163,8 +190,11 @@ function getOrderStateMeta(status) {
   if (status === 'completed') {
     return { tone: 'state-completed', label: '已完成' };
   }
-  if (status === 'cancelled') {
-    return { tone: 'state-completed', label: '已取消' };
+  if (status === 'cancelled' || status === 'rejected' || status === 'expired') {
+    return { tone: 'state-cancelled', label: '已取消' };
+  }
+  if (status === 'pending_quote' || status === 'pending_confirm' || status === 'pending_agree') {
+    return { tone: 'state-urgent', label: '待确认' };
   }
   return { tone: 'state-pending', label: '待出发' };
 }

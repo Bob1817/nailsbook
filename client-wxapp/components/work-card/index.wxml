@@ -1,21 +1,53 @@
-<view wx:if="{{variant === 'editorial'}}" class="nb-theme wc-editorial {{featured ? 'wc-featured' : 'wc-standard'}} {{manageable ? 'wc-manageable' : ''}}" bindtap="onTap" role="button" aria-label="查看{{work.title || '美甲作品'}}详情">
-  <view class="wc-editorial-media {{featured ? 'aspect-featured' : 'aspect-grid'}}">
-    <image wx:if="{{work.coverUrl}}" src="{{work.coverUrl}}" mode="aspectFill" class="wc-editorial-img" lazy-load aria-label="{{work.title || '美甲作品'}}"/>
-    <view wx:else class="wc-editorial-img wc-img-empty"></view>
-    <view wx:if="{{manageable}}" class="wc-status-icons" aria-label="作品状态">
-      <view wx:if="{{!work.isVisible}}" class="wc-status-pill"><image src="/static/icons/eye-closed.svg" class="wc-status-icon"/><text>已隐藏</text></view>
-      <view wx:if="{{work.isPinned}}" class="wc-status-pill"><image src="/static/icons/status-pin.svg" class="wc-status-icon"/><text>已置顶</text></view>
-      <view wx:if="{{work.isFeatured}}" class="wc-status-pill"><image src="/static/icons/status-featured.svg" class="wc-status-icon"/><text>主页精选</text></view>
-      <view wx:if="{{work.heroSlot}}" class="wc-status-pill"><image src="/static/icons/crown.svg" class="wc-status-icon"/><text>首页主推</text></view>
+<view wx:if="{{variant === 'compact-bar'}}" class="nb-theme wc-compact-bar" bindtap="onTap" role="button" aria-label="查看{{displayTitle || '美甲作品'}}详情">
+  <view class="wc-bar-cover-wrap">
+    <view wx:if="{{!imageLoaded && !imageError && resolvedCoverUrl}}" class="wc-skeleton-shimmer" aria-hidden="true"></view>
+    <image wx:if="{{resolvedCoverUrl && !imageError}}" src="{{resolvedCoverUrl}}" mode="aspectFill" class="wc-bar-cover {{imageLoaded ? 'is-loaded' : 'is-loading'}}" lazy-load bindload="onImageLoad" binderror="onImageError" aria-label="{{displayTitle || '作品图片'}}"/>
+    <view wx:else class="wc-bar-cover wc-bar-empty"><image class="wc-fallback-icon-sm" src="/static/icons/image.svg" mode="aspectFit" aria-hidden="true"/></view>
+  </view>
+  <view class="wc-bar-copy">
+    <text class="wc-bar-label">{{label || '预约同款来源'}}</text>
+    <text class="wc-bar-title">{{displayTitle || '美甲作品'}}</text>
+    <view class="wc-bar-pricing-row">
+      <text wx:if="{{displayPrice}}" class="wc-bar-price semantic-money">{{displayPrice}}</text>
+      <text wx:if="{{doneCountText}}" class="wc-bar-done-count">{{doneCountText}}</text>
     </view>
-    <view wx:if="{{!manageable && work.heroSlot}}" class="wc-curated-badge"><image src="/static/icons/crown.svg"/><text>美甲师主推</text></view>
+    <view wx:if="{{hasPromotion}}" class="wc-bar-promotion">
+      <text>{{displayPromotionTitle}}</text>
+      <text wx:if="{{displayPromotionDiscount}}">{{displayPromotionDiscount}}</text>
+    </view>
+  </view>
+  <text class="wc-bar-arrow" aria-hidden="true">›</text>
+</view>
+
+<view wx:elif="{{variant === 'editorial' || variant === 'minimal'}}" class="nb-theme wc-editorial {{featured ? 'wc-featured' : 'wc-standard'}} {{manageable ? 'wc-manageable' : ''}} {{variant === 'minimal' ? 'wc-minimal' : ''}} {{managementMinimal ? 'wc-management-minimal' : ''}}" bindtap="onTap" role="button" aria-label="查看{{work.title || '美甲作品'}}详情">
+  <view class="wc-editorial-media {{featured ? 'aspect-featured' : 'aspect-grid'}}" style="{{mediaStyle}}">
+    <view wx:if="{{!imageLoaded && !imageError && (resolvedCoverUrl || work.coverUrl)}}" class="wc-skeleton-shimmer" aria-hidden="true"></view>
+    <image wx:if="{{(resolvedCoverUrl || work.coverUrl) && !imageError}}" src="{{resolvedCoverUrl || work.coverUrl}}" mode="aspectFill" class="wc-editorial-img {{imageLoaded ? 'is-loaded' : 'is-loading'}}" lazy-load bindload="onImageLoad" binderror="onImageError" aria-label="{{work.title || '美甲作品'}}"/>
+    <view wx:else class="wc-editorial-img wc-img-empty"><image class="wc-fallback-icon" src="/static/icons/image.svg" mode="aspectFit" aria-hidden="true"/></view>
+    <view wx:if="{{manageable}}" class="wc-status-icons" aria-label="作品状态">
+      <view wx:if="{{work.publicationStatus === 'draft'}}" class="wc-status-pill"><text>草稿</text></view>
+      <view wx:if="{{!work.isVisible}}" class="wc-status-pill"><image src="/static/icons/eye-closed.svg" class="wc-status-icon"/><text>私密</text></view>
+      <view wx:if="{{work.isPinned}}" class="wc-status-pill"><image src="/static/icons/status-pin.svg" class="wc-status-icon"/><text>置顶</text></view>
+      <view wx:if="{{work.isFeatured}}" class="wc-status-pill"><image src="/static/icons/status-featured.svg" class="wc-status-icon"/><text>精选</text></view>
+      <view wx:if="{{work.heroSlot}}" class="wc-status-pill"><image src="/static/icons/crown.svg" class="wc-status-icon"/><text>主推</text></view>
+    </view>
+    <view wx:if="{{!manageable && work.heroSlot}}" class="wc-curated-badge"><image src="/static/icons/crown.svg"/><text>精选主推</text></view>
     <view wx:if="{{manageable}}" class="wc-manage" catchtap="onActionTap" role="button" aria-label="管理作品"><image src="/static/icons/more-horizontal.svg" class="wc-manage-icon"/></view>
-    <text wx:if="{{displayPrice}}" class="wc-price-pill">{{displayPrice}}</text>
+    <text wx:if="{{displayPrice && !managementMinimal}}" class="wc-price-pill">{{displayPrice}}</text>
   </view>
   <view class="wc-editorial-copy {{!manageable && !showArtist ? 'wc-title-only' : ''}}">
+    <text wx:if="{{managementMinimal && displayPrice}}" class="wc-management-price semantic-money">{{displayPrice}}</text>
+    <!-- 标题：一级视觉焦点，粗体两行截断 -->
     <text class="wc-editorial-title">{{work.title}}</text>
+    <!-- 正文：二级视觉层级，精炼作品介绍 -->
+    <text wx:if="{{displayDesc && !managementMinimal}}" class="wc-editorial-desc">{{displayDesc}}</text>
+    <!-- 标签：三级视觉层级，轻量标签胶囊 -->
+    <view wx:if="{{!managementMinimal && ((displayTags && displayTags.length) || doneCountText)}}" class="wc-editorial-tags">
+      <text wx:for="{{displayTags}}" wx:key="*this" class="wc-editorial-tag">#{{item}}</text>
+      <text wx:if="{{doneCountText}}" class="wc-editorial-tag wc-editorial-tag-done">{{doneCountText}}</text>
+    </view>
     <view wx:if="{{!manageable && showArtist}}" class="wc-editorial-artist" catchtap="onArtistTap" role="button" aria-label="查看{{work.technicianName || '美甲师'}}的主页">
-      <image wx:if="{{work.technicianAvatarUrl}}" src="{{work.technicianAvatarUrl}}" mode="aspectFill" class="wc-editorial-avatar" lazy-load aria-label="{{work.technicianName || '美甲师'}}的头像"/>
+      <image wx:if="{{resolvedAvatarUrl || work.technicianAvatarUrl}}" src="{{resolvedAvatarUrl || work.technicianAvatarUrl}}" mode="aspectFill" class="wc-editorial-avatar" lazy-load aria-label="{{work.technicianName || '美甲师'}}的头像"/>
       <view wx:else class="wc-editorial-avatar wc-editorial-avatar-fallback"><image src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" /></view>
       <view class="wc-editorial-artist-copy">
         <text class="wc-editorial-name">{{work.technicianName || '独立美甲师'}}</text>
@@ -24,30 +56,31 @@
     </view>
     <text wx:if="{{manageable && artistStatus}}" class="wc-manage-status">{{artistStatus}}</text>
   </view>
-  <view wx:if="{{showClientActions}}" class="wc-client-actions">
-    <view class="wc-client-tools">
+  <view wx:if="{{showClientActions || showBookSame}}" class="wc-client-actions">
+    <view wx:if="{{showClientActions}}" class="wc-client-tools">
       <view class="wc-client-action {{localLiked ? 'is-active' : ''}}" catchtap="onLikeTap" role="button" aria-label="{{localLiked ? '取消点赞' : '点赞'}}">
         <image src="{{localLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}" class="wc-client-action-icon"/>
-        <text>点赞</text>
+        <text>{{localLikeCount > 0 ? localLikeCount : '点赞'}}</text>
       </view>
       <view class="wc-client-action {{localFavorited ? 'is-active' : ''}}" catchtap="onFavoriteTap" role="button" aria-label="{{localFavorited ? '取消收藏' : '收藏'}}">
         <image src="{{localFavorited ? '/static/icons/social-star-active.svg' : '/static/icons/social-star.svg'}}" class="wc-client-action-icon"/>
-        <text>收藏</text>
+        <text>{{localFavoriteCount > 0 ? localFavoriteCount : '收藏'}}</text>
       </view>
     </view>
-    <view class="wc-book-same" catchtap="onBookTap" role="button" aria-label="预约同款"><text class="wc-book-label">预约同款</text></view>
+    <view wx:if="{{showBookSame}}" class="wc-book-same" catchtap="onBookTap" role="button" aria-label="预约同款"><text class="wc-book-label">预约同款</text></view>
   </view>
 </view>
 
 <view wx:else class="nb-theme wc-root {{aspectClass}}" bindtap="onTap" role="button" aria-label="查看{{work.title || '美甲作品'}}详情">
-  <image wx:if="{{work.coverUrl}}" src="{{work.coverUrl}}" mode="aspectFill" class="wc-img" lazy-load aria-label="{{work.title || '美甲作品'}}"/>
-  <view wx:else class="wc-img wc-img-empty"></view>
+  <view wx:if="{{!imageLoaded && !imageError && (resolvedCoverUrl || work.coverUrl)}}" class="wc-skeleton-shimmer" aria-hidden="true"></view>
+  <image wx:if="{{(resolvedCoverUrl || work.coverUrl) && !imageError}}" src="{{resolvedCoverUrl || work.coverUrl}}" mode="aspectFill" class="wc-img {{imageLoaded ? 'is-loaded' : 'is-loading'}}" lazy-load bindload="onImageLoad" binderror="onImageError" aria-label="{{work.title || '美甲作品'}}"/>
+  <view wx:else class="wc-img wc-img-empty"><image class="wc-fallback-icon" src="/static/icons/image.svg" mode="aspectFit" aria-hidden="true"/></view>
   <view class="wc-gradient"></view>
 
   <!-- 顶部：美甲师 + 点赞 -->
   <view class="wc-top">
     <view class="wc-tech-pill" catchtap="onArtistTap" role="button" aria-label="查看{{work.technicianName || '美甲师'}}的主页">
-      <image wx:if="{{work.technicianAvatarUrl}}" src="{{work.technicianAvatarUrl}}" mode="aspectFill" class="wc-tech-av" lazy-load aria-label="{{work.technicianName || '美甲师'}}的头像"/>
+      <image wx:if="{{resolvedAvatarUrl || work.technicianAvatarUrl}}" src="{{resolvedAvatarUrl || work.technicianAvatarUrl}}" mode="aspectFill" class="wc-tech-av" lazy-load aria-label="{{work.technicianName || '美甲师'}}的头像"/>
       <view wx:else class="wc-tech-av-ph"><image src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" aria-label="美甲师默认头像" /></view>
       <view class="wc-tech-copy">
         <text class="wc-tech-name">{{work.technicianName}}</text>
@@ -55,8 +88,7 @@
       </view>
     </view>
     <view class="wc-like-pill" catchtap="onLikeTap">
-      <image wx:if="{{localLiked}}" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAUElEQVR4nGNgQAP/3cP/o2NS5PEqJBVT1TAUQ6lqIDUNG6kG0iSWqZ4OqWEo1txCjsF4DaKZgcQaSrRhxBhKsmH4DCXbMGyGUmwYsqHEqAMAvy56MytYoCsAAAAASUVORK5CYII=" class="wc-heart"/>
-      <image wx:else src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAASCAYAAABb0P4QAAAAS0lEQVR4nOXTMQ4AIAgDQP7/aV3RkKbFMtmV5hYg4soqosxhUY0VO1Ar6MR+BUe2bL9DB1p+SweG0BjIojTGoDKG0DZWoc9YRpneBsE8yGLtxtorAAAAAElFTkSuQmCC" class="wc-heart"/>
+      <image src="{{localLiked ? '/static/icons/social-heart-active.svg' : '/static/icons/social-heart.svg'}}" class="wc-heart" mode="aspectFit"/>
       <text class="wc-like-num">{{localLikeCount}}</text>
     </view>
   </view>
@@ -70,6 +102,7 @@
     </view>
     <view class="wc-foot">
       <text class="wc-date">{{work.dateStr}}</text>
+      <text wx:if="{{doneCountText}}" class="wc-grid-done-count">{{doneCountText}}</text>
       <view class="wc-cta">
         <view class="wc-cta-circle"></view>
         <text class="wc-cta-text semantic-link">查看详情</text>

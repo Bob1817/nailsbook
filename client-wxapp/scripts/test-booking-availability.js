@@ -134,7 +134,7 @@ const day = () => picker.data.calendarDays.find(d => d.dateStr === '2099-01-05')
   page.onBookingAvailability({ detail: { ready: false, paused: false } });
   assert.equal(page.checkBookingAvailability(), false);
   page.onBookingAvailability({ detail: { ready: true, paused: false } });
-  page.setData({ settingsReady: true });
+  page.setData({ settingsReady: true, serviceType:'到店美甲' });
   assert.equal(page.checkBookingAvailability(), true);
   const strip = { ...definition.methods, data: { ...definition.data, horizontal: true, _ready: true, paused: false,
     serviceType: 'home', techInfo: {}, serviceDate: '', closedDates: [] },

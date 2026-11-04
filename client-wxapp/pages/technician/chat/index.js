@@ -1,3 +1,4 @@
+const bookingRealtime = require('../../../utils/booking-realtime');
 var api = require('../../../services/api');
 
 function formatTime(time) {
@@ -48,6 +49,7 @@ var TAB_LIST = [
 ];
 
 Page({
+  onBookingChanged() { return this.loadInbox({ silent: true }); },
   data: {
     allItems: [],
     filteredItems: [],
@@ -72,6 +74,7 @@ Page({
   },
 
   onShow: function() {
+    bookingRealtime.start();
     if (this._loaded) this.loadInbox();
   },
 
@@ -84,9 +87,9 @@ Page({
     });
   },
 
-  loadInbox: function() {
+  loadInbox: function(options = {}) {
     var self = this;
-    self.setData({ loading: true, loadFailed: false });
+    if (!options.silent) self.setData({ loading: true, loadFailed: false });
     self._loaded = true;
 
     return api.chat.technician.conversations({ timeout: 15000, silent: true }).then(function(conversations) {
@@ -245,6 +248,7 @@ Page({
       });
     }).catch(function(err) {
       console.error('Load inbox error:', err);
+      if (options.silent) throw err;
       self.setData({ loading: false, loadFailed: true });
     });
   },

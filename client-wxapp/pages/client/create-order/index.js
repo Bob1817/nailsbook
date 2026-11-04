@@ -12,11 +12,102 @@ function pad2(n) { return n < 10 ? '0' + n : '' + n; }
 function dateStr(y,m,d) { return y + '-' + pad2(m+1) + '-' + pad2(d); }
 function formatAddr(a) { return [a.province,a.city,a.district,a.detailAddress || a.detail].filter(Boolean).join(' '); }
 
+function normalizeCity(name) {
+  if (!name || typeof name !== 'string') return '';
+  return name.trim().replace(/(市|特别行政区|地区|盟|自治州)$/, '');
+}
+
+function getCityHint(tech, address) {
+  var techCity = (tech && (tech.city || tech.serviceArea)) || '';
+  var addrCity = (address && address.city) || '';
+  var normTech = normalizeCity(techCity);
+  var normAddr = normalizeCity(addrCity);
+
+  if (!addrCity) {
+    if (techCity) {
+      return {
+        isCrossCity: false,
+        isSameCity: false,
+        techCity: techCity,
+        addrCity: '',
+        hintText: '服务范围：限 ' + techCity + ' 及周边，具体路程与时间由美甲师沟通确认'
+      };
+    }
+    return {
+      isCrossCity: false,
+      isSameCity: false,
+      techCity: '',
+      addrCity: '',
+      hintText: '上门美甲服务范围及路程由美甲师沟通确认'
+    };
+  }
+
+  if (normTech && normAddr) {
+    if (normTech === normAddr) {
+      return {
+        isCrossCity: false,
+        isSameCity: true,
+        techCity: techCity,
+        addrCity: addrCity,
+        hintText: '同城上门 · 美甲师常驻 ' + techCity + '，路程费用由美甲师沟通确认'
+      };
+    }
+    return {
+      isCrossCity: true,
+      isSameCity: false,
+      techCity: techCity,
+      addrCity: addrCity,
+      hintText: '跨城提醒：当前地址（' + addrCity + '）与美甲师常驻城市（' + techCity + '）不一致，请提前确认是否支持跨城上门及路程费用'
+    };
+  }
+
+  return {
+    isCrossCity: false,
+    isSameCity: false,
+    techCity: techCity,
+    addrCity: addrCity,
+    hintText: '已选择 ' + addrCity + ' · 请与美甲师确认是否支持该区域上门'
+  };
+}
+
+function organizeTechWorks(works, repeatService) {
+  if (!Array.isArray(works) || works.length === 0) return [];
+  var result = works.map(function (w) {
+    return Object.assign({}, w, { isLastBooking: false });
+  });
+  var repeatWorkId = (repeatService && repeatService.hasWork && repeatService.workId) ? Number(repeatService.workId) : null;
+  if (!repeatWorkId) return result;
+
+  var foundIdx = -1;
+  for (var i = 0; i < result.length; i++) {
+    if (Number(result[i].id) === repeatWorkId) {
+      foundIdx = i;
+      result[i].isLastBooking = true;
+      break;
+    }
+  }
+  if (foundIdx > 0) {
+    var pinned = result.splice(foundIdx, 1)[0];
+    result.unshift(pinned);
+  } else if (foundIdx === -1 && repeatService.title) {
+    var syntheticWork = {
+      id: repeatWorkId,
+      title: repeatService.title || '上次预约作品',
+      coverUrl: repeatService.coverUrl || '',
+      standardPriceFen: Math.round(Number(repeatService.price || 0) * 100),
+      isLastBooking: true
+    };
+    result.unshift(syntheticWork);
+  }
+  return result;
+}
+
 Page({
   data: {
     submitBarHeight: 120,
-    technicians: [],
+    technicians: [], homeFeeTiers: [], homeServiceArea:'',
     quickMode: false, depositMode: 'none', depositValue: 0, depositText: '¥0', settingsReady: false,
+    timeCollapsed: false,
     referenceOnly: false,
     quickAvailable: false,
     needsBinding: false,
@@ -29,6 +120,10 @@ Page({
     availableServiceTypes: [],
     shopAddresses: [],
     selectedShopName: '',
+    selectedAddress: null,
+    selectedAddressId: 0,
+    homeCityHint: null,
+    addressCount:0, homeQuote:null, homeQuoteLoading:false, homeQuoteError:'',
     serviceOptions: [],
     selectedServiceOptionKey: '',
     activeServiceItems: [],
@@ -36,6 +131,7 @@ Page({
     selectedServiceCount: 0,
     selectedServiceTotal: 0,
     selectedServiceDuration: 0,
+    repeatService: null,
     lastServiceHint: '',
     isCustomService: false,
     customTitle: '',
@@ -44,6 +140,10 @@ Page({
     showWorkSelector: false,
     showQuickRef: false,
     techWorks: [],
+    workSearchKeyword: '',
+    selectedWorkTag: '全部',
+    workFilterTags: ['全部'],
+    filteredTechWorks: [],
     selectedWorkIds: [],
     sourceWork: null,
     // Booking time
@@ -114,9 +214,14 @@ Page({
     var today = new Date();
     var minDate = dateStr(today.getFullYear(), today.getMonth(), today.getDate());
     var defaultDate = minDate;
+    var presetDate = /^\d{4}-\d{2}-\d{2}$/.test(options.serviceDate || '') && options.serviceDate >= minDate ? options.serviceDate : defaultDate;
+    var presetTime = /^\d{1,2}:\d{2}$/.test(options.startTime || '') ? options.startTime : '';
+    this._presetTime = presetTime;
     this.setData({
       minDate: minDate,
-      serviceDate: defaultDate,
+      serviceDate: presetDate,
+      startTime: presetTime,
+      timeCollapsed: !!presetTime,
       remark: draft.remark || ''
     });
     this._bookingDraft = draft;
@@ -126,6 +231,28 @@ Page({
     if (presetTechId) {
       this._presetTechId = parseInt(presetTechId);
       this.setData({ presetLocked:true });
+    }
+    this._sourceOrderId = options.sourceOrderId ? Number(options.sourceOrderId) : null;
+    if (!this.isClientLoggedIn()) {
+      var queryParts = [];
+      if (options.workId) queryParts.push('workId=' + encodeURIComponent(options.workId));
+      if (presetTechId) queryParts.push('techId=' + encodeURIComponent(presetTechId));
+      if (options.sourceOrderId) queryParts.push('sourceOrderId=' + encodeURIComponent(options.sourceOrderId));
+      if (this.inviteCode) queryParts.push('invite=' + encodeURIComponent(this.inviteCode));
+      if (options.reference === '1') queryParts.push('reference=1');
+      if (options.source) queryParts.push('source=' + encodeURIComponent(options.source));
+      if (options.mode) queryParts.push('mode=' + encodeURIComponent(options.mode));
+      if (options.content) queryParts.push('content=' + encodeURIComponent(options.content));
+      if (options.shareToken) queryParts.push('shareToken=' + encodeURIComponent(options.shareToken));
+      var returnTarget = '/pages/client/create-order/index' + (queryParts.length ? '?' + queryParts.join('&') : '');
+      wx.redirectTo({
+        url: buildClientLoginUrl(returnTarget, {
+          source: this._attributionSource || 'booking',
+          inviteCode: this.inviteCode,
+          quickBookingTechId: presetTechId || undefined
+        })
+      });
+      return;
     }
     this._resumeDraft = options.resume === '1';
     this._resumeSubmit = this._resumeDraft && options.intent === draft.applicationKey && draft.submitRequested === true;
@@ -142,6 +269,19 @@ Page({
   onShow: function () {
     this._pageActive = true;
     this._hasShown = true;
+    if (this.data.serviceType === '上门美甲') this.loadDefaultAddress();
+    var picked = wx.getStorageSync('client_selected_address');
+    if (picked && picked.id && this.data.serviceType === '上门美甲') {
+      wx.removeStorageSync('client_selected_address');
+      this.setData({
+        selectedAddress: picked,
+        selectedAddressId: picked.id
+      }, () => {
+        this.measureSubmitBar();
+        this.updateHomeCityHint(undefined, picked);
+        this.refreshHomeQuote();
+      });
+    }
     if (this._submittedWhileHidden) {
       this._submittedWhileHidden = false;
       wx.reLaunch({ url: '/pages/client/orders/index' });
@@ -159,10 +299,12 @@ Page({
   onHide: function () { this._pageActive = false; this.saveDraft(); },
   onUnload: function () {
     this._pageActive = false;
+    this._homeQuoteToken = (this._homeQuoteToken || 0) + 1;
     if (this._navTimer) clearTimeout(this._navTimer);
   },
 
   isClientLoggedIn: function () {
+    if (typeof wx === 'undefined') return false;
     const app = getApp();
     return (wx.getStorageSync('role') || app.globalData.role) === 'client' && !!(wx.getStorageSync('client_token') || app.globalData.token);
   },
@@ -223,7 +365,7 @@ Page({
         var t = b.technician || b;
         return {
           id: t.id, name: t.name, avatarUrl: t.avatarUrl, city: t.city,
-          status: t.status, shopService: t.shopService, homeService: t.homeService,
+          status: t.status, shopService: t.shopService, homeService: t.homeService, homeServiceSettings:t.homeServiceSettings,
           shopAddresses: (t.shopAddresses || []).filter(function (sa) { return sa.enabled !== false; }),
           serviceItems: (t.serviceItems || []).filter(function (si) { return si.isActive; }),
           serviceSchedule: t.serviceSchedule || null,
@@ -231,7 +373,7 @@ Page({
         };
       }).filter(function (t) { return t.status === 'active' || t.status === 'inactive'; });
       self.setData({ technicians: techs, needsBinding: false });
-      if (self._presetTechId && !techs.some(t => t.id === self._presetTechId) && !self._fullMode) {
+      if (self._presetTechId && !techs.some(t => t.id === self._presetTechId)) {
         self.loadPublicTechnician(); return;
       }
 
@@ -301,6 +443,8 @@ Page({
       self._pendingWorkPrefill = {
         sourceWorkId: w.id,
         techId: techId,
+        title: w.title || '美甲作品',
+        coverUrl: w.coverUrl || (images.length ? images[0] : ''),
         customTitle: w.title || '同款美甲',
         customDesc: w.description || '',
         customImages: images,
@@ -339,6 +483,8 @@ Page({
     if (pf.techId && this.data.selectedTechId !== pf.techId) {
       this.selectTechById(pf.techId);
     }
+    var isPriced = Boolean(pf.pricingReady && pf.standardPriceFen > 0);
+    var isReference = Boolean(this.data.referenceOnly || !isPriced);
     this.setData({
       presetLocked: true,
       isCustomService: false,
@@ -346,9 +492,9 @@ Page({
       customDesc: pf.customDesc,
       customImages: pf.customImages,
       sourceWork: pf,
-        selectedServiceTotal: Number(pf.standardPriceFen || 0) / 100,
-      selectedServiceDuration: this.data.referenceOnly ? 0 : pf.totalDurationMinutes,
-      referenceOnly: this.data.referenceOnly || (this.data.quickMode && !pf.pricingReady),
+      selectedServiceTotal: Number(pf.standardPriceFen || 0) / 100,
+      selectedServiceDuration: isReference ? 0 : pf.totalDurationMinutes,
+      referenceOnly: isReference,
       selectedServiceCount: (pf.serviceLines || []).length
     });
     this.sourceWorkId = pf.sourceWorkId;
@@ -364,8 +510,144 @@ Page({
       var works = (res.list || res.data || res || []).filter(function (w) {
         return w.technicianId === techId || (w.technician && w.technician.id === techId);
       });
-      self.setData({ techWorks: works });
-    }).catch(function () { self.setData({ techWorks: [] }); });
+      var tagSet = {};
+      works.forEach(function (w) {
+        if (Array.isArray(w.tags)) {
+          w.tags.forEach(function (t) { if (t && typeof t === 'string' && t.trim()) tagSet[t.trim()] = true; });
+        }
+        if (w.category && typeof w.category === 'string' && w.category.trim()) tagSet[w.category.trim()] = true;
+        if (w.style && typeof w.style === 'string' && w.style.trim()) tagSet[w.style.trim()] = true;
+      });
+      var tags = ['全部'].concat(Object.keys(tagSet));
+      var reordered = organizeTechWorks(works, self.data.repeatService);
+      self.setData({
+        techWorks: reordered,
+        workFilterTags: tags,
+        selectedWorkTag: '全部',
+        workSearchKeyword: ''
+      }, function () {
+        self.updateFilteredTechWorks();
+      });
+    }).catch(function () {
+      self.setData({ techWorks: [], filteredTechWorks: [], workFilterTags: ['全部'] });
+    });
+  },
+
+  updateFilteredTechWorks: function () {
+    var works = this.data.techWorks || [];
+    var tag = this.data.selectedWorkTag || '全部';
+    var kw = (this.data.workSearchKeyword || '').trim().toLowerCase();
+    var filtered = works.filter(function (w) {
+      if (tag !== '全部') {
+        var hasTag = (Array.isArray(w.tags) && w.tags.indexOf(tag) >= 0) ||
+          w.category === tag ||
+          w.style === tag ||
+          ((w.title || '').indexOf(tag) >= 0);
+        if (!hasTag) return false;
+      }
+      if (kw) {
+        var inTitle = (w.title || '').toLowerCase().indexOf(kw) >= 0;
+        var inDesc = (w.description || '').toLowerCase().indexOf(kw) >= 0;
+        var inTags = Array.isArray(w.tags) && w.tags.some(function (t) { return (t || '').toLowerCase().indexOf(kw) >= 0; });
+        if (!inTitle && !inDesc && !inTags) return false;
+      }
+      return true;
+    });
+    this.setData({ filteredTechWorks: filtered });
+  },
+
+  onWorkSearchInput: function (e) {
+    var val = e.detail.value || '';
+    this.setData({ workSearchKeyword: val });
+    this.updateFilteredTechWorks();
+  },
+
+  clearWorkSearch: function () {
+    this.setData({ workSearchKeyword: '' });
+    this.updateFilteredTechWorks();
+  },
+
+  onSelectWorkTag: function (e) {
+    var tag = e.currentTarget.dataset.tag || '全部';
+    this.setData({ selectedWorkTag: tag });
+    this.updateFilteredTechWorks();
+  },
+
+  resetWorkFilter: function () {
+    this.setData({ selectedWorkTag: '全部', workSearchKeyword: '' });
+    this.updateFilteredTechWorks();
+  },
+
+  selectWorkSameStyle: function (e) {
+    var id = Number(e.currentTarget ? e.currentTarget.dataset.id : e);
+    if (!id) return;
+    var self = this;
+    var m = {}; m[id] = true;
+    this.setData({
+      selectedWorkIds: [id],
+      selectedWorkMap: m,
+      referenceOnly: false
+    });
+    this.loadWork(id);
+    wx.pageScrollTo({
+      selector: '.booking-time-section',
+      duration: 300
+    });
+    var target = (this.data.techWorks || []).find(function (w) { return w.id === id; });
+    if (target && target.title) {
+      wx.showToast({ title: '已选《' + target.title + '》同款', icon: 'none' });
+    }
+  },
+
+  reselectWork: function () {
+    this.setData({
+      showWorkSelector: true,
+      showQuickRef: true
+    });
+    wx.pageScrollTo({
+      selector: '.tech-works-section',
+      duration: 300
+    });
+    wx.showToast({ title: '请选择款式', icon: 'none' });
+  },
+
+  removeSelectedWork: function () {
+    var self = this;
+    wx.showModal({
+      title: '取消选择款式',
+      content: '确定要移除已选的同款作品吗？移除后可重新选择其他作品或自定义需求。',
+      confirmText: '确定移除',
+      cancelText: '保留',
+      success: function (res) {
+        if (!res.confirm) return;
+        self._workRequestId = (self._workRequestId || 0) + 1;
+        self.sourceWorkId = null;
+        self.sourceShareToken = '';
+        self._pendingWorkPrefill = null;
+        self._sourceLoading = false;
+        self._sourceFailed = false;
+        self.setData({
+          sourceWork: null,
+          selectedWorkIds: [],
+          selectedWorkMap: {},
+          referenceOnly: false,
+          customTitle: '',
+          customDesc: '',
+          customImages: [],
+          selectedServiceDuration: 0,
+          selectedServiceCount: 0,
+          selectedServiceTotal: 0,
+          showWorkSelector: false,
+          showQuickRef: false,
+          ...(self.data.repeatService ? { 'repeatService.isApplied': false } : {})
+        }, function () {
+          self.measureSubmitBar();
+        });
+        self.updateDeposit();
+        self.refreshPriceContent();
+        wx.showToast({ title: '已移除同款作品', icon: 'none' });
+      }
+    });
   },
 
 
@@ -390,6 +672,9 @@ Page({
     var serviceItems = (tech.serviceItems || []).filter(function (item) {
       return !String(item.category).startsWith('surcharge_') && item.isActive !== false && Number.isFinite(Number(item.price)) && Number(item.durationMinutes) > 0;
     });
+    // 首次锁定快约带入的美甲师时保留带入的预约时间，用户后续切换美甲师才清空
+    var keepPresetTime = !this._presetTimeApplied && this._presetTechId === id && !!this._presetTime;
+    this._presetTimeApplied = true;
     this.setData({
       selectedTechId: id, selectedTech: tech, sourceWork: null,
       bookingReady: false, bookingPaused: tech.status === 'inactive',
@@ -400,9 +685,10 @@ Page({
       selectedServiceIds: [], selectedServiceMap: {}, selectedWorkIds: [], selectedWorkMap: {},
       showWorkSelector: false,
       selectedServiceCount: 0, selectedServiceTotal: 0, selectedServiceDuration: 0,
+      repeatService: null,
       // 美甲师无服务项目时自动切换到自定义需求模式
       isCustomService: this._preferCustom || serviceItems.length === 0,
-      startTime: ''
+      startTime: keepPresetTime ? this._presetTime : ''
     });
     this.refreshServiceOptions(tech, false);
     this.setData({ quickMode: false, quickAvailable: false, settingsReady: false });
@@ -426,7 +712,8 @@ Page({
 
   expectedPriceFen: function () {
     const d = this.data;
-    return d.sourceWork && d.sourceWork.pricingReady && !d.referenceOnly ? d.sourceWork.standardPriceFen : !d.isCustomService && d.selectedServiceCount > 0 ? Math.round(d.selectedServiceTotal * 100) : null;
+    const base = d.sourceWork && d.sourceWork.pricingReady && !d.referenceOnly ? d.sourceWork.standardPriceFen : !d.isCustomService && d.selectedServiceCount > 0 ? Math.round(d.selectedServiceTotal * 100) : null;
+    return base == null ? null : base + (d.serviceType === '上门美甲' && d.homeQuote ? d.homeQuote.feeFen : 0);
   },
 
   resumeSubmission: function () {
@@ -454,6 +741,8 @@ Page({
   },
 
   checkBookingAvailability: function () {
+    if (!this.data.serviceType) { wx.showToast({ title:'请先选择服务形式', icon:'none' }); return false; }
+    if (this.data.serviceType === '上门美甲' && (!this.data.homeQuote || this.data.homeQuoteLoading || this.data.homeQuoteError)) { wx.showToast({ title:this.data.homeQuoteError || '请先选择地址并确认上门费', icon:'none' }); return false; }
     if (this.data.settingsReady === false) { wx.showToast({ title: '请等待预约设置加载完成', icon: 'none' }); return false; }
     if (this.data.bookingPaused) {
       wx.showToast({ title: '美甲师已关闭预约，请先联系沟通', icon: 'none' });
@@ -468,29 +757,108 @@ Page({
 
   onBookingTimeChange: function (e) {
     var detail = e.detail;
-    if (this.data.serviceDate !== detail.serviceDate || this.data.startTime !== detail.startTime) {
-      this.setData({ serviceDate: detail.serviceDate, startTime: detail.startTime }, () => this.measureSubmitBar());
-    }
+    var updates = {};
+    if (this.data.serviceDate !== detail.serviceDate) updates.serviceDate = detail.serviceDate;
+    if (this.data.startTime !== detail.startTime) updates.startTime = detail.startTime;
+    // 时间失效时展开完整时间选择，避免折叠行与选择器同时不可见导致无法选时间
+    if (!detail.startTime && this.data.timeCollapsed) updates.timeCollapsed = false;
+    if (!Object.keys(updates).length) return;
+    this.setData(updates, () => this.measureSubmitBar());
+  },
+
+  expandTimePicker: function () {
+    this.setData({ timeCollapsed: false });
   },
 
   // ── 服务类型 ─────────────────────────────
 
+  chooseAddress: function () {
+    if (!this.requireClientLogin()) return;
+    if (!this.data.addressCount && !this.data.selectedAddress) return wx.navigateTo({ url:'/pages/client/address-edit/index?requireLocation=1&select=1&forceDefault=1' });
+    wx.navigateTo({ url: '/pages/client/addresses/index?mode=select' });
+  },
+
+  loadDefaultAddress: function () {
+    if (this.data.serviceType !== '上门美甲' || !this.isClientLoggedIn()) return;
+    var self = this;
+    var requestId = (this._addressRequest || 0) + 1; this._addressRequest = requestId;
+    api.client.addresses.list().then(function (res) {
+      var list = res.list || res.data || res || [];
+      if (!self._pageActive || requestId !== self._addressRequest || self.data.serviceType !== '上门美甲') return;
+      var def = list.find(function (a) { return String(a.id) === String(self.data.selectedAddressId); }) || (list.length === 1 ? list[0] : null);
+      self.setData({ addressCount:list.length, selectedAddress:def, selectedAddressId:def ? def.id : 0 });
+      if (def) {
+        self.setData({
+          selectedAddress: def,
+          selectedAddressId: def.id
+        }, () => {
+          self.measureSubmitBar();
+          self.updateHomeCityHint(undefined, def);
+          self.refreshHomeQuote();
+        });
+      } else self.refreshHomeQuote();
+    }).catch(function () { if (self._pageActive) self.setData({ homeQuote:null, homeQuoteError:'地址加载失败，请重新选择地址' }); });
+  },
+
+  editSelectedAddress: function () {
+    if (!this.requireClientLogin() || !this.data.selectedAddressId) return;
+    wx.navigateTo({ url:'/pages/client/address-edit/index?id=' + this.data.selectedAddressId + '&requireLocation=1&select=1' });
+  },
+
+  refreshHomeQuote: async function () {
+    const token = (this._homeQuoteToken || 0) + 1; this._homeQuoteToken = token;
+    const d = this.data;
+    this.setData({ homeQuote:null, homeQuoteLoading:false, homeQuoteError:'' });
+    if (d.serviceType !== '上门美甲' || !d.selectedTechId || !d.selectedAddressId || !this.isClientLoggedIn()) return;
+    this.setData({ homeQuoteLoading:true });
+    try {
+      const quote = await api.client.orders.homeServiceQuote(d.selectedTechId, d.selectedAddressId);
+      if (this._pageActive && token === this._homeQuoteToken) this.setData({ homeQuote:{ ...quote, feeText:(quote.feeFen / 100).toFixed(2) } }, () => this.updateDeposit());
+    } catch (err) {
+      if (this._pageActive && token === this._homeQuoteToken) this.setData({ homeQuoteError:err.message || '上门费用计算失败，请重试' });
+    } finally { if (this._pageActive && token === this._homeQuoteToken) this.setData({ homeQuoteLoading:false }); }
+  },
+
+  updateHomeCityHint: function (selectedTech, selectedAddress) {
+    var tech = selectedTech !== undefined ? selectedTech : this.data.selectedTech;
+    var addr = selectedAddress !== undefined ? selectedAddress : this.data.selectedAddress;
+    var hint = getCityHint(tech, addr);
+    this.setData({ homeCityHint: hint });
+  },
+
   refreshServiceOptions: function (tech, preserveSelection) {
+    var home = tech.homeServiceSettings || {};
+    if (typeof home === 'string') { try { home = JSON.parse(home); } catch (_) { home = {}; } }
+    var feeTiers = Array.isArray(home.tiers) ? home.tiers.map(function (tier, index, tiers) {
+      return { rangeText:(index ? tiers[index - 1].maxKm : 0) + '–' + tier.maxKm + 'km', feeText:(Number(tier.feeFen) / 100).toFixed(2) };
+    }) : [];
+    this.setData({ homeFeeTiers:feeTiers, homeServiceArea:[home.province, home.city, home.district].filter(Boolean).join(' ') });
     var shops = tech.shopService ? (tech.shopAddresses || []).filter(function (shop) { return shop.enabled !== false; }) : [];
     var options = shops.map(function (shop, index) {
       return {
         key: 'shop:' + index + ':' + (shop.name || ''), type: '到店美甲', shopIndex: index,
         title: '到店美甲 · ' + (shop.name || '门店'),
-        detail: formatAddr(shop), guidance: shop.guidance
+        detail: formatAddr(shop), contact:shop.phone || '', guidance: shop.guidance
       };
     });
+    var isAudit = Boolean(tech.auditMode || this.data.auditMode);
+    if (tech.homeService && !isAudit) {
+      options.push({
+        key: 'home:service',
+        type: '上门美甲',
+        shopIndex: -1,
+        title: '上门美甲',
+        detail: '美甲师上门服务 · 需提供您的服务地址'
+      });
+    }
     var selectedKey = preserveSelection ? this.data.selectedServiceOptionKey : '';
     var draftOption = null;
     if (preserveSelection && this._bookingDraft) {
       var draft = this._bookingDraft;
       draftOption = options.find(function (item) {
         return item.key === draft.selectedServiceOptionKey ||
-          (item.type === '到店美甲' && item.title === '到店美甲 · ' + draft.selectedShopName);
+          (item.type === '到店美甲' && item.title === '到店美甲 · ' + draft.selectedShopName) ||
+          (item.type === '上门美甲' && draft.serviceType === '上门美甲');
       });
       if (!selectedKey && draftOption) selectedKey = draftOption.key;
     }
@@ -504,9 +872,13 @@ Page({
     this.setData({
       serviceOptions: options, availableServiceTypes: types,
       selectedServiceOptionKey: selectedKey,
-      serviceType: selected ? selected.type : '',
-      selectedShopName: selected && selected.type === '到店美甲' ? shops[selected.shopIndex].name : ''
+      serviceType: selected ? selected.type : (types.length === 1 ? types[0].value : ''),
+      selectedShopName: selected && selected.type === '到店美甲' && shops[selected.shopIndex] ? shops[selected.shopIndex].name : ''
     }, () => this.measureSubmitBar());
+    this.updateHomeCityHint(tech);
+    if (selected && selected.type === '上门美甲' && !this.data.selectedAddressId) {
+      this.loadDefaultAddress();
+    }
   },
 
   selectServiceOption: function (e) {
@@ -514,19 +886,31 @@ Page({
     var option = this.data.serviceOptions.find(function (item) { return item.key === key; });
     if (!option || key === this.data.selectedServiceOptionKey) return;
     this._serviceOptionTouched = true;
-    var shop = option.type === '到店美甲' ? this.data.shopAddresses[option.shopIndex] : null;
+    var shop = option.type === '到店美甲' && option.shopIndex >= 0 ? this.data.shopAddresses[option.shopIndex] : null;
     this.setData({
       selectedServiceOptionKey: key,
       serviceType: option.type,
       selectedShopName: shop ? shop.name : '',
       startTime: ''
     }, () => this.measureSubmitBar());
+    if (option.type === '上门美甲') this.loadDefaultAddress();
+    else this.refreshHomeQuote();
   },
 
   selectServiceType: function (e) {
     var value = e.currentTarget.dataset.value;
+    this._serviceOptionTouched = true;
     if (value === this.data.serviceType || !this.data.availableServiceTypes.some(function (type) { return type.value === value; })) return;
-    this.setData({ serviceType: value, startTime: '' }, () => this.measureSubmitBar());
+    var matchOption = this.data.serviceOptions.find(function (opt) { return opt.type === value; });
+    var shop = matchOption && matchOption.type === '到店美甲' && matchOption.shopIndex >= 0 ? this.data.shopAddresses[matchOption.shopIndex] : null;
+    this.setData({
+      serviceType: value,
+      selectedServiceOptionKey: matchOption ? matchOption.key : '',
+      selectedShopName: shop ? shop.name : '',
+      startTime: ''
+    }, () => this.measureSubmitBar());
+    if (value === '上门美甲') this.loadDefaultAddress();
+    else this.refreshHomeQuote();
   },
 
   selectShopAddress: function (e) {
@@ -576,11 +960,14 @@ Page({
     var idx = ids.indexOf(id);
     if (idx >= 0) ids.splice(idx, 1); else ids.push(id);
     var summary = summarizeServices(this.data.activeServiceItems, ids);
+    var rs = this.data.repeatService;
+    var isApplied = Boolean(rs && rs.serviceIds && rs.serviceIds.length === ids.length && rs.serviceIds.every(function (i) { return ids.indexOf(i) >= 0; }));
     this.setData({
       selectedServiceIds: ids, selectedServiceMap: selectionMap(ids),
       selectedServiceCount: summary.count,
       selectedServiceTotal: summary.totalPrice,
       selectedServiceDuration: summary.totalDurationMinutes,
+      ...(rs ? { 'repeatService.isApplied': isApplied } : {}),
       lastServiceHint: ''
     });
     this.updateDeposit();
@@ -604,35 +991,107 @@ Page({
       }).sort(function (a, b) {
         return new Date(b.startTime || b.createdAt || 0) - new Date(a.startTime || a.createdAt || 0);
       });
-      var last = mine[0];
-      if (!last) return;
-      var names = (Array.isArray(last.serviceLines) ? last.serviceLines : [])
+      var targetOrder = self._sourceOrderId
+        ? (mine.find(function (o) { return Number(o.id) === Number(self._sourceOrderId); }) || mine[0])
+        : mine[0];
+      if (!targetOrder) return;
+      var names = (Array.isArray(targetOrder.serviceLines) ? targetOrder.serviceLines : [])
         .map(function (line) { return line.nameSnapshot || line.name; })
         .filter(Boolean);
-      if (!names.length) return;
-      var matched = (serviceItems || []).filter(function (item) {
+      var workObj = targetOrder.sourceWork || (Array.isArray(targetOrder.worksFromOrder) && targetOrder.worksFromOrder[0]) || (Array.isArray(targetOrder.works) && targetOrder.works[0]) || targetOrder.work;
+      var workId = (workObj && workObj.id) || targetOrder.sourceWorkId || targetOrder.workId || null;
+      var hasWork = Boolean(workId);
+      if (!names.length && !hasWork) return;
+      var matched = names.length ? (serviceItems || []).filter(function (item) {
         return names.indexOf(item.name) !== -1;
-      });
-      if (!matched.length) return;
+      }) : [];
+      if (!matched.length && !hasWork) return;
       var ids = matched.map(function (item) { return item.id; });
       var summary = summarizeServices(serviceItems, ids);
-      self.setData({
-        selectedServiceIds: ids,
-        selectedServiceMap: selectionMap(ids),
-        selectedServiceCount: summary.count,
-        selectedServiceTotal: summary.totalPrice,
-        selectedServiceDuration: summary.totalDurationMinutes,
-        lastServiceHint: '已为你预填上次服务：' + matched.map(function (i) { return i.name; }).join('、')
+      var coverUrl = (workObj && (workObj.coverUrl || (workObj.imageUrls && workObj.imageUrls[0]))) || '';
+      var workTitle = (workObj && workObj.title) || targetOrder.serviceName || (matched.length ? matched.map(function (i) { return i.name; }).join(' + ') : '美甲作品');
+      var workPrice = (workObj && workObj.standardPriceFen) ? (workObj.standardPriceFen / 100).toFixed(2) : (targetOrder.totalAmount ? Number(targetOrder.totalAmount).toFixed(2) : (summary.totalPrice ? Number(summary.totalPrice).toFixed(2) : ''));
+
+      var repeatData = {
+        orderId: targetOrder.id,
+        workId: workId,
+        title: workTitle,
+        coverUrl: coverUrl,
+        price: workPrice,
+        hasWork: hasWork,
+        names: workTitle,
+        count: matched.length || 1,
+        duration: summary.totalDurationMinutes || 120,
+        totalPrice: workPrice || Number(summary.totalPrice || 0).toFixed(2),
+        serviceIds: ids,
+        isApplied: false
+      };
+
+      var dataToSet = {
+        repeatService: repeatData,
+        lastServiceHint: ''
+      };
+
+      if (hasWork && self.data.techWorks && self.data.techWorks.length > 0) {
+        dataToSet.techWorks = organizeTechWorks(self.data.techWorks, repeatData);
+      }
+
+      if (matched.length > 0) {
+        dataToSet.selectedServiceIds = ids;
+        dataToSet.selectedServiceMap = selectionMap(ids);
+        dataToSet.selectedServiceCount = summary.count;
+        dataToSet.selectedServiceTotal = summary.totalPrice;
+        dataToSet.selectedServiceDuration = summary.totalDurationMinutes;
+      }
+
+      self.setData(dataToSet, function () {
+        self.updateFilteredTechWorks();
+        self.measureSubmitBar();
       });
       self.updateDeposit();
       self.refreshPriceContent();
     }).catch(function () {});
   },
 
+  applyRepeatServices: function (e) {
+    var id = e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id;
+    var rs = this.data.repeatService;
+    var targetWorkId = id || (rs && rs.workId);
+    if (targetWorkId) {
+      this.selectWorkSameStyle(targetWorkId);
+      if (this.data.repeatService) {
+        this.setData({ 'repeatService.isApplied': true });
+      }
+      return;
+    }
+    if (!rs.serviceIds || !rs.serviceIds.length) return;
+    var serviceItems = this.data.activeServiceItems || [];
+    var isCurrentlyApplied = rs.isApplied;
+    var nextIds = isCurrentlyApplied ? [] : rs.serviceIds.slice();
+    var summary = summarizeServices(serviceItems, nextIds);
+    var self = this;
+    this.setData({
+      selectedServiceIds: nextIds,
+      selectedServiceMap: selectionMap(nextIds),
+      selectedServiceCount: summary.count,
+      selectedServiceTotal: summary.totalPrice,
+      selectedServiceDuration: summary.totalDurationMinutes,
+      'repeatService.isApplied': !isCurrentlyApplied
+    }, function () {
+      self.measureSubmitBar();
+    });
+    this.updateDeposit();
+    this.refreshPriceContent();
+    wx.showToast({
+      title: !isCurrentlyApplied ? '已勾选上次服务项目' : '已取消勾选',
+      icon: 'none'
+    });
+  },
+
   updateDeposit: function () {
     const d = this.data;
     const known = d.sourceWork ? d.sourceWork.pricingReady && !d.referenceOnly : !d.isCustomService && d.selectedServiceCount > 0;
-    const amount = d.depositMode === 'fixed' ? d.depositValue / 100 : d.depositMode === 'percentage' && known ? Math.round(d.selectedServiceTotal * 100 * d.depositValue / 10000) / 100 : 0;
+    const amount = d.depositMode === 'fixed' ? d.depositValue / 100 : d.depositMode === 'percentage' && known ? Math.round((this.expectedPriceFen() || 0) * d.depositValue / 10000) / 100 : 0;
     this.setData({ depositText: d.depositMode === 'percentage' && !known ? (d.depositValue / 100) + '%，金额待报价后计算' : '¥' + amount }, () => this.measureSubmitBar());
   },
 
@@ -720,6 +1179,8 @@ Page({
       selectedTechId: d.selectedTechId,
       serviceType: d.serviceType,
       selectedShopName: d.selectedShopName,
+      selectedAddress: d.selectedAddress,
+      selectedAddressId: d.selectedAddressId,
       selectedServiceOptionKey: d.selectedServiceOptionKey,
       selectedServiceIds: d.selectedServiceIds,
       isCustomService: d.isCustomService,
@@ -741,13 +1202,21 @@ Page({
       this.selectTechById(draft.selectedTechId);
       var restoredOption = this.data.serviceOptions.find(function (item) {
         return item.key === draft.selectedServiceOptionKey ||
-          (item.type === '到店美甲' && item.title === '到店美甲 · ' + draft.selectedShopName);
+          (item.type === '到店美甲' && item.title === '到店美甲 · ' + draft.selectedShopName) ||
+          (item.type === '上门美甲' && draft.serviceType === '上门美甲');
       });
       if (restoredOption) this._serviceOptionTouched = true;
+      var addrUpdates = {};
+      if (draft.selectedAddressId) {
+        addrUpdates.selectedAddressId = draft.selectedAddressId;
+        addrUpdates.selectedAddress = draft.selectedAddress || null;
+      }
       this.setData({
         serviceType: restoredOption ? restoredOption.type : this.data.serviceType,
         selectedServiceOptionKey: restoredOption ? restoredOption.key : this.data.selectedServiceOptionKey,
         selectedShopName: restoredOption && restoredOption.type === '到店美甲' ? draft.selectedShopName : this.data.selectedShopName,
+        selectedAddress: addrUpdates.selectedAddress !== undefined ? addrUpdates.selectedAddress : this.data.selectedAddress,
+        selectedAddressId: addrUpdates.selectedAddressId !== undefined ? addrUpdates.selectedAddressId : this.data.selectedAddressId,
         selectedServiceIds: draft.selectedServiceIds || [],
         selectedServiceMap: selectionMap(draft.selectedServiceIds),
         isCustomService: Boolean(draft.isCustomService),
@@ -757,7 +1226,7 @@ Page({
         selectedWorkIds: draft.selectedWorkIds || [],
         selectedWorkMap: selectionMap(draft.selectedWorkIds),
         serviceDate: this._resumeDraft ? (draft.serviceDate || this.data.serviceDate) : this.data.serviceDate,
-        startTime: this._resumeDraft ? (draft.startTime || '') : '',
+        startTime: this._resumeDraft ? (draft.startTime || '') : (this._presetTime || ''),
         remark: draft.remark || ''
       });
       var summary = summarizeServices(this.data.activeServiceItems, draft.selectedServiceIds || []);
@@ -781,11 +1250,15 @@ Page({
     if (!d.serviceDate) { wx.showToast({ title: '请选择日期', icon: 'none' }); return; }
     if (!d.startTime) { wx.showToast({ title: '请选择时间', icon: 'none' }); return; }
     if (d.serviceType === '到店美甲' && !d.selectedShopName) { wx.showToast({ title: '请选择门店', icon: 'none' }); return; }
-    // 服务非必填：无服务时由确认弹窗提醒用户
-    if (this.sourceWorkId && (!d.sourceWork || (!d.sourceWork.pricingReady && !d.quickMode))) { wx.showToast({ title: '该作品尚未完善服务与标准报价', icon: 'none' }); return; }
+    // 服务非必填：无服务时由确认弹窗提醒用户；未定价作品按待报价流程发起
+    if (this.sourceWorkId && !d.sourceWork) { wx.showToast({ title: '请等待作品加载成功后再提交', icon: 'none' }); return; }
 
     this._submitRequested = true;
     this.saveDraft();
+    if (this.sourceWorkId) {
+      // 预约同款最优路径：信息齐全直接提交，免去多层确认弹窗阻碍
+      return this.doSubmit();
+    }
     if (!this._fullMode || d.quickMode) {
       this.setData({ showQuickConfirm: true });
       return;
@@ -872,20 +1345,9 @@ Page({
 
   toggleWorkFromPreview: function (e) {
     var id = Number(e.currentTarget.dataset.id);
-    if (this.data.selectedWorkMap[id]) {
-      // 取消选择
-      var ids = this.data.selectedWorkIds.filter(function (i) { return i !== id; });
-      var m = {}; ids.forEach(function (i) { m[i] = true; });
-      this.setData({ selectedWorkIds: ids, selectedWorkMap: m });
-    } else {
-      if (this.data.selectedWorkIds.length >= 3) {
-        wx.showToast({ title: '最多选 3 个作品', icon: 'none' });
-        return;
-      }
-      var ids2 = this.data.selectedWorkIds.concat([id]);
-      var m2 = {}; ids2.forEach(function (i) { m2[i] = true; });
-      this.setData({ selectedWorkIds: ids2, selectedWorkMap: m2 });
-    }
+    if (!id) return;
+    this.setData({ showWorkPreview: false });
+    this.selectWorkSameStyle(id);
   },
 
   closeWorkPreview: function () {
@@ -911,7 +1373,8 @@ Page({
 
     var payload = {
       expectedDepositMode: d.depositMode, expectedDepositValue: d.depositValue,
-      expectedPriceFen: d.sourceWork && d.sourceWork.pricingReady && !d.referenceOnly ? d.sourceWork.standardPriceFen : !d.isCustomService && d.selectedServiceCount > 0 ? Math.round(d.selectedServiceTotal * 100) : undefined,
+      expectedHomeServiceFeeFen: d.serviceType === '上门美甲' && d.homeQuote ? d.homeQuote.feeFen : undefined,
+      expectedPriceFen: self.expectedPriceFen() == null ? undefined : self.expectedPriceFen(),
       applicationKey:self.applicationKey,
       techId: d.selectedTechId,
       serviceDate: d.serviceDate,
@@ -920,13 +1383,27 @@ Page({
       remark: d.remark || undefined
     };
     if (d.quickMode && (!self.sourceWorkId || d.referenceOnly)) payload.quickBooking = true;
-    if (d.quickMode && d.referenceOnly && self.sourceWorkId) payload.referenceOnly = true;
+    if (d.referenceOnly && self.sourceWorkId) payload.referenceOnly = true;
     if (self.sourceWorkId) payload.sourceWorkId = self.sourceWorkId;
     if (self.sourceWorkId && self._attributionSource) payload.attributionSource = self._attributionSource;
     if (self.sourceWorkId && self.sourceShareToken) payload.sourceShareToken = self.sourceShareToken;
     if (d.serviceType === '到店美甲') {
       var shop = d.shopAddresses.find(function (s) { return s.name === d.selectedShopName; });
       if (shop) payload.shopAddress = shop;
+      else if (d.shopAddresses.length > 0) {
+        wx.hideLoading();
+        wx.showToast({ title: '请选择到店门店', icon: 'none' });
+        self.setData({ submitting: false });
+        return;
+      }
+    } else if (d.serviceType === '上门美甲') {
+      if (!d.selectedAddressId) {
+        wx.hideLoading();
+        wx.showToast({ title: '请选择上门服务地址', icon: 'none' });
+        self.setData({ submitting: false });
+        return;
+      }
+      payload.addressId = d.selectedAddressId;
     }
     if (self.sourceWorkId) {
       // 作品预约的服务与价格均由后端按作品快照生成。
@@ -956,7 +1433,12 @@ Page({
       wx.removeStorageSync(DRAFT_KEY);
       self.applicationKey = '';
       if (!self._pageActive) { self._submittedWhileHidden = true; return; }
-      self.setData({ submitSuccess: true, submitSuccessTech: (d.selectedTech || {}).name || '美甲师' });
+      var isQuoteBranch = Boolean(d.referenceOnly || !payload.expectedPriceFen || d.isCustomService);
+      self.setData({
+        submitSuccess: true,
+        submitSuccessTech: (d.selectedTech || {}).name || '美甲师',
+        submitSuccessType: isQuoteBranch ? 'quote' : 'confirm'
+      });
       self._navTimer = setTimeout(function () { if (self._pageActive) wx.reLaunch({ url: '/pages/client/orders/index' }); }, 2500);
     }).catch(function (err) {
       wx.hideLoading();

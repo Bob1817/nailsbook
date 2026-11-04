@@ -1,0 +1,6 @@
+<view class="location-field">
+  <view class="location-heading"><text class="location-label">{{label}}<text wx:if="{{required}}" aria-hidden="true"> *</text></text><text class="location-status">{{confirmed ? '位置已确认' : '待选点'}}</text></view>
+  <text wx:if="{{value}}" class="location-value">{{value}}</text>
+  <action-button compact variant="secondary" label="{{confirmed ? '重新选择地图位置' : '在腾讯地图选择位置'}}" disabled="{{disabled}}" loading="{{loading}}" bindtap="onChoose"/>
+  <text wx:if="{{hint}}" class="location-hint">{{hint}}</text>
+</view>

@@ -71,11 +71,40 @@ for (const icon of ['social-heart.svg', 'social-heart-active.svg', 'social-star.
   assert(fs.existsSync(path.join(root, 'static/icons', icon)), `缺少统一图标资源：${icon}`);
 }
 
+// Google Material Symbols (Outlined, Weight 400) 单一基准网格与格式门禁
+const iconsDir = path.join(root, 'static/icons');
+const iconFiles = fs.readdirSync(iconsDir).filter(f => f.endsWith('.svg'));
+const nonUiExceptions = new Set(['client.svg', 'technician.svg', 'wechat.svg']);
+const allowedFilledIcons = new Set([
+  'client.svg', 'technician.svg', 'wechat.svg',
+  'check-circle.svg', 'status-featured.svg',
+  'social-heart-active.svg', 'social-star-active.svg',
+  'tab-home-active.svg', 'tab-calendar-active.svg', 'tab-compass-active.svg',
+  'tab-chat-active.svg', 'tab-profile-active.svg', 'tab-customers-active.svg',
+  'tab-business-active.svg', 'tab-today-active.svg', 'tab-works-active.svg'
+]);
+for (const iconFile of iconFiles) {
+  const svgContent = fs.readFileSync(path.join(iconsDir, iconFile), 'utf8');
+  assert(!svgContent.includes('currentColor'), `图标 ${iconFile} 不得使用 currentColor，必须使用确定的设计令牌色值`);
+  if (!nonUiExceptions.has(iconFile)) {
+    assert(svgContent.includes('viewBox="0 0 24 24"'), `UI 图标 ${iconFile} 必须遵循 Google Material Symbols 24x24 标准网格基准`);
+  }
+  if (!allowedFilledIcons.has(iconFile)) {
+    assert(svgContent.includes('fill="none"'), `未选中/线框 UI 图标 ${iconFile} 必须为 Google Material Symbols Outlined (fill="none")，不得使用实心剪影`);
+    assert(svgContent.includes('stroke-width="2"'), `UI 图标 ${iconFile} 必须使用 Google Material Symbols Weight 400 (stroke-width="2")`);
+  }
+}
+
 for (const file of sourceFiles) {
   const content = fs.readFileSync(file, 'utf8');
-  assert(!content.includes('data:image/svg'), `功能图标必须引用 static/icons，禁止内嵌 SVG：${path.relative(root, file)}`);
+  assert(!content.includes('data:image/'), `功能图标必须引用 static/icons，禁止内嵌任何图片或 SVG：${path.relative(root, file)}`);
   if (file.endsWith('.wxss')) {
     assert(!/url\(["']?\/static\/icons\/[^)]*\.svg/.test(content), `微信小程序本地 SVG 必须通过 image 标签加载：${path.relative(root, file)}`);
+  }
+  const matches = content.matchAll(/\/static\/icons\/([a-zA-Z0-9_\-]+\.svg)/g);
+  for (const match of matches) {
+    const iconName = match[1];
+    assert(fs.existsSync(path.join(iconsDir, iconName)), `页面 ${path.relative(root, file)} 引用的图标不存在：/static/icons/${iconName}`);
   }
 }
 

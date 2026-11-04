@@ -1,5 +1,8 @@
 {
   "navigationBarTitleText": "作品详情",
   "navigationStyle": "custom",
-  "usingComponents": { "work-detail-view": "/components/work-detail-view/index" }
+  "usingComponents": {
+    "work-detail-view": "/components/work-detail-view/index",
+    "work-share-poster": "/components/work-share-poster/index"
+  }
 }

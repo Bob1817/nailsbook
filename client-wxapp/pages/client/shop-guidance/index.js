@@ -1,4 +1,5 @@
 const api = require('../../../services/api');
+const location = require('../utils/location');
 const { normalizeGuidanceSection } = require('../../../utils/shop-guidance');
 
 const TABS = [
@@ -9,6 +10,7 @@ const TABS = [
 
 Page({
   data: {
+    shopView: false,
     tabs: TABS,
     activeTab: 0,
     activeMode: 'metro',
@@ -24,6 +26,7 @@ Page({
   },
 
   onLoad(options) {
+    this.setData({ shopView: options.view === 'shop' });
     this._techId = options.techId;
     this._shopName = decodeURIComponent(options.shopName || '');
     this._address = decodeURIComponent(options.address || '');
@@ -85,6 +88,14 @@ Page({
     }
   },
 
+  openGuidance() {
+    wx.navigateTo({
+      url: '/pages/client/shop-guidance/index?view=guidance&techId=' + encodeURIComponent(this._techId) +
+        '&shopName=' + encodeURIComponent(this._shopName || this.data.shopName || '') +
+        '&address=' + encodeURIComponent(this._address || this.data.shopAddress || '')
+    });
+  },
+
   switchTab(e) {
     const activeTab = parseInt(e.currentTarget.dataset.idx);
     const activeMode = this.data.tabs[activeTab].key;
@@ -102,21 +113,15 @@ Page({
   },
 
   navigateToShop() {
-    const loc = this.data.shopLocation;
-    if (!loc) return;
-    wx.openLocation({
-      latitude: loc.latitude,
-      longitude: loc.longitude,
-      name: loc.name || '店铺位置',
-      address: loc.address || '',
-      scale: 18
-    });
+    location.openLocation(this.data.shopLocation || { name:this.data.shopName, address:this.data.shopAddress });
   },
+
+  goHome: require('../../../utils/entry-navigation').goHome,
 
   onShareAppMessage() {
     return {
-      title: `${this.data.shopName || this.data.technicianName || '美甲工作室'}到店指引`,
-      path: `/pages/client/shop-guidance/index?techId=${this._techId}&shopName=${encodeURIComponent(this.data.shopName || this._shopName || '')}&address=${encodeURIComponent(this.data.shopAddress || this._address || '')}`
+      title: `${this.data.shopName || this.data.technicianName || '美甲工作室'}${this.data.shopView ? '｜店铺信息' : '｜到店指引'}`,
+      path: `/pages/client/shop-guidance/index?view=${this.data.shopView ? 'shop' : 'guidance'}&techId=${this._techId}&shopName=${encodeURIComponent(this.data.shopName || this._shopName || '')}&address=${encodeURIComponent(this.data.shopAddress || this._address || '')}`
     };
   }
 });

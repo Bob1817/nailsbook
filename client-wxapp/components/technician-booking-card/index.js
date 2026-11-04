@@ -1,10 +1,17 @@
 Component({
   properties: {
     order: { type: Object, value: {} },
-    variant: { type: String, value: 'compact' }
+    variant: { type: String, value: 'compact' },
+    unreadCount: { type: Number, value: 0 },
+    unreadConversations: { type: Array, value: [] }
   },
   data: { confirming: null },
   methods: {
+    openMessages() { this.triggerEvent('openmessages'); },
+    openConversation(e) {
+      const item = e.currentTarget.dataset.item || {};
+      this.triggerEvent('openconversation', item);
+    },
     open() { this.triggerEvent('open', { id: this.data.order.id }); },
     navigate() { this.triggerEvent('navigate', { id: this.data.order.id }); },
     contact() { this.triggerEvent('contact', { phone: this.data.order.customerPhone }); },
@@ -26,6 +33,20 @@ Component({
     reject() { this.triggerEvent('reject', { id: this.data.order.id }); },
     cancel() { this.triggerEvent('cancel', { id: this.data.order.id }); },
     complete() { this.triggerEvent('complete', { id: this.data.order.id }); },
+    uploadWork() { this.triggerEvent('uploadwork', { id: this.data.order.id }); },
+    viewWork() {
+      const order = this.data.order || {};
+      const workId = order._workId || ((order.worksFromOrder && order.worksFromOrder[0] && order.worksFromOrder[0].id) || order.workId);
+      this.triggerEvent('viewwork', { id: order.id, workId });
+    },
+    record() {
+      const order = this.data.order || {};
+      this.triggerEvent('record', {
+        id: order.id,
+        recordId: order.serviceRecord && order.serviceRecord.id,
+        isComplete: order._recordCompleted
+      });
+    },
     rebook() { this.triggerEvent('rebook', { id: this.data.order.id }); }
   }
 });

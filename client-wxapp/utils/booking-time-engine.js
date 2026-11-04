@@ -41,6 +41,16 @@ function buildSlotStatuses(options) {
   var rangeEnd = timeToMinutes(schedule.endTime);
   if (rangeStart == null || rangeEnd == null || rangeEnd <= rangeStart) return [];
 
+  if (options.homeMode) {
+    var home = options.homeServiceSettings;
+    if (typeof home === 'string') { try { home = JSON.parse(home); } catch (_) { home = null; } }
+    var day = DAY_KEYS[new Date(options.serviceDate + 'T00:00:00').getDay()];
+    if (!home || !Array.isArray(home.days) || home.days.indexOf(day) < 0) return [];
+    var homeStart = timeToMinutes(home.startTime); var homeEnd = timeToMinutes(home.endTime);
+    if (homeStart == null || homeEnd == null || homeEnd <= homeStart) return [];
+    rangeStart = Math.max(rangeStart, homeStart); rangeEnd = Math.min(rangeEnd, homeEnd);
+  }
+
   if (options.shopMode) {
     var hours = shopHoursForDate(options.shop, options.serviceDate);
     if (!hours) return [];

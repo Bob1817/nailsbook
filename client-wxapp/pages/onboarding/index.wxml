@@ -74,7 +74,7 @@
         adjust-position="{{true}}"
       />
       <view wx:if="{{checkingCode}}" class="flow-spinner"></view>
-      <view wx:if="{{foundTech && !checkingCode}}" class="flow-check">✓</view>
+      <view wx:if="{{foundTech && !checkingCode}}" class="flow-check"><image class="flow-check-icon" src="/static/icons/check-white.svg" mode="aspectFit" /></view>
     </view>
 
     <!-- 找到美甲师 -->

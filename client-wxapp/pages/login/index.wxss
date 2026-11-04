@@ -105,28 +105,62 @@ page {
   color: var(--text-faint);
 }
 
-/* 其他登录方式 */
-.alt-login {
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--font-sm);
-  color: var(--text-muted);
-  padding: 0 var(--space-sm);
-}
-
+/* ===== 底部辅助入口（账号密码登录 & 游客探索） ===== */
 .login-footer {
   width: 100%;
   flex-shrink: 0;
+  min-height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
 }
 
-.guest-entry { min-height:88rpx; display:flex; align-items:center; justify-content:center; color:var(--nb-secondary); font-size:28rpx; }
+.footer-action {
+  min-height: 88rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-sm);
+  box-sizing: border-box;
+}
 
-.alt-login:active { opacity: 0.6; }
+.footer-action-text {
+  font-size: var(--font-sm);
+  font-weight: var(--weight-medium);
+  color: var(--nb-secondary);
+  line-height: 1.4;
+}
+
+.footer-action-arrow {
+  font-size: var(--font-sm);
+  font-weight: var(--weight-normal);
+  color: var(--nb-muted);
+  margin-left: 6rpx;
+  line-height: 1;
+}
+
+.footer-action:active,
+.footer-action-pressed {
+  opacity: 0.65;
+  transform: scale(0.98);
+}
+
+.footer-divider {
+  width: 1rpx;
+  height: 24rpx;
+  background: var(--nb-line);
+  margin: 0 var(--space-xs);
+  flex-shrink: 0;
+}
+
+.alt-login {
+  min-height: 44px;
+}
+
+.guest-entry {
+  min-height: 88rpx;
+}
 
 .wechat-privacy-consent {
   width: 100%;
@@ -147,7 +181,7 @@ page {
 }
 
 .form-section {
-  padding: 0 8rpx;
+  padding: 0 var(--space-xs);
 }
 
 .phone-heading {
@@ -201,7 +235,7 @@ page {
   height: 36rpx;
   flex-shrink: 0;
   opacity: 0.45;
-  margin-right: 24rpx;
+  margin-right: var(--space-md);
 }
 
 /* 区号与号码之间的分隔线 */
@@ -209,7 +243,7 @@ page {
   width: 1.5rpx;
   height: 28rpx;
   background: var(--border-default);
-  margin: 0 24rpx;
+  margin: 0 var(--space-md);
   flex-shrink: 0;
 }
 
@@ -281,9 +315,9 @@ page {
 .submit-btn::after { border: none; }
 
 .submit-btn-active {
-  background: var(--brand-gradient);
-  color: var(--text-inverse);
-  box-shadow: 0 8rpx 28rpx rgba(0, 0, 0, 0.3);
+  background: var(--nb-action);
+  color: var(--nb-inverse);
+  box-shadow: none;
 }
 
 .submit-btn-active:active {
@@ -325,11 +359,11 @@ page {
   color: var(--text-faint);
   text-align: center;
   width: 100%;
-  padding-bottom: env(safe-area-inset-bottom, 40rpx);
+  padding-bottom: env(safe-area-inset-bottom, var(--space-xl));
   padding-top: var(--space-md);
 }
 
-.invite-registration-note { display: block; margin-bottom: 24rpx; font-size: 24rpx; line-height: 1.6; color: var(--nb-secondary); text-align: center; }
+.invite-registration-note { display: block; margin-bottom: var(--space-md); font-size: 24rpx; line-height: 1.6; color: var(--nb-secondary); text-align: center; }
 
 @import '../../styles/booking-actions.wxss';
 .wechat-btn.booking-action,

@@ -37,6 +37,8 @@ Page({
     priceDifferenceType: '',
     priceDifferenceFen: 0,
     coverUrl: '',
+    coverWidth: 0,
+    coverHeight: 0,
     images: [],
     photoCount: 0,
     isVisible: true,
@@ -52,6 +54,8 @@ Page({
       { key: 'hero', title: '首页主推', desc: '推荐到客户首页' }
     ],
     moreExpanded: false,
+    failedPhotoCount: 0,
+    uploadProgress: '',
     uploading: false,
     submitting: false
   },
@@ -94,9 +98,9 @@ Page({
     const intent = wx.getStorageSync(CREATE_INTENT_STORAGE_KEY);
     if (!intent || !intent.requestId) return;
     const result = await new Promise((resolve) => wx.showModal({
-      title: '恢复未完成的作品保存',
-      content: intent.workId ? '上次保存已创建作品但后续设置未完成，是否继续？' : '上次保存结果不明确，是否继续上次请求？',
-      confirmText: '继续保存',
+      title: intent.workId ? '继续完成作品保存' : '继续编辑本机草稿',
+      content: intent.workId ? '上次保存已创建作品但后续设置未完成，是否继续？' : '发现未完成的作品，是否恢复照片和已填写的信息？',
+      confirmText: '继续编辑',
       cancelText: '重新开始',
       success: resolve,
       fail: () => resolve({ confirm: false })
@@ -121,6 +125,8 @@ Page({
       standardPrice: intent.standardPrice || '',
       selectedServiceIds: intent.selectedServiceIds || [],
       coverUrl: intent.coverUrl || '',
+      coverWidth: intent.coverWidth || 0,
+      coverHeight: intent.coverHeight || 0,
       images: intent.images || [],
       photoCount: new Set([intent.coverUrl].concat(intent.images || []).filter(Boolean)).size,
       isVisible: intent.isVisible !== false,
@@ -147,6 +153,8 @@ Page({
       standardPrice: this.data.standardPrice,
       selectedServiceIds: this.data.selectedServiceIds,
       coverUrl: this.data.coverUrl,
+      coverWidth: this.data.coverWidth,
+      coverHeight: this.data.coverHeight,
       images: this.data.images,
       isVisible: this.data.isVisible,
       visibilityScope: this.data.visibilityScope,
@@ -250,6 +258,8 @@ Page({
         promotionEndsAt: work.promotion && work.promotion.endsAt ? String(work.promotion.endsAt).slice(0, 10) : '',
         selectedServiceIds: expandServiceIds(work.serviceLines || []),
         coverUrl: work.coverUrl || '',
+        coverWidth: work.coverWidth || 0,
+        coverHeight: work.coverHeight || 0,
         images,
         photoCount: new Set([work.coverUrl].concat(images).filter(Boolean)).size,
         isVisible: work.isVisible !== false,
@@ -365,6 +375,7 @@ Page({
   },
 
   saveDraft() {
+    if (this.data.uploading || this.data.submitting) return;
     this._createRequestId = this._createRequestId || createRequestId();
     this.persistCreateIntent(null);
     wx.showToast({ title: '草稿已保存在本机', icon: 'success' });
@@ -436,6 +447,11 @@ Page({
     this.setData({ accessGrants });
   },
 
+  openCoverActions(e) {
+    if (this.data.coverUrl) this.photoActions(e);
+    else this.chooseCover();
+  },
+
   chooseCover() {
     if (this.data.uploading) return;
     this.chooseImages(1, async (files) => {
@@ -448,6 +464,8 @@ Page({
           if (!this._pageActive) { this._asyncFinishedWhileHidden = true; return; }
           this.setData({
             coverUrl: result.url,
+            coverWidth: Number(result.width) || 0,
+            coverHeight: Number(result.height) || 0,
             photoCount: new Set([result.url].concat(this.data.images).filter(Boolean)).size
           });
         } catch (err) {
@@ -464,37 +482,66 @@ Page({
   addImage() {
     if (this.data.uploading) return;
     const remaining = Math.min(9, 10 - this.data.photoCount);
-    if (remaining <= 0) {
-      wx.showToast({ title: '最多9张图片', icon: 'none' });
-      return;
+    if (remaining <= 0) return wx.showToast({ title: '最多10张图片', icon: 'none' });
+    this.chooseImages(remaining, files => this.uploadPhotos(files));
+  },
+
+  retryPhotos() {
+    if (!this.data.uploading && this._failedPhotos && this._failedPhotos.length) {
+      this.uploadPhotos(this._failedPhotos.slice());
     }
-    this.chooseImages(remaining, async (files) => {
-        this.setData({ uploading: true });
-        wx.showLoading({ title: '上传中...' });
-        try {
-          const urls = [];
-          for (const file of files) {
-            const filePath = file.tempFilePath || file.path;
-            if (!filePath) continue;
-            const result = await api.upload.image(filePath, 'technician');
-            urls.push(result.url);
+  },
+
+  async uploadPhotos(files) {
+    this._failedPhotos = [];
+    this.setData({ uploading: true, failedPhotoCount: 0 });
+    for (let index = 0; index < files.length; index++) {
+      const file = files[index];
+      const filePath = file.tempFilePath || file.path;
+      this.setData({ uploadProgress: '正在上传 ' + (index + 1) + '/' + files.length });
+      try {
+        if (!filePath) throw new Error('图片无法读取');
+        const result = await api.upload.image(filePath, 'technician');
+        const images = this.data.images.slice();
+        const patch = {};
+        if (!this.data.coverUrl) {
+          patch.coverUrl = result.url;
+          patch.coverWidth = Number(result.width) || 0;
+          patch.coverHeight = Number(result.height) || 0;
+        } else images.push(result.url);
+        this._photoSizes = this._photoSizes || {};
+        this._photoSizes[result.url] = { width: Number(result.width) || 0, height: Number(result.height) || 0 };
+        const cover = patch.coverUrl || this.data.coverUrl;
+        this.setData({ ...patch, images, photoCount: new Set([cover].concat(images).filter(Boolean)).size });
+      } catch (error) {
+        this._failedPhotos.push(file);
+      }
+    }
+    this.setData({ uploading: false, failedPhotoCount: this._failedPhotos.length,
+      uploadProgress: this._failedPhotos.length ? '部分照片上传失败，已保留成功照片' : '照片上传完成' });
+  },
+
+  photoActions(e) {
+    if (this.data.uploading) return;
+    const url = e.currentTarget.dataset.url;
+    wx.showActionSheet({
+      itemList: url === this.data.coverUrl ? ['预览照片', '更换封面照片'] : ['预览照片', '设为封面'],
+      success: async result => {
+        if (result.tapIndex === 0) {
+          wx.previewImage({ current: url, urls: [...new Set([this.data.coverUrl].concat(this.data.images).filter(Boolean))] });
+        } else if (url === this.data.coverUrl) {
+          this.chooseCover();
+        } else {
+          let size = this._photoSizes && this._photoSizes[url];
+          if (!size) {
+            try { size = await new Promise((resolve, reject) => wx.getImageInfo({ src: url, success: resolve, fail: reject })); }
+            catch { return wx.showToast({ title: '读取照片失败，请重试', icon: 'none' }); }
           }
-          if (!this._pageActive) { this._asyncFinishedWhileHidden = true; return; }
-          const coverUrl = this.data.coverUrl || urls.shift() || '';
-          const images = [...this.data.images, ...urls];
-          this.setData({
-            coverUrl,
-            images,
-            photoCount: new Set([coverUrl].concat(images).filter(Boolean)).size
-          });
-        } catch (err) {
-          if (!this._pageActive) { this._asyncFinishedWhileHidden = true; return; }
-          wx.showToast({ title: err.message || '相册图片上传失败', icon: 'none' });
-        } finally {
-          wx.hideLoading();
-          if (this._pageActive) this.setData({ uploading: false });
-          else this._asyncFinishedWhileHidden = true;
+          const images = this.data.images.filter(item => item !== url);
+          if (this.data.coverUrl && !images.includes(this.data.coverUrl)) images.unshift(this.data.coverUrl);
+          this.setData({ coverUrl: url, coverWidth: size.width, coverHeight: size.height, images });
         }
+      }
     });
   },
 
@@ -597,7 +644,7 @@ Page({
   async handleSubmit() {
     if (this.data.submitting || this.data.uploading || !this.validate()) return;
 
-    const { title, description, designIdea, suitableScene, recommendationScore, tags, price, standardPrice, selectedServiceIds, coverUrl, images, isVisible, isEdit, workId } = this.data;
+    const { title, description, designIdea, suitableScene, recommendationScore, tags, price, standardPrice, selectedServiceIds, coverUrl, coverWidth, coverHeight, images, isVisible, isEdit, workId } = this.data;
     const desiredVisible = isVisible;
     this._createRequestId = this._createRequestId || createRequestId();
     const payload = {
@@ -612,6 +659,8 @@ Page({
       standardPrice: Number(standardPrice),
       selectedServiceIds,
       coverUrl,
+      coverWidth: coverWidth || undefined,
+      coverHeight: coverHeight || undefined,
       images: JSON.stringify(images),
       isVisible: isEdit ? isVisible : false
     };

@@ -6,31 +6,15 @@
     <view class="loading-spinner"></view>
   </view>
 
-  <view wx:elif="{{loadFailed}}" class="empty-wrap">
-    <text class="empty-title">收藏加载失败</text>
-    <text class="empty-desc">请检查网络后重新加载</text>
-    <view class="go-btn booking-action" bindtap="loadFavorites">重新加载</view>
-  </view>
+  <state-card wx:elif="{{loadFailed}}" class="booking-action" type="error" title="收藏加载失败" description="请检查网络后重新加载" actionText="重新加载" bind:action="loadFavorites" />
 
-  <view wx:elif="{{works.length === 0}}" class="empty-wrap">
-    <view class="empty-icon"><view class="empty-bookmark"></view></view>
-    <text class="empty-title">暂无收藏作品</text>
-    <text class="empty-desc">去浏览并收藏你喜欢的作品吧</text>
-    <view class="go-btn booking-action" bindtap="goWorks">发现作品</view>
-  </view>
+  <state-card wx:elif="{{works.length === 0}}" class="booking-action" icon="/static/icons/bookmark.svg" title="暂无收藏作品" description="去浏览并收藏你喜欢的作品吧" actionText="发现作品" bind:action="goWorks" />
 
   <view wx:else class="waterfall-wrap">
     <view class="waterfall">
-      <!-- 左列 -->
-      <view class="col">
-        <view wx:for="{{leftCol}}" wx:key="id" class="w-card">
-          <work-card work="{{item}}" bind:cardtap="viewWork" bind:artisttap="viewArtist" bind:liketap="toggleFavorite"/>
-        </view>
-      </view>
-      <!-- 右列 -->
-      <view class="col">
-        <view wx:for="{{rightCol}}" wx:key="id" class="w-card">
-          <work-card work="{{item}}" bind:cardtap="viewWork" bind:artisttap="viewArtist" bind:liketap="toggleFavorite"/>
+      <view class="col" wx:for="{{waterfallCols}}" wx:for-item="col" wx:key="id">
+        <view wx:for="{{col.items}}" wx:key="id" class="w-card">
+          <work-card variant="editorial" work="{{item}}" bind:cardtap="viewWork" bind:artisttap="viewArtist" bind:liketap="toggleFavorite"/>
         </view>
       </view>
     </view>

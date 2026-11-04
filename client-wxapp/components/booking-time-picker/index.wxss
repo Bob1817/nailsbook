@@ -1,8 +1,8 @@
 /* ===== 日历 ===== */
-.btp-calendar { margin-top: 8rpx; }
+.btp-calendar { margin-top: var(--space-xs); }
 .btp-calendar-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 16rpx 0 20rpx;
+  padding: var(--space-sm) 0 20rpx;
 }
 .btp-calendar-title { font-size: var(--font-md); font-weight: var(--weight-semibold); color: var(--text-primary); }
 .btp-nav-btn {
@@ -13,11 +13,11 @@
 .btp-nav-btn:active { background: var(--nb-page); }
 .btp-weekdays {
   display: grid; grid-template-columns: repeat(7, 1fr);
-  margin-bottom: 8rpx;
+  margin-bottom: var(--space-xs);
 }
 .btp-weekday-cell {
   text-align: center; font-size: var(--font-xs); color: var(--text-muted);
-  font-weight: var(--weight-medium); padding: 8rpx 0;
+  font-weight: var(--weight-medium); padding: var(--space-xs) 0;
 }
 .btp-calendar-grid {
   display: grid; grid-template-columns: repeat(7, 1fr);
@@ -33,7 +33,7 @@
 }
 .btp-day-empty { background: transparent; }
 .btp-day-disabled { flex-direction: column; }
-.btp-day-label { font-size: 18rpx; line-height: 1.2; color: var(--text-muted); }
+.btp-day-label { font-size: var(--font-xs); line-height: 1.2; color: var(--text-muted); }
 .btp-contact { min-height: 88rpx; display: flex; align-items: center; color: var(--nb-text-link); }
 .btp-day-disabled .btp-day-text { color: var(--text-muted); }
 .btp-day-selected { background: var(--brand-primary); }
@@ -47,12 +47,12 @@
 /* ===== 时间网格 ===== */
 .btp-time-grid {
   display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 16rpx; margin-top: var(--space-md);
+  gap: var(--space-sm); margin-top: var(--space-md);
 }
 .btp-time-item {
   position: relative;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  min-height: 88rpx; padding: 12rpx 0 8rpx; border-radius: var(--radius-sm);
+  min-height: 88rpx; padding: 12rpx 0 var(--space-xs); border-radius: var(--radius-sm);
   font-size: var(--font-sm); font-weight: var(--weight-medium); background: var(--nb-page); color: var(--text-body);
 }
 .btp-time-active {
@@ -64,23 +64,23 @@
 .btp-time-active:active { opacity: 0.9; }
 .btp-time-occupied .btp-time-text { text-decoration: line-through; }
 .btp-occupied-label {
-  font-size: 18rpx; color: var(--text-error); white-space: nowrap; line-height: 1; margin-top: 2rpx;
+  font-size: var(--font-xs); color: var(--text-error); white-space: nowrap; line-height: 1; margin-top: 2rpx;
 }
 
 .btp-contact:active { opacity: .65; }
 
 .btp-date-strip { width: 100%; }
-.btp-date-row { display: flex; gap: 16rpx; padding: 4rpx 0; }
-.btp-date-card { flex: 0 0 112rpx; min-width: 44px; min-height: 124rpx; box-sizing: border-box; padding: 20rpx 8rpx; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8rpx; border-radius: 24rpx; background: var(--nb-surface); color: var(--nb-ink); }
-.btp-date-week { font-size: 24rpx; }
-.btp-date-number { font-size: 30rpx; font-weight: 600; }
+.btp-date-row { display: flex; gap: var(--space-sm); padding: 4rpx 0; }
+.btp-date-card { flex: 0 0 112rpx; min-width: 44px; min-height: 124rpx; box-sizing: border-box; padding: 20rpx var(--space-xs); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-xs); border-radius: 24rpx; background: var(--nb-surface); color: var(--nb-ink); }
+.btp-date-week { font-size: var(--font-sm); }
+.btp-date-number { font-size: var(--font-md); font-weight: 600; }
 .btp-date-active { background: var(--nb-ink); color: var(--nb-inverse); }
 .btp-date-disabled { background: var(--nb-pressed); color: var(--nb-control); }
 .btp-date-active .btp-day-label { color: var(--nb-inverse); }
 .btp-date-unavailable-selected { background: var(--nb-soft-surface); color: var(--nb-secondary); box-shadow: inset 0 0 0 2rpx var(--nb-control); }
 .btp-date-unavailable-selected .btp-day-label { color: inherit; }
 .btp-date-pressed { opacity: .75; }
-.btp-slot-title { display: block; margin-top: 32rpx; font-size: var(--font-md); font-weight: 600; color: var(--nb-ink); }
+.btp-slot-title { display: block; margin-top: var(--space-lg); font-size: var(--font-md); font-weight: 600; color: var(--nb-ink); }
 .btp-strip-layout { display: flex; align-items: stretch; gap: 12rpx; height: 126rpx; }
 .btp-date-strip { flex: 1; min-width: 0; width: auto; height: 126rpx; white-space: nowrap; }
 .btp-date-row { display: inline-flex; height: 126rpx; gap: 12rpx; padding: 0; }
@@ -90,5 +90,5 @@
 .btp-date-unavailable-selected { color: var(--nb-secondary); }
 .btp-time-strip { width: 100%; margin-top: var(--space-md); white-space: nowrap; }
 .btp-time-row { display: inline-flex; gap: 12rpx; padding-right: 4rpx; }
-.btp-time-item-horizontal { width: 128rpx; min-height: 44px; box-sizing: border-box; flex: 0 0 128rpx; padding: 8rpx 0; border-radius: 999rpx; background: var(--nb-page); }
+.btp-time-item-horizontal { width: 128rpx; min-height: 44px; box-sizing: border-box; flex: 0 0 128rpx; padding: var(--space-xs) 0; border-radius: var(--radius-full); background: var(--nb-page); }
 .btp-time-item-horizontal.btp-time-active { background: var(--nb-action); color: var(--nb-inverse); box-shadow: none; }

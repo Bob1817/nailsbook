@@ -17,19 +17,19 @@ page {
 .scroll { flex: 1; min-height: 0; }
 
 .content {
-  padding: var(--space-md) 32rpx calc(48rpx + env(safe-area-inset-bottom));
+  padding: var(--space-md) var(--space-lg) calc(var(--space-2xl) + env(safe-area-inset-bottom));
 }
 
 /* 区块标题 */
 .block-head {
-  padding: 16rpx 8rpx;
-  margin-top: 8rpx;
+  padding: var(--space-sm) var(--space-xs);
+  margin-top: var(--space-xs);
 }
 .block-title {
   font-size: var(--font-lg);
   font-weight: var(--weight-bold);
   color: var(--text-primary);
-  margin-right: 16rpx;
+  margin-right: var(--space-sm);
 }
 .block-sub {
   font-size: var(--font-sm);
@@ -69,7 +69,7 @@ page {
   font-size: var(--font-md);
   font-weight: var(--weight-semibold);
   color: var(--text-primary);
-  margin-bottom: 8rpx;
+  margin-bottom: var(--space-xs);
 }
 .guide-d {
   display: block;
@@ -94,7 +94,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16rpx;
+  gap: var(--space-sm);
 }
 .faq-q {
   flex: 1;
@@ -112,7 +112,7 @@ page {
 .faq-open .faq-chevron { transform: rotate(-90deg); }
 .faq-a-wrap {
   margin-top: var(--space-sm);
-  padding: 20rpx 24rpx;
+  padding: 20rpx var(--space-md);
   background: var(--bg-input);
   border-radius: var(--radius-sm);
 }
@@ -128,7 +128,7 @@ page {
   flex-direction: column;
   align-items: center;
   gap: 20rpx;
-  padding: 56rpx 0 16rpx;
+  padding: 56rpx 0 var(--space-sm);
 }
 .more-text {
   font-size: var(--font-sm);
@@ -137,7 +137,7 @@ page {
 .more-btn {
   height: 80rpx;
   padding: 0 56rpx;
-  border-radius: 999rpx;
+  border-radius: var(--radius-full);
   background: var(--nb-page);
   color: var(--nb-text-link);
   font-size: var(--font-md);
@@ -147,4 +147,4 @@ page {
   justify-content: center;
 }
 .more-btn:active { background: var(--nb-page); }
-.content{padding:32rpx 32rpx calc(48rpx + env(safe-area-inset-bottom))}.block-head{padding:24rpx 8rpx 14rpx}.block-title{display:block;margin:0;font-size:var(--font-lg);font-weight:var(--weight-semibold)}.block-sub{display:block;margin-top:4rpx;font-size:var(--font-xs)}.guides,.faqs{padding:4rpx 28rpx;border-radius:24rpx;background:var(--nb-surface);box-shadow:none}.guide{min-height:104rpx;padding:22rpx 0;box-sizing:border-box;border-bottom:1rpx solid var(--nb-border)}.guide:last-child{border-bottom:0}.guide-num{width:44rpx;height:44rpx;background:var(--nb-action);font-size:var(--font-xs)}.guide-t{margin-bottom:5rpx;font-size:var(--font-sm);font-weight:var(--weight-medium)}.guide-d{font-size:var(--font-xs);line-height:1.6}.faq{min-height:96rpx;padding:26rpx 0;box-sizing:border-box;border-bottom:1rpx solid var(--nb-border)}.faq:last-child{border-bottom:0}.faq-q{font-size:var(--font-sm);font-weight:var(--weight-medium)}.faq-a-wrap{background:var(--nb-soft-surface)}.faq-a{font-size:var(--font-xs)}.more{padding-top:40rpx}.more-btn{min-height:88rpx;height:auto;border-radius:16rpx;background:var(--nb-surface);color:var(--nb-text-link);font-size:var(--font-sm)}
+.content{padding:var(--space-lg) var(--space-lg) calc(var(--space-2xl) + env(safe-area-inset-bottom))}.block-head{padding:var(--space-md) var(--space-xs) 14rpx}.block-title{display:block;margin:0;font-size:var(--font-lg);font-weight:var(--weight-semibold)}.block-sub{display:block;margin-top:4rpx;font-size:var(--font-xs)}.guides,.faqs{padding:4rpx 28rpx;border-radius:24rpx;background:var(--nb-surface);box-shadow:none}.guide{min-height:104rpx;padding:22rpx 0;box-sizing:border-box;border-bottom:1rpx solid var(--nb-border)}.guide:last-child{border-bottom:0}.guide-num{width:44rpx;height:44rpx;background:var(--nb-action);font-size:var(--font-xs)}.guide-t{margin-bottom:5rpx;font-size:var(--font-sm);font-weight:var(--weight-medium)}.guide-d{font-size:var(--font-xs);line-height:1.6}.faq{min-height:96rpx;padding:26rpx 0;box-sizing:border-box;border-bottom:1rpx solid var(--nb-border)}.faq:last-child{border-bottom:0}.faq-q{font-size:var(--font-sm);font-weight:var(--weight-medium)}.faq-a-wrap{background:var(--nb-soft-surface)}.faq-a{font-size:var(--font-xs)}.more{padding-top:var(--space-xl)}.more-btn{min-height:88rpx;height:auto;border-radius:16rpx;background:var(--nb-surface);color:var(--nb-text-link);font-size:var(--font-sm)}

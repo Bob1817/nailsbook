@@ -32,10 +32,10 @@
         <view wx:if="{{checkingCode}}" class="spinner"></view>
       </view>
       <text wx:if="{{inviteCodeError}}" class="error-text">{{inviteCodeError}}</text>
-      <text wx:if="{{foundTech}}" class="success-text">
-        <text class="success-icon">✓</text>
-        美甲师：{{foundTech.name}}
-      </text>
+      <view wx:if="{{foundTech}}" class="success-text">
+        <image class="success-icon-svg" src="/static/icons/check.svg" mode="aspectFit" />
+        <text>美甲师：{{foundTech.name}}</text>
+      </view>
     </view>
 
     <view class="form-item">

@@ -45,6 +45,22 @@ function genderText(g) {
   return '';
 }
 
+function durationText(minutes) {
+  const total = Math.max(0, Math.round(Number(minutes) || 0));
+  if (!total) return '—';
+  const hours = Math.floor(total / 60);
+  const rest = total % 60;
+  if (!hours) return `${rest} 分钟`;
+  return rest ? `${hours} 小时 ${rest} 分钟` : `${hours} 小时`;
+}
+
+function serviceDurationMinutes(record, order) {
+  const start = parseDate(record.actualStartTime || (order && order.startTime));
+  const end = parseDate(record.actualEndTime || (order && order.endTime));
+  if (start && end && end > start) return (end - start) / 60000;
+  return order && order.totalDurationMinutes;
+}
+
 function buildCustomerIdentity(raw) {
   const accountName = isPhoneLikeName(raw.accountName) ? '' : String(raw.accountName || '').trim();
   const savedName = isPhoneLikeName(raw.name) ? '' : String(raw.name || '').trim();
@@ -162,30 +178,17 @@ Page({
       }));
       const serviceRecords = (raw.serviceRecords || []).map(item => {
         const order = item.order || orders.find(candidate => String(candidate.id) === String(item.orderId)) || null;
-        const stageCount = { before: 0, during: 0, after: 0 };
-        (item.photos || []).forEach(photo => {
-          if (stageCount[photo.stage] !== undefined) stageCount[photo.stage] += 1;
-        });
-        const missingPhotos = [
-          stageCount.before ? '' : '服务前照片',
-          stageCount.after ? '' : '完成后照片'
-        ].filter(Boolean);
-        const serviceTime = item.actualEndTime || item.actualStartTime || (order && order.startTime);
+        const serviceTime = item.actualStartTime || (order && order.startTime) || item.actualEndTime;
+        const amount = item.actualAmount != null
+          ? item.actualAmount
+          : (order && order.quotePrice);
         return {
           ...item,
           _dateText: serviceTime
             ? `${formatBookingDate(serviceTime)} ${formatClock(serviceTime)}`
             : '记录草稿',
-          _photoCount: (item.photos || []).length,
-          _photoCountsText: `服务前 ${stageCount.before} · 过程中 ${stageCount.during} · 完成后 ${stageCount.after} 张`,
-          _missingText: missingPhotos.length ? `缺${missingPhotos.join('、')}` : '',
-          _statusText: item.status === 'complete' ? '已完善' : '待补全',
-          _serviceTitle: order
-            ? (order.customTitle
-              || (order.service && order.service.name)
-              || (order.sourceWork && order.sourceWork.title)
-              || '预约服务')
-            : '美甲服务'
+          _priceText: amount != null ? formatMoney(amount) : '—',
+          _durationText: durationText(serviceDurationMinutes(item, order))
         };
       });
 

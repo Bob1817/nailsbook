@@ -1,0 +1,12 @@
+<view class="address-card {{selected ? 'is-selected' : ''}} {{disabled ? 'is-disabled' : ''}}">
+  <view class="address-main" bindtap="onSelect" hover-class="is-pressed" role="button" aria-label="{{selectable ? '选择' : '查看或编辑'}}{{address.contactName}}的地址" aria-pressed="{{selected}}">
+    <view class="address-heading"><text class="address-name">{{address.contactName}}</text><text class="address-phone">{{address.contactPhone}}</text><text wx:if="{{address.isDefault}}" class="address-tag">常用</text><text wx:if="{{selectable && selected}}" class="address-selected">已选</text></view>
+    <text class="address-detail">{{address.province || ''}}{{address.city || ''}}{{address.district || ''}}{{address.detailAddress || address.detail || ''}}{{address.doorInfo ? ' ' + address.doorInfo : ''}}</text>
+  </view>
+  <view wx:if="{{editAction && !manage}}" class="address-summary-action"><action-button compact label="编辑此地址" variant="secondary" disabled="{{disabled}}" bindtap="onEdit"/></view>
+  <view wx:if="{{manage}}" class="address-actions">
+    <view class="address-default" catchtap="onDefault" role="button" aria-label="{{address.isDefault ? '常用地址' : '设为常用地址'}}"><view class="address-radio {{address.isDefault ? 'is-on' : ''}}"></view><text>{{address.isDefault ? '常用地址' : '设为常用'}}</text></view>
+    <view class="address-action"><action-button compact label="编辑" variant="text" disabled="{{disabled}}" bindtap="onEdit"/></view>
+    <view class="address-action"><action-button compact label="删除" variant="text" disabled="{{disabled}}" bindtap="onRemove"/></view>
+  </view>
+</view>

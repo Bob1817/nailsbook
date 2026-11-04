@@ -60,5 +60,13 @@ vm.runInNewContext(fs.readFileSync(file, 'utf8'), {
   assert(menu.includes('padding: 12rpx 0;'));
   assert(menu.includes('color: var(--nb-text-link)'));
   assert(menu.includes('font-weight: var(--weight-bold)'));
+  assert(wxml.includes("{{month.expanded ? 'calendar-month-expanded' : 'calendar-month-collapsed'}}"), '月份必须区分展开与收起结构类名');
+  assert(wxml.includes("{{month.expanded ? 'month-disclosure-open' : ''}}"), '月份必须具备显式折叠/展开指示箭头');
+  assert(css.includes('.calendar-month-collapsed {'), '收起月份必须定义实体卡片样式');
+  assert(css.includes('.calendar-month-expanded {'), '展开月份必须定义独立凸起日历模块样式');
+  assert(css.includes('.month-disclosure {') && css.includes('border-top:') && css.includes('border-right:'), '折叠箭头必须具备清晰可见的边框线条');
+  assert(css.includes('.month-disclosure-open {') && css.includes('rotate(135deg)'), '展开状态箭头必须顺畅旋转下指');
+  assert(css.includes('.total-actual {') && css.includes('var(--nb-success)'), '实际收入必须对应语义成功绿色');
+  assert(css.includes('.total-estimated {') && css.includes('var(--nb-text-link)'), '预计收入必须对应提示蓝色');
   console.log('Calendar income, cancellation, refund, fallback and selected contrast checks passed.');
 })().catch(err => { console.error(err); process.exitCode = 1; });

@@ -18,8 +18,8 @@
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.load-error { display:flex; flex-direction:column; align-items:center; padding:160rpx 40rpx 80rpx; }
-.load-error-mark { width:88rpx; height:88rpx; margin-bottom:32rpx; border-radius:50%; background:var(--nb-page); color:var(--nb-ink); font-size: var(--font-xl); line-height:88rpx; text-align:center; }
+.load-error { display:flex; flex-direction:column; align-items:center; padding:160rpx var(--space-xl) 80rpx; }
+.load-error-mark { width:88rpx; height:88rpx; margin-bottom:var(--space-lg); border-radius:50%; background:var(--nb-page); color:var(--nb-ink); font-size: var(--font-xl); line-height:88rpx; text-align:center; }
 .load-error-title { margin-bottom:12rpx; color: var(--text-body); font-size: var(--font-lg); }
 .load-error-desc { margin-bottom:56rpx; color: var(--text-muted); font-size: var(--font-sm); }
 .retry-btn { min-height:88rpx; margin:0; padding:0 56rpx; border:0; border-radius: var(--radius-xl); background:var(--nb-ink); color: var(--text-inverse); font-size: var(--font-md); line-height:88rpx; }
@@ -27,9 +27,9 @@
 
 /* ===== Hero 状态卡 ===== */
 .hero-card {
-  margin: 0 24rpx 20rpx;
+  margin: 0 var(--space-md) 20rpx;
   border-radius: var(--radius-md);
-  padding: 32rpx;
+  padding: var(--space-lg);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -55,7 +55,7 @@
 }
 .hero-icon { position:relative; width:54rpx; height:40rpx; }
 .car-body { position:absolute; left:4rpx; right:4rpx; top:10rpx; height:22rpx; border: 0; border-radius:10rpx 12rpx 6rpx 6rpx; box-sizing:border-box; }
-.car-body::before { content:''; position:absolute; left:10rpx; top:-12rpx; width:24rpx; height:12rpx; border: 0; border-bottom:0; border-radius:8rpx 8rpx 0 0; box-sizing:border-box; }
+.car-body::before { content:''; position:absolute; left:10rpx; top:-12rpx; width:24rpx; height:12rpx; border: 0; border-bottom:0; border-radius:var(--radius-xs) var(--radius-xs) 0 0; box-sizing:border-box; }
 .car-wheel { position:absolute; bottom:2rpx; width:10rpx; height:10rpx; border-radius:50%; background:var(--nb-action); }
 .wheel-left { left:10rpx; } .wheel-right { right:10rpx; }
 .hero-text {
@@ -71,18 +71,18 @@
 .hero-status-label {
   font-size: var(--font-xs);
   font-weight: var(--weight-semibold);
-  padding: 4rpx 16rpx;
-  border-radius: 999rpx;
+  padding: 4rpx var(--space-sm);
+  border-radius: var(--radius-full);
 }
 .label-on  { background: var(--nb-page); color: var(--nb-ink); }
 .label-off { background: var(--bg-input); color: var(--text-muted); }
 
 /* ===== 快速开启横幅 ===== */
 .quick-banner {
-  margin: 0 24rpx 20rpx;
+  margin: 0 var(--space-md) 20rpx;
   background: var(--nb-action);
   border-radius: var(--radius-md);
-  padding: 28rpx 32rpx;
+  padding: 28rpx var(--space-lg);
 }
 .quick-banner-body { margin-bottom: var(--space-md); }
 .quick-banner-title {
@@ -90,7 +90,7 @@
   font-size: var(--font-md);
   font-weight: var(--weight-bold);
   color: var(--text-inverse);
-  margin-bottom: 8rpx;
+  margin-bottom: var(--space-xs);
 }
 .quick-banner-desc {
   display: block;
@@ -102,7 +102,7 @@
 .quick-banner-defaults {
   display: flex;
   align-items: center;
-  gap: 8rpx;
+  gap: var(--space-xs);
   flex-wrap: wrap;
 }
 .quick-default-item {
@@ -131,7 +131,7 @@
 
 /* ===== 参数配置卡 ===== */
 .config-card {
-  margin: 0 24rpx 20rpx;
+  margin: 0 var(--space-md) 20rpx;
   background: var(--bg-card);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -141,7 +141,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 28rpx 32rpx 20rpx;
+  padding: 28rpx var(--space-lg) 20rpx;
 }
 .config-card-title {
   font-size: var(--font-md);
@@ -160,7 +160,7 @@
   align-items: center;
   gap: 10rpx;
   background: var(--nb-page);
-  margin: 0 32rpx 20rpx;
+  margin: 0 var(--space-lg) 20rpx;
   border-radius: var(--radius-xs);
   padding: 14rpx 20rpx;
 }
@@ -178,18 +178,18 @@
 
 /* ===== 字段组 ===== */
 .field-group {
-  padding: 0 32rpx 24rpx;
+  padding: 0 var(--space-lg) var(--space-md);
 }
 .field-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   min-height: 88rpx;
-  padding: 8rpx 0;
+  padding: var(--space-xs) 0;
 }
 .field-row-textarea {
   align-items: flex-start;
-  padding: 20rpx 0 8rpx;
+  padding: 20rpx 0 var(--space-xs);
 }
 .field-sep {
   height: 1rpx;
@@ -198,7 +198,7 @@
 .field-label-wrap {
   display: flex;
   align-items: center;
-  gap: 8rpx;
+  gap: var(--space-xs);
 }
 .field-label {
   font-size: var(--font-md);
@@ -216,7 +216,7 @@
   font-size: var(--font-md);
   font-weight: var(--weight-semibold);
   color: var(--text-primary);
-  padding: 0 0 0 16rpx;
+  padding: 0 0 0 var(--space-sm);
 }
 .field-textarea {
   flex: 1;
@@ -225,13 +225,13 @@
   color: var(--text-primary);
   line-height: 1.6;
   text-align: right;
-  padding: 0 0 0 16rpx;
+  padding: 0 0 0 var(--space-sm);
 }
 .ph { color: var(--text-muted); }
 
 /* ===== 阶梯报价 ===== */
 .pricing-list {
-  padding: 0 32rpx 16rpx;
+  padding: 0 var(--space-lg) var(--space-sm);
 }
 .pricing-item {
   background: var(--bg-input);
@@ -261,7 +261,7 @@
   height: 88rpx;
   background: var(--nb-soft-surface);
   border-radius: var(--radius-xs);
-  padding: 0 16rpx;
+  padding: 0 var(--space-sm);
   font-size: var(--font-md);
   color: var(--text-primary);
   text-align: center;
@@ -284,9 +284,9 @@
   width: 60rpx;
 }
 .pricing-remove {
-  padding: 8rpx 20rpx;
+  padding: var(--space-xs) 20rpx;
   background: var(--nb-page);
-  border-radius: 8rpx;
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
 }
 .pricing-remove text {
@@ -297,9 +297,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8rpx;
+  gap: var(--space-xs);
   height: 80rpx;
-  margin: 0 32rpx 24rpx;
+  margin: 0 var(--space-lg) var(--space-md);
   background: var(--bg-card);
   border: 2rpx dashed var(--nb-line);
   border-radius: var(--radius-sm);
@@ -319,7 +319,7 @@
 
 /* ===== 保存按钮 ===== */
 .btn-save {
-  margin: 0 24rpx 16rpx;
+  margin: 0 var(--space-md) var(--space-sm);
   height: 96rpx;
   background: var(--nb-action);
   color: var(--text-inverse);
@@ -336,11 +336,14 @@
 
 /* 关闭服务提示 */
 .close-tip {
-  padding: 0 40rpx;
+  padding: 0 var(--space-xl);
   text-align: center;
   font-size: var(--font-xs);
   color: var(--nb-muted);
   line-height: var(--leading-normal);
 }
 @import '../../../styles/booking-actions.wxss';
-.retry-btn.booking-action { min-height:44px; height:44px; margin:0; padding:0 24rpx; border-radius:8px; font-size:var(--font-sm); line-height:1.4; }
+.retry-btn.booking-action { min-height:44px; height:44px; margin:0; padding:0 var(--space-md); border-radius:8px; font-size:var(--font-sm); line-height:1.4; }
+.compliance-banner { margin: 0 var(--space-md) 20rpx; padding: var(--space-md); background: var(--nb-soft-surface); border-radius: var(--radius-md); border: 1rpx solid var(--nb-border); display: flex; flex-direction: column; gap: 8rpx; }
+.compliance-badge { display: inline-block; align-self: flex-start; font-size: var(--font-xs); font-weight: var(--weight-medium); color: var(--nb-ink); background: var(--nb-surface); border-radius: var(--radius-sm); padding: 4rpx 12rpx; }
+.compliance-text { font-size: var(--font-xs); color: var(--nb-muted); line-height: var(--leading-normal); }

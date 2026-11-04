@@ -1,6 +1,7 @@
 // 模块级缓存：wx.getSystemInfoSync 和 getMenuButtonBoundingClientRect
 // 在同一设备上结果不变，只需计算一次
 let _navBarInfoCache = null;
+const { goHome } = require('../../utils/entry-navigation');
 function getNavBarInfo() {
   if (!_navBarInfoCache) {
     const si = wx.getSystemInfoSync();
@@ -61,6 +62,7 @@ Component({
   },
 
   data: {
+    hasHistory: false,
     statusBarHeight: 0,
     navBarHeight: 0,
     menuButtonHeight: 0,
@@ -70,13 +72,32 @@ Component({
 
   lifetimes: {
     attached() {
-      this.setData(getNavBarInfo());
+      const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : [];
+      this.setData({ ...getNavBarInfo(), hasHistory: pages.length > 1 });
+    }
+  },
+
+  pageLifetimes: {
+    show() {
+      const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : [];
+      this.setData({ hasHistory: pages.length > 1 });
     }
   },
 
   methods: {
     onBack() {
       this.triggerEvent('back');
+    },
+    navigateBack() {
+      const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : [];
+      if (pages.length > 1) {
+        wx.navigateBack({ delta: 1, fail: () => this.goSafeHome() });
+        return;
+      }
+      this.goSafeHome();
+    },
+    goSafeHome() {
+      goHome();
     }
   }
 });

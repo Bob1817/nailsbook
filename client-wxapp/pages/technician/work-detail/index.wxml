@@ -1,12 +1,30 @@
-<work-detail-view submittingComment="{{submittingComment}}" canRetryShare="{{shareEligible}}" bind:shareretry="prepareSharePath" sharePath="{{sharePath}}" canShare="{{!!sharePath}}" work="{{work}}" imageUrls="{{imageUrls}}" comments="{{visibleComments}}" hiddenComments="{{hiddenComments}}" loading="{{loading}}" loadFailed="{{loadFailed}}" loadErrorText="{{loadErrorText}}" canRetryLoad="{{canRetryLoad}}" isAuthor showBookSame="{{false}}" canComment commentText="{{commentText}}" replyingTo="{{replyingTo}}" bind:back="goBack" bind:retry="loadWork" bind:manage="showWorkActions" bind:commentmanage="manageComment" bind:like="toggleLike" bind:favorite="toggleFavorite" bind:commentfocus="focusComment" bind:commentinput="onSharedCommentInput" bind:commentsubmit="submitComment" bind:commentreply="onSharedCommentReply" bind:commentcancel="cancelReply" />
+<work-detail-view submittingComment="{{submittingComment}}" canRetryShare="{{shareEligible}}" bind:shareretry="prepareSharePath" sharePath="{{sharePath}}" canShare="{{!!sharePath}}" work="{{work}}" imageUrls="{{imageUrls}}" comments="{{visibleComments}}" hiddenComments="{{hiddenComments}}" loading="{{loading}}" loadFailed="{{loadFailed}}" loadErrorText="{{loadErrorText}}" canRetryLoad="{{canRetryLoad}}" isAuthor showBookSame="{{false}}" canComment commentText="{{commentText}}" replyingTo="{{replyingTo}}" bind:back="goBack" bind:home="goHome" bind:retry="loadWork" bind:manage="showWorkActions" bind:commentmanage="manageComment" bind:like="toggleLike" bind:favorite="toggleFavorite" bind:commentfocus="focusComment" bind:commentinput="onSharedCommentInput" bind:commentsubmit="submitComment" bind:commentreply="onSharedCommentReply" bind:commentcancel="cancelReply" bind:share="openMarketingSheet">
+  <view slot="before-comments" wx:if="{{work.id}}" class="marketing-card {{marketingState.available ? 'is-available' : 'is-unavailable'}}">
+    <view class="marketing-row">
+      <image class="marketing-icon" src="/static/icons/share.svg" mode="aspectFit" aria-hidden="true" />
+      <view class="marketing-text-wrap">
+        <text class="marketing-title">{{marketingState.title}}</text>
+        <text class="marketing-desc">{{marketingState.description}}</text>
+      </view>
+      <button class="marketing-open-btn booking-action {{marketingState.available ? '' : 'is-secondary'}} {{marketingState.disabled ? 'is-disabled' : ''}}" disabled="{{marketingState.disabled}}" bindtap="handleMarketingAction">{{marketingState.actionText}}</button>
+    </view>
+  </view>
+</work-detail-view>
+<work-share-poster show="{{showShareSheet}}" sharePath="{{sharePath}}" work="{{work}}" bind:close="closeMarketingSheet" />
 <view wx:if="{{work.preparation}}" class="preparation-card">
-  <view class="preparation-head"><text class="preparation-title">内部制作方案</text><text class="preparation-private">仅美甲师可见</text></view>
+  <view class="preparation-head"><text class="preparation-title">作品档案</text><text class="preparation-private">仅当前美甲师可见</text></view>
   <view wx:if="{{work.preparation.tools}}" class="preparation-row"><text>工具</text><text>{{work.preparation.tools}}</text></view>
   <view wx:if="{{work.preparation.materials}}" class="preparation-row"><text>材料</text><text>{{work.preparation.materials}}</text></view>
   <view wx:if="{{work.preparation.preparation}}" class="preparation-row"><text>前置准备</text><text>{{work.preparation.preparation}}</text></view>
   <view wx:if="{{work.preparation.steps}}" class="preparation-row"><text>关键步骤</text><text>{{work.preparation.steps}}</text></view>
   <view wx:if="{{work.preparation.riskNotes}}" class="preparation-row"><text>注意事项</text><text>{{work.preparation.riskNotes}}</text></view>
   <text wx:if="{{work.preparation.sourceRecordCount}}" class="preparation-source">该方案基于 {{work.preparation.sourceRecordCount}} 次实际服务完善</text>
+  <view wx:if="{{work.preparationRevisions && work.preparationRevisions.length}}" class="preparation-history">
+    <text class="preparation-history-title">最近版本</text>
+    <view wx:for="{{work.preparationRevisions}}" wx:key="id" class="preparation-history-row">
+      <text>版本 {{item.version}}</text><text>来源记录 #{{item.sourceRecordId}}</text>
+    </view>
+  </view>
 </view>
 <view wx:if="{{work.sourceService}}" class="source-service-card">
   <view class="preparation-head"><text class="preparation-title">经验来源</text><text class="preparation-private">仅美甲师可见</text></view>
@@ -17,3 +35,5 @@
     <view><text class="source-service-label">关联预约</text><text class="source-service-meta">{{work.sourceService.orderNo || '查看预约详情'}}</text></view><text class="source-service-arrow">›</text>
   </view>
 </view>
+<!-- 页面级扩展内容位于固定评论栏之外，需要在真正的内容末尾预留完整操作栏高度。 -->
+<view wx:if="{{work.id}}" class="composer-safe-spacer" aria-hidden="true"></view>

@@ -162,6 +162,33 @@ const technicianBookingCardHandlers = {
   onBookingCardRebook(event) {
     const id = eventId(event);
     if (id) wx.navigateTo({ url: `/pages/technician/edit-booking-time/index?id=${id}&mode=repeat` });
+  },
+
+  onBookingCardUploadWork(event) {
+    const id = eventId(event);
+    if (id) wx.navigateTo({ url: `/pages/technician/work-edit/index?orderId=${id}` });
+  },
+
+  onBookingCardViewWork(event) {
+    const detail = event && event.detail;
+    const workId = detail && detail.workId;
+    const id = (detail && detail.id) || eventId(event);
+    if (workId) {
+      wx.navigateTo({ url: `/pages/technician/work-detail/index?id=${workId}` });
+    } else if (id) {
+      wx.navigateTo({ url: `/pages/technician/work-edit/index?orderId=${id}` });
+    }
+  },
+
+  onBookingCardRecord(event) {
+    const id = eventId(event);
+    const detail = event && event.detail;
+    if (!id) return;
+    const mode = detail && detail.isComplete ? 'record' : '';
+    const url = mode
+      ? `/pages/technician/complete-service/index?id=${id}&mode=record`
+      : `/pages/technician/complete-service/index?id=${id}`;
+    wx.navigateTo({ url });
   }
 };
 

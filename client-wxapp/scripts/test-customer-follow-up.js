@@ -18,6 +18,9 @@ assert(!workEdit.includes('options.customerId'), '作品编辑页不应保留客
 assert(!workEdit.includes('prefillCustomer('), '作品编辑页只应通过关联预约预填客户授权');
 assert(wxml.includes('customer._serviceRecords.length === 0 && customer.relatedWorks.length'), '历史关联作品兼容区应仅在无记录且确有作品时展示');
 assert(wxml.includes('bindtap="addProfileFact"'), '稳定客户档案应保留唯一的结构化新增入口');
+assert(wxml.includes('<text class="card-title">客户档案</text>'), '客户事实与特征应统一收口到客户档案');
+assert(!wxml.includes('<text class="card-title">客户标签</text>'), '客户标签不应继续作为独立卡片展示');
+assert.match(wxml, /customer-traits[\s\S]*bindtap="openTagEdit"[\s\S]*customer\._tags/, '客户特征应在客户档案内保留查看与编辑入口');
 for (const category of ['allergy', 'contraindication', 'preference', 'communication', 'reminder']) {
   assert(js.includes(`value: '${category}'`), `客户档案应支持结构化分类：${category}`);
 }

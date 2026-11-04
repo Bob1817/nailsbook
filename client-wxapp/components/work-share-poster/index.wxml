@@ -1,4 +1,69 @@
-<button class="poster-button" bindtap="savePoster" loading="{{busy}}" disabled="{{busy}}">{{busy ? '正在生成海报' : '保存作品分享海报'}}</button>
-<button class="copy-button" bindtap="copyCaption" disabled="{{busy}}">复制分享文案</button>
-<text class="poster-hint">{{shareToken ? '分享授权有效期内可扫码查看作品及预约' : '扫码查看作品、美甲师及预约信息'}}</text>
+<block wx:if="{{mode === 'inline'}}">
+  <button class="poster-button" bindtap="savePoster" loading="{{busy}}" disabled="{{busy}}">{{busy ? '正在生成海报' : '保存作品分享海报'}}</button>
+  <button class="copy-button" bindtap="copyCaption" disabled="{{busy}}">复制分享文案</button>
+  <text class="poster-hint">{{shareToken ? '分享授权有效期内可扫码查看作品及预约' : '扫码查看作品、美甲师及预约信息'}}</text>
+</block>
+
+<!-- 营销分享底部弹窗 -->
+<view wx:if="{{show}}" class="wsp-mask" bindtap="closeSheet" catchtouchmove="preventBubble">
+  <view class="wsp-sheet" catchtap="preventBubble">
+    <view class="wsp-handle" aria-hidden="true"></view>
+    <view class="wsp-header">
+      <view class="wsp-header-info">
+        <text class="wsp-title">作品营销与裂变获客</text>
+        <text class="wsp-subtitle">全渠道获客闭环 · 客户扫码自动绑定美甲师</text>
+      </view>
+      <view class="wsp-close-btn" bindtap="closeSheet" role="button" aria-label="关闭分享面板">
+        <image class="wsp-close-icon" src="/static/icons/close.svg" mode="aspectFit" />
+      </view>
+    </view>
+
+    <!-- 渠道1：微信好友 / 微信群 -->
+    <view class="wsp-card">
+      <view class="wsp-card-head">
+        <text class="wsp-badge">私域即时沟通</text>
+        <text class="wsp-channel-title">微信好友 / 微信群</text>
+      </view>
+      <text class="wsp-card-desc">转发精美小程序卡片给客户或闺蜜群，客户点开即刻查看作品并可预约同款</text>
+      <button class="wsp-btn wsp-btn-primary" open-type="share" hover-class="wsp-btn-hover">
+        <text>立即转发给好友 / 群</text>
+      </button>
+    </view>
+
+    <!-- 渠道2：微信朋友圈获客海报 -->
+    <view class="wsp-card">
+      <view class="wsp-card-head">
+        <text class="wsp-badge">朋友圈获客</text>
+        <text class="wsp-channel-title">朋友圈高清海报</text>
+      </view>
+      <text class="wsp-card-desc">生成 1200×1600 高清作品海报，自带你的专属小程序码与门店信息</text>
+      <view class="wsp-btn-row">
+        <button class="wsp-btn wsp-btn-primary wsp-btn-flex" bindtap="savePoster" loading="{{busy}}" disabled="{{busy}}" hover-class="wsp-btn-hover">
+          <text>{{busy ? '正在生成海报...' : '保存海报到相册'}}</text>
+        </button>
+        <button class="wsp-btn wsp-btn-secondary wsp-btn-flex" bindtap="copyCaption" disabled="{{busy}}" hover-class="wsp-btn-hover">
+          <text>复制文案</text>
+        </button>
+      </view>
+    </view>
+
+    <!-- 渠道3：小红书分发助手 -->
+    <view class="wsp-card">
+      <view class="wsp-card-head">
+        <text class="wsp-badge">公域种草</text>
+        <text class="wsp-channel-title">小红书分发助手</text>
+      </view>
+      <text class="wsp-card-desc">智能提炼吸睛标题、爆款标签与预约引导文案，一键导出高清原图</text>
+      <view class="wsp-btn-row">
+        <button class="wsp-btn wsp-btn-primary wsp-btn-flex" bindtap="copyXhsNote" disabled="{{busy}}" hover-class="wsp-btn-hover">
+          <text>复制小红书文案</text>
+        </button>
+        <button class="wsp-btn wsp-btn-secondary wsp-btn-flex" bindtap="saveWorkImages" disabled="{{busy}}" hover-class="wsp-btn-hover">
+          <text>导出原图到相册</text>
+        </button>
+      </view>
+    </view>
+  </view>
+</view>
+
 <canvas canvas-id="work-poster" class="poster-canvas" style="width:600px;height:800px" />

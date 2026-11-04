@@ -12,7 +12,7 @@ const RULE_TEMPLATE = Object.freeze({
 
 Page({
   data: {
-    technicianId:'', name:'', avatarUrl:'', bio:'', city:'', serviceArea:'', saving:false,
+    technicianId:'', name:'', wechat:'', avatarUrl:'', bio:'', city:'', serviceArea:'', saving:false,
     heroImageUrl:'', tagline:'', experienceYears:0, specialties:[], selectedSpecialtyMap:{}, specialtyOptions:SPECIALTY_OPTIONS, certificationTitle:'',
     artistIntroduction:'', aestheticPhilosophy:'', publicationStatus:'draft', faqs:[],
     exclusiveServiceNote:'', privacyNote:'', serviceProcess:[], timeline:[],
@@ -96,6 +96,7 @@ Page({
         specialties:styleTags,
         selectedSpecialtyMap:styleTags.reduce((map,item,index)=>{map[item]=index+1;return map;},{}),
         certificationTitle:brand.certificationTitle || '',
+        wechat:brand.wechat || (user.socialMedia || {}).wechat || '',
         artistIntroduction:brand.artistIntroduction || user.bio || '', aestheticPhilosophy:brand.aestheticPhilosophy || '',
         publicationStatus:brand.publicationStatus || 'draft', faqs:brand.faqs || [],
         exclusiveServiceNote:brand.exclusiveServiceNote || '', privacyNote:brand.privacyNote || '',
@@ -124,6 +125,7 @@ Page({
   },
   refreshCompletion() {
     const items = [
+      { key:'wechat', label:'沟通微信号', hint:'客户添加微信前联系你', done:!!String(this.data.wechat || '').trim(), target:330 },
       { key:'identity', label:'主页形象', hint:'头像与主页名称', done:!!(this.data.avatarUrl && String(this.data.name || '').trim()), target:330 },
       { key:'profile', label:'专业介绍', hint:'自我介绍与服务区域', done:!!(String(this.data.artistIntroduction || '').trim() && this.data.city && this.data.serviceArea), target:650 },
       { key:'service', label:'服务项目', hint:'至少展示一项可预约服务', done:(this.data.featuredServiceIds || []).length > 0, url:'/pages/technician/services/index' },
@@ -286,6 +288,10 @@ Page({
   goWorks() { wx.navigateTo({ url:'/pages/technician/works/index' }); },
   async save() {
     if (this.data.saving || this.data.heroUploading) return;
+    if (this.data.publicationStatus === 'published' && !String(this.data.wechat || '').trim()) {
+      wx.showToast({ title:'请填写客户沟通微信号', icon:'none' });
+      return;
+    }
     this.setData({ saving:true });
     try {
       const pendingDefaultWorks=this.data.works.filter((work)=>work.selected && !work.persistedSelected);
@@ -296,6 +302,7 @@ Page({
       const profilePayload={};
       if (this.data.avatarUrl) profilePayload.avatarUrl=this.data.avatarUrl;
       const brandPayload={
+        wechat:this.data.wechat.trim(),
         brandName:this.data.name.trim() || undefined, tagline:this.data.tagline.trim(), heroImageUrl:this.data.heroImageUrl || undefined,
         experienceYears:Number(this.data.experienceYears) > 0 ? Math.min(30, Math.round(Number(this.data.experienceYears))) : 0,
         specialties:this.data.specialties.slice(0,5),
@@ -316,6 +323,9 @@ Page({
       const updates=[api.technician.brandProfile.update(brandPayload)];
       if (Object.keys(profilePayload).length) updates.push(api.technician.auth.updateProfile(profilePayload));
       await Promise.all(updates);
+      const savedUser=wx.getStorageSync('technician_userInfo') || wx.getStorageSync('userInfo') || {};
+      savedUser.socialMedia={ ...(savedUser.socialMedia || {}), wechat:this.data.wechat.trim() };
+      wx.setStorageSync('technician_userInfo',savedUser); wx.setStorageSync('userInfo',savedUser);
       if (profilePayload.avatarUrl) {
         const user=wx.getStorageSync('technician_userInfo') || wx.getStorageSync('userInfo') || {};
         user.avatarUrl=profilePayload.avatarUrl;

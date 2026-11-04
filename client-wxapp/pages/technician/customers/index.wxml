@@ -5,7 +5,7 @@
     <!-- 搜索框 + 邀请按钮 -->
     <view class="search-row">
       <view class="search-bar">
-        <view class="search-icon"></view>
+        <image class="search-icon" src="/static/icons/search.svg" mode="aspectFit" />
         <input
           class="search-input"
           placeholder-class="search-placeholder"
@@ -15,14 +15,14 @@
           bindinput="onKeywordInput"
           bindconfirm="onSearchConfirm"
         />
-        <view wx:if="{{keyword}}" class="search-clear" bindtap="clearKeyword" role="button" aria-label="清空搜索"><view class="clear-line"></view></view>
+        <view wx:if="{{keyword}}" class="search-clear" bindtap="clearKeyword" role="button" aria-label="清空搜索"><image class="clear-icon" src="/static/icons/close.svg" mode="aspectFit" /></view>
       </view>
       <button wx:if="{{inviteCode}}" class="btn-invite booking-action" bindtap="openInviteGuide" hover-class="btn-invite-pressed" aria-label="邀请客户">
-        <text class="invite-icon">+</text>
+        <image class="invite-icon" src="/static/icons/plus.svg" mode="aspectFit" />
         <text class="invite-text">邀请</text>
       </button>
       <view wx:else class="btn-invite booking-action" bindtap="handleInviteUnavailable" role="button" aria-label="邀请码加载中">
-        <text class="invite-icon">+</text>
+        <image class="invite-icon" src="/static/icons/plus.svg" mode="aspectFit" />
         <text class="invite-text">邀请</text>
       </view>
     </view>
@@ -155,4 +155,4 @@
 </view>
 
 
-<tab-bar selected="customers"/>
+<tab-bar selected="customers" placeholder="{{false}}"/>

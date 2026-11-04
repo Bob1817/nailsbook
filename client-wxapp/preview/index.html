@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NailBook · 小程序设计预览</title>
+<title>OnlyNail · 小程序设计预览</title>
 <style>
 /* ===== Reset & Base ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -523,7 +523,7 @@ body {
     <!-- Nav Bar -->
     <div class="nav-bar" id="navBar">
       <span class="nav-bar-back" id="navBack" style="display:none;">‹</span>
-      <span class="nav-bar-title" id="navTitle">NailBook</span>
+      <span class="nav-bar-title" id="navTitle">OnlyNail</span>
     </div>
 
     <!-- Page Content -->
@@ -748,7 +748,7 @@ body {
 
 <!-- Info Panel -->
 <div class="info-panel">
-  <h3>📱 NailBook 设计预览</h3>
+  <h3>📱 OnlyNail 设计预览</h3>
   <div class="info-row"><span class="info-dot green"></span> 设计令牌已全部应用（颜色/圆角/字号/阴影/间距）</div>
   <div class="info-row"><span class="info-dot green"></span> 1rpx = 0.5px（375px 宽手机，基于 750rpx 设计稿）</div>
   <div class="info-row"><span class="info-dot green"></span> 触控最小高度 44px（88rpx）</div>
@@ -779,7 +779,7 @@ tabItems.forEach(item => {
     if (page === 'home') {
       homePage.classList.add('active');
       discoverPage.classList.remove('active');
-      navTitle.textContent = 'NailBook';
+      navTitle.textContent = 'OnlyNail';
       document.getElementById('pageContent').scrollTop = 0;
     } else if (page === 'discover') {
       homePage.classList.remove('active');

@@ -17,13 +17,18 @@ const make = status => ({ ...page, data: { ...page.data, userInfo: { status }, c
 (async () => {
   const ctx = make('inactive');
   await ctx.onAcceptingChange({ detail: { value: true } });
-  assert.equal(ctx.data.userInfo.status, 'active');
-  assert.equal(ctx.data.acceptingEnabled, true);
+  assert.equal(ctx.data.userInfo.status, 'inactive');
+  assert.equal(ctx.data.acceptingEnabled, false);
+  assert(navigatedTo.includes('service-forms/index?mode=accept'));
+  assert.equal(calls, 0, '服务形式确认前不能开启接单');
+  ctx.data.userInfo.status = 'active';
   await ctx.onAcceptingChange({ detail: { value: false } });
   assert.equal(ctx.data.acceptingEnabled, false);
   fail = true;
-  await ctx.onAcceptingChange({ detail: { value: true } });
-  assert.equal(ctx.data.acceptingEnabled, false);
+  ctx.data.userInfo.status = 'active';
+  await ctx.onAcceptingChange({ detail: { value: false } });
+  assert.equal(ctx.data.acceptingEnabled, true);
+  ctx.data.userInfo.status = 'inactive';
   assert.equal(ctx.data.savingAccepting, false);
   fail = false;
   ctx.data.canAcceptOrders = false;
@@ -62,7 +67,7 @@ const make = status => ({ ...page, data: { ...page.data, userInfo: { status }, c
   assert.equal(ctx.data.showInviteDetail, true);
   ctx.closeProfileDetail();
   assert.equal(ctx.data.showInviteDetail, false);
-  assert.equal(ctx.data.tools.length, 7);
+  assert.equal(ctx.data.tools.length, 8);
   assert(!ctx.data.tools.some(item => item.key === 'styles'), '擅长风格应归入我的主页管理，不应在经营工具中重复展示');
   assert(ctx.data.tools.some(item => item.key === 'homepage'), '经营工具应保留我的主页入口');
   assert(!ctx.data.tools.some(item => item.key === 'quoteRecords'), '报价记录应归入预约管理，不应作为独立经营工具');
@@ -97,11 +102,11 @@ const make = status => ({ ...page, data: { ...page.data, userInfo: { status }, c
   assert(wxml.includes('class="availability-setting" bindtap="openCapacityModal"'));
   assert.equal((wxml.match(/class="ws-header settings-sheet-header"/g) || []).length, 2, '工作时间与接待能力弹窗必须复用紧凑标题栏');
   assert.equal((wxml.match(/class="ws-close settings-sheet-close"/g) || []).length, 2, '两个设置弹窗必须复用紧凑关闭按钮');
-  assert.match(css, /\.settings-sheet-header\s*\{[^}]*position:relative;[^}]*min-height:72rpx;[^}]*padding:12rpx 112rpx 8rpx 40rpx/s, '设置弹窗标题栏必须收紧并为关闭按钮预留空间');
+  assert.match(css, /\.settings-sheet-header\s*\{[^}]*position:relative;[^}]*min-height:72rpx;[^}]*padding:12rpx 112rpx var\(--space-xs\) var\(--space-xl\)/s, '设置弹窗标题栏必须收紧并为关闭按钮预留空间');
   assert.match(css, /\.settings-sheet-close\s*\{[^}]*position:absolute;[^}]*top:50%;[^}]*right:16rpx/s, '关闭按钮必须脱离标题栏排版，避免撑大标题与正文间距');
   assert.match(css, /\.settings-sheet-close \.ws-close-icon\s*\{[^}]*width:56rpx;[^}]*height:56rpx;/s, '关闭按钮的可见圆形尺寸必须小于触控区域');
-  assert.match(css, /\.order-cell\s*\{[^}]*position:\s*relative;[^}]*gap:\s*16rpx/s, '预约入口必须为数量角标预留空间并统一图文间距');
-  assert.match(css, /\.tool-cell\s*\{[^}]*gap:\s*16rpx/s, '经营工具与预约入口必须使用相同图文间距');
+  assert.match(css, /\.order-cell\s*\{[^}]*position:\s*relative;[^}]*gap:\s*var\(--space-sm\)/s, '预约入口必须为数量角标预留空间并统一图文间距');
+  assert.match(css, /\.tool-cell\s*\{[^}]*gap:\s*var\(--space-sm\)/s, '经营工具与预约入口必须使用相同图文间距');
   assert.match(css, /\.count-badge\s*\{[^}]*top:\s*8rpx;\s*right:\s*8rpx;[^}]*background:\s*var\(--nb-danger\)/s, '预约数量必须使用独立且醒目的角标，不能覆盖图标');
   assert(!wxml.includes('bindtap="toggleAccepting"'));
   assert(wxml.includes('wx:if="{{showScheduleModal}}"'));

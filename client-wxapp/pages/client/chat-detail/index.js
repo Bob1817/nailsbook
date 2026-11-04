@@ -50,6 +50,9 @@ Page({
       wx.setNavigationBarTitle({ title: decodeURIComponent(techName) });
       this.setData({ techName: decodeURIComponent(techName) });
     }
+    if (options.intent === 'reschedule') {
+      this.setData({ inputText: '您好，我想协商调整一下预约时间，请问方便改到什么时间呢？' });
+    }
     this.loadMessages();
     this.loadReplyReminderStatus();
 

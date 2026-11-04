@@ -1,6 +1,7 @@
 const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
 const { guardTourist } = require('../../../utils/permission');
+const { getLayout, buildColumns } = require('../utils/waterfall');
 
 function getShareState(work) {
   if (work.archivedAt) return { ready: false, key: 'needs_action', text: '已归档', reason: '已归档作品不可分享' };
@@ -34,13 +35,17 @@ function decorateWork(work, profile) {
 
 Page({
   data: {
+    hasLocalDraft: false,
+    localDraftTitle: '',
     works: [],
+    waterfallCols: [],
     leftCol: [],
     rightCol: [],
     filteredWorks: [],
     keyword: '',
     categoryFilters: ['全部分类'],
     selectedCategory: '全部分类',
+    primaryStatuses: [{ key: 'all', label: '全部' }, { key: 'shareable', label: '可分享' }, { key: 'draft', label: '草稿箱' }],
     statusFilters: [
       { key: 'all', label: '全部' },
       { key: 'shareable', label: '可分享' },
@@ -50,6 +55,7 @@ Page({
       { key: 'hidden', label: '已隐藏' }
     ],
     selectedStatus: 'all',
+    extraStatusLabel: '',
     sortBy: 'updated',
     sortLabel: '最近更新',
     loading: false,
@@ -58,7 +64,11 @@ Page({
   },
 
   onLoad() {},
-  onShow() { this.loadWorks(); },
+  onShow() {
+    const draft = wx.getStorageSync('technician_work_create_intent');
+    this.setData({ hasLocalDraft: !!draft, localDraftTitle: draft && draft.title || '未命名作品' });
+    this.loadWorks();
+  },
   onPullDownRefresh() { this.loadWorks().finally(() => wx.stopPullDownRefresh()); },
 
   async loadWorks() {
@@ -78,13 +88,10 @@ Page({
   },
 
   splitIntoColumns(works) {
-    const leftCol = [];
-    const rightCol = [];
-    works.forEach((work, index) => {
-      if (index % 2 === 0) leftCol.push(work);
-      else rightCol.push(work);
-    });
-    this.setData({ filteredWorks: works, leftCol, rightCol });
+    const waterfallCols = buildColumns(works, this._layout || getLayout({ paddingRpx: 32, gapRpx: 20 }));
+    const leftCol = (waterfallCols[0] && waterfallCols[0].items) || [];
+    const rightCol = (waterfallCols[1] && waterfallCols[1].items) || [];
+    this.setData({ filteredWorks: works, waterfallCols, leftCol, rightCol });
   },
 
   onKeywordInput(e) {
@@ -105,6 +112,26 @@ Page({
   selectStatus(e) {
     this.setData({ selectedStatus: e.currentTarget.dataset.key });
     this.applyFilters();
+  },
+
+  pickCategory(e) {
+    this.setData({ selectedCategory: this.data.categoryFilters[Number(e.detail.value)] });
+    this.applyFilters();
+  },
+
+  resetFilters() {
+    this.setData({ keyword: '', selectedCategory: '全部分类', selectedStatus: 'all' });
+    this.applyFilters();
+  },
+
+  chooseStatusFilter() {
+    wx.showActionSheet({
+      itemList: this.data.statusFilters.map(item => item.label),
+      success: res => {
+        const option = this.data.statusFilters[res.tapIndex];
+        if (option) { this.setData({ selectedStatus: option.key, extraStatusLabel: option.label }); this.applyFilters(); }
+      }
+    });
   },
 
   chooseSort() {
@@ -130,6 +157,7 @@ Page({
       const text = [work.title].concat(work.tags || []).join(' ').toLowerCase();
       if (keyword && text.indexOf(keyword) < 0) return false;
       if (category !== '全部分类' && !(work.tags || []).includes(category)) return false;
+      if (status === 'draft' && work.publicationStatus !== 'draft') return false;
       if (status === 'shareable' && !work.isShareReady) return false;
       if (status === 'needs_action' && work.shareStateKey !== 'needs_action' && work.shareStateKey !== 'reviewing') return false;
       if (status === 'hero' && !work.heroSlot) return false;
@@ -182,7 +210,12 @@ Page({
     if (guardTourist('发布作品')) return;
     wx.navigateTo({ url: '/pages/technician/work-edit/index' });
   },
-  goDetail(e) { wx.navigateTo({ url: '/pages/technician/work-detail/index?id=' + ((e.detail && e.detail.id) || e.currentTarget.dataset.id) }); },
+  goDetail(e) {
+    const id = (e.detail && e.detail.id) || e.currentTarget.dataset.id;
+    const work = this.data.works.find(item => String(item.id) === String(id));
+    if (work && work.publicationStatus === 'draft') return this.goEditById(id);
+    wx.navigateTo({ url: '/pages/technician/work-detail/index?id=' + id });
+  },
   goEditById(id) { wx.navigateTo({ url: '/pages/technician/work-edit/index?id=' + id }); },
 
   async toggleVisible(id) {

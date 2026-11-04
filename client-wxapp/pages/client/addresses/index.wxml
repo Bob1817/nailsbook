@@ -1,62 +1,12 @@
-<nav-bar title="地址管理" showBack/>
-<view class="container">
-
-  <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
-
-  <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
-    <view class="load-error-mark">!</view>
-    <text class="empty-text">地址加载失败</text>
-    <text class="empty-sub">请检查网络后重试</text>
-    <button class="retry-btn booking-action" bindtap="loadAddresses">重新加载</button>
+<page-meta page-style="background: var(--nb-surface);"/>
+<nav-bar title="{{isSelectMode ? '选择上门地址' : '上门地址管理'}}" showBack/>
+<secondary-page-header title="你的上门地址" subtitle="{{isSelectMode ? '请选择本次服务地点，常用地址不会自动替你确认。' : '仅用于上门美甲。预约中保存的地址也会显示在这里。'}}"/>
+<view class="address-page">
+  <state-card compact wx:if="{{loading}}" type="loading" title="正在获取地址"/>
+  <state-card compact wx:elif="{{loadFailed}}" type="error" title="地址加载失败" description="请检查网络后重试" bindaction="loadAddresses"/>
+  <state-card compact wx:elif="{{addresses.length === 0}}" icon="/static/icons/pin.svg" title="添加第一个上门地址" description="保存常用服务地点，下次预约更方便。"/>
+  <view wx:else class="address-list">
+    <address-card wx:for="{{addresses}}" wx:key="id" address="{{item}}" selectable="{{isSelectMode}}" selected="{{isSelectMode && item.id === selectedAddressId}}" manage data-id="{{item.id}}" data-default="{{item.isDefault}}" bindselect="{{isSelectMode ? 'selectAddress' : 'editAddress'}}" bindedit="editAddress" bindremove="deleteAddress" binddefaultchange="setDefault"/>
   </view>
-
-  <!-- 空状态 -->
-  <view wx:elif="{{addresses.length === 0}}" class="empty">
-    <view class="empty-icon"><view class="empty-pin"></view></view>
-    <text class="empty-text">还没有地址</text>
-    <text class="empty-sub">添加常用上门地址，方便快速预约</text>
-  </view>
-
-  <!-- 地址卡片列表 -->
-  <view wx:else class="list">
-    <view
-      class="addr-card {{item.isDefault ? 'is-default' : ''}}"
-      wx:for="{{addresses}}"
-      wx:key="id"
-    >
-      <!-- 主体：点击进入编辑 -->
-      <view class="addr-main" bindtap="editAddress" data-id="{{item.id}}">
-        <view class="addr-top">
-          <text class="addr-name">{{item.contactName}}</text>
-          <text class="addr-phone">{{item.contactPhone}}</text>
-          <view class="tag-default" wx:if="{{item.isDefault}}">默认</view>
-        </view>
-        <text class="addr-detail">{{item.province}}{{item.city}}{{item.district}}{{item.detailAddress || item.detail}}{{item.doorInfo ? ' ' + item.doorInfo : ''}}</text>
-      </view>
-
-      <!-- 底部：单选默认 + 编辑/删除 -->
-      <view class="addr-foot">
-        <view class="radio-row" bindtap="setDefault" data-id="{{item.id}}" data-default="{{item.isDefault}}">
-          <view class="radio {{item.isDefault ? 'radio-on' : ''}}"></view>
-          <text class="radio-label">{{item.isDefault ? '默认地址' : '设为默认'}}</text>
-        </view>
-        <view class="addr-ops">
-          <view class="op-btn" catchtap="editAddress" data-id="{{item.id}}">
-            <view class="op-icon op-edit"></view>
-            <text>编辑</text>
-          </view>
-          <view class="op-btn danger" catchtap="deleteAddress" data-id="{{item.id}}">
-            <view class="op-icon op-del"></view>
-            <text class="semantic-danger">删除</text>
-          </view>
-        </view>
-      </view>
-    </view>
-  </view>
-
-  <!-- 新增 -->
-  <view class="footer">
-    <button class="btn-add booking-action" bindtap="addAddress">+ 新增地址</button>
-  </view>
-
 </view>
+<bottom-action-bar class="page-actions" wx:if="{{!loading && !loadFailed}}" primary-label="{{isSelectMode && addresses.length ? '确认使用此地址' : '新增地址'}}" secondary-label="{{isSelectMode && addresses.length ? '新增地址' : ''}}" disabled="{{isSelectMode && addresses.length && !selectedAddressId}}" bindprimary="onPrimaryAction" bindsecondary="addAddress"/>

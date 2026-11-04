@@ -1,0 +1,7 @@
+@import '../../styles/component-tokens.generated.wxss';
+:host{display:block}
+.location-field{display:flex;flex-direction:column;gap:var(--space-sm);padding:var(--space-md) 0}
+.location-heading{display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-md)}
+.location-label{font-size:var(--font-sm);font-weight:var(--weight-medium);color:var(--nb-ink)}
+.location-status,.location-hint{font-size:var(--font-xs);color:var(--nb-secondary);line-height:1.6}
+.location-status{flex-shrink:0}.location-value{font-size:var(--font-sm);line-height:1.6;overflow-wrap:anywhere;color:var(--nb-ink)}

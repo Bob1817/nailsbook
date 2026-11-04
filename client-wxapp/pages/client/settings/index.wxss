@@ -1,15 +1,15 @@
-.profile-editor { padding: 32rpx 32rpx calc(40rpx + env(safe-area-inset-bottom)); box-sizing: border-box; }
+.profile-editor { padding: var(--space-lg) var(--space-lg) calc(var(--space-xl) + env(safe-area-inset-bottom)); box-sizing: border-box; }
 .editor-card { background: var(--nb-surface); border-radius: 24rpx; padding: 0 28rpx; overflow: hidden; }
-.editor-row { display: flex; align-items: center; gap: 24rpx; border-bottom: 1rpx solid var(--nb-page); }
+.editor-row { display: flex; align-items: center; gap: var(--space-md); border-bottom: 1rpx solid var(--nb-page); }
 .editor-row { min-height: 112rpx; }
 .editor-row-last { border-bottom: 0; }
-.editor-label { font-size: 28rpx; color: var(--nb-ink); flex-shrink: 0; }
-.editor-input { flex: 1; min-width: 0; height: 96rpx; text-align: right; font-size: 28rpx; color: var(--nb-ink); background: transparent; padding: 0; }
+.editor-label { font-size: var(--font-md); color: var(--nb-ink); flex-shrink: 0; }
+.editor-input { flex: 1; min-width: 0; height: 96rpx; text-align: right; font-size: var(--font-md); color: var(--nb-ink); background: transparent; padding: 0; }
 .editor-input:focus { background: var(--nb-page); }
 .editor-placeholder { color: var(--nb-muted); }
-.editor-phone { margin-left: auto; font-size: 28rpx; color: var(--nb-secondary); }
-.editor-note { display: block; margin: 20rpx 8rpx 32rpx; font-size: 24rpx; line-height: 1.6; color: var(--nb-secondary); }
-.profile-editor .editor-save { width: 100%; min-height: 96rpx; margin: 0; padding: 24rpx; box-sizing: border-box; border: 0; border-radius: 20rpx; background: var(--nb-action); color: var(--nb-inverse); font-size: 30rpx; font-weight: 600; line-height: 1.6; box-shadow: none; }
+.editor-phone { margin-left: auto; font-size: var(--font-md); color: var(--nb-secondary); }
+.editor-note { display: block; margin: 20rpx var(--space-xs) var(--space-lg); font-size: var(--font-sm); line-height: 1.6; color: var(--nb-secondary); }
+.profile-editor .editor-save { width: 100%; min-height: 96rpx; margin: 0; padding: var(--space-md); box-sizing: border-box; border: 0; border-radius: var(--radius-md); background: var(--nb-action); color: var(--nb-inverse); font-size: var(--btn-font-size); font-weight: 600; line-height: 1.6; box-shadow: none; }
 .editor-save::after { border: 0; }
 .editor-save:active { opacity: .8; }
 .profile-editor .editor-save[disabled] { opacity: .45; }
@@ -18,4 +18,4 @@
 @import '../../../styles/booking-actions.wxss';
 .editor-input,.editor-placeholder,.editor-phone,.editor-label { font-size:var(--font-sm); }
 .editor-input { min-height:44px; }
-.profile-editor .editor-save { padding:0 24rpx; }
+.profile-editor .editor-save { padding:0 var(--space-md); }

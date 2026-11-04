@@ -1,3 +1,4 @@
+const bookingRealtime = require('../../../utils/booking-realtime');
 const api = require('../../../services/api');
 const {
   decorateTechnicianOrder
@@ -7,6 +8,7 @@ const { technicianBookingCardHandlers = {} } = require('../utils/technician-book
 const TRIP_STATUSES = ['pending_shop', 'in_progress'];
 
 Page({
+  onBookingChanged() { return this.loadOrders({ silent: true }); },
   onBookingCardOpen: technicianBookingCardHandlers.onBookingCardOpen,
   onBookingCardQuote: technicianBookingCardHandlers.onBookingCardQuote,
   onBookingCardWithdrawQuote: technicianBookingCardHandlers.onBookingCardWithdrawQuote,
@@ -16,18 +18,26 @@ Page({
   onBookingCardComplete: technicianBookingCardHandlers.onBookingCardComplete,
   onBookingCardRebook: technicianBookingCardHandlers.onBookingCardRebook,
   onBookingCardConfirmed: technicianBookingCardHandlers.onBookingCardConfirmed,
+  onBookingCardRecord: technicianBookingCardHandlers.onBookingCardRecord,
+  onBookingCardUploadWork: technicianBookingCardHandlers.onBookingCardUploadWork,
+  onBookingCardViewWork: technicianBookingCardHandlers.onBookingCardViewWork,
   data: {
     orders: [],
     loading: false,
     loadFailed: false
   },
 
+  onShow() {
+    bookingRealtime.start();
+    if (!this.data.loading) this.loadOrders();
+  },
+
   onLoad() {
     this.loadOrders();
   },
 
-  async loadOrders() {
-    this.setData({ loading: true, loadFailed: false });
+  async loadOrders(options = {}) {
+    if (!options.silent) this.setData({ loading: true, loadFailed: false });
     try {
       const [res, technicianProfile] = await Promise.all([
         api.technician.orders.list({}),
@@ -42,6 +52,7 @@ Page({
         .sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
       this.setData({ orders });
     } catch (err) {
+      if (options.silent) throw err;
       this.setData({ loadFailed: true });
     } finally {
       this.setData({ loading: false });

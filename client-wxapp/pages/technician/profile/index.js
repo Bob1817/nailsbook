@@ -1,12 +1,13 @@
 const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
+const { formIssues } = require('../utils/service-forms');
 const { phoneMask } = require('../../../utils/util');
 const { parseDate, isSameDay } = require('../../../utils/format');
 const { normalizeSchedule, genId, daysSummary, DAY_KEYS, TIME_OPTIONS } = require('../../../utils/workSchedule');
 
 // 我的预约 - 状态快捷入口
 const ORDER_SHORTCUTS = [
-  { status: 'pending_quote',   label: '待报价', icon: '/static/icons/tab-chat-active.svg' },
+  { status: 'pending_quote',   label: '待报价', icon: '/static/icons/tab-chat.svg' },
   { status: 'pending_confirm', label: '待确认', icon: '/static/icons/clock.svg' },
   { status: 'pending_shop',    label: '待到店', icon: '/static/icons/shop.svg' },
   { status: 'in_progress',     label: '服务中', icon: '/static/icons/status-progress.svg' }
@@ -18,6 +19,7 @@ const TOOLS = [
   { key: 'homepage',    label: '我的主页', icon: '/static/icons/profile-edit.svg' },
   { key: 'services',    label: '服务管理', icon: '/static/icons/scissors.svg' },
   { key: 'works',       label: '作品管理', icon: '/static/icons/image.svg' },
+  { key: 'serviceForms', label: '服务形式', icon: '/static/icons/pin.svg' },
   { key: 'shops',       label: '店铺管理', icon: '/static/icons/shop.svg' },
   { key: 'tags',        label: '标签管理', icon: '/static/icons/tag.svg' },
   { key: 'marketingMaterials', label: '营销工具', icon: '/static/icons/share.svg' }
@@ -29,8 +31,10 @@ const TOOL_ROUTES = {
   works:        '/pages/technician/works/index',
   serviceTime:  '/pages/technician/service-time/index',
   shops:        '/pages/technician/shop-management/index',
+  serviceForms: '/pages/technician/service-forms/index',
   tags:         '/pages/technician/tag-management/index',
-  marketingMaterials: '/pages/technician/marketing-materials/index'
+  marketingMaterials: '/pages/technician/marketing-materials/index',
+  quoteRecords: '/pages/technician/quote-records/index'
 };
 const DAILY_CAPACITY_MIN = 1;
 const DAILY_CAPACITY_MAX = 10;
@@ -51,7 +55,7 @@ Page({
     canAcceptOrders: false,  // 是否满足接单前置条件（已配置到店服务）
     stats: { todayOrders: 0, monthOrders: 0, pendingTotal: 0, customers: 0, newCustomers: 0, works: 0, monthlyRevenue: '¥0', rating: '待积累' },
     orderShortcuts: ORDER_SHORTCUTS.map((s) => ({ ...s, count: 0 })),
-    tools: ['services', 'works', 'shops', 'tags', 'marketingMaterials', 'homepage', 'quickBooking'].map(key => TOOLS.find(item => item.key === key)),
+    tools: ['services', 'works', 'serviceForms', 'shops', 'tags', 'marketingMaterials', 'homepage', 'quickBooking'].map(key => TOOLS.find(item => item.key === key)),
     showStatsDetail: false,
     showInviteDetail: false,
     inviteLinkLoading: false,
@@ -109,8 +113,9 @@ Page({
     endTimeIdx: 0
   },
 
-  onLoad() {
+  onLoad(options) {
     this.applyUserInfo();
+    if (options && options.editSchedule === '1') this.openScheduleModal();
   },
 
   onShow() {
@@ -193,20 +198,23 @@ Page({
     const userInfo = wx.getStorageSync('userInfo') || wx.getStorageSync('technician_userInfo') || {};
     if (userInfo.phone) userInfo.phoneDisplay = phoneMask(userInfo.phone);
     const shopServiceOn = !!userInfo.shopService;
+    const homeServiceOn = !!userInfo.homeService;
     const activeServices = (userInfo.serviceItems || []).filter((item) =>
       item && item.isActive !== false && item.name && Number.isFinite(Number(item.price)) && Number(item.durationMinutes) > 0
     );
     const schedule = normalizeSchedule(userInfo.serviceSchedule);
     const activeScheme = (schedule.schemes || []).find((item) => item.id === schedule.activeSchemeId);
     const serviceReady = activeServices.length > 0;
-    const shopReady = shopServiceOn && (userInfo.shopAddresses || []).some((item) => item.enabled !== false && (item.detailAddress || item.address));
+    const shopReady = shopServiceOn && formIssues(userInfo, 'shop').length === 0;
+    const homeReady = homeServiceOn && formIssues(userInfo, 'home').length === 0;
+    const fulfillmentReady = (shopServiceOn || homeServiceOn) && (!shopServiceOn || shopReady) && (!homeServiceOn || homeReady);
     const scheduleReady = !!(userInfo.serviceSchedule && activeScheme && activeScheme.days && activeScheme.days.length && activeScheme.startTime < activeScheme.endTime);
     const setupSteps = [
       { key: 'services', label: '完善服务与定价', hint: serviceReady ? '已配置有效服务' : '添加服务名称、价格和预计时长', done: serviceReady, route: 'services' },
-      { key: 'shop', label: '完善到店门店', hint: shopReady ? '已配置可用门店' : '添加客户到店地址', done: shopReady, route: 'shops' },
+      { key: 'shop', label: '配置服务形式', hint: fulfillmentReady ? '服务形式已配置' : '选择到店或上门，完成对应设置', done: fulfillmentReady, route: 'serviceForms' },
       { key: 'schedule', label: '设置可预约时间', hint: scheduleReady ? '已启用工作时间方案' : '设置工作日和营业时段', done: scheduleReady, route: 'schedule' }
     ];
-    const canAcceptOrders = serviceReady && shopReady && scheduleReady;
+    const canAcceptOrders = serviceReady && fulfillmentReady && scheduleReady;
     this.setData({ userInfo, shopServiceOn, needsSetup: !canAcceptOrders, canAcceptOrders, setupSteps });
     if (userInfo.id && userInfo.invitationCode) wx.showShareMenu({ menus: ['shareAppMessage'] });
     else wx.hideShareMenu();
@@ -215,6 +223,7 @@ Page({
 
   goSetupStep(e) {
     const route = e.currentTarget.dataset.route;
+    if (route === 'serviceForms') return wx.navigateTo({ url:'/pages/technician/service-forms/index' });
     if (route === 'schedule') return this.openScheduleModal();
     if (route === 'shops') return wx.navigateTo({ url: '/pages/technician/shop-management/index' });
     if (route === 'homepage') return wx.navigateTo({ url: '/pages/technician/homepage-settings/index' });
@@ -256,31 +265,7 @@ Page({
       }
       return;
     }
-    if (!this.data.canAcceptOrders) {
-      const firstIncomplete = this.data.setupSteps.find((item) => !item.done);
-      wx.showModal({
-        title: '请先完成接单设置',
-        content: '需要完善服务与定价、到店门店和可预约时间后才能开启接单。',
-        confirmText: '去完善',
-        success: (res) => {
-          if (res.confirm && firstIncomplete) {
-            this.goSetupStep({ currentTarget: { dataset: { route: firstIncomplete.route } } });
-          }
-        }
-      });
-      return;
-    }
-    try {
-      const updated = await api.technician.auth.updateStatus('active');
-      const next = { ...userInfo, ...updated };
-      wx.setStorageSync('userInfo', next);
-      wx.setStorageSync('technician_userInfo', next);
-      this.setData({ userInfo: next });
-      this.computeAccepting();
-      wx.showToast({ title: '已开启接单', icon: 'success' });
-    } catch (err) {
-      wx.showToast({ title: err.message || '尚未满足接单条件', icon: 'none' });
-    }
+    wx.navigateTo({ url: '/pages/technician/service-forms/index?mode=accept' });
   },
 
   updateAvailabilitySummary() {
@@ -599,7 +584,6 @@ Page({
         newShops.push({ id, name: shopName, detailAddress: shopAddress, phone: shopPhone, enabled: true });
       }
       await api.technician.auth.updateServiceType({
-        shopService: true,
         shopAddresses: newShops
       });
       // 重新获取用户信息
@@ -627,7 +611,6 @@ Page({
         try {
           const newShops = this.data.shopList.filter(s => !(s.name === name && (s.detailAddress || s.address) === address));
           await api.technician.auth.updateServiceType({
-            shopService: newShops.length > 0,
             shopAddresses: newShops
           });
           // 重新获取用户信息

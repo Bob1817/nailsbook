@@ -9,7 +9,7 @@
 
 /* ===== 店铺信息 ===== */
 .shop-info {
-  padding: 24rpx 32rpx 20rpx;
+  padding: var(--space-md) var(--space-lg) 20rpx;
   background: var(--bg-card);
   border-bottom: 0;
 }
@@ -31,7 +31,7 @@
 .tabs {
   display: flex;
   gap: 12rpx;
-  padding: 20rpx 32rpx;
+  padding: 20rpx var(--space-lg);
   background: var(--bg-card);
 }
 .tab {
@@ -60,14 +60,14 @@
 /* ===== 编辑区域 ===== */
 .editor-area {
   flex: 1;
-  padding: 24rpx 32rpx 140rpx;
+  padding: var(--space-md) var(--space-lg) 140rpx;
   box-sizing: border-box;
 }
 .editor-intro {
   display: flex;
   flex-direction: column;
-  gap: 8rpx;
-  margin-bottom: 24rpx;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-md);
 }
 .editor-title, .editor-empty-title {
   font-size: var(--font-md);
@@ -140,6 +140,7 @@
 .block-action:active { background: var(--bg-input); }
 .block-action-disabled { opacity: .25; }
 .block-action-delete { color: var(--danger); }
+.block-action-icon { width: var(--icon-sm); height: var(--icon-sm); }
 .block-textarea {
   width: 100%;
   min-height: 160rpx;
@@ -160,8 +161,8 @@
 }
 .insert-toolbar {
   display: flex;
-  gap: 16rpx;
-  margin-top: 24rpx;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
 }
 .insert-action {
   flex: 1;
@@ -187,7 +188,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+  padding: 20rpx var(--space-lg) calc(20rpx + env(safe-area-inset-bottom));
   background: var(--bg-card);
   box-shadow: 0 -2rpx 16rpx rgba(0, 0, 0, 0.04);
   z-index: 10;

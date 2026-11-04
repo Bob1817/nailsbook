@@ -1,4 +1,4 @@
-.container { min-height: 100vh; background: var(--bg-gradient-entry); padding: 80rpx 40rpx 40rpx; }
+.container { min-height: 100vh; background: var(--bg-gradient-entry); padding: 80rpx var(--space-xl) var(--space-xl); }
 .header { margin-bottom: 60rpx; }
 .logo-circle {
   min-width: 120rpx;
@@ -8,33 +8,33 @@
   background: var(--brand-gradient);
   border-radius: 32rpx;
   color: var(--text-inverse);
-  font-size: 28rpx;
+  font-size: var(--font-md);
   font-weight: var(--weight-semibold);
   letter-spacing: 1rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 32rpx;
+  margin-bottom: var(--space-lg);
 }
 .title { display: block; font-size: var(--font-2xl); font-weight: var(--weight-bold); color: var(--text-primary); margin-bottom: 12rpx; }
 .subtitle { display: block; font-size: var(--font-sm); color: var(--text-muted); }
-.form { background:rgba(255,255,255,.92); border: 0; border-radius: var(--radius-lg); padding:32rpx; box-shadow:0 8rpx 28rpx rgba(0, 0, 0, .045); }
+.form { background:rgba(255,255,255,.92); border: 0; border-radius: var(--radius-lg); padding:var(--space-lg); box-shadow:0 8rpx 28rpx rgba(0, 0, 0, .045); }
 .phone-display { background:var(--nb-page); border: 0; border-radius: var(--radius-sm); padding: var(--space-md); margin-bottom: var(--space-md); font-size: var(--font-md); color:var(--nb-secondary); }
 .form-item { margin-bottom: 28rpx; }
 .label { display: block; font-size: var(--font-sm); color: var(--text-body); margin-bottom: 12rpx; }
-.input  { width:100%; height:92rpx; border: 0; border-radius: var(--radius-sm); padding:0 24rpx; font-size: var(--font-md); color: var(--text-primary); box-sizing:border-box; background: var(--nb-soft-surface); box-shadow:0 2rpx 8rpx rgba(0, 0, 0, .035); transition:border-color 180ms ease,box-shadow 180ms ease;}
+.input  { width:100%; height:92rpx; border: 0; border-radius: var(--radius-sm); padding:0 var(--space-md); font-size: var(--font-md); color: var(--text-primary); box-sizing:border-box; background: var(--nb-soft-surface); box-shadow:0 2rpx 8rpx rgba(0, 0, 0, .035); transition:border-color 180ms ease,box-shadow 180ms ease;}
 .input:focus { border-color:var(--nb-link); box-shadow:0 0 0 6rpx rgba(0, 0, 0, .08); }
-.error-text { display: block; text-align: center; font-size: var(--font-sm); color: var(--text-error); margin: 16rpx 0; }
+.error-text { display: block; text-align: center; font-size: var(--font-sm); color: var(--text-error); margin: var(--space-sm) 0; }
 .btn-primary { width: 100%; height: 88rpx; border-radius: var(--btn-radius); background: var(--brand-gradient); color: var(--text-inverse); font-size: var(--font-md); font-weight: var(--weight-semibold); display: flex; align-items: center; justify-content: center; border: none; margin-top: var(--space-sm); box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.3); }
 .btn-primary:active { opacity: 0.85; }
 .btn-primary[disabled] { opacity: 0.5; }
 .wechat-set-btn::after { border: none; }
 
-.fallback-card { display: flex; flex-direction: column; align-items: center; gap: 24rpx; margin-top: var(--space-sm); padding: 8rpx 0; }
+.fallback-card { display: flex; flex-direction: column; align-items: center; gap: var(--space-md); margin-top: var(--space-sm); padding: var(--space-xs) 0; }
 .fallback-text { font-size: var(--font-sm); color: var(--text-muted); text-align: center; line-height: 1.6; }
 .contact-btn {
   min-height: 88rpx;
-  padding: 0 48rpx;
+  padding: 0 var(--space-2xl);
   border: 0;
   border-radius: var(--radius-lg);
   background: var(--nb-soft-surface);

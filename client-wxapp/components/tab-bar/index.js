@@ -19,6 +19,7 @@ const TECHNICIAN_TABS = [
 Component({
   properties: {
     selected: { type: String, value: 'home' },
+    placeholder: { type: Boolean, value: true },
     unreadCount: {
       type: Number,
       value: -1,
@@ -98,17 +99,19 @@ Component({
     onTabTap(e) {
       const key = e.currentTarget.dataset.key;
       const tab = this.data.tabs.find(t => t.key === key);
-      if (!tab || key === this.data.selected) return;
+      if (!tab || key === this.data.selected || this._navigating) return;
 
       const app = getApp();
       const role = app.globalData.role || wx.getStorageSync('role') || 'client';
       const token = app.globalData.token || wx.getStorageSync(`${role}_token`) || wx.getStorageSync('token');
+      this._navigating = true;
+      const complete = () => { this._navigating = false; };
       if (!token) {
-        wx.navigateTo({ url: '/pages/login/index?redirect=' + encodeURIComponent(tab.path) });
+        wx.navigateTo({ url: '/pages/login/index?redirect=' + encodeURIComponent(tab.path), complete });
         return;
       }
 
-      wx.reLaunch({ url: tab.path });
+      wx.reLaunch({ url: tab.path, complete });
     }
   }
 });

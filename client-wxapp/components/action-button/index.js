@@ -7,7 +7,9 @@ Component({
     loading: { type: Boolean, value: false },
     disabled: { type: Boolean, value: false },
     block: { type: Boolean, value: true },
-    ariaLabel: { type: String, value: '' }
+    compact: { type: Boolean, value: false },
+    ariaLabel: { type: String, value: '' },
+    openType: { type: String, value: '' }
   },
   observers: {
     variant(value) {
@@ -15,8 +17,11 @@ Component({
     }
   },
   methods: {
-    onTap() {
-      if (!this.data.disabled && !this.data.loading) this.triggerEvent('tap');
+    onTap(e) {
+      if (!this.data.disabled && !this.data.loading) this.triggerEvent('tap', e && e.detail);
+    },
+    onGetPhoneNumber(e) {
+      this.triggerEvent('getphonenumber', e && e.detail);
     }
   }
 });

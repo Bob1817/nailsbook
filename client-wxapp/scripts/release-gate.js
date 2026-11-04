@@ -2,8 +2,9 @@ const { execFileSync } = require('child_process');
 const { join } = require('path');
 
 const root = join(__dirname, '..');
+const pyBin = process.env.PYTHON || (require('fs').existsSync('/opt/homebrew/bin/python3') ? '/opt/homebrew/bin/python3' : 'python3');
 for (const args of [['sync-colors.py', '--check'], ['check-colors.py']]) {
-  execFileSync('python3', [join(root, '..', 'scripts', args[0]), ...args.slice(1), '--wxapp-only'], {
+  execFileSync(pyBin, [join(root, '..', 'scripts', args[0]), ...args.slice(1), '--wxapp-only'], {
     cwd: root,
     stdio: 'inherit'
   });
@@ -16,6 +17,8 @@ const checks = [
   'check-style-imports.js',
   'test-profile-accepting-switch.js',
   'test-client-profile-layout.js',
+  'test-address-location.js',
+  'test-address-design-system.js',
   'test-role-account-switch.js',
   'test-client-binding-flow.js',
   'test-hero-binding-limits.js',
@@ -27,6 +30,7 @@ const checks = [
   'test-client-auth-profile.js',
   'test-customer-invite-share.js',
   'test-work-share-poster.js',
+  'test-state-card.js',
   'test-customer-card-status.js',
   'test-customer-action-style.js',
   'test-customer-booking-entry.js',
@@ -36,10 +40,13 @@ const checks = [
   'test-request-throttling.js',
   'test-upload-auth.js',
   'test-session-expiry.js',
+  'test-share-entry-navigation.js',
+  'test-route-race.js',
   'test-orders-auth.js',
   'test-artist-navigation.js',
   'test-complete-publish-flow.js',
   'test-service-record-autosave.js',
+  'test-service-forms.js',
   'test-booking-review.js',
   'test-booking-status-colors.js',
   'test-booking-shop-selection.js',
@@ -49,6 +56,7 @@ const checks = [
   'test-booking-time-engine.js',
   'test-booking-availability.js',
   'test-quick-booking.js',
+  'test-passive-booking-flow.js',
   'test-quick-booking-share.js',
   'test-booking-api-capability.js',
   'test-conversion-tracking.js',
@@ -60,6 +68,7 @@ const checks = [
   'test-technician-booking-day-control.js',
   'test-booking-capacity-stepper.js',
   'test-technician-booking-card.js',
+  'test-technician-booking-card-and-works-sync.js',
   'test-chat-detail-consistency.js',
   'test-technician-chat-conversation.js',
   'test-message-unread-badge.js',
@@ -79,6 +88,8 @@ const checks = [
   'test-create-order-location-presentation.js',
   'test-technician-order-actions.js',
   'test-booking-preparation-context.js',
+  'test-order-detail-differentiation.js',
+  'test-order-action-interaction.js',
   'test-work-source-service.js',
   'test-work-card-role-actions.js',
   'test-work-image-upload-controls.js',
@@ -98,7 +109,9 @@ const checks = [
   'test-account-deletion.js',
   'test-work-error-state.js',
   'test-work-promotion.js',
+  'test-image-pipeline.js',
   'test-page-governance.js',
+  'test-filter-chip-standard.js',
 ];
 
 execFileSync(process.execPath, [join(__dirname, 'validate-miniprogram.js')], {

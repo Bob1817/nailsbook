@@ -1,8 +1,8 @@
 page { min-height: 100%; background: var(--nb-page); color: var(--nb-ink); }
 .page { min-height: 100vh; background: var(--nb-page); }
-.container { padding: 24rpx 32rpx calc(40rpx + env(safe-area-inset-bottom)); box-sizing: border-box; }
+.container { padding: var(--space-md) var(--space-lg) calc(var(--space-xl) + env(safe-area-inset-bottom)); box-sizing: border-box; }
 .form { padding: 28rpx 28rpx 4rpx; border-radius: var(--radius-lg); background: var(--nb-surface); }
-.submit-wrap { margin-top: 24rpx; }
+.submit-wrap { margin-top: var(--space-md); }
 
 .wechat-submit-btn {
   width: 100%;
@@ -26,16 +26,16 @@ page { min-height: 100%; background: var(--nb-page); color: var(--nb-ink); }
 .fallback-card {
   background: var(--nb-surface);
   border-radius: var(--radius-lg);
-  padding: 32rpx;
+  padding: var(--space-lg);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24rpx;
+  gap: var(--space-md);
 }
 .fallback-text { font-size: var(--font-sm); color: var(--text-muted); text-align: center; line-height: 1.6; }
 .contact-btn {
   min-height: 88rpx;
-  padding: 0 48rpx;
+  padding: 0 var(--space-2xl);
   border: 0;
   border-radius: var(--radius-lg);
   background: var(--nb-soft-surface);

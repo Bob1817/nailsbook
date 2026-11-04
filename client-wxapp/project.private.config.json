@@ -1,15 +1,22 @@
 {
-  "libVersion": "2.25.0",
+  "libVersion": "3.17.2",
   "projectname": "client-wxapp",
   "condition": {
     "miniprogram": {
       "list": [
         {
+          "name": "注册页",
+          "pathName": "pages/register/index",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
           "name": "绑定弹层",
           "pathName": "pages/client/profile/index",
           "query": "",
-          "scene": null,
-          "launchMode": "default"
+          "launchMode": "default",
+          "scene": null
         },
         {
           "name": "手机号登录布局",

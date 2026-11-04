@@ -1,7 +1,7 @@
 const api = require('../../../services/api');
 
 Page({
-  data: { artist: null, loading: true, error: '', owner: false, enabled: false, quickBookingEnabled: false, acceptingBookings: false, savingAvailability: false, submitting: false },
+  data: { artist: null, loading: true, error: '', owner: false, enabled: false, quickBookingEnabled: false, acceptingBookings: false, savingAvailability: false, submitting: false, serviceDate: '', startTime: '', shopName: '' },
 
   onLoad(options) {
     this.techId = Number(options.techId);
@@ -26,7 +26,8 @@ Page({
       if (Number(artist.id) !== this.techId || artist.invitationCode !== this.inviteCode) throw new Error('预约邀请已失效，请向美甲师索取新的分享');
       const quickBookingEnabled = settings.quickBookingEnabled === true;
       const acceptingBookings = artist.acceptingBookings === true;
-      this.setData({ artist, quickBookingEnabled, acceptingBookings, enabled: quickBookingEnabled && acceptingBookings });
+      const shops = (artist.shopAddresses || []).filter(shop => shop.enabled !== false);
+      this.setData({ artist, quickBookingEnabled, acceptingBookings, enabled: quickBookingEnabled && acceptingBookings, shopName: shops.length === 1 ? shops[0].name : '' });
       wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
     } catch (err) {
       this.setData({ error: err.message || '加载失败，请重试', artist: null, enabled: false });
@@ -77,9 +78,16 @@ Page({
     wx.showModal({ title: '分享到朋友圈', content: '点击右上角“…”中的“分享到朋友圈”。分享会自动携带您的预约入口和绑定邀请码。', showCancel: false });
   },
 
+  goHome: require('../../../utils/entry-navigation').goHome,
+
   viewArtistHome() {
     if (!this.data.artist || !this.techId) return;
     wx.navigateTo({ url: `/pages/client/artist-home/index?id=${this.techId}&source=quick_booking&invite=${encodeURIComponent(this.inviteCode)}` });
+  },
+
+  onTimeChange(e) {
+    const detail = e.detail || {};
+    this.setData({ serviceDate: detail.serviceDate || '', startTime: detail.startTime || '' });
   },
 
   async bookNow() {
@@ -89,7 +97,10 @@ Page({
       wx.showModal({ title: '进入小程序预约', content: '请点击页面底部“前往小程序”，进入后点击“立即预约”完成授权。', showCancel: false });
       return;
     }
-    const path = `/pages/client/create-order/index?techId=${this.techId}&mode=quick&source=quick_booking&invite=${encodeURIComponent(this.inviteCode)}`;
+    let path = `/pages/client/create-order/index?techId=${this.techId}&mode=quick&source=quick_booking&invite=${encodeURIComponent(this.inviteCode)}`;
+    if (this.data.serviceDate && this.data.startTime) {
+      path += `&serviceDate=${this.data.serviceDate}&startTime=${encodeURIComponent(this.data.startTime)}`;
+    }
     wx.navigateTo({ url: path });
   }
 });

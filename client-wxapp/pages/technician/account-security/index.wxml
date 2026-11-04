@@ -2,7 +2,7 @@
 <view class="page">
   <secondary-page-header title="保护你的账号" subtitle="定期更新密码，避免在多个平台重复使用同一密码。" />
   <view class="settings-page">
-  <view class="security-card"><view class="security-icon">✓</view><view><text class="security-title">账号状态正常</text><text class="security-sub">密码与登录信息由平台安全保护</text></view></view>
+  <view class="security-card"><view class="security-icon"><image class="security-icon-svg" src="/static/icons/check-white.svg" mode="aspectFit" /></view><view><text class="security-title">账号状态正常</text><text class="security-sub">密码与登录信息由平台安全保护</text></view></view>
   <view class="section-heading"><text class="section-title">修改密码</text><text class="section-note">至少 6 位字符</text></view>
   <view class="form-card">
     <view class="field"><text class="label">当前密码</text><input class="input" password value="{{oldPassword}}" bindinput="onOldInput" placeholder="输入当前密码" placeholder-class="ph" confirm-type="done"/></view>

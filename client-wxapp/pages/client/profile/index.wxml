@@ -1,7 +1,8 @@
+<nav-bar title="我的" />
 <view class="page">
 
-  <!-- ===== 顶部个人信息区：白底铺到屏幕顶端与导航栏连成一体，内容自胶囊按钮下方开始 ===== -->
-  <view class="profile-top" style="padding-top: {{navBarHeight}}px;">
+  <!-- ===== 顶部个人信息区 ===== -->
+  <view class="profile-top">
     <view class="page-hero" bindtap="editProfile">
       <view class="hero-left">
         <button class="hero-avatar-wrap" open-type="chooseAvatar" bindchooseavatar="chooseAvatar" catchtap="preventBubble" aria-label="更换头像，支持 JPG、PNG、WebP，最大5MB">
@@ -27,14 +28,13 @@
   </view>
 
   <!-- ===== 可滚动内容 ===== -->
-  <scroll-view class="content-scroll" scroll-y enhanced show-scrollbar="{{false}}">
-    <view class="content-area">
+  <view class="content-area">
 
       <!-- 美甲师轮播卡片：直接在头像下方展示 -->
       <view wx:if="{{visibleCount}}" class="tech-carousel-section {{visibleCount === 1 ? 'tech-carousel-section-single' : ''}}">
         <!-- 左滑提示箭头 -->
         <view wx:if="{{visibleCount > 1 && carouselIndex > 0}}" class="tech-carousel-arrow tech-carousel-arrow-left" bindtap="carouselPrev" aria-label="上一位美甲师">
-          <text class="tech-carousel-arrow-icon">‹</text>
+          <image class="tech-carousel-arrow-icon" src="/static/icons/arrow-left-white.svg" mode="aspectFit" />
         </view>
         <scroll-view class="tech-carousel" scroll-x enhanced show-scrollbar="{{false}}" bindscroll="onCarouselScroll" scroll-into-view="{{carouselScrollTarget}}">
           <view class="tech-carousel-track">
@@ -73,7 +73,7 @@
         </scroll-view>
         <!-- 右滑提示箭头 -->
         <view wx:if="{{visibleCount > 1 && carouselIndex < visibleCount - 1}}" class="tech-carousel-arrow tech-carousel-arrow-right" bindtap="carouselNext" aria-label="下一位美甲师">
-          <text class="tech-carousel-arrow-icon">›</text>
+          <image class="tech-carousel-arrow-icon" src="/static/icons/arrow-right-white.svg" mode="aspectFit" />
         </view>
         <!-- 指示器 -->
         <view wx:if="{{visibleCount > 1}}" class="tech-carousel-dots" aria-label="左右滑动查看更多美甲师">
@@ -91,39 +91,39 @@
         </view>
         <view class="menu-list">
           <view class="menu-item" bindtap="manageTechnicians">
-            <view class="menu-icon-wrap menu-icon-pink"><image class="m-icon" src="/static/icons/technician.svg" mode="aspectFit" /></view>
+            <view class="menu-icon-wrap menu-icon-pink"><image class="m-icon" src="/static/icons/role-technician.svg" mode="aspectFit" /></view>
             <text class="menu-label">我的美甲师</text>
-            <text class="menu-arrow">›</text>
+            <image class="menu-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
           </view>
           <view class="menu-item" bindtap="navigateToOrders">
             <view class="menu-icon-wrap menu-icon-pink"><image class="m-icon" src="/static/icons/document.svg" mode="aspectFit" /></view>
             <text class="menu-label">我的订单</text>
-            <text class="menu-arrow">›</text>
+            <image class="menu-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
           </view>
           <view class="menu-item" bindtap="navigateToArchive">
             <view class="menu-icon-wrap menu-icon-pink"><image class="m-icon" src="/static/icons/image.svg" mode="aspectFit" /></view>
             <text class="menu-label">我的美甲记录</text>
-            <text class="menu-arrow">›</text>
+            <image class="menu-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
           </view>
           <view class="menu-item" bindtap="navigateToDesigns">
             <view class="menu-icon-wrap menu-icon-pink"><image class="m-icon" src="/static/icons/edit.svg" mode="aspectFit" /></view>
             <text class="menu-label">设计记录</text>
-            <text class="menu-arrow">›</text>
+            <image class="menu-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
           </view>
           <view class="menu-item" bindtap="navigateToFavorites">
             <view class="menu-icon-wrap menu-icon-pink"><image class="m-icon" src="/static/icons/bookmark.svg" mode="aspectFit" /></view>
             <text class="menu-label">我的收藏</text>
-            <text class="menu-arrow">›</text>
+            <image class="menu-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
           </view>
           <view class="menu-item" bindtap="navigateToLikes">
             <view class="menu-icon-wrap menu-icon-pink"><image class="m-icon" src="/static/icons/social-heart.svg" mode="aspectFit" /></view>
             <text class="menu-label">我的点赞</text>
-            <text class="menu-arrow">›</text>
+            <image class="menu-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
           </view>
           <view class="menu-item" bindtap="navigateToFeedback">
             <view class="menu-icon-wrap menu-icon-pink"><image class="m-icon" src="/static/icons/tab-chat.svg" mode="aspectFit" /></view>
             <text class="menu-label">问题反馈</text>
-            <text class="menu-arrow">›</text>
+            <image class="menu-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
           </view>
         </view>
       </view>
@@ -133,44 +133,49 @@
         <view class="section-head">
           <view class="section-head-copy">
             <text class="section-title">账户信息</text>
-            <text class="section-sub">管理个人资料、登录身份与账户安全</text>
+            <text class="section-sub">管理上门地址、登录身份与账户安全</text>
           </view>
         </view>
         <view class="menu-list">
+          <view class="menu-item" bindtap="navigateToAddresses" role="button" aria-label="管理上门地址">
+            <view class="menu-icon-wrap menu-icon-purple"><image class="m-icon" src="/static/icons/pin.svg" mode="aspectFit" /></view>
+            <text class="menu-label">上门地址管理</text>
+            <image class="menu-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
+          </view>
           <view class="menu-item" bindtap="navigateToPassword">
             <view class="menu-icon-wrap menu-icon-purple"><image class="m-icon" src="/static/icons/lock.svg" mode="aspectFit" /></view>
             <text class="menu-label">修改密码</text>
-            <text class="menu-arrow">›</text>
+            <image class="menu-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
           </view>
           <view class="menu-item" bindtap="navigateToManual">
             <view class="menu-icon-wrap menu-icon-purple"><image class="m-icon" src="/static/icons/book.svg" mode="aspectFit" /></view>
             <text class="menu-label">使用手册</text>
-            <text class="menu-arrow">›</text>
+            <image class="menu-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
           </view>
           <view class="menu-item" bindtap="openAgreement" data-type="user">
             <view class="menu-icon-wrap menu-icon-purple"><image class="m-icon" src="/static/icons/document.svg" mode="aspectFit" /></view>
             <text class="menu-label">用户协议</text>
-            <text class="menu-arrow">›</text>
+            <image class="menu-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
           </view>
           <view class="menu-item" bindtap="openAgreement" data-type="privacy">
             <view class="menu-icon-wrap menu-icon-purple"><image class="m-icon" src="/static/icons/shield.svg" mode="aspectFit" /></view>
             <text class="menu-label">隐私政策</text>
-            <text class="menu-arrow">›</text>
+            <image class="menu-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
           </view>
           <view class="menu-item" bindtap="requestAccountDeletion">
             <view class="menu-icon-wrap menu-icon-purple"><image class="m-icon" src="/static/icons/document.svg" mode="aspectFit" /></view>
             <text class="menu-label">账号注销申请</text>
-            <text class="menu-arrow">›</text>
+            <image class="menu-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
           </view>
           <view class="menu-item" bindtap="switchAccount">
             <view class="menu-icon-wrap menu-icon-purple"><image class="m-icon" src="/static/icons/tab-profile.svg" mode="aspectFit" /></view>
             <text class="menu-label">切换账号</text>
-            <text class="menu-arrow">›</text>
+            <image class="menu-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
           </view>
           <view class="menu-item" bindtap="navigateToAbout">
             <view class="menu-icon-wrap menu-icon-purple"><image class="m-icon" src="/static/icons/info.svg" mode="aspectFit" /></view>
             <text class="menu-label">关于我们</text>
-            <text class="menu-arrow">›</text>
+            <image class="menu-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit" />
           </view>
         </view>
       </view>
@@ -179,7 +184,6 @@
       <text class="version">OnlyNail v1.0.0</text>
 
     </view>
-  </scroll-view>
 </view>
 
 <tab-bar selected="profile" />

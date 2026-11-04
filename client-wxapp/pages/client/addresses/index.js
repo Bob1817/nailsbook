@@ -1,11 +1,42 @@
 const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
+const location = require('../utils/location');
 
 Page({
   data: {
     addresses: [],
     loading: true,
-    loadFailed: false
+    loadFailed: false,
+    isSelectMode: false, selectedAddressId:0
+  },
+
+  onLoad(options) {
+    this.isSelectMode = options && options.mode === 'select';
+    this.setData({ isSelectMode: this.isSelectMode });
+  },
+
+  selectAddress(e) {
+    if (!this.isSelectMode) return;
+    const id = e.currentTarget.dataset.id;
+    const addr = this.data.addresses.find(a => String(a.id) === String(id));
+    if (!addr) return;
+    if (!location.coordinates(addr)) {
+      wx.showToast({ title:'请先编辑地址并确认地图位置', icon:'none' });
+      return this.editAddress(e);
+    }
+    this.setData({ selectedAddressId:addr.id });
+  },
+
+  confirmAddress() {
+    const addr = this.data.addresses.find(a => String(a.id) === String(this.data.selectedAddressId));
+    if (!addr || !location.coordinates(addr)) return;
+    wx.setStorageSync('client_selected_address', addr);
+    wx.navigateBack();
+  },
+
+  onPrimaryAction() {
+    if (this.isSelectMode && this.data.addresses.length) this.confirmAddress();
+    else this.addAddress();
   },
 
   onShow() {
@@ -31,7 +62,8 @@ Page({
         }
       }
 
-      this.setData({ addresses: list, loading: false, loadFailed: false });
+      this.setData({ addresses: list, loading: false, loadFailed: false,
+        selectedAddressId:list.some(a => String(a.id) === String(this.data.selectedAddressId)) ? this.data.selectedAddressId : 0 });
     } catch (err) {
       this.setData({ loading: false, loadFailed: true });
     }
@@ -39,13 +71,13 @@ Page({
 
   addAddress() {
     // 新增第一个地址时强制设为默认（默认地址不能为空）
-    const forceDefault = this.data.addresses.length === 0 ? '?forceDefault=1' : '';
+    const forceDefault = '?requireLocation=1' + (this.data.addresses.length === 0 ? '&forceDefault=1' : '');
     wx.navigateTo({ url: '/pages/client/address-edit/index' + forceDefault });
   },
 
   editAddress(e) {
     const id = e.currentTarget.dataset.id;
-    wx.navigateTo({ url: `/pages/client/address-edit/index?id=${id}` });
+    wx.navigateTo({ url: `/pages/client/address-edit/index?id=${id}&requireLocation=1` });
   },
 
   async setDefault(e) {

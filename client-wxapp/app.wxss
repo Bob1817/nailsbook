@@ -75,9 +75,9 @@ checkbox {
 .text-section   { font-family: var(--font-display); font-size: var(--type-section); }
 
 .mt-20 { margin-top: 20rpx; }
-.mt-40 { margin-top: 40rpx; }
+.mt-40 { margin-top: var(--space-xl); }
 .mb-20 { margin-bottom: 20rpx; }
-.mb-40 { margin-bottom: 40rpx; }
+.mb-40 { margin-bottom: var(--space-xl); }
 
 /* ===== 按钮 ===== */
 .btn-primary {
@@ -188,7 +188,7 @@ checkbox {
 .tag {
   display: inline-flex;
   align-items: center;
-  padding: 4rpx 16rpx;
+  padding: 4rpx var(--space-sm);
   background-color: var(--bg-tag);
   color: var(--brand-primary);
   border-radius: var(--radius-pill);

@@ -1,8 +1,9 @@
 <view class="form-field">
-  <text wx:if="{{label}}" class="form-field-label">{{label}}</text>
-  <view class="form-field-control {{focused ? 'is-focused' : ''}} {{error ? 'has-error' : ''}} {{disabled ? 'is-disabled' : ''}}">
+  <text wx:if="{{label}}" class="form-field-label">{{label}}<text wx:if="{{required}}" class="form-field-required" aria-hidden="true">*</text></text>
+  <view class="form-field-control {{outlined ? 'is-outlined' : ''}} {{focused ? 'is-focused' : ''}} {{error ? 'has-error' : ''}} {{disabled ? 'is-disabled' : ''}}">
     <image wx:if="{{icon}}" class="form-field-icon" src="{{icon}}" mode="aspectFit" aria-hidden="true" />
-    <input
+    <view wx:if="{{customControl}}" class="form-field-custom"><slot name="control"></slot></view>
+    <input wx:else
       class="form-field-input"
       value="{{value}}"
       type="{{type}}"
@@ -12,7 +13,7 @@
       placeholder-class="form-field-placeholder"
       disabled="{{disabled}}"
       confirm-type="done"
-      cursor-spacing="24"
+      cursor-spacing="{{cursorSpacing}}"
       bindinput="onInput"
       bindfocus="onFocus"
       bindblur="onBlur"

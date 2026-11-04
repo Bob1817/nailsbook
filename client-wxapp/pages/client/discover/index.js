@@ -1,5 +1,6 @@
 var api = require('../../../services/api');
 var { normalizeWork } = require('../../../utils/normalize-work');
+var { getLayout, buildColumns } = require('../utils/waterfall');
 
 var CATEGORIES = ['全部', '法式', '渐变', '日系', 'ins风', '简约', '可爱', '水晶', '炫彩'];
 var PAGE_SIZE = 10;
@@ -15,10 +16,6 @@ function openWork(id) {
   wx.navigateTo({ url: '/pages/client/work-detail/index?id=' + encodeURIComponent(id) });
 }
 
-
-// 宽高比循环分配，左右列各自错开
-var ASPECTS_LEFT  = ['aspect-4-5', 'aspect-3-4', 'aspect-5-6', 'aspect-2-3'];
-var ASPECTS_RIGHT = ['aspect-3-4', 'aspect-5-6', 'aspect-4-5', 'aspect-3-4'];
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
@@ -66,8 +63,7 @@ Page({
     featuredWork: null,
     featuredWorks: [],
     featuredIndex: 0,
-    leftCol: [],
-    rightCol: [],
+    waterfallCols: [],
     loading: true,
     loadingMore: false,
     hasMore: false,
@@ -89,7 +85,17 @@ Page({
     } catch (e) {
       // 保持默认 88px
     }
+    this.updateLayout();
     this.loadWorks();
+  },
+
+  onResize: function () {
+    this.updateLayout();
+    this.applyFilter();
+  },
+
+  updateLayout: function () {
+    this._layout = getLayout({ paddingRpx: 28, gapRpx: 20 });
   },
 
   onShow: function () {
@@ -100,7 +106,7 @@ Page({
       return;
     }
     if (!loggedIn) {
-      this.setData({ needLogin: true, loading: false, works: [], featuredWorks: [], leftCol: [], rightCol: [] });
+      this.setData({ needLogin: true, loading: false, works: [], featuredWorks: [], waterfallCols: [] });
       return;
     }
     // 从详情页返回时刷新点赞状态
@@ -117,7 +123,7 @@ Page({
     var self = this;
     // 合规口径：作品仅对已登录客户开放，且只展示其绑定美甲师发布的内容
     if (!isClientLoggedIn()) {
-      self.setData({ needLogin: true, loading: false, works: [], featuredWorks: [], leftCol: [], rightCol: [] });
+      self.setData({ needLogin: true, loading: false, works: [], featuredWorks: [], waterfallCols: [] });
       return;
     }
     self.setData({ loading: true, needLogin: false });
@@ -228,29 +234,15 @@ Page({
 
     var visible = filtered.slice(0, this.data.loadedCount);
 
-    var featuredWorks = visible.filter(function (work) { return work.isFeatured; }).slice(0, 5).map(function (work) {
-      return Object.assign({}, work, { aspect: 'aspect-featured' });
-    });
+    var featuredWorks = visible.filter(function (work) { return work.isFeatured; }).slice(0, 5);
     var featuredWork = featuredWorks[0] || null;
-    var leftCol = [], rightCol = [];
-    visible.forEach(function (w, i) {
-      var isLeft = i % 2 === 0;
-      var rowIdx = Math.floor(i / 2);
-      if (isLeft) {
-        w.aspect = ASPECTS_LEFT[rowIdx % ASPECTS_LEFT.length];
-        leftCol.push(w);
-      } else {
-        w.aspect = ASPECTS_RIGHT[rowIdx % ASPECTS_RIGHT.length];
-        rightCol.push(w);
-      }
-    });
+    var waterfallCols = buildColumns(visible, this._layout || getLayout({ paddingRpx: 28, gapRpx: 20 }));
 
     this.setData({
       filteredWorks: filtered,
       featuredWork: featuredWork,
       featuredWorks: featuredWorks,
-      leftCol: leftCol,
-      rightCol: rightCol,
+      waterfallCols: waterfallCols,
       resultCount: filtered.length,
       hasMore: visible.length < filtered.length,
       loadingMore: false

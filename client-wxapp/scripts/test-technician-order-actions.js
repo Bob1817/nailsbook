@@ -17,10 +17,11 @@ assert.match(js, /case 'pending_agree':\s+return \[EDIT_QUOTE, WITHDRAW_QUOTE\]/
 assert.match(js, /case 'pending_shop':\s+return \[EDIT_BOOKING, CANCEL\]/, '客户确认后必须显示编辑预约和取消预约');
 const bottomActions = wxml.split('<!-- ============ 底部操作栏 ============ -->')[1].split('</view>\n</view>')[0];
 assert(!bottomActions.includes('bindtap="openCancel"'), '底部不得额外硬编码取消预约');
-assert.match(wxml, /order\._actions\.length === 2/, '两个操作必须并列展示');
+assert.match(wxml, /order\._actions\.length === 2|order\._visibleActions\.length === 2/, '两个操作必须并列展示');
+assert.match(wxml, /action-btns-row-3/, '三个操作必须使用并列三按钮布局');
 assert.match(wxss, /\.action-secondary\s*\{[^}]*background:\s*var\(--nb-soft-surface\)[^}]*color:\s*var\(--nb-ink\)/, '编辑预约次按钮必须显示完整背景和文字颜色');
-assert.match(wxml, /更多操作/, '三个及以上操作必须收起到更多操作');
-assert.match(wxml, /wx:for="{{order\._actions}}"/, '更多操作弹层必须展示全部可用操作');
+assert.match(wxml, /更多操作/, '超过三个操作时必须提供更多操作展开抽屉');
+assert.match(wxml, /order\._overflowActions|order\._actions/, '更多操作弹层必须展示可用操作');
 assert.match(wxml, /deposit-summary-amount[^]*定金 ¥/, '最终报价下方必须展示定金金额');
 assert.match(wxml, /order\.depositPaid \? '已支付' : '未支付'/, '最终报价下方必须展示独立定金支付状态');
 assert.match(wxml, /bindchange="onQuoteDepositStatusChange"/, '发送报价必须用选择器编辑定金支付状态');
@@ -38,7 +39,7 @@ assert.match(js, /editDepositPaid && depositFen <= 0/, '更新作品标准报价
 assert.match(js, /payload\.depositAmount = depositAmount/, '人工覆盖定金时必须按元提交，不能再次乘以100');
 assert.match(js, /depositAmount: Number\(depositStr \|\| 0\)/, '调整报价必须按元提交定金');
 assert(!js.includes('depositAmount: depositFen'), '不得把以分计算的临时值提交到元字段');
-assert.match(wxml, /source-work-title[\s\S]*sourceWork\._priceFen \/ 100/, '预约来源作品标题下方必须展示统一口径的作品价格');
+assert.match(wxml, /<work-card[^>]*variant="compact-bar"[^>]*work="\{\{order\.sourceWork\}\}"/, '预约来源作品必须复用 work-card compact-bar 变体展示');
 assert.match(js, /raw\.sourceWorkId[\s\S]*api\.technician\.works\.detail\(sourceWorkId\)/, '线上详情仅返回作品 ID 时必须补拉作品详情');
 assert.match(apiJs, /withdrawQuote: \(id\) => api\.patch\(`\$\{T\}\/orders\/\$\{id\}\/withdraw-quote`/, '小程序 API 必须提供撤回报价动作');
 assert.match(cardWxml, /order\._actionStatus === 'pending_agree'[^]*取消报价[^]*编辑报价/, '行程卡片待客户确认时必须显示取消报价和编辑报价');

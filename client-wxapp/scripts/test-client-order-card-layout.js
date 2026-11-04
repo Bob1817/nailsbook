@@ -22,11 +22,11 @@ if (locationIndex < 0 || paymentIndex < locationIndex) throw new Error('payment 
 if (wxml.includes('order-service-name') || wxml.includes('item._titleText')) throw new Error('service item names must not appear in list cards');
 if ((wxml.match(/class="info-row/g) || []).length < 6) throw new Error('appointment facts must use dedicated aligned rows');
 if (!wxml.includes('class="footer-prompt"') || !wxml.includes('class="footer-action"')) throw new Error('footer must separate left prompt and right action');
-if (!/\.order-footer \{[^}]*min-height: 88rpx;[^}]*margin-top: -16rpx;[^}]*padding: 0;[^}]*align-items: center/.test(wxss)) throw new Error('footer must keep a 44px hit area while matching the compact fact-row spacing');
-if (!/\.footer-action \{[^}]*justify-content:flex-end/.test(wxss)) throw new Error('footer action must stay right aligned');
-if (!/\.footer-action \{[^}]*min-height:88rpx/.test(wxss)) throw new Error('footer action must keep a 44px touch target');
+if (!/\.order-footer \{[^}]*margin-top:\s*16rpx;[^}]*border-top:\s*1rpx solid var\(--nb-line\);[^}]*align-items:\s*center/.test(wxss)) throw new Error('footer must keep distinct top separation');
+if (!/\.footer-action \{[^}]*justify-content:\s*flex-end/.test(wxss)) throw new Error('footer action must stay right aligned');
+if (!/\.footer-action::after\s*\{[^}]*top:\s*-20rpx;[^}]*bottom:\s*-20rpx;/.test(wxss)) throw new Error('footer action must keep a 44px touch target');
 if (!/\.order-guidance-link \.info-text \{ color:var\(--nb-text-link\); \}/.test(wxss)) throw new Error('shop guidance text must use the standard blue link color');
-if (!/\.order-card-content \{ padding: 24rpx 24rpx 0; \}/.test(wxss)) throw new Error('card bottom must not duplicate footer spacing');
+if (!/\.order-card-content \{ padding: var\(--space-md\) var\(--space-md\) 0; \}/.test(wxss)) throw new Error('card bottom must not duplicate footer spacing');
 if (!/\.order-card \{[^}]*border-radius: 32rpx/.test(wxss)) throw new Error('order card must use the compact radius');
 if (!/\.order-date-box \{[^}]*width: 112rpx;[^}]*min-height: 128rpx/.test(wxss)) throw new Error('date box must use compact dimensions');
 

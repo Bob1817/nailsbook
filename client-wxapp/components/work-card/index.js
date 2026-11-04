@@ -1,4 +1,6 @@
 const api = require('../../services/api');
+const { buildThumbnail } = require('../../utils/cdn-image');
+const { buildClientLoginUrl } = require('../../utils/artist-navigation');
 
 // 统一作品卡片组件（发现 / 首页最新动态 / 作品 / 点赞 / 收藏 通用视觉）
 Component({
@@ -6,9 +8,22 @@ Component({
     compactExpertise: '1年 · -',
     gridArtistMeta: '',
     displayPrice: '',
+    doneCountText: '',
+    displayTitle: '',
+    resolvedCoverUrl: '',
+    resolvedAvatarUrl: '',
+    imageLoaded: false,
+    imageError: false,
+    mediaStyle: '',
+    displayTags: [],
+    displayDesc: '',
+    displayPromotionTitle: '',
+    displayPromotionDiscount: '',
+    hasPromotion: false,
     artistStatus: '',
     artistPlaceLine: '',
     showClientActions: false,
+    showBookSame: false,
     localLiked: false,
     localFavorited: false,
     localLikeCount: 0,
@@ -17,6 +32,7 @@ Component({
     socialLoading: false
   },
   properties: {
+    managementMinimal: { type: Boolean, value: false },
     work: {
       type: Object,
       value: {}
@@ -40,11 +56,19 @@ Component({
     showArtist: {
       type: Boolean,
       value: true
+    },
+    label: {
+      type: String,
+      value: '预约同款来源'
+    },
+    promotion: {
+      type: Object,
+      value: null
     }
   },
 
   observers: {
-    'work, manageable': function (work, manageable) {
+    'work, manageable, promotion, variant, featured': function (work, manageable, promotion, variant, featured) {
       work = work || {};
       // 作品卡展示专用精简：城市去掉末尾的"市"（杭州市→杭州）、从业文案去掉"从业"二字（从业6年→6年）
       // 注意：只在 work-card 展示层精简；normalizeWork 输出的 artistMetaText 继续与美甲师详情页口径一致（public-work 详情页用）
@@ -107,14 +131,9 @@ Component({
       var gridParts = [slimCity(cityPartRaw), yearsStr(num)].filter(Boolean);
       gridMeta = gridParts.join(' · ');
 
-      function bindingTechId(binding) {
-        if (!binding) return '';
-        var tech = binding.technician || binding;
-        return String(tech.id || tech.technicianId || binding.techId || '');
-      }
       function formatCardPrice(w) {
         if (w.priceText) return w.priceText;
-        var fen = Number(w.standardPriceFen || w.serviceSubtotalFen || w.priceCents || 0);
+        var fen = Number(w.standardPriceFen || w.serviceSubtotalFen || w.priceCents || w._priceFen || 0);
         var value = fen > 0 ? fen / 100 : Number(w.price || 0);
         return value > 0 ? '¥' + value : '';
       }
@@ -131,36 +150,108 @@ Component({
         return w.isVisible === false ? '已隐藏' : '待审核';
       }
 
-      var publisherId = String(work.technicianId || (work.technician && (work.technician.id || work.technician.technicianId)) || '');
-      var bindings = wx.getStorageSync('client_bindings') || [];
-      var publisherBound = !!work.isMyTechnician || bindings.some(function (binding) {
-        return publisherId && bindingTechId(binding) === publisherId;
-      });
-
       // 美甲师信息第二行：地址 · 店铺名（默认第一个启用店铺；无店铺则为空隐藏）
       var shopName = String(work.technicianShopName || '').trim();
       var shopAddress = String(work.technicianShopAddress || '').trim();
       var placeParts = [shopAddress, shopName].filter(Boolean);
 
-      this.setData({
+      var cover = work.coverUrl || (Array.isArray(work.customImages) && work.customImages[0]) || (Array.isArray(work.imageUrls) && work.imageUrls[0]) || '';
+      var rawAvatar = work.technicianAvatarUrl || (work.technician && work.technician.avatarUrl) || '';
+      var thumbPreset = variant === 'compact-bar' ? 'avatar' : (featured ? 'cover' : 'thumb');
+      var optimizedCover = work.coverThumbUrl || buildThumbnail(cover, thumbPreset);
+      var optimizedAvatar = work.technicianAvatarThumbUrl || buildThumbnail(rawAvatar, 'avatar');
+      var prevCover = this.data.resolvedCoverUrl;
+      var shouldResetImage = !prevCover || prevCover !== optimizedCover;
+      var title = work.title || work.customTitle || '美甲作品';
+
+      // 提取标签（最多 2 个，保持瀑布流卡片精练）
+      var rawTags = work.tags || work.tagList || [];
+      if (typeof rawTags === 'string') rawTags = rawTags.split(/[,，、\s]+/);
+      var tagsList = Array.isArray(rawTags) ? rawTags.map(function (t) { return String(t).trim(); }).filter(Boolean) : [];
+      var displayTags = tagsList.slice(0, 2);
+      var displayDesc = String(work.description || work.desc || work.intro || '').trim();
+
+      // 封面真实宽高决定卡片图片高度，实现小红书错落瀑布流；无宽高时回退到默认比例
+      var mediaStyle = '';
+      var coverWidth = Number(work.coverWidth || work.imageWidth || (work.cover && work.cover.width));
+      var coverHeight = Number(work.coverHeight || work.imageHeight || (work.cover && work.cover.height));
+      if (coverWidth > 0 && coverHeight > 0) {
+        var ratio = Math.min(1.45, Math.max(0.75, coverHeight / coverWidth));
+        mediaStyle = 'padding-bottom:' + (ratio * 100).toFixed(2) + '%';
+      }
+
+      var promo = promotion || (work && work.promotion) || null;
+      var hasPromo = !!promo;
+      var promoTitle = promo && promo.title ? promo.title : (hasPromo ? '作品分享优惠' : '');
+      var promoDiscount = (promo && Number(promo.discountAmountFen) > 0)
+        ? ('报价时立减 ¥' + (Number(promo.discountAmountFen) / 100))
+        : '';
+
+      var completedBookingsCount = Number(
+        work.completedBookingsCount ||
+        work.doneCount ||
+        work.completedCount ||
+        (Array.isArray(work.completedOrders) ? work.completedOrders.length : 0) ||
+        (Array.isArray(work.sourceOrders) ? work.sourceOrders.filter(function (o) { return o && (o.status === 'completed' || !o.status); }).length : 0) ||
+        (work._count && (work._count.sourceOrders || work._count.completedOrders)) ||
+        0
+      );
+      var doneCountText = work.doneCountText || (completedBookingsCount > 0 ? (completedBookingsCount + '人做过') : '');
+
+      var updateData = {
         compactExpertise: expertise,
         gridArtistMeta: gridMeta,
         artistPlaceLine: placeParts.join(' · '),
         displayPrice: formatCardPrice(work),
+        doneCountText: doneCountText,
+        displayTitle: title,
+        displayTags: displayTags,
+        displayDesc: displayDesc,
+        resolvedCoverUrl: optimizedCover,
+        resolvedAvatarUrl: optimizedAvatar,
+        mediaStyle: mediaStyle,
+        displayPromotionTitle: promoTitle,
+        displayPromotionDiscount: promoDiscount,
+        hasPromotion: hasPromo,
         artistStatus: manageable
           ? publicationStatusText(work)
           : (work.nextAvailableText || work.availabilityText || expertise),
-        showClientActions: !manageable && publisherBound,
+        showClientActions: !manageable,
+        showBookSame: !manageable,
         localLiked: !!work.isLiked,
         localFavorited: !!work.isFavorited,
         localLikeCount: work.likeCount || 0,
         localFavoriteCount: work.favoriteCount || 0,
         localCommentCount: work.commentCount || 0
-      });
+      };
+      if (shouldResetImage) {
+        updateData.imageLoaded = false;
+        updateData.imageError = false;
+      }
+      this.setData(updateData);
+      if (variant === 'minimal') {
+        this.setData({ showArtist: false });
+      }
     }
   },
 
   methods: {
+    onImageLoad() {
+      var e = arguments[0];
+      var update = { imageLoaded: true };
+      if (!this.data.mediaStyle && e && e.detail && e.detail.width && e.detail.height) {
+        var w = Number(e.detail.width);
+        var h = Number(e.detail.height);
+        if (w > 0 && h > 0) {
+          var ratio = Math.min(1.45, Math.max(0.75, h / w));
+          update.mediaStyle = 'padding-bottom:' + (ratio * 100).toFixed(2) + '%';
+        }
+      }
+      this.setData(update);
+    },
+    onImageError() {
+      this.setData({ imageLoaded: true, imageError: true });
+    },
     onTap() {
       this.triggerEvent('cardtap', { id: this.data.work && this.data.work.id });
     },
@@ -215,10 +306,63 @@ Component({
       const work = this.data.work || {};
       this.triggerEvent('actiontap', { id: work.id, visible: work.isVisible, pinned: work.isPinned, featured: work.isFeatured, heroSlot: work.heroSlot || null });
     },
-    onBookTap() {
+    async onBookTap() {
       const work = this.data.work || {};
-      if (!work.id) return;
-      wx.navigateTo({ url: '/pages/client/create-order/index?workId=' + work.id });
+      if (!work.id || this._bookingOpening) return;
+      const app = getApp();
+      const role = wx.getStorageSync('role') || (app && app.globalData && app.globalData.role);
+      const token = wx.getStorageSync('client_token') || wx.getStorageSync('token') || (app && app.globalData && app.globalData.token);
+      if (role === 'technician') {
+        wx.showToast({ title: '美甲师账号不能以客户身份预约', icon: 'none' });
+        return;
+      }
+      this._bookingOpening = true;
+      try {
+        const techId = work.technicianId || (work.technician && (work.technician.id || work.technician.technicianId));
+        let inviteCode = work.invitationCode || (work.technician && work.technician.invitationCode) || '';
+        if (!inviteCode && techId) {
+          try {
+            const artistRes = await api.public.artists.detail(String(techId));
+            const artist = artistRes.artist || artistRes || {};
+            inviteCode = artist.invitationCode || '';
+          } catch (_) {}
+        }
+        const isPriced = Boolean(work.pricingReady || (Number(work.standardPriceFen) > 0) || (Number(work.serviceSubtotalFen) > 0) || (Number(work.price) > 0));
+        const refQuery = isPriced ? '' : '&reference=1';
+        const targetUrl = '/pages/client/create-order/index?workId=' + work.id + (techId ? '&techId=' + techId : '') + (inviteCode ? '&invite=' + encodeURIComponent(inviteCode) : '') + refQuery + '&source=work_card';
+
+        if (!token || role !== 'client') {
+          wx.navigateTo({
+            url: buildClientLoginUrl(targetUrl, {
+              source: 'work_card',
+              inviteCode: inviteCode,
+              quickBookingTechId: techId
+            })
+          });
+          return;
+        }
+
+        if (techId && inviteCode) {
+          const bindings = wx.getStorageSync('client_bindings') || [];
+          const isBound = bindings.some(b => {
+            const t = b.technician || b;
+            return Number(t.id) === Number(techId);
+          });
+          if (!isBound) {
+            try {
+              wx.showLoading({ title: '正在关联美甲师', mask: true });
+              await api.client.profile.bindQuickBooking(Number(techId), inviteCode);
+              wx.hideLoading();
+            } catch (_) {
+              wx.hideLoading();
+            }
+          }
+        }
+
+        wx.navigateTo({ url: '/pages/client/create-order/index?workId=' + work.id + (techId ? '&techId=' + techId : '') + (inviteCode ? '&invite=' + encodeURIComponent(inviteCode) : '') + refQuery + '&source=work_card' });
+      } finally {
+        this._bookingOpening = false;
+      }
     }
   }
 });

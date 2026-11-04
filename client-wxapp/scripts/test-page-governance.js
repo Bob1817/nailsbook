@@ -38,6 +38,12 @@ const cases = [
 for (const [name, page, requiredControls, styleRule] of cases) {
   const wxml = read(`${page}/index.wxml`);
   const wxss = read(`${page}/index.wxss`);
+  if (wxml.includes('<bottom-action-bar')) {
+    const config=JSON.parse(read(`${page}/index.json`));
+    assert(config.usingComponents['bottom-action-bar'], `${name}必须注册共用底部操作组件`);
+    assert(read('components/bottom-action-bar/index.wxml').includes('<action-button compact'), `${name}底部按钮必须使用标准紧凑操作`);
+    continue;
+  }
   assert(wxml.includes('booking-action'), `${name}必须接入预约卡片按钮标准`);
   assert((wxml.match(/booking-action/g) || []).length >= requiredControls, `${name}存在遗漏的主要操作按钮`);
   assert(wxss.includes("@import '../../../styles/booking-actions.wxss';"), `${name}必须引入统一按钮样式`);

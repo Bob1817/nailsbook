@@ -1,3 +1,4 @@
+const bookingRealtime = require('./utils/booking-realtime');
 // === 主包共享模块注册（解决「主包未使用的 js 文件」上传报错）===
 // 以下模块被子包页面 require，必须在主包 app.js 中声明引用才能通过上传校验。
 require('./utils/format');
@@ -7,6 +8,7 @@ require('./utils/util');
 require('./utils/permission');
 require('./utils/subscription');
 require('./utils/artist-navigation');
+require('./utils/entry-navigation');
 require('./utils/conversion-tracking');
 require('./utils/service-pricing');
 require('./utils/shop-guidance');
@@ -54,27 +56,62 @@ App({
       const homePage = homePages[role] || homePages.client;
       const isWorkTimelineEntry = options.query && options.query.channel === 'wechat_moments'
         && (options.path === 'pages/client/work-detail/index' || options.path === 'pages/technician/work-detail/index');
-      const preserveSharePage = (options.path === 'pages/login/index' && options.query && options.query.invite) || options.path === 'pages/client/quick-booking/index' || options.path === 'pages/client/public-work/index' || options.path === 'pages/client/artist-home/index' || options.path === 'pages/client/works/index' || options.path === 'pages/client/create-order/index' || options.path === 'pages/client/quote-confirm/index' || options.path === 'pages/client/quote-booking/index' || isWorkTimelineEntry;
+      const preserveSharePage = (options.path === 'pages/login/index' && options.query && options.query.invite) || options.path === 'pages/client/quick-booking/index' || options.path === 'pages/client/public-work/index' || options.path === 'pages/client/artist-home/index' || options.path === 'pages/client/works/index' || options.path === 'pages/client/shop-guidance/index' || options.path === 'pages/client/create-order/index' || options.path === 'pages/client/quote-confirm/index' || options.path === 'pages/client/quote-booking/index' || isWorkTimelineEntry;
+      const launchQuery = Object.keys(options.query || {})
+        .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(options.query[key])}`)
+        .join('&');
+      const launchPath = `/${options.path || ''}${launchQuery ? `?${launchQuery}` : ''}`;
+      const publicGuestEntry = require('./utils/account-navigation').isPublicClientPath(launchPath);
+
+      // 公开分享页不因本地残留的过期会话被强制拉去登录，账户操作时再按原页面发起登录。
+      const expiresAt = this.getTokenExpiresAt(token);
+      if (publicGuestEntry && expiresAt > 0 && expiresAt <= Date.now()) {
+        this.clearInvalidAuth();
+        return;
+      }
+
+      // 异步校验结束时只处理仍停留在启动入口的会话，避免销毁已进入的页面。
+      const redirectToHome = () => {
+        if (preserveSharePage) return;
+        setTimeout(() => {
+          const pages = getCurrentPages();
+          const current = pages[pages.length - 1];
+          const entryRoute = options.path || 'pages/login/index';
+          if (!current || current.route !== entryRoute || `/${current.route}` === homePage) return;
+          if (this.globalData.token !== token || this.globalData.role !== role) return;
+          wx.reLaunch({ url: homePage });
+        }, 300);
+      };
 
       // 先校验 token 是否有效，避免带失效 token 跳首页导致 401
       this.verifyToken(token, role)
         .then((valid) => {
           if (valid) {
-            if (!preserveSharePage) setTimeout(() => wx.reLaunch({ url: homePage }), 300);
+            redirectToHome();
           }
         })
         .catch(() => {
           // 网络错误时保留本地会话，进入首页后由认证接口再次校验。
-          if (!preserveSharePage) setTimeout(() => wx.reLaunch({ url: homePage }), 300);
+          redirectToHome();
         });
     }
     // 无 token 时保留当前入口；公开作品与美甲师主页允许游客浏览。
   },
 
+  onHide() { bookingRealtime.stop(); },
+
   onShow() {
+    bookingRealtime.start();
     const token = this.globalData.token || wx.getStorageSync('token');
     const expiresAt = this.getTokenExpiresAt(token);
-    if (expiresAt > 0 && expiresAt <= Date.now()) require('./utils/request').handleUnauthorized();
+    if (expiresAt > 0 && expiresAt <= Date.now()) {
+      const currentPath = require('./utils/entry-navigation').currentPagePath();
+      if (require('./utils/account-navigation').isPublicClientPath(currentPath)) {
+        this.clearInvalidAuth();
+        return;
+      }
+      require('./utils/request').handleUnauthorized();
+    }
   },
 
   /** 修复旧版本曾把客户端 JWT 存入 technician 会话槽位的问题。 */
@@ -175,6 +212,7 @@ App({
 
   /** 清除失效的登录态 */
   clearInvalidAuth() {
+    bookingRealtime.stop();
     const role = this.globalData.role || wx.getStorageSync('role') || 'client';
     this.globalData.role = null;
     this.globalData.token = null;
@@ -259,6 +297,7 @@ App({
   },
 
   logout() {
+    bookingRealtime.stop();
     this.globalData.role = null;
     this.globalData.token = null;
     this.globalData.userInfo = null;

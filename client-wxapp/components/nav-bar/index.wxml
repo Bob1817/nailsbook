@@ -9,9 +9,12 @@
       <navigator wx:elif="{{showBack && backUrl}}" class="back-btn" url="{{backUrl}}" open-type="redirect" hover-class="none" bindtap="onBack">
         <image class="back-chevron" src="/static/icons/nav-back.svg" mode="aspectFit" />
       </navigator>
-      <navigator wx:elif="{{showBack}}" class="back-btn" open-type="navigateBack" delta="1" hover-class="none" bindtap="onBack">
+      <view wx:elif="{{showBack && hasHistory}}" class="back-btn" hover-class="none" bindtap="navigateBack" role="button" aria-label="返回上一页">
         <image class="back-chevron" src="/static/icons/nav-back.svg" mode="aspectFit" />
-      </navigator>
+      </view>
+      <view wx:elif="{{showBack}}" class="back-btn" hover-class="none" bindtap="goSafeHome" role="button" aria-label="进入首页">
+        <image class="nav-home" src="/static/icons/tab-home.svg" mode="aspectFit" />
+      </view>
     </view>
 
     <!-- 标题区域：有返回键时居中，否则左对齐 -->

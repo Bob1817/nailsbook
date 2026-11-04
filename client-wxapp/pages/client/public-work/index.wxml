@@ -13,6 +13,7 @@
   canRetryLoad="{{canRetry}}"
   canComment="{{false}}"
   bind:back="goBack"
+  bind:home="goHome"
   bind:retry="loadWork"
   bind:book="bookSameStyle"
   bind:contact="contactArtist"
@@ -23,3 +24,47 @@
   bind:commentlocked="goToLogin"
   bind:artist="goToArtist"
 />
+
+<!-- 美甲师微信咨询名片弹层 -->
+<view wx:if="{{showContactModal}}" class="nb-modal-mask" catchtap="closeContactModal" aria-modal="true" role="dialog">
+  <view class="nb-contact-sheet" catchtap="">
+    <view class="nb-contact-header">
+      <text class="nb-contact-title">联系美甲师</text>
+      <view class="nb-contact-close" catchtap="closeContactModal" role="button" aria-label="关闭">✕</view>
+    </view>
+
+    <view class="nb-contact-artist-card">
+      <image wx:if="{{visitorInfo.avatarUrl}}" class="nb-contact-avatar" src="{{visitorInfo.avatarUrl}}" mode="aspectFill" />
+      <view wx:else class="nb-contact-avatar fallback"><image src="/static/icons/technician.svg" mode="aspectFit" class="nb-default-avatar" /></view>
+      <view class="nb-contact-info">
+        <text class="nb-contact-name">{{visitorInfo.name || '美甲师'}}</text>
+        <text class="nb-contact-sub">{{visitorInfo.city ? visitorInfo.city + ' · ' : ''}}在线咨询与款式沟通</text>
+      </view>
+    </view>
+
+    <!-- 微信号信息卡片 -->
+    <view wx:if="{{visitorInfo.wechat}}" class="nb-wechat-box">
+      <view class="nb-wechat-left">
+        <text class="nb-wechat-label">美甲师微信号</text>
+        <text class="nb-wechat-val {{visitorInfo.protectWechat && !isLoggedIn ? 'is-masked' : ''}}" user-select="{{!(visitorInfo.protectWechat && !isLoggedIn)}}">{{visitorInfo.wechatDisplay || visitorInfo.wechat}}</text>
+      </view>
+      <button wx:if="{{visitorInfo.protectWechat && !isLoggedIn}}" class="nb-wechat-copy-btn" catchtap="loginToViewWechat" hover-class="btn-hover">登录查看</button>
+      <button wx:else class="nb-wechat-copy-btn" catchtap="copyArtistWechat" hover-class="btn-hover">复制微信号</button>
+    </view>
+    <view wx:else class="nb-wechat-empty">
+      <text class="nb-wechat-empty-text">美甲师暂未填写微信号，推荐使用小程序在线咨询</text>
+    </view>
+
+    <!-- 操作按钮列表 -->
+    <view class="nb-contact-actions">
+      <button class="nb-action-btn nb-action-primary" catchtap="goOnlineChatAfterLogin" hover-class="btn-hover">
+        <image class="nb-action-icon" src="/static/icons/message.svg" mode="aspectFit" />
+        <text>登录小程序在线咨询</text>
+      </button>
+      <button class="nb-action-btn nb-action-ghost" catchtap="closeContactModal" hover-class="btn-hover">
+        <text>继续浏览作品</text>
+      </button>
+    </view>
+  </view>
+</view>
+

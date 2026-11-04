@@ -3,6 +3,7 @@
   "navigationStyle": "custom",
   "usingComponents": {
     "nav-bar": "/components/nav-bar/index",
-    "nb-switch": "/components/nb-switch/index"
+    "nb-switch": "/components/nb-switch/index",
+    "booking-time-picker": "/components/booking-time-picker/index"
   }
 }

@@ -1,4 +1,6 @@
 const api = require('../../../services/api');
+const location = require('../utils/location');
+const { resolveActionLayout } = require('../utils/action-layout-resolver');
 const { normalizeSourceWorkSummary } = require('../../../utils/normalize-work');
 const {
   parseDate,
@@ -36,20 +38,24 @@ const STATUS_DESC = {
 
 // 按状态返回详情页底部应显示的动作
 function actionsForStatus(status) {
-  const QUOTE  = { key: 'quote',   label: '发送报价', style: 'action-primary' };
-  const EDIT_QUOTE = { key: 'edit_quote', label: '编辑报价', style: 'action-primary' };
-  const WITHDRAW_QUOTE = { key: 'withdraw_quote', label: '取消报价', style: 'action-danger' };
-  const EDIT_BOOKING = { key: 'edit_booking', label: '编辑预约', style: 'action-secondary' };
-  const COMPLETE={ key: 'complete',label: '确认完成', style: 'action-primary' };
-  const CANCEL = { key: 'cancel',  label: '取消预约', style: 'action-danger' };
+  const QUOTE  = { key: 'quote',   label: '发送报价', style: 'action-primary', priority: 1 };
+  const CONFIRM = { key: 'confirm', label: '确认排期', style: 'action-primary', priority: 1 };
+  const EDIT_QUOTE = { key: 'edit_quote', label: '编辑报价', style: 'action-primary', priority: 1 };
+  const WITHDRAW_QUOTE = { key: 'withdraw_quote', label: '取消报价', style: 'action-danger', priority: 2 };
+  const EDIT_BOOKING = { key: 'edit_booking', label: '编辑预约', style: 'action-secondary', priority: 2 };
+  const COMPLETE={ key: 'complete',label: '确认完成', style: 'action-primary', priority: 1 };
+  const CANCEL = { key: 'cancel',  label: '取消预约', style: 'action-danger', priority: 3 };
+  const REFUSE = { key: 'cancel',  label: '拒绝排期', style: 'action-danger', priority: 3 };
+  const REBOOK = { key: 'repeat_booking', label: '为TA再次预约', style: 'action-primary', priority: 1 };
 
   switch (status) {
-    case 'pending_quote':   return [QUOTE, CANCEL];
+    case 'pending_quote':   return [QUOTE, EDIT_BOOKING, CANCEL];
     case 'pending_agree':   return [EDIT_QUOTE, WITHDRAW_QUOTE];
     case 'pending_client_confirm': return [CANCEL];
-    case 'pending_confirm': return [EDIT_BOOKING, CANCEL];
+    case 'pending_confirm': return [CONFIRM, EDIT_BOOKING, REFUSE];
     case 'pending_shop':    return [EDIT_BOOKING, CANCEL];
-    case 'in_progress':     return [CANCEL, COMPLETE];
+    case 'in_progress':     return [COMPLETE, CANCEL];
+    case 'completed':       return [REBOOK];
     default:                return [];
   }
 }
@@ -70,6 +76,14 @@ function todayISO() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+function formatTechnicianSchedule(iso) {
+  const d = parseDate(iso);
+  if (!d) return '';
+  const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  const pad2 = (n) => (n < 10 ? '0' + n : '' + n);
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${pad2(d.getHours())}:${pad2(d.getMinutes())} ${WEEKDAYS[d.getDay()]}`;
+}
+
 function recordServiceTitle(record) {
   const order = record && record.order;
   if (!order) return '美甲服务';
@@ -77,28 +91,6 @@ function recordServiceTitle(record) {
     || (order.serviceLines || []).map(line => line.nameSnapshot).filter(Boolean).join('、')
     || (order.service && order.service.name)
     || '美甲服务';
-}
-
-function recentServiceInsights(records, currentRecord) {
-  return (records || [])
-    .filter(record => record.status === 'complete' && (!currentRecord || record.id !== currentRecord.id))
-    .map(record => {
-      const notes = [
-        record.nailCondition ? `甲面：${record.nailCondition}` : '',
-        record.discomfortNotes ? `不适：${record.discomfortNotes}` : '',
-        record.preferenceNotes ? `偏好：${record.preferenceNotes}` : '',
-        record.nextServiceNotes ? `下次准备：${record.nextServiceNotes}` : ''
-      ].filter(Boolean);
-      return notes.length ? {
-        id: record.id,
-        dateText: record.actualEndTime
-          ? formatBookingDate(record.actualEndTime)
-          : (record.actualStartTime ? formatBookingDate(record.actualStartTime) : '历史服务'),
-        notes
-      } : null;
-    })
-    .filter(Boolean)
-    .slice(0, 2);
 }
 
 function hasPreparation(preparation) {
@@ -291,8 +283,8 @@ Page({
       this._rawOrder = raw;
       this._quoteBaseTouched = false; this._quoteCoreTouched = false; this._quoteFinalTouched = false; this._quoteDepositTouched = false;
       const pricing = typeof raw.pricingDetails === 'string' ? JSON.parse(raw.pricingDetails) : raw.pricingDetails;
-      const surchargeIds = (raw.serviceLines || []).filter(line => line.source === 'surcharge').map(line => line.servicePublicIdSnapshot);
-      this.setData({ quoteSurcharges, quoteSurchargeIds: surchargeIds, quoteSurchargeMap: Object.fromEntries(surchargeIds.map(id => [id, true])), quoteUseCurrent: (raw.serviceLines || []).some(line => line.source !== 'surcharge'), quoteCorePrice: String((pricing ? pricing.coreFen : raw.finalPriceFen || raw.serviceSubtotalFen || 0) / 100) });
+      const surchargeIds = (raw.serviceLines || []).filter(line => line.source === 'surcharge').map(line => line.servicePublicIdSnapshot).filter(Boolean);
+      this.setData({ quoteSurcharges, quoteSurchargeIds: surchargeIds, quoteSurchargeMap: Object.fromEntries(surchargeIds.map(id => [id, true])), quoteUseCurrent: (raw.serviceLines || []).some(line => line.source !== 'surcharge'), quoteCorePrice: String((pricing ? pricing.coreFen : (raw.finalPriceFen == null ? raw.serviceSubtotalFen || 0 : raw.finalPriceFen - (raw.homeServiceFeeFen || 0))) / 100) });
       const technicianProfile = result[2] || {};
       let sourceWork = raw.sourceWork || null;
       const sourceWorkId = raw.sourceWorkId || (sourceWork && sourceWork.id);
@@ -341,14 +333,25 @@ Page({
           .filter(fact => ['preference', 'communication'].includes(fact.category))
           .map(fact => fact.status === 'pending' ? `${fact.content}（待确认）` : fact.content))
       ].filter((text, index, values) => text && values.indexOf(text) === index);
-      const customerHistoryInsights = recentServiceInsights(
-        raw.customer && raw.customer.serviceRecords,
-        raw.serviceRecord
-      );
       const workPreparations = preparationWorks(raw, sourceWork);
+      let customerTags = [];
+      if (raw.customer && raw.customer.tags) {
+        if (Array.isArray(raw.customer.tags)) {
+          customerTags = raw.customer.tags;
+        } else if (typeof raw.customer.tags === 'string') {
+          try {
+            const parsed = JSON.parse(raw.customer.tags);
+            customerTags = Array.isArray(parsed) ? parsed : [raw.customer.tags];
+          } catch (e) {
+            customerTags = raw.customer.tags.split(/[,，\s]+/).map(t => t.trim()).filter(Boolean);
+          }
+        }
+      }
+      const customerNotes = (raw.customer && raw.customer.notes) ? String(raw.customer.notes).trim() : '';
 
       const decorated = {
         ...o,
+        homeServiceFeeFen:raw.homeServiceFeeFen || 0, homeServiceDistanceKm:raw.homeServiceDistanceKm,
         pricingDetails: pricing || null,
         review: raw.review ? { ...raw.review, photos: parseReviewPhotos(raw.review.photos) } : null,
         techId: o.techId || raw.techId || raw.technicianId || (raw.technician && raw.technician.id),
@@ -361,10 +364,16 @@ Page({
         _timeRange:   start && end
           ? `${formatClock(o.startTime)} - ${formatClock(o.endTime)}`
           : formatClock(o.startTime),
+        _technicianScheduleText: formatTechnicianSchedule(o.startTime),
         _priceText:   price ? formatMoney(price) : (serviceSubtotalFen > 0 ? formatMoney(serviceSubtotalFen / 100) : '待报价'),
         _customerPhoneMasked: maskPhone(o.customerPhone),
+        _customerTags: customerTags,
+        _customerNotes: customerNotes,
         _showPriceCard: showPriceCard,
         _actions: actionsForStatus(o.status),
+        _visibleActions: resolveActionLayout(actionsForStatus(o.status)).visibleActions,
+        _overflowActions: resolveActionLayout(actionsForStatus(o.status)).overflowActions,
+        _hasMoreActions: resolveActionLayout(actionsForStatus(o.status)).hasMore,
         serviceLines: (raw.serviceLines || []).map(line => ({
           id: line.id,
           name: line.nameSnapshot || line.name || '服务',
@@ -393,9 +402,8 @@ Page({
         sourceWork,
         _customerAlerts: customerAlerts,
         _customerPreferences: customerPreferences,
-        _customerHistoryInsights: customerHistoryInsights,
         _preparationWorks: workPreparations,
-        _hasPreparationContext: customerAlerts.length > 0 || customerPreferences.length > 0 || customerHistoryInsights.length > 0 || workPreparations.length > 0,
+        _hasPreparationContext: customerAlerts.length > 0 || customerPreferences.length > 0 || workPreparations.length > 0 || customerTags.length > 0 || !!customerNotes,
         _customerId: (raw.customer && raw.customer.id) || '',
         _recordTotal: (raw.customer && raw.customer._count && raw.customer._count.serviceRecords) || 0,
         _recentRecords: ((raw.customer && raw.customer.serviceRecords) || [])
@@ -469,6 +477,11 @@ Page({
 
   // ---------- 操作分发 ----------
   onAction(e) {
+    const isMore = e.currentTarget.dataset.isMore === 'true' || e.currentTarget.dataset.isMore === true || e.currentTarget.dataset.key === '__more__';
+    if (isMore) {
+      this.openActionMenu();
+      return;
+    }
     const key = e.currentTarget.dataset.key;
     this.setData({ showActionMenu: false });
     switch (key) {
@@ -479,6 +492,7 @@ Page({
       case 'confirm':  return this.confirmOrder();
       case 'complete': return this.completeOrder();
       case 'cancel':   return this.openCancel();
+      case 'repeat_booking': return this.repeatBooking();
     }
   },
 
@@ -510,40 +524,21 @@ Page({
     wx.makePhoneCall({ phoneNumber: String(phone) });
   },
 
-  navigateToAddress() {
-    const addr = this.data.order && this.data.order.address;
-    if (!addr) return;
-    // 美甲师自己的店铺有坐标，直接从本地缓存或接口获取
-    const tryOpen = (lat, lng) => {
-      if (lat && lng) {
-        wx.openLocation({ latitude: lat, longitude: lng, name: '服务地址', address: addr, scale: 18 });
-      } else {
-        wx.setClipboardData({ data: addr, success: () => wx.showToast({ title: '地址已复制，请打开导航 App 粘贴', icon: 'none', duration: 2500 }) });
-      }
-    };
-    // 优先从已加载的 userInfo 中取 shopAddresses
-    const cached = wx.getStorageSync('technician_userInfo') || wx.getStorageSync('userInfo') || {};
-    const shops = (cached.shopAddresses || []).filter(s => s.enabled !== false);
-    const normAddr = addr.replace(/\s+/g, '');
-    let matched = shops.find(s => {
-      const full = ((s.province || '') + (s.city || '') + (s.district || '') + (s.detailAddress || '')).replace(/\s+/g, '');
-      return full === normAddr || normAddr.indexOf((s.detailAddress || '').replace(/\s+/g, '')) >= 0;
-    });
-    if (!matched) matched = shops.find(s => s.latitude && s.longitude) || null;
-    if (matched) {
-      tryOpen(parseFloat(matched.latitude), parseFloat(matched.longitude));
-    } else {
-      // 缓存没有则异步拉取
-      api.technician.auth.getUserInfo().then(res => {
-        const allShops = (res.shopAddresses || []).filter(s => s.enabled !== false);
-        let m = allShops.find(s => {
-          const full = ((s.province || '') + (s.city || '') + (s.district || '') + (s.detailAddress || '')).replace(/\s+/g, '');
-          return full === normAddr || normAddr.indexOf((s.detailAddress || '').replace(/\s+/g, '')) >= 0;
-        });
-        if (!m) m = allShops.find(s => s.latitude && s.longitude) || null;
-        tryOpen(m ? parseFloat(m.latitude) : 0, m ? parseFloat(m.longitude) : 0);
-      }).catch(() => tryOpen(0, 0));
+  async navigateToAddress() {
+    const order = this.data.order || {};
+    if (!order.address) return;
+    if (!['到店美甲', 'shop'].includes(order.serviceType)) {
+      return location.openLocation({ name:'上门服务地址', address:order.address });
     }
+    const cached = wx.getStorageSync('technician_userInfo') || wx.getStorageSync('userInfo') || {};
+    let matched = location.matchingShop(cached.shopAddresses, order.address);
+    if (!matched) {
+      try {
+        const user = await api.technician.auth.getUserInfo();
+        matched = location.matchingShop(user.shopAddresses, order.address);
+      } catch (_) { /* 缺少坐标时仍可复制当前预约地址 */ }
+    }
+    location.openLocation({ ...(matched || {}), name:matched ? matched.name : '预约店铺', address:order.address });
   },
 
   openShopGuidance() {
@@ -558,7 +553,7 @@ Page({
     const order = this.data.order;
     const shop = this.data.guidanceShop;
     const techId = order && (order.techId || order.technicianId);
-    if (!this.data.shopGuidance || !techId || !shop) return { title: '预约详情', path: `/pages/technician/order-detail/index?id=${this.orderId}` };
+    if (!this.data.shopGuidance || !techId || !shop) return { title: 'OnlyNail', path: '/pages/client/home/index' };
     return {
       title: `${shop.name || '美甲工作室'}到店指引`,
       path: `/pages/client/shop-guidance/index?techId=${techId}&shopName=${encodeURIComponent(shop.name || '')}&address=${encodeURIComponent(order.address || '')}`
@@ -633,7 +628,7 @@ Page({
     const lines = useCurrent ? raw.serviceLines.filter(line => line.source !== 'surcharge') : selected.map(item => ({ unitPriceFen: Math.round(Number(item.price) * 100), quantity: this.data.quoteServiceQuantities[String(item.id)], durationMinutes: item.durationMinutes }));
     const subtotal = lines.reduce((sum, line) => sum + line.unitPriceFen * line.quantity, 0);
     const duration = lines.reduce((sum, line) => sum + line.durationMinutes * line.quantity, 0);
-    const extras = this.data.quoteSurcharges.filter(item => this.data.quoteSurchargeIds.includes(String(item.id))).reduce((sum, item) => sum + Math.round(Number(item.price) * 100), 0);
+    const extras = (raw.homeServiceFeeFen || 0) + this.data.quoteSurcharges.filter(item => this.data.quoteSurchargeIds.includes(String(item.id))).reduce((sum, item) => sum + Math.round(Number(item.price) * 100), 0);
     const core = this._quoteCoreTouched || useCurrent ? Math.round(Number(this.data.quoteCorePrice || 0) * 100) : subtotal;
     const oldPricing = typeof raw.pricingDetails === 'string' ? JSON.parse(raw.pricingDetails) : raw.pricingDetails;
     const final = this._quoteFinalTouched ? Math.round(Number(this.data.quotePrice || 0) * 100) : Math.max(0, core + extras - (oldPricing ? oldPricing.finalDiscountFen || 0 : 0));
@@ -770,6 +765,12 @@ Page({
     if (!order) return;
     wx.navigateTo({
       url: `/pages/technician/complete-service/index?id=${this.orderId}`
+    });
+  },
+  repeatBooking() {
+    if (!this.orderId) return;
+    wx.navigateTo({
+      url: `/pages/technician/edit-booking-time/index?id=${this.orderId}&mode=repeat`
     });
   },
   openServiceRecord(e) {

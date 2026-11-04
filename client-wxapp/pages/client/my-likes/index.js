@@ -1,13 +1,20 @@
 const api = require('../../../services/api');
+const { getLayout, buildColumns } = require('../utils/waterfall');
 const PAGE_SIZE = 10;
-
-var ASPECTS_LEFT = ['aspect-4-5', 'aspect-3-4', 'aspect-5-6', 'aspect-3-4'];
-var ASPECTS_RIGHT = ['aspect-3-4', 'aspect-5-6', 'aspect-4-5', 'aspect-3-4'];
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
   var d = new Date(dateStr);
   return (d.getMonth() + 1) + '月' + d.getDate() + '日';
+}
+
+function boundTechnicianIds() {
+  var bindings = wx.getStorageSync('client_bindings') || [];
+  return bindings.map(function (b) {
+    return b && (b.technician || b);
+  }).map(function (t) {
+    return t ? String(t.id || t.technicianId || '') : '';
+  }).filter(Boolean);
 }
 
 function mapWork(work) {
@@ -20,6 +27,8 @@ function mapWork(work) {
     id: work.id,
     title: work.title || '美甲作品',
     coverUrl: work.coverUrl || (work.imageUrls && work.imageUrls[0]) || '',
+    coverWidth: Number(work.coverWidth || 0),
+    coverHeight: Number(work.coverHeight || 0),
     technicianId: work.technicianId || (work.technician && work.technician.id) || '',
     technicianName: name,
     technicianAvatarUrl: work.technicianAvatarUrl || (work.technician && work.technician.avatarUrl) || '',
@@ -37,11 +46,23 @@ function mapWork(work) {
 Page({
   data: {
     works: [],
-    leftCol: [],
-    rightCol: [],
+    waterfallCols: [],
     loading: true,
     loadFailed: false,
     hasMore: false
+  },
+
+  onLoad() {
+    this.updateLayout();
+  },
+
+  onResize() {
+    this.updateLayout();
+    this.applyWaterfall(this.data.works);
+  },
+
+  updateLayout() {
+    this._layout = getLayout({ paddingRpx: 28, gapRpx: 20 });
   },
 
   onShow() {
@@ -52,7 +73,10 @@ Page({
     this.setData({ loading: true, loadFailed: false });
     try {
       const res = await api.client.likes.list();
-      const works = (res.list || res.data || res || []).map(mapWork);
+      const boundIds = boundTechnicianIds();
+      const works = (res.list || res.data || res || []).map(mapWork).filter(function (w) {
+        return w.technicianId && boundIds.indexOf(String(w.technicianId)) !== -1;
+      });
       this._allWorks = works;
       const visible = works.slice(0, PAGE_SIZE);
       this.setData({ works: visible, loading: false, hasMore: visible.length < works.length });
@@ -71,18 +95,7 @@ Page({
   },
 
   applyWaterfall(list) {
-    var left = [], right = [];
-    list.forEach(function (w) {
-      var item = Object.assign({}, w);
-      if (left.length <= right.length) {
-        item.aspect = ASPECTS_LEFT[left.length % ASPECTS_LEFT.length];
-        left.push(item);
-      } else {
-        item.aspect = ASPECTS_RIGHT[right.length % ASPECTS_RIGHT.length];
-        right.push(item);
-      }
-    });
-    this.setData({ leftCol: left, rightCol: right });
+    this.setData({ waterfallCols: buildColumns(list, this._layout || getLayout({ paddingRpx: 28, gapRpx: 20 })) });
   },
 
   viewWork(e) {

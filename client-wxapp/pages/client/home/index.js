@@ -1,5 +1,6 @@
 const api = require('../../../services/api');
 const { normalizeWork } = require('../../../utils/normalize-work');
+const { getLayout, buildColumns } = require('../utils/waterfall');
 const {
   claimFirstSubscriptionPrompt,
   getBookingReminderResultState,
@@ -16,6 +17,17 @@ const STATUS_LABELS = {
   in_progress: '服务中'
 };
 
+const STATUS_MAP = {
+  pending_quote: { text: '待报价', class: 'status-red' },
+  quoted: { text: '已报价', class: 'status-red' },
+  pending_agree: { text: '待同意', class: 'status-red' },
+  pending_confirm: { text: '待确认', class: 'status-red' },
+  pending_client_confirm: { text: '待客户确认', class: 'status-red' },
+  confirmed: { text: '已确认', class: 'status-blue' },
+  pending_shop: { text: '待到店', class: 'status-blue' },
+  in_progress: { text: '服务中', class: 'status-blue' }
+};
+
 const UPCOMING_STATUSES = new Set(['pending_quote', 'pending_agree', 'pending_confirm', 'pending_shop', 'in_progress']);
 
 const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
@@ -29,8 +41,7 @@ Page({
     recentWorks: [],
     featuredWorks: [],
     featuredLead: null,
-    featuredLeftCol: [],
-    featuredRightCol: [],
+    featuredCols: [],
     loading: true,
     swiperIndex: 0,
     technicianCount: 0,
@@ -52,7 +63,14 @@ Page({
     onboardingReminderStatus: null
   },
 
-  onLoad() {},
+  onLoad() {
+    this._layout = getLayout({ paddingRpx: 40, gapRpx: 16 });
+  },
+
+  onResize() {
+    this._layout = getLayout({ paddingRpx: 40, gapRpx: 16 });
+    this.splitFeaturedWorks();
+  },
 
   onShow() {
     this.loadData();
@@ -128,15 +146,23 @@ Page({
           var startDate = new Date(upcoming.startTime);
           var endStr = upcoming.endTime ? formatTimeShort(upcoming.endTime) : '';
           var timeRange = formatTimeShort(upcoming.startTime) + (endStr ? '–' + endStr : '');
+          var statusMeta = STATUS_MAP[upcoming.status] || {
+            text: STATUS_LABELS[upcoming.status] || upcoming.status,
+            class: 'status-red'
+          };
+          var cd = calcCountdown(upcoming.startTime);
+          var cdText = cd ? (cd === '已开始' ? '已开始' : '还有 ' + cd) : '';
 
           this.setData({
             upcomingOrder: {
               id: upcoming.id,
               status: upcoming.status,
-              statusText: STATUS_LABELS[upcoming.status] || upcoming.status,
+              statusText: statusMeta.text,
+              statusClass: statusMeta.class,
               serviceType: upcoming.serviceType || '美甲服务',
               timeStr: timeRange,
-              countdown: calcCountdown(upcoming.startTime),
+              countdown: cd,
+              countdownText: cdText,
               technician: upcoming.technician || null,
               address: upcoming.address || ''
             },
@@ -317,7 +343,15 @@ Page({
   },
 
   navigateToWorks() { wx.navigateTo({ url: '/pages/client/works/index' }); },
-  navigateToBooking() { wx.navigateTo({ url: '/pages/client/create-order/index' }); },
+  navigateToBooking() {
+    var tech = this.data.technician;
+    var techId = tech && (tech.id || tech.technicianId);
+    if (techId) {
+      wx.navigateTo({ url: '/pages/client/create-order/index?techId=' + encodeURIComponent(techId) + '&source=home_shortcut' });
+    } else {
+      wx.navigateTo({ url: '/pages/client/create-order/index' });
+    }
+  },
   navigateToOrders() { wx.navigateTo({ url: '/pages/client/orders/index' }); },
   navigateToChat() { wx.navigateTo({ url: '/pages/client/chat/index' }); },
 
@@ -401,22 +435,12 @@ Page({
     return result;
   },
 
-  /** 将 featuredWorks 拆分为左右两列，并分配宽高比 */
+  /** 将 featuredWorks 按封面真实比例拆分为自适应列数的瀑布流 */
   splitFeaturedWorks() {
-    var works = this.data.featuredWorks;
-    var left = [], right = [];
-    works.forEach(function (w, i) {
-      var isLeft = i % 2 === 0;
-      // 交错分配宽高比
-      if (isLeft) {
-        w.aspectClass = i % 4 === 0 ? 'aspect-4-5' : 'aspect-3-4';
-        left.push(w);
-      } else {
-        w.aspectClass = i % 4 === 1 ? 'aspect-3-4' : 'aspect-5-6';
-        right.push(w);
-      }
+    this.setData({
+      featuredLead: null,
+      featuredCols: buildColumns(this.data.featuredWorks, this._layout || getLayout({ paddingRpx: 40, gapRpx: 16 }))
     });
-    this.setData({ featuredLead: null, featuredLeftCol: left, featuredRightCol: right });
   },
 
   viewUpcomingOrder() {

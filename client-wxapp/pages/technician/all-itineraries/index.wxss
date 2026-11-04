@@ -1,5 +1,5 @@
 page {
-  background: var(--bg-gradient-entry);
+  background: var(--nb-page);
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -17,39 +17,39 @@ page {
 /* ===== 统计栏 ===== */
 .page-header {
   flex-shrink: 0;
-  padding: 16rpx 40rpx 12rpx;
+  padding: var(--space-sm) var(--space-xl) 12rpx;
 }
-.page-count { font-size: var(--font-sm); color: var(--text-muted); }
+.page-count { font-size: var(--font-sm); color: var(--nb-muted); }
 
 /* ===== 列表 ===== */
 .list-scroll { flex: 1; min-height: 0; }
-.list-area { padding: 16rpx 32rpx calc(24rpx + env(safe-area-inset-bottom)); }
+.list-area { padding: var(--space-sm) var(--space-lg) calc(var(--space-md) + env(safe-area-inset-bottom)); }
 
 /* ===== 骨架/空状态 ===== */
-.skeleton-list { display: flex; flex-direction: column; gap: 16rpx; }
+.skeleton-list { display: flex; flex-direction: column; gap: var(--space-sm); }
 .skel-card {
   height: 200rpx;
   border-radius: var(--card-radius);
-  background: var(--bg-input);
+  background: var(--nb-soft-surface);
   animation: skel 1.4s linear infinite;
 }
 @keyframes skel { 0%{opacity:1;} 50%{opacity:0.5;} 100%{opacity:1;} }
 
 .empty-card {
   margin: 80rpx 0;
-  padding: 60rpx 40rpx;
-  background: var(--bg-card);
-  border-radius: var(--radius-lg);
+  padding: 60rpx var(--space-xl);
+  background: var(--nb-surface);
+  border-radius: 24rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12rpx;
-  border: 0;
-  box-shadow: var(--shadow-lg);
+  border: 1rpx solid var(--nb-line);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
 }
-.empty-title { font-size: var(--font-md); font-weight: var(--weight-semibold); color: var(--text-primary); }
-.empty-sub { font-size: var(--font-sm); color: var(--text-muted); text-align: center; }
-.retry-btn { display:flex; min-height:var(--touch-min); margin-top:22rpx; padding:0 38rpx; align-items:center; justify-content:center; border-radius: var(--btn-radius); background: var(--bg-tag); color:var(--brand-primary); font-size: var(--font-sm); font-weight: var(--weight-semibold); }
+.empty-title { font-size: var(--font-md); font-weight: var(--weight-semibold); color: var(--nb-ink); }
+.empty-sub { font-size: var(--font-sm); color: var(--nb-muted); text-align: center; }
+.retry-btn { display: flex; min-height: var(--touch-min); margin-top: 22rpx; padding: 0 38rpx; align-items: center; justify-content: center; border-radius: 9999rpx; background: var(--nb-action); color: var(--nb-inverse); font-size: var(--font-sm); font-weight: var(--weight-semibold); }
 
 /* ===== 行程卡片 ===== */
-.trip-list { display: flex; flex-direction: column; gap: 16rpx; }
+.trip-list { display: flex; flex-direction: column; gap: var(--space-sm); }

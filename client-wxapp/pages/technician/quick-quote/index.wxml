@@ -3,13 +3,39 @@
 <view class="quote-page">
   <view wx:if="{{loading}}" class="state">正在加载服务…</view>
 
-  <block wx:elif="{{!quote}}">
+  <block wx:else>
       <view class="compose-card">
         <view class="compose-head">
           <text class="compose-eyebrow">新建报价单</text>
           <text class="intent-badge">意向报价</text>
         </view>
         <text class="compose-title">组合本次美甲服务</text>
+
+        <view wx:if="{{canChooseServiceType}}" class="service-type-toggle">
+          <view
+            class="service-type-btn {{serviceType === '到店美甲' ? 'is-active' : ''}}"
+            data-type="到店美甲"
+            bindtap="changeServiceType"
+            role="button"
+            hover-class="control-pressed"
+            aria-label="到店美甲"
+          >
+            <text class="service-type-text">到店美甲</text>
+          </view>
+          <view
+            class="service-type-btn {{serviceType === '上门美甲' ? 'is-active' : ''}}"
+            data-type="上门美甲"
+            bindtap="changeServiceType"
+            role="button"
+            hover-class="control-pressed"
+            aria-label="上门美甲"
+          >
+            <text class="service-type-text">上门美甲</text>
+          </view>
+        </view>
+        <view wx:elif="{{serviceType === '上门美甲'}}" class="service-type-badge-row">
+          <text class="service-type-badge">上门美甲服务</text>
+        </view>
 
         <view wx:if="{{selectedServices.length || displayFees.length}}" class="quote-lines">
           <view wx:for="{{selectedServices}}" wx:key="id" class="quote-line">
@@ -38,7 +64,7 @@
           <image class="service-entry-arrow" src="/static/icons/arrow-right.svg" mode="aspectFit"/>
         </view>
         <view wx:else class="add-service-link" bindtap="openServicePicker" hover-class="control-pressed" role="button">
-          <text class="add-service-plus">＋</text>
+          <image class="add-service-plus-icon" src="/static/icons/plus.svg" mode="aspectFit" />
           <text>继续添加系统服务</text>
         </view>
 
@@ -75,7 +101,7 @@
 
       <view class="supplement-panel">
       <view class="supplement-card" bindtap="toggleMore" hover-class="control-pressed" role="button" aria-expanded="{{showMore}}">
-        <view class="supplement-icon"><text>＋</text></view>
+        <view class="supplement-icon"><image class="supplement-icon-svg" src="/static/icons/plus.svg" mode="aspectFit" /></view>
         <view class="supplement-copy">
           <text class="supplement-title">补充报价信息</text>
           <text class="supplement-caption">作品参考、备注等次要信息</text>
@@ -110,20 +136,6 @@
       <text class="submit-hint">客户接受报价后，才会进入注册和预约</text>
     </block>
   </block>
-
-  <view wx:else class="letter">
-    <text class="eyebrow">ONLYNAIL PRIVATE ESTIMATE</text>
-    <text class="letter-title">专属报价确认函</text>
-    <text class="letter-no">NO. {{quote.quoteNo}}</text>
-    <scroll-view wx:if="{{quote.referenceImages.length}}" class="letter-images" scroll-x enable-flex>
-      <image wx:for="{{quote.referenceImages}}" wx:key="*this" src="{{item}}" mode="aspectFill"/>
-    </scroll-view>
-    <view class="letter-price"><text>最终报价</text><text>¥{{quote._priceText}}</text></view>
-    <view wx:for="{{quote.lines}}" wx:key="id" class="letter-line"><text>{{item.nameSnapshot}} × {{item.quantity}}</text><text>¥{{item.subtotalFen / 100}}</text></view>
-    <view class="letter-meta"><text>预计 {{quote.totalDurationMinutes}} 分钟</text><text>有效期至 {{quote._expiresText}}</text></view>
-    <button class="primary" open-type="share">确认并转发给客户</button>
-    <button class="secondary" bindtap="newQuote">创建新报价</button>
-  </view>
 </view>
 
 <block wx:if="{{showServicePicker}}">

@@ -38,6 +38,18 @@ assert(home.includes("label: '个预约待支付定金'"), '定金待办必须�
 assert(tradeOrders.includes("options.filter === 'pending'"), '交易订单必须读取待支付筛选参数');
 assert(home.includes('Number(o.depositAmount || 0) > 0') && home.includes('unpaidDepositOrders[0].id'), '定金待办只能统计有定金金额的预约，并保留单条预约 ID');
 assert(allBookings.includes("options.filter === 'unpaid_deposit'") && allBookings.includes("value === 'unpaid_deposit'"), '全部预约页必须支持待支付定金筛选');
-assert(/\.todo-left\s*\{[^}]*gap:\s*8rpx/.test(homeWxss), '待办数量与文案应保持紧凑间距');
+assert(homeWxml.includes('todo-summary-grid') && homeWxml.includes('todoSummaryItems'), '待处理事项必须同时展示分类摘要入口');
+assert(!homeWxml.includes('<swiper') && !homeWxml.includes('confirmation-swiper'), '操作型待办不得使用自动轮播隐藏关键信息');
+assert(homeWxml.includes('confirmationTodos[0]') && homeWxml.includes('下一项'), '首页必须展开最高优先级的一条预约');
+assert(/\.todo-summary-item\s*\{[^}]*min-height:56px/.test(homeWxss), '分类摘要入口必须保持触控友好的点击高度');
+assert(bookingCard.includes('service-type-tag') && bookingCard.includes('到店美甲'), '待处理卡片必须展示上门还是到店服务形式');
+assert(bookingCard.includes("order.serviceType === 'home' ? (order._cleanAddress || order.address) : (order._shopName || order.shopName)"), '到店美甲卡片仅展示预约店铺名称，不展示多余的店铺地址信息');
+assert(home.includes('_cardDate') && home.includes('_cardWeekday'), '首页待处理卡片必须提供日期与星期字段');
+assert(homeWxml.includes('pendingTotal') && homeWxml.includes('共 {{pendingTotal}} 项'), '待处理事项标题必须展示统一待办总数');
+assert(!homeWxml.includes('action-task-list'), '待处理事项中必须移除过敏和安全等风险提醒');
+assert(homeWxml.includes('variant="unread-messages"'), '待处理卡片必须支持未读消息卡片变体');
+assert(bookingCard.includes("variant === 'unread-messages'"), '预约卡片必须支持未读消息卡片列表展示');
+assert(bookingCardWxss.includes('booking-card-unread-messages'), '未读消息卡片必须提供专属样式');
+assert(home.includes('unreadConversations'), '首页必须提供未读会话列表数据');
 
 console.log('美甲师首页待处理事项导航检查通过');

@@ -46,6 +46,7 @@ var TAB_LIST = [
 
 Page({
   data: {
+    navBarHeight: 88,
     allItems: [],
     filteredItems: [],
     activeTab: 'all',
@@ -57,8 +58,15 @@ Page({
   },
 
   onLoad: function() {
+    try {
+      var si = wx.getSystemInfoSync();
+      var mb = wx.getMenuButtonBoundingClientRect();
+      var navH = mb.top + mb.height + (mb.top - si.statusBarHeight);
+      this.setData({ navBarHeight: Math.round(navH) });
+    } catch (_) {}
     this.loadInbox();
   },
+
 
   onShow: function() {
     if (this._loaded) this.loadInbox();

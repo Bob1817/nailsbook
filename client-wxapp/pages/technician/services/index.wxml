@@ -2,20 +2,10 @@
 <view class="container">
   <view wx:if="{{loading}}" class="loading-wrap"><view class="loading-spinner"></view></view>
 
-  <view wx:elif="{{loadFailed}}" class="load-error" aria-live="polite">
-    <view class="load-error-mark">!</view>
-    <text class="empty-text">服务项目加载失败</text>
-    <text class="empty-sub">请检查网络后重试</text>
-    <button class="booking-action retry-btn" bindtap="loadServices">重新加载</button>
-  </view>
+  <state-card wx:elif="{{loadFailed}}" type="error" title="服务项目加载失败" description="请检查网络后重试" actionText="重新加载" bind:action="loadServices" />
 
   <!-- 空状态 -->
-  <view wx:elif="{{services.length === 0}}" class="empty">
-    <view class="service-empty-mark"><view></view><view></view><view></view></view>
-    <text class="empty-text">还没有服务项目</text>
-      <text class="empty-sub">至少添加一项有效服务和价格，才能开启接单</text>
-    <button class="booking-action btn-add-first" bindtap="openCreate">添加第一个服务</button>
-  </view>
+  <state-card wx:elif="{{services.length === 0}}" icon="/static/icons/document.svg" title="还没有服务项目" description="至少添加一项有效服务和价格，才能开启接单" actionText="添加第一个服务" bind:action="openCreate" />
 
   <!-- 服务列表 -->
   <view wx:if="{{actionMenuId !== null}}" class="action-menu-scrim" bindtap="closeActionMenu"></view>
@@ -79,8 +69,8 @@
   <view class="form-sheet {{showForm ? 'show' : ''}}">
     <view class="sheet-header">
       <text class="sheet-title">{{editingId ? '编辑服务' : '添加服务'}}</text>
-      <view class="sheet-close" bindtap="closeForm">
-        <text class="sheet-close-icon">×</text>
+      <view class="sheet-close" bindtap="closeForm" role="button" aria-label="关闭">
+        <image class="sheet-close-icon" src="/static/icons/close.svg" mode="aspectFit" />
       </view>
     </view>
 

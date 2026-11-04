@@ -1,5 +1,7 @@
 const api = require('../../../services/api');
 const { normalizeWorkDetail } = require('../../../utils/normalize-work');
+const { goHome: goEntryHome } = require('../../../utils/entry-navigation');
+const { buildClientLoginUrl } = require('../../../utils/artist-navigation');
 
 function formatTime(dateStr) {
   if (!dateStr) return '';
@@ -64,6 +66,7 @@ Page({
       return;
     }
     this.focusCommentsOnLoad = options.focus === 'comments';
+    this.resumeBooking = options.book === '1';
     if (options.id) {
       this.workId = parseInt(options.id);
       this.loadWork();
@@ -107,6 +110,10 @@ Page({
       self.prepareSharePath();
       self.loadComments();
       if (self.focusCommentsOnLoad) setTimeout(function () { self.focusComment(); }, 120);
+      if (self.resumeBooking) {
+        self.resumeBooking = false;
+        self.bookSameStyle();
+      }
     }).catch(function () {
       self.setData({ loading: false, loadFailed: true, loadErrorText: '作品暂时无法加载', canRetryLoad: true });
     }).finally(function () {
@@ -129,7 +136,16 @@ Page({
   // ── 导航 ──────────────────────────────────
 
   goBack: function () {
-    wx.navigateBack();
+    var pages = typeof getCurrentPages === 'function' ? getCurrentPages() : [];
+    if (pages.length > 1) {
+      wx.navigateBack({ fail: function () { goEntryHome(); } });
+      return;
+    }
+    goEntryHome();
+  },
+
+  goHome: function () {
+    goEntryHome();
   },
 
   resolveInviteCode: async function () {
@@ -166,7 +182,14 @@ Page({
   // 预约同款
   bookSameStyle: async function () {
     var work = this.data.work;
-    if (!work || !work.id) return;
+    if (!work || !work.id || this._bookingOpening) return;
+    var app = getApp();
+    var role = wx.getStorageSync('role') || (app && app.globalData && app.globalData.role);
+    var token = wx.getStorageSync('client_token') || wx.getStorageSync('token') || (app && app.globalData && app.globalData.token);
+    if (role === 'technician') {
+      wx.showToast({ title: '美甲师账号不能以客户身份预约', icon: 'none' });
+      return;
+    }
     var technicianId = work.technicianId || (work.technician && work.technician.id);
     if (!technicianId) {
       wx.showToast({ title: '暂无法获取美甲师信息', icon: 'none' });
@@ -174,12 +197,46 @@ Page({
     }
     var inviteCode = await this.resolveInviteCode();
     if (!inviteCode) return wx.showToast({ title: '美甲师邀请信息暂不可用', icon: 'none' });
-    wx.navigateTo({ url: '/pages/client/create-order/index?workId=' + work.id + '&techId=' + technicianId + '&invite=' + encodeURIComponent(inviteCode) + '&source=work_detail' });
+
+    var isPriced = Boolean(work.pricingReady || (Number(work.standardPriceFen) > 0) || (Number(work.serviceSubtotalFen) > 0) || (Number(work.price) > 0));
+    var referenceQuery = isPriced ? '' : '&reference=1';
+    var target = '/pages/client/create-order/index?workId=' + work.id + '&techId=' + technicianId + '&invite=' + encodeURIComponent(inviteCode) + referenceQuery + '&source=work_detail';
+
+    if (!token || role !== 'client') {
+      wx.navigateTo({
+        url: buildClientLoginUrl(target, {
+          source: 'work_detail',
+          inviteCode: inviteCode,
+          quickBookingTechId: technicianId
+        })
+      });
+      return;
+    }
+
+    this._bookingOpening = true;
+    try {
+      var bindings = wx.getStorageSync('client_bindings') || [];
+      var isBound = bindings.some(function (b) {
+        var t = b.technician || b;
+        return Number(t.id) === Number(technicianId);
+      });
+      if (!isBound && inviteCode) {
+        wx.showLoading({ title: '正在关联美甲师', mask: true });
+        await api.client.profile.bindQuickBooking(Number(technicianId), inviteCode);
+        wx.hideLoading();
+      }
+      wx.navigateTo({ url: target });
+    } catch (err) {
+      wx.hideLoading();
+      wx.showToast({ title: err.message || '关联美甲师失败，请重试', icon: 'none' });
+    } finally {
+      this._bookingOpening = false;
+    }
   },
 
   onShareAppMessage: function () {
     var work = this.data.work || {};
-    if (!this.data.sharePath) return { title: '美甲作品', path: '/pages/client/works/index' };
+    if (!this.data.sharePath) return { title: 'OnlyNail', path: '/pages/client/home/index' };
     if (work.id) api.client.works.recordShare(work.id, 'wechat_friend').catch(function () {});
     return {
       title: require('../../../utils/share-copy').buildWorkShareTitle(work),

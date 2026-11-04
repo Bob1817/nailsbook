@@ -1,23 +1,25 @@
 <nav-bar title="{{tradeView ? '我的订单' : '预约'}}"/>
 
-<view class="filter-bar">
-  <scroll-view scroll-x class="status-scroll" enhanced show-scrollbar="{{false}}">
-    <view class="status-list">
-      <view
-        wx:for="{{tabs}}"
-        wx:key="value"
-        class="status-tab {{currentStatus === item.value ? 'status-tab-active' : ''}}"
-        bindtap="switchStatus"
-        data-status="{{item.value}}"
-      >{{item.label}}</view>
-    </view>
-  </scroll-view>
-  <view class="filter-create" bindtap="createOrder" role="button" aria-label="发起预约">
-    <view class="filter-create-plus"></view>
-  </view>
-</view>
-
 <view class="page">
+  <view class="filter-bar" style="top: {{navBarHeight}}px;">
+    <scroll-view scroll-x class="status-scroll" enhanced show-scrollbar="{{false}}">
+      <view class="status-list">
+        <view
+          wx:for="{{tabs}}"
+          wx:key="value"
+          class="status-tab {{currentStatus === item.value ? 'status-tab-active' : ''}}"
+          bindtap="switchStatus"
+          data-status="{{item.value}}"
+          role="button"
+          aria-pressed="{{currentStatus === item.value}}"
+        >{{item.label}}</view>
+      </view>
+    </scroll-view>
+    <view class="filter-create" bindtap="createOrder" role="button" aria-label="发起预约">
+      <image class="filter-create-icon" src="/static/icons/plus.svg" mode="aspectFit" />
+    </view>
+  </view>
+
   <!-- ===== 列表区（原生页面滚动）===== -->
   <view class="list-area">
 
@@ -83,7 +85,7 @@
                 <text class="info-text">{{item._serviceModeText}}</text>
               </view>
               <view wx:if="{{item.technician && item.technician.name}}" class="info-row">
-                <image class="info-icon" src="/static/icons/client.svg" mode="aspectFit" />
+                <image class="info-icon" src="/static/icons/role-client.svg" mode="aspectFit" />
                 <text class="info-text">美甲师 {{item.technician.name}}</text>
               </view>
               <view wx:if="{{item._isShopService && item._shopNameText}}" class="info-row">
@@ -92,11 +94,17 @@
               </view>
               <view class="info-row info-row-address">
                 <image class="info-icon" src="/static/icons/pin.svg" mode="aspectFit" />
-                <text class="info-text info-text-muted order-detail-address">{{item._addressText}}</text>
-              </view>
-              <view wx:if="{{item._hasShopGuidance}}" class="info-row order-guidance-link" catchtap="openShopGuidance" data-id="{{item.id}}" role="button" aria-label="查看到店指引">
-                <image class="info-icon" src="/static/icons/navigation.svg" mode="aspectFit" />
-                <text class="info-text">查看到店指引 ›</text>
+                <view class="order-detail-address-wrap">
+                  <text class="info-text info-text-muted order-detail-address">{{item._addressText}}</text>
+                  <text
+                    wx:if="{{item._hasShopGuidance}}"
+                    class="order-guidance-link"
+                    catchtap="openShopGuidance"
+                    data-id="{{item.id}}"
+                    role="button"
+                    aria-label="查看到店指引"
+                  ><text class="guidance-sep"> · </text><text class="info-text">查看到店指引 ›</text></text>
+                </view>
               </view>
               <view class="info-row payment-row">
                 <image class="info-icon" src="/static/icons/wallet.svg" mode="aspectFit" />

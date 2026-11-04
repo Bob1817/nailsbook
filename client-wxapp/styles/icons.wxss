@@ -1,0 +1,89 @@
+@import './tokens.wxss';
+
+/**
+ * Airbnb 图标通用样式标准工具库
+ * 对齐：docs/AIRBNB-ICON-SYSTEM-SPEC.md
+ */
+
+/* 标准图标基类 */
+.nb-icon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* 阶梯尺寸类 */
+.nb-icon-xs {
+  width: var(--icon-xs);
+  height: var(--icon-xs);
+  flex-shrink: 0;
+}
+
+.nb-icon-sm {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  flex-shrink: 0;
+}
+
+.nb-icon-md {
+  width: var(--icon-md);
+  height: var(--icon-md);
+  flex-shrink: 0;
+}
+
+.nb-icon-lg {
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  flex-shrink: 0;
+}
+
+.nb-icon-xl {
+  width: var(--icon-xl);
+  height: var(--icon-xl);
+  flex-shrink: 0;
+}
+
+.nb-icon-display {
+  width: var(--icon-display);
+  height: var(--icon-display);
+  flex-shrink: 0;
+}
+
+/* 独立可点击图标按钮容器（强制 44px 防误触触控盒） */
+.nb-icon-button {
+  min-width: var(--icon-touch);
+  min-height: var(--icon-touch);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+}
+
+.nb-icon-button::after {
+  border: 0;
+}
+
+.nb-icon-button:active {
+  opacity: 0.65;
+}
+
+/* 行内伴随文字排版组 */
+.nb-icon-text {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  vertical-align: middle;
+}
+
+/* 列表行尾指引箭头图标 */
+.nb-icon-disclosure {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  flex-shrink: 0;
+  opacity: 0.6;
+}

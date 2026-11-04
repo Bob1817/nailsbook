@@ -1,6 +1,7 @@
 const api = require('../../../services/api');
 const { parseWorkScene } = require('../../../utils/work-share-scene');
 const { buildClientLoginUrl } = require('../../../utils/artist-navigation');
+const { goHome: goEntryHome } = require('../../../utils/entry-navigation');
 function pad(n) { return String(n).padStart(2, '0'); }
 function formatDateTime(value) { if (!value) return ''; const d = new Date(value); return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`; }
 function phoneMask(value) { const phone = String(value || ''); return phone.length === 11 ? `${phone.slice(0, 3)}****${phone.slice(-4)}` : phone; }
@@ -32,7 +33,7 @@ function buildInvitation(quote) {
   };
 }
 Page({
-  data: { loading: true, submitting: false, quote: null, owner: false, feedbackSent: false, showReasons: false, customReason: false, reasonText: '', downloading: false, reasons: ['太贵了', '距离太远了', '最近没空', '只是问问而已', '款式还没决定', '其他原因'], client: null, invitation: null, accepted: false, booked: false, error: '', coverImage: '' },
+  data: { loading: true, submitting: false, quote: null, owner: false, feedbackSent: false, showReasons: false, customReason: false, reasonText: '', downloading: false, showShareConfirm: false, showShareCompletion: false, reasons: ['太贵了', '距离太远了', '最近没空', '只是问问而已', '款式还没决定', '其他原因'], client: null, invitation: null, accepted: false, booked: false, isInvalid: false, invalidReason: '', error: '', coverImage: '' },
   onLoad(options) {
     if (options.scene) {
       // 扫描报价单下载图中的小程序码进入
@@ -43,7 +44,12 @@ Page({
     this.quoteId = Number(options.id || 0);
     this.inviteCode = options.invite ? decodeURIComponent(options.invite) : '';
     this.autoAccept = options.autoAccept === '1';
+    this.justBooked = options.justBooked === '1';
     this.load();
+  },
+  getCurrentClientId() {
+    const user = wx.getStorageSync('client_userInfo') || wx.getStorageSync('userInfo') || {};
+    return user.id || null;
   },
   async load() {
     if (!this.quoteId && !/^[a-f0-9]{48}$/.test(this.token)) return this.setData({ loading: false, error: '报价链接无效' });
@@ -66,11 +72,42 @@ Page({
       if (quote.order) quote.order.displayTime = formatDateTime(quote.order.startTime);
       this.inviteCode = quote.invitationCode || this.inviteCode;
       const booked = quote.status === 'booked';
-      this.setData({ quote, owner, invitation: booked ? buildInvitation(quote) : null, loading: false, accepted: quote.status === 'accepted_pending_schedule', booked, error: '' });
+      let isInvalid = false;
+      let invalidReason = '';
+      if (!owner) {
+        if (quote.status === 'declined') {
+          isInvalid = true;
+          invalidReason = '该报价已结束，请点击前往美甲师主页';
+        } else if (quote.status === 'expired' || quote.status === 'withdrawn') {
+          isInvalid = true;
+          invalidReason = '该报价已失效，请点击前往美甲师主页';
+        } else if (booked) {
+          const currentUserId = this.getCurrentClientId();
+          const isBookedClient = this.justBooked || (currentUserId && quote.clientUserId && Number(currentUserId) === Number(quote.clientUserId));
+          if (!isBookedClient) {
+            isInvalid = true;
+            invalidReason = '该报价已成单并失效，请点击前往美甲师主页';
+          }
+        }
+      }
+
+      this.setData({
+        quote,
+        owner,
+        invitation: booked ? buildInvitation(quote) : null,
+        loading: false,
+        accepted: quote.status === 'accepted_pending_schedule',
+        booked,
+        isInvalid,
+        invalidReason,
+        error: ''
+      });
       this.loadCover(quote);
-      wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
-      if (this.loggedIn() && (quote.status === 'accepted_pending_schedule' || quote.status === 'booked')) await this.loadClient();
-      if (this.autoAccept && this.loggedIn() && (quote.status === 'issued' || quote.status === 'viewed')) {
+      if (owner && !booked) wx.hideShareMenu();
+      else wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
+      if (isInvalid) wx.hideShareMenu();
+      if (this.loggedIn() && (quote.status === 'accepted_pending_schedule' || booked)) await this.loadClient();
+      if (!isInvalid && this.autoAccept && this.loggedIn() && (quote.status === 'issued' || quote.status === 'viewed')) {
         this.autoAccept = false;
         await this.accept();
       }
@@ -101,7 +138,27 @@ Page({
     const pages = getCurrentPages();
     const previous = pages[pages.length - 2];
     if (previous && previous.route === 'pages/technician/quick-quote/index') return wx.navigateBack();
-    wx.navigateTo({ url: `/pages/technician/quick-quote/index?quoteId=${this.data.quote.id}` });
+    wx.redirectTo({ url: `/pages/technician/quick-quote/index?quoteId=${this.data.quote.id}` });
+  },
+  openShareConfirm() {
+    if (!this.data.owner || this.data.booked) return;
+    this.setData({ showShareConfirm: true, showShareCompletion: false });
+  },
+  closeShareConfirm() {
+    this.setData({ showShareConfirm: false });
+  },
+  markShareStarted() {
+    // 先让原生 open-type="share" 唤起微信面板，再更新面板背后的页面状态。
+    setTimeout(() => this.setData({ showShareConfirm: false, showShareCompletion: true }), 300);
+  },
+  closeShareCompletion() {
+    this.setData({ showShareCompletion: false });
+  },
+  completeQuoteShare() {
+    if (!this.data.owner || this.data.booked) return;
+    this.setData({ showShareCompletion: false });
+    wx.showToast({ title: '报价单已分享', icon: 'success', duration: 1200 });
+    setTimeout(() => wx.reLaunch({ url: '/pages/technician/all-bookings/index?view=quotes' }), 1200);
   },
   async downloadQuote() {
     if (this.data.downloading || !this.data.quote) return;
@@ -184,8 +241,15 @@ Page({
     this.setData({ submitting: true });
     try {
       await api.public.bookingQuotes.decline(this.token, reason);
-      this.setData({ showReasons: false, feedbackSent: true });
-      wx.showToast({ title: '已记录，随时可以回来预约', icon: 'none' });
+      this.setData({
+        showReasons: false,
+        feedbackSent: true,
+        isInvalid: true,
+        invalidReason: '你已记录想法，该报价已结束。请点击前往美甲师主页',
+        'quote.status': 'declined'
+      });
+      wx.hideShareMenu();
+      wx.showToast({ title: '已记录反馈', icon: 'none' });
     } catch (err) { wx.showToast({ title: err.message || '提交失败，请重试', icon: 'none' }); }
     finally { this.setData({ submitting: false }); }
   },
@@ -195,8 +259,17 @@ Page({
     this.setData({ submitting: true });
     try {
       await api.public.bookingQuotes.decline(this.token, reason);
-      this.setData({ showReasons: false, customReason: false, reasonText: '', feedbackSent: true });
-      wx.showToast({ title: '已记录，随时可以回来预约', icon: 'none' });
+      this.setData({
+        showReasons: false,
+        customReason: false,
+        reasonText: '',
+        feedbackSent: true,
+        isInvalid: true,
+        invalidReason: '你已记录想法，该报价已结束。请点击前往美甲师主页',
+        'quote.status': 'declined'
+      });
+      wx.hideShareMenu();
+      wx.showToast({ title: '已记录反馈', icon: 'none' });
     } catch (err) { wx.showToast({ title: err.message || '提交失败，请重试', icon: 'none' }); }
     finally { this.setData({ submitting: false }); }
   },
@@ -210,9 +283,7 @@ Page({
     return !(expiresAt > 0 && expiresAt <= Date.now());
   },
   goHome() {
-    // 分享进入时页面栈深度为 1，返回键失效，必须用 reLaunch 提供直达出口
-    const role = wx.getStorageSync('role') || getApp().globalData.role;
-    wx.reLaunch({ url: role === 'technician' ? '/pages/technician/home/index' : '/pages/client/home/index' });
+    goEntryHome();
   },
   goBooking() {
     if (this.data.owner || this.data.submitting) return;
@@ -239,6 +310,24 @@ Page({
     this.setData({ submitting: true });
     try {
       const quote = await api.client.bookingQuotes.accept(this.token);
+      const bindings = wx.getStorageSync('client_bindings') || [];
+      const techId = Number(quote.technicianId);
+      if (techId && !bindings.some(b => Number(b.technicianId || (b.technician && b.technician.id)) === techId)) {
+        bindings.unshift({
+          technicianId: techId,
+          technician: {
+            id: techId,
+            name: quote.technicianName,
+            avatarUrl: quote.technicianAvatarUrl,
+            shopName: quote.shopName,
+            shopAddress: quote.shopAddress
+          }
+        });
+        wx.setStorageSync('client_bindings', bindings);
+        if (!wx.getStorageSync('defaultTechId')) {
+          wx.setStorageSync('defaultTechId', techId);
+        }
+      }
       await this.loadClient();
       this.setData({ quote: this.decorateQuote(quote), accepted: true, submitting: false });
       wx.navigateTo({ url: `/pages/client/quote-booking/index?token=${this.token}` });
@@ -249,6 +338,20 @@ Page({
     if (!Number.isFinite(Number(q.shopLatitude)) || !Number.isFinite(Number(q.shopLongitude))) return wx.showToast({ title: '工作室暂未配置导航坐标', icon: 'none' });
     wx.openLocation({ name: q.shopName || '美甲工作室', address: q.shopAddress || '', latitude: Number(q.shopLatitude), longitude: Number(q.shopLongitude), scale: 16 });
   },
-  onShareAppMessage() { const q = this.data.quote || {}; return { title: this.data.booked ? `${q.technicianName} · 专属预约邀请卡` : `${q.technicianName || '美甲师'} 为你准备了专属报价`, path: `/pages/client/quote-confirm/index?token=${this.token}${this.inviteCode ? `&invite=${encodeURIComponent(this.inviteCode)}` : ''}` }; },
+  onShareAppMessage() {
+    const q = this.data.quote || {};
+    const payload = {
+      title: this.data.booked ? `${q.technicianName} · 专属预约邀请卡` : `${q.technicianName || '美甲师'} 为你准备了专属报价`,
+      path: `/pages/client/quote-confirm/index?token=${this.token}${this.inviteCode ? `&invite=${encodeURIComponent(this.inviteCode)}` : ''}`
+    };
+    if (this.data.owner && !this.data.booked) {
+      payload.success = () => this.completeQuoteShare();
+      payload.fail = () => {
+        this.setData({ showShareCompletion: false });
+        wx.showToast({ title: '未完成分享，请重试', icon: 'none' });
+      };
+    }
+    return payload;
+  },
   onShareTimeline() { const q = this.data.quote || {}; return { title: this.data.booked ? `${q.technicianName || 'OnlyNail'} · 专属预约邀请卡` : `${q.technicianName || 'OnlyNail'} · 专属报价确认函`, query: `token=${this.token}${this.inviteCode ? `&invite=${encodeURIComponent(this.inviteCode)}` : ''}` }; }
 });

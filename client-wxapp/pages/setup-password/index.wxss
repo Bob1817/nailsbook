@@ -4,7 +4,7 @@
 
 /* ===== 页面根 ===== */
 page {
-  background: var(--bg-card);
+  background: var(--nb-page);
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -184,9 +184,9 @@ page {
 .submit-btn::after { border: none; }
 
 .submit-btn-active {
-  background: var(--brand-gradient);
-  color: var(--text-inverse);
-  box-shadow: 0 8rpx 28rpx rgba(0, 0, 0, 0.3);
+  background: var(--nb-action);
+  color: var(--nb-inverse);
+  box-shadow: none;
 }
 
 .submit-btn-active:active {
@@ -201,7 +201,7 @@ page {
   color: var(--text-faint);
   text-align: center;
   width: 100%;
-  padding-bottom: env(safe-area-inset-bottom, 40rpx);
+  padding-bottom: env(safe-area-inset-bottom, var(--space-xl));
   padding-top: var(--space-md);
 }
 

@@ -1,35 +1,27 @@
 page {
   background: var(--nb-page);
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
 }
 
 .page {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  min-height: 100vh;
+  background: var(--nb-page);
+  padding-bottom: 24rpx;
 }
 
 /* ===== 固定 Tab 栏（吸附在 nav-bar 下方）===== */
 .tabs-bar {
-  flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.78);
-  border-bottom: 0;
-  padding: 4rpx 40rpx;
-}
-
-/* ===== 可滚动内容区 ===== */
-.content-scroll {
-  flex: 1;
-  min-height: 0;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.06);
+  padding: 14rpx var(--space-lg);
 }
 
 .content-area {
-  padding: 28rpx 40rpx calc(28rpx + env(safe-area-inset-bottom));
+  padding: 28rpx var(--space-xl) 24rpx;
 }
 
 /* ===== Tab 栏 ===== */
@@ -39,53 +31,64 @@ page {
 
 .tab-bar-inner {
   display: inline-flex;
-  gap: 8rpx;
+  align-items: center;
+  gap: 12rpx;
 }
 
 .tab-pill {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 10rpx;
-  min-height: 88rpx;
-  padding: 0 28rpx;
-  border: 0;
-  background: transparent;
+  gap: 8rpx;
+  height: 56rpx;
+  min-height: 56rpx;
+  padding: 0 22rpx;
+  border-radius: var(--radius-full);
+  background: var(--nb-page);
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
   flex-shrink: 0;
-  transition: all 0.2s;
-  z-index: 0;
+  box-sizing: border-box;
+  transition: all 0.15s ease-in-out;
 }
-.tab-pill::before { content:''; position:absolute; left:4rpx; right:4rpx; top:var(--control-visual-inset); bottom:var(--control-visual-inset); z-index:-1; border: 0; border-radius:999rpx; background:var(--bg-card); box-sizing:border-box; }
+.tab-pill::after { content:''; position:absolute; top:-16rpx; bottom:-16rpx; left:0; right:0; }
 
-.tab-pill:active::before { background: var(--nb-page); }
+/* 44px 移动端触控热区保证 */
+.tab-pill:active {
+  background: var(--nb-pressed);
+  transform: scale(0.97);
+}
 
 .tab-pill-active {
-  background: transparent;
+  background: var(--nb-action);
+  border-color: var(--nb-action);
 }
-.tab-pill-active::before { background:var(--nb-page); border-color:var(--nb-line); }
 
 .tab-label {
   font-size: var(--font-sm);
   font-weight: var(--weight-medium);
-  color: var(--text-muted);
+  color: var(--nb-secondary);
+  line-height: 1;
 }
 
 .tab-pill-active .tab-label {
-  color: var(--brand-primary);
+  color: var(--nb-inverse);
+  font-weight: var(--weight-semibold);
 }
 
 .tab-count {
-  font-size: var(--font-xs);
-  padding: 2rpx 14rpx;
-  border-radius: var(--radius-md);
-  background: var(--nb-page);
-  color: var(--text-muted);
+  font-size: 20rpx;
+  color: var(--nb-muted);
   font-weight: var(--weight-medium);
+  background: rgba(0, 0, 0, 0.06);
+  padding: 2rpx 10rpx;
+  border-radius: var(--radius-full);
+  line-height: 1.2;
 }
 
 .tab-pill-active .tab-count {
-  background: var(--bg-card);
-  color: var(--brand-primary);
+  background: #FFFFFF;
+  color: var(--nb-action);
+  font-weight: var(--weight-semibold);
 }
 
 .badge-reminder { background:var(--nb-page); color:var(--nb-ink); }
@@ -101,7 +104,7 @@ page {
   display: flex;
   align-items: flex-start;
   gap: 20rpx;
-  padding: 28rpx 32rpx;
+  padding: 28rpx var(--space-lg);
   background: rgba(255, 255, 255, 0.86);
   border-radius: var(--radius-lg);
   border: 0;
@@ -258,17 +261,17 @@ page {
 /* ===== 空态 ===== */
 .empty-card {
   margin: 80rpx 0;
-  padding: 72rpx 48rpx;
+  padding: 72rpx var(--space-2xl);
   background: rgba(255, 255, 255, 0.86);
   border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16rpx;
+  gap: var(--space-sm);
   border: 0;
   box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.08), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
 }
-.load-error { margin:80rpx 0; padding:72rpx 48rpx; border: 0; border-radius: var(--radius-lg); background:rgba(255,255,255,.86); box-shadow:0 20rpx 60rpx rgba(0, 0, 0, .08); display:flex; flex-direction:column; align-items:center; gap:16rpx; text-align:center; }
+.load-error { margin:80rpx 0; padding:72rpx var(--space-2xl); border: 0; border-radius: var(--radius-lg); background:rgba(255,255,255,.86); box-shadow:0 20rpx 60rpx rgba(0, 0, 0, .08); display:flex; flex-direction:column; align-items:center; gap:var(--space-sm); text-align:center; }
 .load-error-mark { width:88rpx; height:88rpx; margin-bottom:12rpx; border-radius:50%; background:var(--nb-page); color:var(--nb-ink); font-size: var(--font-xl); line-height:88rpx; text-align:center; }
 .retry-btn { min-height:88rpx; margin:28rpx 0 0; padding:0 56rpx; border:0; border-radius: var(--radius-xl); background:var(--nb-ink); color: var(--text-inverse); font-size: var(--font-md); line-height:88rpx; }
 .retry-btn::after { border:0; }
@@ -316,7 +319,7 @@ page {
   display: flex;
   align-items: center;
   gap: 20rpx;
-  padding: 28rpx 32rpx;
+  padding: 28rpx var(--space-lg);
   background: rgba(255, 255, 255, 0.86);
   border-radius: var(--radius-lg);
   border: 0;
@@ -334,7 +337,7 @@ page {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  gap: var(--space-sm);
 }
 
 .skel-line {
@@ -369,9 +372,13 @@ page {
 
 .modal-sheet {
   width: 100%;
-  background: var(--bg-card);
+  background: rgba(255, 255, 255, 0.94);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border-top: 1rpx solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 -16rpx 48rpx rgba(0, 0, 0, 0.08);
   border-radius: var(--radius-lg) 32rpx 0 0;
-  padding: 40rpx 40rpx calc(48rpx + env(safe-area-inset-bottom));
+  padding: var(--space-xl) var(--space-xl) calc(var(--space-2xl) + env(safe-area-inset-bottom));
   max-height: 70vh;
   overflow-y: auto;
 }
@@ -384,7 +391,7 @@ page {
 }
 
 .modal-type-badge {
-  padding: 8rpx 24rpx;
+  padding: var(--space-xs) var(--space-md);
   border-radius: var(--radius-md);
 }
 
@@ -401,32 +408,9 @@ page {
 
 .modal-close:active { background: var(--nb-page); }
 
-/* CSS close icon (X shape) */
 .modal-close-icon {
-  display: block;
-  width: 20rpx;
-  height: 20rpx;
-  position: relative;
-}
-
-.modal-close-icon::before,
-.modal-close-icon::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 20rpx;
-  height: 3rpx;
-  background: var(--nb-muted);
-  border-radius: 2rpx;
-}
-
-.modal-close-icon::before {
-  transform: translate(-50%, -50%) rotate(45deg);
-}
-
-.modal-close-icon::after {
-  transform: translate(-50%, -50%) rotate(-45deg);
+  width: var(--icon-sm, 28rpx);
+  height: var(--icon-sm, 28rpx);
 }
 
 .modal-name {
@@ -466,7 +450,7 @@ page {
 .modal-actions {
   display: flex;
   gap: 20rpx;
-  margin-top: 40rpx;
+  margin-top: var(--space-xl);
 }
 
 .modal-btn {
@@ -505,7 +489,7 @@ page {
 .page { padding-bottom: 0; }
 
 @import '../../../styles/booking-actions.wxss';
-.retry-btn.booking-action { min-height: 44px; height: var(--control-hit-height); margin-top: 28rpx; padding: 0 24rpx; border-radius: 8px; background: var(--nb-action); font-size: var(--font-sm); line-height: 1.4; box-shadow: none; }
+.retry-btn.booking-action { min-height: 44px; height: var(--control-hit-height); margin-top: 28rpx; padding: 0 var(--space-md); border-radius: 8px; background: var(--nb-action); font-size: var(--font-sm); line-height: 1.4; box-shadow: none; }
 .modal-btn.booking-action { height: var(--control-hit-height); min-height: 44px; border-radius: 8px; }
 .modal-btn.booking-action text { font-size: var(--font-sm); }
 

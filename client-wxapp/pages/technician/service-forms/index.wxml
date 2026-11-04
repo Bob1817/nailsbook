@@ -1,0 +1,56 @@
+<page-meta page-style="background: var(--nb-surface);"/>
+<nav-bar title="{{editor === 'shop' ? '到店美甲设置' : (editor === 'home' ? '上门美甲设置' : '服务形式')}}" showBack/>
+<state-card compact wx:if="{{loading}}" type="loading" title="正在获取服务设置"/>
+<state-card compact wx:elif="{{loadFailed}}" type="error" title="服务设置加载失败" description="{{error}}" bindaction="load"/>
+<block wx:else>
+  <secondary-page-header title="{{editor === 'shop' ? '确认客户到店地点' : (editor === 'home' ? '配置上门服务' : '选择提供的服务形式')}}" subtitle="{{editor ? '信息完整并保存成功后才会开启。返回或取消不会开启服务。' : '两种形式分别配置、分别保存；客户只能预约已开启的服务。'}}"/>
+  <view class="forms-page">
+    <block wx:if="{{!editor}}">
+      <view class="forms-card">
+        <view class="forms-card-head"><image class="forms-icon" src="/static/icons/shop.svg" mode="aspectFit"/><view class="forms-card-copy"><text class="forms-heading">到店美甲</text><text class="forms-note">{{shopService ? '已开启' : '未开启'}}</text></view><nb-switch checked="{{shopService}}" disabled="{{saving}}" bindchange="onShopSwitch" label="到店美甲，{{shopService ? '已开启，点击关闭' : '未开启，点击配置'}}"/></view>
+        <text class="forms-note forms-intro">使用店铺管理中已启用的店铺，修改后同步更新。</text>
+        <view wx:for="{{shops}}" wx:key="name" class="forms-row"><text class="forms-shop-name">{{item.name}}</text><text class="forms-note">{{item.province}} {{item.city}} {{item.district}} {{item.detailAddress || item.address}}</text></view>
+        <text wx:if="{{!shops.length}}" class="forms-note forms-help">尚无可用店铺，请先完善店铺信息。</text>
+        <action-button compact variant="secondary" label="{{shopService ? '查看到店设置' : '配置到店美甲'}}" bindtap="editShop" disabled="{{saving}}"/>
+      </view>
+      <view class="forms-card">
+        <view class="forms-card-head"><image class="forms-icon" src="/static/icons/pin.svg" mode="aspectFit"/><view class="forms-card-copy"><text class="forms-heading">上门美甲</text><text class="forms-note">{{homeService ? '已开启' : '未开启'}}</text></view><nb-switch checked="{{homeService}}" disabled="{{saving}}" bindchange="onHomeSwitch" label="上门美甲，{{homeService ? '已开启，点击关闭' : '未开启，点击配置'}}"/></view>
+        <block wx:if="{{homeFeeText}}"><text class="forms-note forms-intro">{{homeAreaText}}</text><text class="forms-note">{{homeFeeText}}</text><text class="forms-note">{{homeTimeText}}</text></block>
+        <text wx:else class="forms-note forms-intro">开启前需设置服务区域、地图出发点、距离收费档位及可约时间。</text>
+        <action-button compact variant="secondary" label="{{homeService ? '编辑上门设置' : '配置上门美甲'}}" bindtap="editHome" disabled="{{saving}}"/>
+      </view>
+      <text class="forms-note forms-help">关闭全部服务形式会暂停接单；已有预约不受影响。</text>
+    </block>
+    <view wx:elif="{{editor === 'shop'}}" class="forms-section">
+      <text class="forms-heading">可接待客户的店铺</text>
+      <text class="forms-note forms-intro">请在店铺管理中完善并启用至少一家店铺。返回后自动读取最新信息，无需重复填写。</text>
+      <view wx:for="{{shops}}" wx:key="name" class="forms-shop"><text class="forms-shop-name">{{item.name || '店铺名称待完善'}}</text><text class="forms-note">{{item.province}} {{item.city}} {{item.district}} {{item.detailAddress || item.address}}</text><text wx:if="{{item.phone}}" class="forms-note">联系电话：{{item.phone}}</text></view>
+      <text wx:if="{{shopIssues.length}}" class="forms-error">{{shopIssues[0]}}</text>
+      <action-button compact variant="secondary" label="前往店铺管理" bindtap="manageShops" disabled="{{saving}}"/>
+    </view>
+    <block wx:elif="{{editor === 'home'}}">
+    <view class="forms-section">
+      <text class="forms-heading">上门范围与费用</text>
+      <text class="forms-note forms-intro">按出发点与客户地址的直线距离计费，超过最大距离不可预约。出发地点仅你可见。</text>
+      <form-field outlined custom-control label="服务区域" required disabled="{{saving}}"><picker slot="control" class="forms-picker" mode="region" custom-item="全部" value="{{region}}" bindchange="changeRegion" disabled="{{saving}}"><view class="forms-picker-value"><text>{{region.length ? region[0] + ' ' + region[1] + ' ' + region[2] : '选择省市区，可选择全市'}}</text><text>›</text></view></picker></form-field>
+      <location-field label="上门出发点" required confirmed="{{!!origin}}" value="{{origin ? origin.address : ''}}" loading="{{choosingOrigin}}" disabled="{{saving}}" hint="地图位置仅用于计算上门距离，不向客户公开。" bindchoose="chooseOrigin"/>
+      <view wx:for="{{tiers}}" wx:key="key" class="forms-tier">
+        <text class="forms-tier-title">第 {{index + 1}} 档 · {{index ? '超过上一档，至本档上限' : '从 0 公里起，至本档上限'}}</text>
+        <view class="forms-tier-fields"><view class="forms-tier-field"><form-field outlined label="距离上限（km）" type="digit" value="{{item.maxKm}}" data-index="{{index}}" data-field="maxKm" bindinput="changeTier" placeholder="例如 3" disabled="{{saving}}"/></view><view class="forms-tier-field"><form-field outlined label="每单费用（元）" type="digit" value="{{item.fee}}" data-index="{{index}}" data-field="fee" bindinput="changeTier" placeholder="0 代表免费" disabled="{{saving}}"/></view></view>
+        <action-button compact variant="text" label="删除此档" data-index="{{index}}" bindtap="removeTier" disabled="{{saving || tiers.length === 1}}"/>
+      </view>
+      <action-button compact variant="secondary" label="添加距离档位" bindtap="addTier" disabled="{{saving || tiers.length >= 10}}"/>
+      <text class="forms-note forms-help">按距离递增填写，例如 3km 内 10 元、3–8km 25 元。</text>
+    </view>
+    <view class="forms-section">
+      <text class="forms-heading">上门可约时间</text><text class="forms-note forms-intro">与总工作时间、预约占用及接待人数共同决定可预约时段。</text>
+      <checkbox-group class="forms-days" bindchange="changeDays"><label wx:for="{{dayOptions}}" wx:key="key" class="forms-day"><checkbox color="{{colors.ink}}" value="{{item.key}}" checked="{{item.selected}}" disabled="{{saving}}"/>{{item.label}}</label></checkbox-group>
+      <view class="forms-time"><view class="forms-time-field"><form-field outlined custom-control label="开始时间"><picker slot="control" class="forms-picker" mode="time" value="{{startTime}}" data-field="startTime" bindchange="changeTime" disabled="{{saving}}"><view class="forms-picker-value">{{startTime || '请选择'}}</view></picker></form-field></view><view class="forms-time-field"><form-field outlined custom-control label="结束时间"><picker slot="control" class="forms-picker" mode="time" value="{{endTime}}" data-field="endTime" bindchange="changeTime" disabled="{{saving}}"><view class="forms-picker-value">{{endTime || '请选择'}}</view></picker></form-field></view></view>
+      <action-button compact variant="secondary" label="设置总工作时间" bindtap="manageSchedule" disabled="{{saving}}"/>
+    </view>
+    </block>
+    <text wx:if="{{error}}" class="forms-error" aria-live="polite">{{error}}</text>
+  </view>
+  <bottom-action-bar wx:if="{{editor}}" class="page-actions" primary-label="{{editor === 'shop' ? '保存并开启到店美甲' : '保存并开启上门美甲'}}" secondary-label="取消" loading="{{saving}}" disabled="{{choosingOrigin}}" secondary-disabled="{{choosingOrigin}}" bindprimary="save" bindsecondary="cancelEdit"/>
+  <bottom-action-bar wx:elif="{{acceptingMode}}" class="page-actions" primary-label="确认已开启的形式并接单" loading="{{saving}}" disabled="{{!shopService && !homeService}}" bindprimary="activate"/>
+</block>

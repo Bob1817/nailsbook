@@ -1,0 +1,102 @@
+@import '../../styles/booking-actions.wxss';
+.state-spinner{width:40rpx;height:40rpx;border:3rpx solid var(--nb-line);border-top-color:var(--nb-ink);border-radius:50%;margin-bottom:var(--space-md);animation:state-spin .8s linear infinite}
+@keyframes state-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.state-spinner{animation:none}}
+
+.state-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 64rpx 32rpx;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.state-card.is-full-height {
+  min-height: 50vh;
+}
+
+.state-card.is-compact {
+  padding: 32rpx 24rpx;
+}
+.state-card.is-compact .state-icon-wrap{background:var(--nb-page)}
+.state-card.is-compact .state-btn{border-radius:8px;padding:0 var(--space-lg);font-size:var(--font-sm);font-weight:var(--weight-semibold)}
+
+.state-icon-wrap {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  background: var(--nb-soft-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24rpx;
+}
+
+.state-icon {
+  width: 48rpx;
+  height: 48rpx;
+}
+
+.state-title {
+  font-size: var(--font-lg, 32rpx);
+  font-weight: var(--weight-semibold, 600);
+  color: var(--nb-ink);
+  line-height: 1.4;
+  margin-bottom: 12rpx;
+}
+
+.state-desc {
+  font-size: var(--font-sm, 26rpx);
+  color: var(--nb-secondary);
+  line-height: 1.5;
+  max-width: 480rpx;
+}
+
+.state-actions {
+  margin-top: 36rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  justify-content: center;
+}
+
+.state-btn {
+  min-height: 44px;
+  height: 44px;
+  border-radius: var(--radius-full, 44px);
+  padding: 0 48rpx;
+  font-size: var(--font-sm, 26rpx);
+  font-weight: var(--weight-medium, 500);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  box-shadow: none;
+}
+
+.state-btn::after {
+  border: 0;
+}
+
+.state-btn-primary {
+  background: var(--nb-action);
+  color: var(--nb-surface);
+}
+
+.state-btn-secondary {
+  background: var(--nb-surface);
+  color: var(--nb-ink);
+  border: 1rpx solid var(--nb-line);
+}
+
+.state-btn-text {
+  background: transparent;
+  color: var(--nb-text-link);
+}
+
+.state-btn-hover {
+  opacity: 0.85;
+}

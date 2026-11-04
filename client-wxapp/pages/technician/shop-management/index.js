@@ -1,5 +1,6 @@
 const uiColors = require('../../../utils/colors');
 const api = require('../../../services/api');
+const location = require('../utils/location');
 
 // 营业时间默认配置
 const DEFAULT_BUSINESS_HOURS = [
@@ -33,7 +34,7 @@ Page({
     detailAddress: '',
     latitude: '',
     longitude: '',
-    locationText: '',
+    locationText: '', choosingLocation:false,
     phone: '',
     enabled: false,
     guidanceEnabled: false,
@@ -49,9 +50,12 @@ Page({
   },
 
   onLoad(options) {
+    this._unloaded = false;
     this._fromSetup = options.from === 'setup';
     this.loadShops();
   },
+
+  onUnload() { this._unloaded = true; },
 
   async loadShops() {
     this.setData({ loading: true, loadFailed: false });
@@ -62,11 +66,32 @@ Page({
         enabled: shop.enabled !== false,
         businessHours: shop.businessHours || JSON.parse(JSON.stringify(DEFAULT_BUSINESS_HOURS))
       }));
+      this._techId = userInfo.id;
       wx.setStorageSync('technician_userInfo', userInfo);
       this.setData({ shops, loading: false, loadFailed: false });
     } catch (err) {
       this.setData({ loading: false, loadFailed: true });
     }
+  },
+
+  openShopPage(e) {
+    const shop = e.currentTarget.dataset.shop;
+    const view = e.currentTarget.dataset.view || 'shop';
+    if (!shop || !this._techId) return;
+    wx.navigateTo({
+      url: '/pages/client/shop-guidance/index?view=' + view + '&techId=' + encodeURIComponent(this._techId) +
+        '&shopName=' + encodeURIComponent(shop.name || '') + '&address=' + encodeURIComponent(shop.detailAddress || '')
+    });
+  },
+
+  onShareAppMessage(e) {
+    const shop = e && e.target && e.target.dataset.shop;
+    if (!shop || !this._techId) return { title: 'OnlyNail', path: '/pages/client/home/index' };
+    return {
+      title: shop.name + '｜店铺地址与到店指引',
+      path: '/pages/client/shop-guidance/index?view=shop&techId=' + encodeURIComponent(this._techId) +
+        '&shopName=' + encodeURIComponent(shop.name || '') + '&address=' + encodeURIComponent(shop.detailAddress || '')
+    };
   },
 
   openAdd() {
@@ -113,12 +138,13 @@ Page({
   },
 
   closeModal() {
+    if (this.data.saving || this.data.photoUploading || this.data.choosingLocation) return;
     this.setData({ showAddModal: false, editShop: null });
     wx.nextTick(() => wx.pageScrollTo({ scrollTop: 0, duration: 0 }));
   },
 
   onNameInput(e) { this.setData({ name: e.detail.value }); },
-  onDetailAddressInput(e) { this.setData({ detailAddress: e.detail.value }); },
+  onDetailAddressInput(e) { this.setData({ detailAddress: e.detail.value, latitude:'', longitude:'', locationText:'' }); },
   onPhoneInput(e) { this.setData({ phone: e.detail.value }); },
 
   chooseShopPhotos() {
@@ -172,8 +198,26 @@ Page({
     const region = e.detail.value;
     this.setData({
       region,
-      regionText: region.join(' ')
+      regionText: region.join(' '), latitude:'', longitude:'', locationText:''
     });
+  },
+
+  chooseShopLocation() {
+    if (this.data.saving || this.data.choosingLocation) return;
+    if (this.data.region.length < 2) return wx.showToast({ title:'请先选择店铺所在省市区', icon:'none' });
+    this.setData({ choosingLocation:true });
+    const editingShop = this.data.editShop;
+    location.selectLocation(this.data, result => {
+      if (this._unloaded || !this.data.showAddModal || this.data.editShop !== editingShop) return;
+      this.setData({ latitude:String(result.latitude), longitude:String(result.longitude),
+        detailAddress:location.detailForRegion(result.address || result.name, this.data.region), locationText:result.name || '地图位置已确认' });
+    }, () => { if (!this._unloaded) this.setData({ choosingLocation:false }); });
+  },
+
+  viewShopLocation(e) {
+    const shop = e.currentTarget.dataset.shop;
+    if (!shop) return;
+    location.openLocation({ ...shop, address:[shop.province, shop.city, shop.district, shop.detailAddress || shop.address, shop.doorInfo].filter(Boolean).join('') });
   },
 
   toggleEnabled(e) {
@@ -212,7 +256,7 @@ Page({
       wx.showLoading({ title: '正在开启指引…' });
       try {
         await api.technician.auth.updateServiceType({
-          shopService: shops.some((shop) => shop.enabled),
+
           shopAddresses: shops
         });
         this.setData({ shops, guidanceEnabled: true });
@@ -257,7 +301,7 @@ Page({
   },
 
   async save() {
-    if (this.data.saving) return;
+    if (this.data.saving || this.data.photoUploading || this.data.choosingLocation) return;
     const { name, region, detailAddress, latitude, longitude, phone, enabled, businessHours, guidanceEnabled, editShop, shops } = this.data;
     if (!name.trim()) { wx.showToast({ title: '请输入店铺名称', icon: 'none' }); return; }
     if (region.length === 0) { wx.showToast({ title: '请选择省市区', icon: 'none' }); return; }
@@ -297,11 +341,10 @@ Page({
         newShops.push(shopData);
       }
 
-      // 判断是否需要更新 shopService 状态
-      const hasEnabledShop = newShops.some(s => s.enabled);
+
 
       await api.technician.auth.updateServiceType({
-        shopService: hasEnabledShop,
+
         shopAddresses: newShops
       });
 
@@ -309,6 +352,7 @@ Page({
       const userInfo = wx.getStorageSync('userInfo') || {};
       Object.assign(userInfo, res);
       wx.setStorageSync('userInfo', userInfo);
+      this._techId = userInfo.id;
       wx.setStorageSync('technician_userInfo', userInfo);
 
       wx.hideLoading();
@@ -334,12 +378,12 @@ Page({
     if (!shop) return;
 
     shop.enabled = !shop.enabled;
-    const hasEnabledShop = shops.some(s => s.enabled);
+
 
     try {
       wx.showLoading({ title: '保存中...' });
       await api.technician.auth.updateServiceType({
-        shopService: hasEnabledShop,
+
         shopAddresses: shops
       });
 
@@ -347,6 +391,7 @@ Page({
       const userInfo = wx.getStorageSync('userInfo') || {};
       Object.assign(userInfo, res);
       wx.setStorageSync('userInfo', userInfo);
+      this._techId = userInfo.id;
       wx.setStorageSync('technician_userInfo', userInfo);
 
       wx.hideLoading();
@@ -369,10 +414,10 @@ Page({
         if (!res.confirm) return;
         try {
           const newShops = this.data.shops.filter(s => !(s.name === name && s.detailAddress === address));
-          const hasEnabledShop = newShops.some(s => s.enabled);
+
 
           await api.technician.auth.updateServiceType({
-            shopService: hasEnabledShop,
+
             shopAddresses: newShops
           });
 
@@ -380,7 +425,8 @@ Page({
           const userInfo = wx.getStorageSync('userInfo') || {};
           Object.assign(userInfo, userRes);
           wx.setStorageSync('userInfo', userInfo);
-          wx.setStorageSync('technician_userInfo', userInfo);
+          this._techId = userInfo.id;
+      wx.setStorageSync('technician_userInfo', userInfo);
 
           wx.showToast({ title: '已删除', icon: 'success' });
           this.loadShops();

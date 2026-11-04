@@ -35,7 +35,7 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: 48rpx;
+  padding: var(--space-2xl);
 }
 
 .error-text {
@@ -43,7 +43,7 @@
   color: var(--text-muted);
   margin-bottom: var(--space-md);
 }
-.error-sub { margin-bottom:32rpx; color: var(--text-muted); font-size: var(--font-sm); }
+.error-sub { margin-bottom:var(--space-lg); color: var(--text-muted); font-size: var(--font-sm); }
 .btn-retry { min-height:88rpx; margin:0 0 20rpx; padding:0 56rpx; border:0; border-radius: var(--radius-xl); background:var(--nb-ink); color: var(--text-inverse); font-size: var(--font-md); line-height:88rpx; }
 .btn-retry::after { border:0; }
 
@@ -52,7 +52,7 @@
   background: var(--brand-primary);
   color: var(--text-inverse);
   font-size: var(--font-md);
-  padding: 16rpx 48rpx;
+  padding: var(--space-sm) var(--space-2xl);
   border-radius: var(--radius-xl);
   border: none;
 }
@@ -120,7 +120,7 @@
   margin-top: -40rpx;
   background: var(--bg-card);
   border-radius: 40rpx 40rpx 0 0;
-  padding: 38rpx 32rpx 200rpx;
+  padding: 38rpx var(--space-lg) 200rpx;
   box-shadow: 0 -10rpx 30rpx rgba(0, 0, 0, 0.08);
   box-sizing: border-box;
 }
@@ -154,7 +154,7 @@
 }
 
 .tag {
-  padding: 8rpx 40rpx;
+  padding: var(--space-xs) var(--space-xl);
   background: var(--nb-page);
   border-radius: var(--radius-sm);
 }
@@ -169,7 +169,7 @@
 .tech-section {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: var(--space-sm);
   padding: 20rpx 0;
   border-top: 0;
   border-bottom: 0;
@@ -225,8 +225,8 @@
 /* 操作按钮 */
 .actions-section {
   display: flex;
-  gap: 16rpx;
-  margin-bottom: 32rpx;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
 }
 
 .action-btn {
@@ -234,7 +234,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8rpx;
+  gap: var(--space-xs);
   padding: 20rpx;
   background: var(--bg-input);
   border-radius: var(--radius-md);
@@ -264,7 +264,7 @@
 
 /* 评论区 */
 .comments-section {
-  margin-bottom: 32rpx;
+  margin-bottom: var(--space-lg);
 }
 
 .comments-header {
@@ -293,7 +293,7 @@
 
 .comment-item {
   display: flex;
-  gap: 16rpx;
+  gap: var(--space-sm);
 }
 
 .comment-avatar-wrap {
@@ -325,14 +325,14 @@
   flex: 1;
   background: var(--bg-input);
   border-radius: var(--radius-sm);
-  padding: 16rpx 40rpx;
+  padding: var(--space-sm) var(--space-xl);
 }
 
 .comment-header {
   display: flex;
   align-items: center;
-  gap: 8rpx;
-  margin-bottom: 8rpx;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xs);
 }
 
 .comment-name {
@@ -345,7 +345,7 @@
   font-size: var(--font-xs);
   color: var(--nb-secondary);
   background: var(--nb-page);
-  padding: 2rpx 40rpx;
+  padding: 2rpx var(--space-xl);
   border-radius: 10rpx;
 }
 
@@ -365,7 +365,7 @@
 
 /* 回复列表 */
 .replies-list {
-  margin-top: 16rpx;
+  margin-top: var(--space-sm);
   padding-left: 12rpx;
   border-left: 0;
   display: flex;
@@ -403,7 +403,7 @@
 }
 
 .reply-content {
-  padding: 12rpx 32rpx;
+  padding: 12rpx var(--space-lg);
 }
 
 .comment-retry {
@@ -419,7 +419,7 @@
 .comment-retry { color:var(--nb-text-link); }
 
 .comments-empty {
-  padding: 40rpx;
+  padding: var(--space-xl);
   text-align: center;
   background: var(--bg-input);
   border-radius: var(--radius-sm);
@@ -436,13 +436,13 @@
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 16rpx 40rpx;
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  padding: var(--space-sm) var(--space-xl);
+  padding-bottom: calc(var(--space-sm) + env(safe-area-inset-bottom));
   background: var(--bg-page);
   border-top: 0;
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: var(--space-sm);
 }
 
 .reply-indicator {
@@ -453,7 +453,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12rpx 40rpx;
+  padding: 12rpx var(--space-xl);
   background: var(--bg-page);
   border-top: 0;
 }
@@ -471,7 +471,7 @@
 .reply-cancel-btn {
   font-size: var(--font-md);
   color: var(--text-muted);
-  padding: 8rpx 16rpx;
+  padding: var(--space-xs) var(--space-sm);
 }
 
 .input-with-send {
@@ -488,7 +488,7 @@
   height: 88rpx;
   background: var(--nb-soft-surface);
   border-radius: var(--radius-md);
-  padding: 0 32rpx;
+  padding: 0 var(--space-lg);
   font-size: var(--font-md);
   color: var(--text-primary);
   border: 0;

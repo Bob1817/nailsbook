@@ -1,3 +1,5 @@
+const { buildThumbnail } = require('./cdn-image');
+
 /**
  * normalizeWork(raw, technician, options)
  *
@@ -92,6 +94,10 @@ function normalizeWork(raw, technician, options) {
     id: raw.id,
     title: raw.title || '美甲作品',
     coverUrl: coverUrl,
+    coverThumbUrl: buildThumbnail(coverUrl, 'thumb'),
+    coverMediumUrl: buildThumbnail(coverUrl, 'cover'),
+    coverWidth: Number(raw.coverWidth || 0),
+    coverHeight: Number(raw.coverHeight || 0),
     imageUrls: imageUrls,
     tags: tags,
     tagsText: tags.join(' · '),
@@ -106,6 +112,32 @@ function normalizeWork(raw, technician, options) {
     likeCount: Number(raw.likeCount || 0),
     favoriteCount: Number(raw.favoriteCount || 0),
     commentCount: Number(raw.commentCount || 0),
+    completedBookingsCount: Number(
+      raw.completedBookingsCount ||
+      raw.doneCount ||
+      raw.completedCount ||
+      (Array.isArray(raw.completedOrders) ? raw.completedOrders.length : 0) ||
+      (Array.isArray(raw.sourceOrders) ? raw.sourceOrders.filter(o => o && (o.status === 'completed' || !o.status)).length : 0) ||
+      (raw._count && (raw._count.sourceOrders || raw._count.completedOrders)) ||
+      0
+    ),
+    doneCountText: (Number(
+      raw.completedBookingsCount ||
+      raw.doneCount ||
+      raw.completedCount ||
+      (Array.isArray(raw.completedOrders) ? raw.completedOrders.length : 0) ||
+      (Array.isArray(raw.sourceOrders) ? raw.sourceOrders.filter(o => o && (o.status === 'completed' || !o.status)).length : 0) ||
+      (raw._count && (raw._count.sourceOrders || raw._count.completedOrders)) ||
+      0
+    ) > 0) ? `${Number(
+      raw.completedBookingsCount ||
+      raw.doneCount ||
+      raw.completedCount ||
+      (Array.isArray(raw.completedOrders) ? raw.completedOrders.length : 0) ||
+      (Array.isArray(raw.sourceOrders) ? raw.sourceOrders.filter(o => o && (o.status === 'completed' || !o.status)).length : 0) ||
+      (raw._count && (raw._count.sourceOrders || raw._count.completedOrders)) ||
+      0
+    )}人做过` : '',
     isLiked: !!raw.isLiked,
     isFavorited: !!raw.isFavorited,
     description: raw.description || '',
@@ -132,6 +164,7 @@ function normalizeWork(raw, technician, options) {
     technicianId: mergedTech.id,
     technicianName: mergedTech.name,
     technicianAvatarUrl: mergedTech.avatarUrl,
+    technicianAvatarThumbUrl: buildThumbnail(mergedTech.avatarUrl, 'avatar'),
     technicianCity: mergedTech.cityText,
     // 美甲师第一个启用店铺（后端 mapWork 解析；无店铺为空串）
     technicianShopName: raw.technicianShopName || '',
@@ -174,11 +207,23 @@ function normalizeWorkDetail(raw) {
     .map((tag) => tag.trim())
     .filter((tag, index, values) => tag && values.indexOf(tag) === index);
   const promotionDiscountAmount = Math.max(0, Number(raw.promotion && raw.promotion.discountAmount || 0));
+  const completedBookingsCount = Number(
+    raw.completedBookingsCount ||
+    raw.doneCount ||
+    raw.completedCount ||
+    (Array.isArray(raw.completedOrders) ? raw.completedOrders.length : 0) ||
+    (Array.isArray(raw.sourceOrders) ? raw.sourceOrders.filter(o => o && (o.status === 'completed' || !o.status)).length : 0) ||
+    (raw._count && (raw._count.sourceOrders || raw._count.completedOrders)) ||
+    0
+  );
+  const doneCountText = completedBookingsCount > 0 ? `${completedBookingsCount}人做过` : '';
   return {
     ...raw,
     tags,
     serviceSubtotalFen,
     standardPriceFen: standardPriceFen || null,
+    completedBookingsCount,
+    doneCountText,
     _priceFen: priceFen,
     _priceText: raw.priceText || (priceFen > 0 ? '¥' + formatFen(priceFen) : ''),
     _priceDiffType: differenceFen < 0 ? 'discount' : (differenceFen > 0 ? 'surcharge' : ''),

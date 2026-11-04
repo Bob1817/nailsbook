@@ -21,9 +21,12 @@ const p = { ...definition, data: { ...definition.data, work: { id: 10, technicia
   setData(d) { Object.assign(this.data, d); } };
 (async () => {
   let appDefinition, relaunches = 0;
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../app.js'), 'utf8'), {
-    require() {}, App: a => { appDefinition = a; }, console,
+  const appFile = path.join(__dirname, '../app.js');
+  const appRequire = createRequire(appFile);
+  vm.runInNewContext(fs.readFileSync(appFile, 'utf8'), {
+    require: name => name.includes('account-navigation') ? appRequire(name) : {}, App: a => { appDefinition = a; }, console,
     wx: { getStorageSync: key => key === 'token' ? 'saved-token' : 'client', reLaunch() { relaunches++; } },
+    getCurrentPages: () => [{ route: 'pages/login/index' }],
     setTimeout: fn => fn()
   });
   const app = { ...appDefinition, globalData: {}, loadCapabilities() {}, loadLaunchConfig() {}, normalizeStoredSession() {}, verifyToken: async () => true };

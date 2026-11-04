@@ -6,6 +6,7 @@
 
 <!-- Step 1: 快捷登录（默认主屏） -->
 <view wx:if="{{step === 'wechat'}}" class="login-root quick-login-root">
+  <nav-bar wx:if="{{canGoBack}}" title="" showBack customBack bind:back="onLoginBack" transparent />
   <view class="login-stack">
     <view class="hero">
       <text class="logo-text">OnlyNail</text>
@@ -38,7 +39,15 @@
   </view>
 
   <view class="login-footer">
-    <text class="alt-login" bindtap="goPhoneLogin">其他登录方式</text>
+    <view class="footer-action alt-login" bindtap="goPhoneLogin" hover-class="footer-action-pressed" role="button" aria-label="账号密码登录">
+      <text class="footer-action-text">账号密码登录</text>
+      <text class="footer-action-arrow">›</text>
+    </view>
+    <view wx:if="{{canGoBack}}" class="footer-divider"></view>
+    <view wx:if="{{canGoBack}}" class="footer-action guest-entry" bindtap="skipToGuestExplore" hover-class="footer-action-pressed" role="button" aria-label="暂不登录，先去逛逛">
+      <text class="footer-action-text">暂不登录，先去逛逛</text>
+      <text class="footer-action-arrow">›</text>
+    </view>
   </view>
 </view>
 

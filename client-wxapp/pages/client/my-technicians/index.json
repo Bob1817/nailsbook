@@ -2,6 +2,7 @@
   "navigationBarTitleText": "我的美甲师",
   "navigationStyle": "custom",
   "usingComponents": {
+    "tab-bar": "/components/tab-bar/index",
     "nav-bar": "/components/nav-bar/index",
     "form-field": "/components/form-field/index",
     "action-button": "/components/action-button/index"

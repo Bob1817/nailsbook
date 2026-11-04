@@ -17,10 +17,10 @@
 .logo-wrap {
   width: 120rpx; height: 120rpx;
   border-radius: var(--space-lg);
-  background: var(--brand-gradient);
+  background: var(--nb-action);
   display: flex; align-items: center; justify-content: center;
   margin: 0 auto var(--space-lg);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.12);
 }
 
 .logo-deco {
@@ -86,12 +86,12 @@
 .btn-submit {
   width: 100%;
   height: var(--btn-height);
-  background: var(--brand-gradient);
-  color: var(--text-inverse);
+  background: var(--nb-action);
+  color: var(--nb-inverse);
   font-size: var(--btn-font-size); font-weight: var(--weight-semibold);
   border-radius: var(--btn-radius);
   display: flex; align-items: center; justify-content: center;
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
   border: none; margin-bottom: var(--space-sm);
 }
 .btn-submit::after { border: none; }
@@ -118,8 +118,10 @@
 .feature-item {
   display: flex; align-items: center; gap: var(--space-md);
   padding: var(--space-md);
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: var(--radius-md);
+  background: var(--nb-surface);
+  border: 1rpx solid var(--nb-line);
+  border-radius: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
 }
 
 .feature-icon-wrap {
@@ -139,7 +141,7 @@
 .menu-icon::after {
   content: '';
   width: 12rpx; height: 12rpx; border-radius: 50%;
-  background: var(--brand-gradient);
+  background: var(--nb-ink);
 }
 
 .feature-info { flex: 1; }

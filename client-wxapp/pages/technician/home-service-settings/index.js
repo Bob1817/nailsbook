@@ -32,6 +32,7 @@ Page({
         nightFee: userInfo.nightServiceFee != null ? String(userInfo.nightServiceFee) : '',
         holidayFee: userInfo.holidayServiceFee != null ? String(userInfo.holidayServiceFee) : '',
         minOrderAmount: userInfo.minOrderAmount != null ? String(userInfo.minOrderAmount) : '',
+        auditMode: Boolean(userInfo && userInfo.auditMode),
         loading: false,
         loadFailed: false
       });

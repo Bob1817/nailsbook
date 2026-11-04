@@ -64,7 +64,7 @@
         placeholder="邀请码 / 邀请链接（必填）"
         placeholder-class="input-placeholder" confirm-type="done" />
       <view wx:if="{{findingTech}}" class="spinner"></view>
-      <view wx:if="{{foundTech && !findingTech}}" class="check">✓</view>
+      <view wx:if="{{foundTech && !findingTech}}" class="check"><image class="check-icon-svg" src="/static/icons/check-white.svg" mode="aspectFit" /></view>
     </view>
 
     <view wx:if="{{foundTech}}" class="found-card">

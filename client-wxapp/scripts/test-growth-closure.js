@@ -15,11 +15,9 @@ for (const label of ['主页形象', '专业介绍', '服务项目', '服务地�
 
 const profileWxml = read('pages/technician/profile/index.wxml');
 assert(!profileWxml.includes('经营成长路径'), '经营成长路径不应占用我的页面核心位置');
-const marketingWxml = read('pages/technician/marketing-materials/index.wxml');
-for (const label of ['美甲师主页', '作品管理', '邀请客户']) assert(marketingWxml.includes(label), `营销工具缺少 ${label}`);
-for (const label of ['营销配置', '品牌与内容', '客户增长', '宣传物料']) assert(marketingWxml.includes(label), `营销工具缺少 ${label} 分区`);
-assert(marketingWxml.includes('completionPercent'), '营销工具缺少配置完成度');
-assert(marketingWxml.indexOf('营销配置') < marketingWxml.indexOf('品牌与内容'), '配置完成度应先于工具分类展示');
+const marketingJs = read('pages/technician/marketing-materials/index.js');
+for (const label of ['美甲师主页', '作品管理', '邀请客户']) assert(marketingJs.includes(label), `营销工具缺少 ${label}`);
+assert(marketingJs.includes('openTool'), '营销工具应通过统一入口跳转');
 
 const customers = read('pages/technician/customers/index.wxml');
 assert(customers.includes('邀请客户后会直接建立关系，无需审批'));

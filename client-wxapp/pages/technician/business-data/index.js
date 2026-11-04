@@ -56,6 +56,63 @@ Page({
     const formatRate = (value) => value == null ? '待积累' : `${Math.round(value * 100)}%`;
     const homepage = conversion.homepage || null;
     const worksConversion = conversion.works || null;
+    const revenueVal = Number(data.revenue && data.revenue.monthConfirmed) || 0;
+    const completedVal = Number(data.bookings && data.bookings.monthCompleted) || 0;
+    const newCustVal = Number(data.customers && data.customers.newThisMonth) || 0;
+    const dueCustVal = Number(data.customers && data.customers.dueForRepurchase) || 0;
+    const repeatRateVal = data.customers && data.customers.repeatRate != null ? Math.round(data.customers.repeatRate * 100) : null;
+    const topService = performance.services && performance.services[0] ? performance.services[0].name : null;
+    const topSlot = performance.timeSlots && performance.timeSlots[0] ? performance.timeSlots[0].name : null;
+
+    const insights = [];
+    if (completedVal > 0) {
+      insights.push({
+        tag: '营收表现',
+        tone: 'positive',
+        text: `本月已完成入账 ${completedVal} 笔订单，总确认收入 ${formatMoney(revenueVal)}，平均客单价 ${data.revenue.averageTicket == null ? '待积累' : formatMoney(data.revenue.averageTicket)}。`
+      });
+    } else {
+      insights.push({
+        tag: '经营起步',
+        tone: 'neutral',
+        text: '本月尚无已完成入账订单，可通过发布精选作品、主动分享专属报价单快速获客成单。'
+      });
+    }
+
+    if (repeatRateVal !== null) {
+      insights.push({
+        tag: '客户健康度',
+        tone: repeatRateVal >= 30 ? 'positive' : 'neutral',
+        text: `当月老客户复购率达 ${repeatRateVal}%，新增客户 ${newCustVal} 位。${dueCustVal > 0 ? `当前有 ${dueCustVal} 位客户已临近复购周期，建议主动发起关怀沟通。` : '客户资产稳步留存。'}`
+      });
+    } else if (newCustVal > 0) {
+      insights.push({
+        tag: '客群增长',
+        tone: 'positive',
+        text: `本月新增 ${newCustVal} 位新客户，建议服务完成后及时记录美甲档案以促成下次复购。`
+      });
+    }
+
+    if (topService && topSlot) {
+      insights.push({
+        tag: '排期与款式',
+        tone: 'positive',
+        text: `「${topService}」为本月最受欢迎款式，${topSlot} 预约最集中，建议后续优先开放该时段排期并主推相关款式。`
+      });
+    } else if (topService) {
+      insights.push({
+        tag: '主推款式',
+        tone: 'positive',
+        text: `「${topService}」是当前贡献最高的服务款式，可多拍摄同款美甲作品在主页展示。`
+      });
+    } else {
+      insights.push({
+        tag: '经营建议',
+        tone: 'neutral',
+        text: '持续完善服务档案并关联美甲作品，系统将在积累 5 单后自动生成款式排行与时段效率分析。'
+      });
+    }
+
     return {
       workShare: conversion.workShare || null,
       homepageConversion: homepage && {
@@ -99,7 +156,8 @@ Page({
       performanceMinimum: performance.minimumSampleSize || 5,
       topServices: (performance.services || []).slice(0, 3).map(item => ({ ...item, revenueText: formatMoney(item.revenue) })),
       topTimeSlots: (performance.timeSlots || []).slice(0, 3).map(item => ({ ...item, revenueText: formatMoney(item.revenue) })),
-      reminders: (data.reminders || []).map(item => ({ ...item, typeText: { due: '待复购', dormant: '沉睡客户', high_value: '高价值客户' }[item.type] || '经营提醒' }))
+      reminders: (data.reminders || []).map(item => ({ ...item, typeText: { due: '待复购', dormant: '沉睡客户', high_value: '高价值客户' }[item.type] || '经营提醒' })),
+      insights
     };
   },
 

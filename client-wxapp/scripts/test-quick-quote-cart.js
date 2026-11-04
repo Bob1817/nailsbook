@@ -31,7 +31,8 @@ const api = {
 const wx = {
   showToast() {},
   showModal(options) { options.success({ confirm: true }); },
-  navigateTo({ url }) { navigatedTo = url; }
+  redirectTo({ url }) { navigatedTo = url; },
+  reLaunch({ url }) { navigatedTo = url; }
 };
 vm.runInNewContext(fs.readFileSync(file, 'utf8'), {
   Page: value => { definition = value; },
@@ -116,8 +117,7 @@ page.recalculate();
   assert.equal(submitted.lines[1].lineType, 'surcharge', '其他费用应作为附加费用提交');
   assert.equal(submitted.finalPriceFen, 44600, '未手动改价时使用系统合计');
   assert.equal(submitted.totalDurationMinutes, 150, '提交时应保留编辑后的服务时长');
-  assert.equal(navigatedTo, '/pages/client/quote-confirm/index?id=1', '创建后应进入新版报价单预览页');
-  assert.equal(page.data.quote.id, 1, '创建后的报价应保留在当前页，返回时可继续预览和转发');
+  assert.equal(navigatedTo, '/pages/client/quote-confirm/index?id=1', '创建后应替换编辑页并进入正式报价预览');
   editFee('name', '特殊饰品');
   const previousSubmission = submitted;
   await page.submit();
@@ -136,7 +136,7 @@ page.recalculate();
   assert.match(template, /class="quote-fee-heading"[\s\S]*class="quote-fee-tag">临时项目<\/text>[\s\S]*quote-fee-note">\{\{requirement \|\| '按本次需求临时添加'\}\}/, '临时项目应在名称后展示标签，下方显示备注或默认说明');
   assert.doesNotMatch(template, /sheet-fee-title|<text[^>]*>其他费用<\/text>/, '未新增费用时不应显示额外标题');
   assert.doesNotMatch(template, /empty-quote-card|empty-service-action/, '初始页面不得回退到旧版独立选择服务卡片');
-  assert.match(template, /<block wx:elif="\{\{!quote\}\}">\s*<view class="compose-card">/, '新建报价应直接显示新版报价卡');
+  assert.match(template, /<block wx:else>\s*<view class="compose-card">/, '服务加载完成后应直接显示新版报价编辑卡');
   assert.match(template, /class="compose-card"[\s\S]*新建报价单[\s\S]*意向报价[\s\S]*组合本次美甲服务[\s\S]*selectedServices[\s\S]*继续添加系统服务[\s\S]*系统预计时长[\s\S]*calculatedText/, '已选服务后应显示参考图中的报价组合卡');
   assert.match(template, /class="adjust-card"[\s\S]*最终报价调整[\s\S]*可编辑[\s\S]*最终报价（元）[\s\S]*服务时长（小时）/, '应显示可编辑的最终报价调整卡且时长以小时展示');
   assert.doesNotMatch(template, /unit-switch|unit-option|setDurationUnit/, '不得再提供时长单位切换');
@@ -170,8 +170,9 @@ page.recalculate();
   page.recalculate();
   assert.equal(page.data.showMore, false, '清空服务后折叠更多');
   assert.equal(page.data.finalPrice, '', '清空服务后重置手动报价');
-  page.newQuote();
-  assert.equal(page.data.quote, null, '创建新报价时应退出上一张报价预览');
+  assert.equal(Object.prototype.hasOwnProperty.call(page.data, 'quote'), false, '快捷报价页不得保留一套简化结果预览');
+  assert.doesNotMatch(template, /class="letter"|专属报价确认函|确认并转发给客户|创建新报价/, '报价结果必须统一进入正式客户预览页');
+  assert.doesNotMatch(styles, /\.letter(?:-|\s|,)/, '应清理简化结果预览的重复样式');
   assert.equal(Object.prototype.hasOwnProperty.call(page.data, 'showHistory'), false, '快速报价页不保留重复的历史报价状态');
   assert.equal(Object.prototype.hasOwnProperty.call(page.data, 'quotes'), false, '报价记录统一由预约页管理');
   console.log('快速报价购物车式服务选择与固定汇总检查通过');

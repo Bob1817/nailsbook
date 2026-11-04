@@ -237,6 +237,13 @@ Component({
       this.setData({ calendarDays: days, todayOption: this.data.horizontal ? days[0] : null, futureDays: this.data.horizontal ? days.slice(1) : [], serviceDate: selectedDate });
       var selectedDay = days.find(function (day) { return day.dateStr === selectedDate; });
       if (this.data.horizontal && this.data._ready && selectedDay && selectedDay.disabled) {
+        var autoDay = !this._userPickedDate && !this.data.startTime && days.find(function (day) { return !day.disabled; });
+        if (autoDay) {
+          days.forEach(function (day) { day.isSelected = day.dateStr === autoDay.dateStr; });
+          this.setData({ calendarDays: days, todayOption: days[0], futureDays: days.slice(1), serviceDate: autoDay.dateStr });
+          this._refreshTimeSlots();
+          return;
+        }
         this.setData({ startTime: '', timeSlotStatuses: [] });
         this._emitChange(selectedDate, '', false);
       }
@@ -266,6 +273,7 @@ Component({
     onSelectDate: function (e) {
       var ds = e.currentTarget.dataset.date;
       if (!ds) return;
+      this._userPickedDate = true;
       var day = this.data.calendarDays.find(function (d) { return d.dateStr === ds; });
       if (!day || (day.disabled && !this.data.horizontal)) return;
       this.setData({
@@ -289,17 +297,29 @@ Component({
     _refreshTimeSlots: function () {
       var serviceDate = this.data.serviceDate;
       if (!serviceDate) { this.setData({ timeSlotStatuses: [] }); return; }
+      // 档期未就绪时不要清空外部带入的时间，否则预约时间会在加载期间被静默丢弃
+      if (!this.data._ready) { this.setData({ timeSlotStatuses: [] }); return; }
+      // 到店美甲尚未确定门店时无法判断时段，同样保留外部带入的时间
+      var isShop = this.data.serviceType === 'shop' || this.data.serviceType === '到店美甲';
+      if (isShop && (this.data.shopAddresses || []).length > 0 && !this._selectedShop()) {
+        this.setData({ timeSlotStatuses: [] });
+        return;
+      }
 
-      var statuses = this.data._ready && !this.data.paused ? this._slotsForDate(serviceDate) : [];
+      var statuses = this.data.paused ? [] : this._slotsForDate(serviceDate);
       if (serviceDate < dateStr(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()) ||
           (this.data.minDate && serviceDate < this.data.minDate)) statuses = [];
       var available = statuses.some(function (slot) { return !slot.occupied; });
-      var selected = statuses.find(function (slot) { return slot.time === this.data.startTime && !slot.occupied; }, this);
+      // 内部未选择时回退到父级传入的时间，保证外部带入的预约时间能被校验并选中
+      var targetTime = this.data.startTime || (this.properties && this.properties.startTime);
+      var selected = statuses.find(function (slot) { return slot.time === targetTime && !slot.occupied; }, this);
       this.setData({ timeSlotStatuses: available ? statuses : [] });
-      if (!selected) {
-        this.setData({ startTime: '' });
-        this._emitChange(serviceDate, '', false);
+      if (selected) {
+        if (targetTime !== this.data.startTime) this.setData({ startTime: targetTime });
+        return;
       }
+      this.setData({ startTime: '' });
+      this._emitChange(serviceDate, '', false);
     },
 
     _slotsForDate: function (serviceDate) {
@@ -313,6 +333,8 @@ Component({
         excludeOrderId: this.data.excludeOrderId,
         serviceDate: serviceDate,
         serviceSchedule: tech && tech.serviceSchedule,
+        homeMode: this.data.serviceType === 'home' || this.data.serviceType === '上门美甲',
+        homeServiceSettings: tech && tech.homeServiceSettings,
         shop: this._selectedShop(),
         shopMode: this.data.serviceType === 'shop' || this.data.serviceType === '到店美甲',
         slots: TIME_SLOTS

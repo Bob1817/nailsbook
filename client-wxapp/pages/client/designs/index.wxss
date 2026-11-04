@@ -1,14 +1,14 @@
 .container {
   min-height: 100vh;
   background: var(--bg-page);
-  padding-bottom: 40rpx;
+  padding-bottom: var(--space-xl);
 }
 
 /* 创建入口 */
 .create-section {
-  padding: var(--space-md) 40rpx;
+  padding: var(--space-md) var(--space-xl);
   display: flex;
-  gap: 16rpx;
+  gap: var(--space-sm);
 }
 
 .create-card {
@@ -37,7 +37,7 @@
   color: var(--brand-primary);
   font-size: var(--font-xs);
   font-weight: var(--weight-medium);
-  padding: 6rpx 40rpx;
+  padding: 6rpx var(--space-xl);
   border-radius: var(--radius-sm);
   margin-bottom: 20rpx;
 }
@@ -64,7 +64,7 @@
 .create-info {
   display: flex;
   flex-direction: column;
-  gap: 8rpx;
+  gap: var(--space-xs);
 }
 
 .create-title {
@@ -81,7 +81,7 @@
 
 /* 列表区域 */
 .list-section {
-  padding: 0 32rpx;
+  padding: 0 var(--space-lg);
 }
 
 .list-header {
@@ -108,7 +108,7 @@
 
 .list-count {
   background: rgba(255, 255, 255, 0.8);
-  padding: 8rpx 40rpx;
+  padding: var(--space-xs) var(--space-xl);
   border-radius: var(--radius-sm);
   border: 0;
 }
@@ -145,13 +145,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 80rpx 40rpx;
+  padding: 80rpx var(--space-xl);
   background: var(--bg-card);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
 }
 .load-error-mark { width:88rpx; height:88rpx; margin-bottom: var(--space-md); border-radius:50%; background:var(--nb-page); color:var(--nb-ink); font-size: var(--font-xl); line-height:88rpx; text-align:center; }
-.retry-btn { min-height:88rpx; margin:40rpx 0 0; padding:0 56rpx; border:0; border-radius: var(--radius-xl); background:var(--nb-ink); color: var(--text-inverse); font-size: var(--font-md); line-height:88rpx; }
+.retry-btn { min-height:88rpx; margin:var(--space-xl) 0 0; padding:0 56rpx; border:0; border-radius: var(--radius-xl); background:var(--nb-ink); color: var(--text-inverse); font-size: var(--font-md); line-height:88rpx; }
 .retry-btn::after { border:0; }
 
 .empty-icon-wrap {
@@ -187,7 +187,7 @@
   font-size: var(--font-md);
   font-weight: var(--weight-medium);
   color: var(--text-body);
-  margin-bottom: 8rpx;
+  margin-bottom: var(--space-xs);
 }
 
 .empty-desc {
@@ -199,7 +199,7 @@
 .design-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 16rpx;
+  gap: var(--space-sm);
 }
 
 .design-card {
@@ -261,7 +261,7 @@
   position: absolute;
   top: 16rpx;
   left: 16rpx;
-  padding: 6rpx 40rpx;
+  padding: 6rpx var(--space-xl);
   border-radius: var(--radius-sm);
 }
 
@@ -375,21 +375,21 @@
 }
 
 /* 创建入口与设计列表对齐客户端“我的”的卡片规范。 */
-.container { background: var(--nb-page); padding-bottom: calc(40rpx + env(safe-area-inset-bottom)); }
-.create-section { padding: 24rpx 32rpx 20rpx; gap: 16rpx; }
-.create-card { min-height: 216rpx; padding: 24rpx; border-radius: 24rpx; box-shadow: none; box-sizing: border-box; }
-.create-tag { margin-bottom: 16rpx; padding: 6rpx 14rpx; border-radius: 12rpx; color: var(--nb-muted); }
-.create-icon-wrap,.create-icon-wrap.upload { width: 64rpx; height: 64rpx; margin-bottom: 16rpx; border-radius: 16rpx; background: var(--nb-ink); box-shadow: none; }
+.container { background: var(--nb-page); padding-bottom: calc(var(--space-xl) + env(safe-area-inset-bottom)); }
+.create-section { padding: var(--space-md) var(--space-lg) 20rpx; gap: var(--space-sm); }
+.create-card { min-height: 216rpx; padding: var(--space-md); border-radius: 24rpx; box-shadow: none; box-sizing: border-box; }
+.create-tag { margin-bottom: var(--space-sm); padding: 6rpx 14rpx; border-radius: 12rpx; color: var(--nb-muted); }
+.create-icon-wrap,.create-icon-wrap.upload { width: 64rpx; height: 64rpx; margin-bottom: var(--space-sm); border-radius: 16rpx; background: var(--nb-ink); box-shadow: none; }
 .create-title { color: var(--nb-ink); font-size: var(--font-md); font-weight: var(--weight-semibold); }
 .create-desc { margin-top: 2rpx; color: var(--nb-muted); font-size: var(--font-xs); }
-.list-section { padding: 0 32rpx; }
-.list-header { align-items: center; margin-bottom: 16rpx; }
+.list-section { padding: 0 var(--space-lg); }
+.list-header { align-items: center; margin-bottom: var(--space-sm); }
 .list-title { color: var(--nb-ink); font-size: var(--font-lg); font-weight: var(--weight-semibold); letter-spacing: 0; }
 .list-subtitle { color: var(--nb-muted); font-size: var(--font-xs); }
-.list-count { padding: 8rpx 14rpx; border-radius: 14rpx; background: var(--nb-surface); }
-.design-grid { gap: 16rpx; }
-.design-card { border-radius: 20rpx; box-shadow: none; }
+.list-count { padding: var(--space-xs) 14rpx; border-radius: var(--radius-sm); background: var(--nb-surface); }
+.design-grid { gap: var(--space-sm); }
+.design-card { border-radius: var(--radius-md); box-shadow: none; }
 .status-badge { padding: 6rpx 12rpx; border-radius: 12rpx; }
-.empty-wrap,.load-error { padding: 64rpx 32rpx; border-radius: 24rpx; box-shadow: none; }
+.empty-wrap,.load-error { padding: var(--space-3xl) var(--space-lg); border-radius: 24rpx; box-shadow: none; }
 @import '../../../styles/booking-actions.wxss';
-.retry-btn.booking-action { min-height:44px; height:44px; margin-top:40rpx; padding:0 24rpx; border-radius:8px; font-size:var(--font-sm); line-height:1.4; }
+.retry-btn.booking-action { min-height:44px; height:44px; margin-top:var(--space-xl); padding:0 var(--space-md); border-radius:8px; font-size:var(--font-sm); line-height:1.4; }

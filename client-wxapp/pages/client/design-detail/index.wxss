@@ -49,7 +49,7 @@
   background: var(--brand-gradient);
   color: var(--text-inverse);
   font-size: var(--font-md);
-  padding: 16rpx 48rpx;
+  padding: var(--space-sm) var(--space-2xl);
   border-radius: var(--radius-md);
   border: none;
 }
@@ -60,14 +60,14 @@
 
 /* 内容区域 */
 .content {
-  padding: var(--space-md) 40rpx;
+  padding: var(--space-md) var(--space-xl);
 }
 
 /* 设计信息卡片 */
 .design-card {
   background: var(--bg-card);
   border-radius: var(--radius-md);
-  padding: 32rpx;
+  padding: var(--space-lg);
   margin-bottom: var(--space-md);
   box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
   border: 0;
@@ -159,7 +159,7 @@
 .status-card {
   background: var(--bg-card);
   border-radius: var(--radius-md);
-  padding: 32rpx;
+  padding: var(--space-lg);
   margin-bottom: var(--space-md);
   box-shadow: var(--shadow-md), 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
   border: 0;
@@ -248,13 +248,13 @@
 /* 报价信息 */
 .quote-section {
   border-top: 0;
-  padding-top: 24rpx;
+  padding-top: var(--space-md);
 }
 
 .tech-info {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: var(--space-sm);
   margin-bottom: 20rpx;
 }
 
@@ -321,7 +321,7 @@
 }
 
 .remark-wrap {
-  padding: 16rpx;
+  padding: var(--space-sm);
   background: var(--bg-input);
   border-radius: var(--radius-sm);
 }
@@ -330,7 +330,7 @@
   font-size: var(--font-xs);
   color: var(--text-muted);
   display: block;
-  margin-bottom: 8rpx;
+  margin-bottom: var(--space-xs);
 }
 
 .remark-text {
@@ -346,13 +346,13 @@
   right: 0;
   background: rgba(255, 255, 255, 0.95);
   border-top: 0;
-  padding: 20rpx 40rpx;
+  padding: 20rpx var(--space-xl);
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
 }
 
 .btn-group {
   display: flex;
-  gap: 16rpx;
+  gap: var(--space-sm);
 }
 
 .btn-quote {
@@ -428,7 +428,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32rpx;
+  padding: var(--space-lg);
 }
 
 .modal-content {
@@ -436,7 +436,7 @@
   max-width: 600rpx;
   background: var(--bg-card);
   border-radius: var(--radius-md);
-  padding: 40rpx;
+  padding: var(--space-xl);
   max-height: 80vh;
   overflow-y: auto;
 }
@@ -447,7 +447,7 @@
 
 .modal-header {
   text-align: center;
-  margin-bottom: 32rpx;
+  margin-bottom: var(--space-lg);
 }
 
 .modal-icon-wrap {
@@ -458,7 +458,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 16rpx;
+  margin: 0 auto var(--space-sm);
 }
 
 .modal-icon-wrap.danger {
@@ -481,7 +481,7 @@
   font-weight: var(--weight-semibold);
   color: var(--text-primary);
   display: block;
-  margin-bottom: 8rpx;
+  margin-bottom: var(--space-xs);
 }
 
 .modal-desc {
@@ -493,7 +493,7 @@
 .modal-tech {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: var(--space-sm);
   padding: 20rpx;
   background: var(--bg-input);
   border-radius: var(--radius-sm);
@@ -544,7 +544,7 @@
 /* 弹窗操作按钮 */
 .modal-actions {
   display: flex;
-  gap: 16rpx;
+  gap: var(--space-sm);
   margin-top: var(--space-md);
 }
 
@@ -643,7 +643,7 @@
   height: 200rpx;
   background: var(--bg-input);
   border-radius: var(--radius-sm);
-  padding: 16rpx 40rpx;
+  padding: var(--space-sm) var(--space-xl);
   font-size: var(--font-md);
   color: var(--text-primary);
   box-sizing: border-box;
@@ -656,7 +656,7 @@
 .form-hint {
   font-size: var(--font-xs);
   color: var(--text-muted);
-  margin-top: 8rpx;
+  margin-top: var(--space-xs);
   display: block;
 }
 
@@ -684,8 +684,8 @@
   position: absolute;
   top: 4rpx;
   right: 4rpx;
-  width: 32rpx;
-  height: 32rpx;
+  width: 40rpx;
+  height: 40rpx;
   background: var(--bg-overlay);
   border-radius: 50%;
   display: flex;
@@ -693,9 +693,9 @@
   justify-content: center;
 }
 
-.remove-icon {
-  font-size: var(--font-sm);
-  color: var(--text-inverse);
+.remove-icon-svg {
+  width: 20rpx;
+  height: 20rpx;
 }
 
 .edit-img-add {
@@ -713,9 +713,9 @@
   border-color: var(--brand-primary);
 }
 
-.add-icon {
-  font-size: var(--font-xl);
-  color: var(--text-muted);
+.add-icon-svg {
+  width: 44rpx;
+  height: 44rpx;
 }
 @import '../../../styles/booking-actions.wxss';
 .btn-back.booking-action,.btn-quote.booking-action,.btn-book.booking-action,.btn-view-order.booking-action,.btn-cancel.booking-action,.btn-confirm.booking-action,.btn-danger.booking-action { min-height:44px; height:44px; border-radius:8px; font-size:var(--font-sm); line-height:1.4; box-shadow:none; }

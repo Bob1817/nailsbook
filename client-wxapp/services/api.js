@@ -29,18 +29,17 @@ function publicAssetUrl(url) {
 function guidanceFromPublicArtist(result, params = {}) {
   const artist = result && result.artist || {};
   const shops = (Array.isArray(artist.shopAddresses) ? artist.shopAddresses : [])
-    .filter((shop) => shop && shop.enabled !== false && shop.guidance && shop.guidance.enabled === true);
+    .filter((shop) => shop && shop.enabled !== false);
   const normalizedAddress = String(params.address || '').replace(/\s+/g, '');
   const shop = shops.find((item) => {
-    if (params.shopName && item.name === params.shopName) return true;
     const fullAddress = [item.province, item.city, item.district, item.detailAddress]
       .filter(Boolean).join('').replace(/\s+/g, '');
     const detailAddress = String(item.detailAddress || '').replace(/\s+/g, '');
-    return normalizedAddress && (fullAddress === normalizedAddress ||
-      (detailAddress && normalizedAddress.includes(detailAddress)) ||
-      fullAddress.includes(normalizedAddress));
-  }) || (shops.length === 1 ? shops[0] : null);
+    return (!params.shopName || item.name === params.shopName) &&
+      (!normalizedAddress || fullAddress === normalizedAddress || detailAddress === normalizedAddress);
+  }) || (!params.shopName && !normalizedAddress && shops.length === 1 ? shops[0] : null);
   if (!shop) return null;
+  const guidance = shop.guidance && shop.guidance.enabled === true ? shop.guidance : {};
   const section = (value) => {
     const source = value && typeof value === 'object' ? value : {};
     return {
@@ -56,10 +55,10 @@ function guidanceFromPublicArtist(result, params = {}) {
     technicianName: artist.name,
     shop,
     guidance: {
-      enabled: true,
-      metro: section(shop.guidance.metro),
-      bus: section(shop.guidance.bus),
-      driving: section(shop.guidance.driving)
+      enabled: guidance.enabled === true,
+      metro: section(guidance.metro),
+      bus: section(guidance.bus),
+      driving: section(guidance.driving)
     }
   };
 }
@@ -198,6 +197,7 @@ const client = {
   },
 
   orders: {
+    homeServiceQuote: (techId, addressId) => api.get(`${C}/orders/home-service-quote/${techId}/${addressId}`),
     list: (params) => api.get(`${C}/orders`, params),
     detail: (id) => api.get(`${C}/orders/${id}`),
     create: (data) => api.post(`${C}/orders`, data),
@@ -303,7 +303,7 @@ const technician = {
     login: (phone, password) => auth.login(phone, password, 'technician'),
     getUserInfo: () => auth.getUserInfo('technician'),
     updateProfile: (data) => api.patch(`${T}/auth/profile`, data),
-    updateStatus: (status) => api.patch(`${T}/auth/status`, { status }),
+    updateStatus: (status, forms = {}) => api.patch(`${T}/auth/status`, { status, ...forms }),
     changePassword: (oldPassword, newPassword) =>
       api.patch(`${T}/auth/password`, { oldPassword, newPassword }),
     updateServiceType: (data) => api.patch(`${T}/auth/service-type`, data),
@@ -326,6 +326,7 @@ const technician = {
     startService: (id) => api.patch(`${T}/orders/${id}/start-service`, {}),
     serviceRecord: (id) => api.get(`${T}/orders/${id}/service-record`),
     saveServiceRecord: (id, data) => api.patch(`${T}/orders/${id}/service-record`, data),
+    correctServiceRecordAssociation: (id, data) => api.post(`${T}/orders/${id}/service-record/correct-association`, data),
     // 兼容尚未部署 blocked-slots 专用路由的线上后端：从现有订单列表派生美甲师占用。
     blockedSlots: () => api.get(`${T}/orders`).then((result) => {
       const orders = Array.isArray(result) ? result : (result.data || []);
@@ -455,15 +456,12 @@ const technician = {
     fundSummary: () => api.get(`${T}/reward-funds/summary`)
   },
 
-  // 以下端点后端暂未实现，返回兜底数据避免页面崩溃
-  dashboard: () => Promise.resolve({
-    worksCount: 0, customersCount: 0, ordersCount: 0,
-    todayOrders: 0, monthlyRevenue: 0, rating: 0, todaySchedule: []
-  }),
+  // dashboard 数据已由首页直接聚合 insights.overview 等接口；此处保留兼容映射
+  dashboard: (params) => api.get(`${T}/insights/overview`, params),
 
   schedule: {
-    get: () => Promise.resolve([]),
-    update: () => Promise.reject({ message: '功能开发中' })
+    get: () => api.get(`${T}/auth/me`).then(res => res.serviceSchedule || []),
+    update: (data) => api.patch(`${T}/auth/profile`, { serviceSchedule: data })
   },
 
   shops: {
@@ -678,6 +676,15 @@ technician.bookingDays = {
   updateCapacity: async (data) => {
     await requireBookingSettings();
     return api.patch(`${T}/booking-days/capacity`, data);
+  },
+  listBlockedSlots: async (params) => {
+    return api.get(`${T}/booking-days/blocked-slots`, params, { silent: true });
+  },
+  createBlockedSlot: async (data) => {
+    return api.post(`${T}/booking-days/blocked-slots`, data);
+  },
+  deleteBlockedSlot: async (id) => {
+    return api.del(`${T}/booking-days/blocked-slots/${id}`);
   }
 };
 module.exports = { auth, client, technician, chat, upload, public: publicApi };

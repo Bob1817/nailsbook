@@ -20,14 +20,14 @@ const routes = [
   'pages/technician/home-service-settings/index',
 ].forEach((route) => assert(!routes.includes(route), `forbidden launch route: ${route}`));
 
-assert(!app.permission, '首发版不得声明位置权限');
-assert(!app.requiredPrivateInfos, '首发版不得声明 chooseLocation 等位置隐私能力');
+assert(app.permission['scope.userLocation'].desc.includes('上门'), '位置用途必须明确限定为上门服务计费');
+assert([...app.permission['scope.userLocation'].desc].length <= 30, '位置权限用途说明不得超过微信上传限制的 30 字');
+assert.deepStrictEqual(app.requiredPrivateInfos, ['chooseLocation'], '只按用户主动操作选点，不引入自动或后台定位');
 const createOrderJs = read('pages/client/create-order/index.js');
 const createOrderWxml = read('pages/client/create-order/index.wxml');
-assert(!createOrderJs.includes('上门美甲') && !createOrderWxml.includes('上门'), '预约页不得暴露上门服务');
-assert(!createOrderJs.includes('getLocation') && !createOrderJs.includes('client.addresses'), '预约页不得读取定位或客户地址');
-assert(!read('pages/client/address-edit/index.js').includes('chooseLocation'), '首发版客户地址编辑不得请求地图选址');
-assert(!read('pages/technician/shop-management/index.js').includes('chooseLocation'), '首发版店铺管理不得请求地图选址');
+assert(!createOrderJs.includes('getLocation'), '预约页不得读取定位');
+assert(read('pages/client/address-edit/index.js').includes('chooseMapLocation()'), '上门地址通过用户主动点击选点');
+assert(read('pages/technician/shop-management/index.js').includes('chooseShopLocation()'), '店铺地图由用户主动点击选点');
 assert(!read('pages/technician/help-feedback/index.js').includes('上门服务'), '帮助中心不得宣传上门服务');
 assert(routes.includes('pages/client/discover/index'), '发现页必须注册');
 const discoverJs = read('pages/client/discover/index.js');

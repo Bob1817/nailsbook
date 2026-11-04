@@ -15,7 +15,7 @@
         "ai-photo/index", "public-work/index", "quick-booking/index", "create-order/index", "orders/index", "order-detail/index",
         "designs/index", "create-design/index", "customize-design/index", "design-detail/index", "chat/index",
         "chat-detail/index", "profile/index", "profile-completion/index", "my-technicians/index", "settings/index", "my-favorites/index", "my-likes/index",
-        "feedback/index", "manual/index", "agreement/index", "help-feedback/index",
+        "feedback/index", "manual/index", "agreement/index", "help-feedback/index", "addresses/index", "address-edit/index",
         "shop-guidance/index", "quote-confirm/index", "quote-booking/index"
       ]
     },
@@ -28,8 +28,8 @@
         "schedule/index", "all-itineraries/index", "all-bookings/index", "chat/index", "chat-detail/index",
         "artist-interactions/index", "binding-applications/index", "profile/index", "profile-settings/index", "homepage-settings/index",
         "account-security/index", "service-time/index", "shop-management/index", "tag-management/index",
-        "referral-campaign/index", "marketing-materials/index",
-        "help-feedback/index", "about/index",
+        "referral-campaign/index", "marketing-materials/index", "marketing-poster/index",
+        "help-feedback/index", "about/index", "service-forms/index",
         "shop-guidance-edit/index", "edit-booking-time/index", "quick-quote/index", "quote-records/index"
       ]
     }
@@ -44,6 +44,8 @@
   "usingComponents": {
     "nb-switch": "/components/nb-switch/index"
   },
+  "permission": { "scope.userLocation": { "desc": "用于选择店铺、上门出发点及服务地址，支持导航与距离计费" } },
+  "requiredPrivateInfos": ["chooseLocation"],
   "style": "v2",
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"

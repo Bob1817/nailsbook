@@ -3,12 +3,13 @@
 /* ===== 导航栏容器 ===== */
 .nav-bar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(20px);
-  border-bottom: 0;
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.06);
 }
-.nav-bar.transparent { background: transparent; border-bottom: none; backdrop-filter: none; }
-.nav-bar.light { background: transparent; border-bottom: none; backdrop-filter: blur(20px); }
+.nav-bar.transparent { background: transparent; border-bottom: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.nav-bar.light { background: transparent; border-bottom: none; -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%); }
 
 /* 内容行 */
 .nav-content { display: flex; align-items: center; position: relative; padding: 0 var(--space-sm); }
@@ -25,7 +26,9 @@
   flex-shrink: 0;
   opacity: 0.7;
 }
+.nav-home { width: 38rpx; height: 38rpx; flex-shrink: 0; opacity: .72; }
 .nav-bar.light .back-chevron { opacity: 0.9; }
+.nav-bar.light .nav-home { opacity: .9; filter: brightness(0) invert(1); }
 
 /* 标题区域 */
 .title-zone { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }

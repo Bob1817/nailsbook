@@ -142,8 +142,8 @@
   </view>
   <view class="sheet-header">
     <text class="sheet-title">发送预约卡片</text>
-    <view class="sheet-close" bindtap="closeBookingSheet">
-      <view class="sheet-close-icon"></view>
+    <view class="sheet-close" bindtap="closeBookingSheet" role="button" aria-label="关闭">
+      <image class="sheet-close-icon" src="/static/icons/close.svg" mode="aspectFit" />
     </view>
   </view>
   <view class="sheet-body">
