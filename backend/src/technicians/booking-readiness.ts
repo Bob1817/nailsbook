@@ -84,7 +84,7 @@ export function bookingReadiness(
     const enabledShops = jsonArray(technician.shopAddresses).filter(
       (item: any) =>
         item && String(item.name || '').trim() &&
-        item.enabled !== false &&
+        item.enabled !== false && item.bookingSelected === true &&
         typeof (item.detailAddress || item.address) === 'string' &&
         (item.detailAddress || item.address).trim(),
     );

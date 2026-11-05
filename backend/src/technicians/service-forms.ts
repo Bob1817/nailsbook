@@ -14,7 +14,7 @@ export function serviceFormIssues(technician: {
   if (type === 'shop') {
     let shops: any[] = [];
     try { shops = JSON.parse(technician.shopAddresses || '[]'); } catch { /* invalid config */ }
-    return Array.isArray(shops) && shops.some(shop => shop && shop.enabled !== false &&
+    return Array.isArray(shops) && shops.some(shop => shop && shop.enabled !== false && shop.bookingSelected === true &&
       String(shop.name || '').trim() && String(shop.detailAddress || shop.address || '').trim())
       ? [] : ['请完善至少一家启用店铺的名称和详细地址'];
   }

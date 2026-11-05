@@ -156,6 +156,11 @@ export class ShopAddressDto {
   @IsOptional()
   enabled?: boolean;
 
+  @ApiPropertyOptional({ description: '是否选为到店服务店铺' })
+  @IsBoolean()
+  @IsOptional()
+  bookingSelected?: boolean;
+
   @ApiPropertyOptional({
     description: '营业时间列表',
     type: [ShopBusinessHourDto],

@@ -59,6 +59,7 @@ type ShopAddressConfig = {
   detailAddress?: string;
   doorInfo?: string;
   enabled?: boolean;
+  bookingSelected?: boolean;
   guidance?: { enabled?: boolean };
   businessHours?: ShopBusinessHour[];
 };
@@ -2102,7 +2103,7 @@ export class ClientOrdersService {
     startTime: string,
     durationMinutes = 120,
   ) {
-    if (shopAddress.enabled === false) {
+    if (shopAddress.enabled === false || shopAddress.bookingSelected !== true) {
       throw new BadRequestException('该店铺当前已关闭，暂不可预约');
     }
 

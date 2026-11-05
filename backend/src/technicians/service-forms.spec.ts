@@ -6,7 +6,7 @@ const config = { province:'浙江省', city:'杭州市', district:'西湖区', o
 const address = { city:'杭州市', district:'西湖区', latitude:30, longitude:120 };
 describe('service forms and distance pricing', () => {
   it('requires a named enabled shop, complete home coverage, map origin, prices and hours', () => {
-    expect(serviceFormIssues({ shopAddresses:'[{"name":"店铺","detailAddress":"地址"}]' }, 'shop')).toEqual([]);
+    expect(serviceFormIssues({ shopAddresses:'[{"name":"店铺","detailAddress":"地址","bookingSelected":true}]' }, 'shop')).toEqual([]);
     expect(serviceFormIssues({ shopAddresses:'[{"detailAddress":"地址"}]' }, 'shop')).not.toHaveLength(0);
     expect(serviceFormIssues({ homeServiceSettings:config }, 'home')).toEqual([]);
     expect(serviceFormIssues({ homeServiceSettings:{ ...config, tiers:[{ maxKm:10, feeFen:0 }, { maxKm:3, feeFen:100 }] } }, 'home').join()).toContain('档位');
@@ -45,7 +45,7 @@ describe('service forms and distance pricing', () => {
   });
   it('saves service forms independently without validating or overwriting the other form', async () => {
     const prisma:any = { technician:{
-      findUnique:jest.fn().mockResolvedValue({id:7,status:'active',homeService:true,shopService:false,shopAddresses:JSON.stringify([{name:'工作室',detailAddress:'服务地址'}])}),
+      findUnique:jest.fn().mockResolvedValue({id:7,status:'active',homeService:true,shopService:false,shopAddresses:JSON.stringify([{name:'工作室',detailAddress:'服务地址',bookingSelected:true}])}),
       update:jest.fn().mockResolvedValue({shopAddresses:null,socialMedia:null})
     } };
     const service = new TechnicianAuthService(prisma, {} as never, {} as never, {} as never);

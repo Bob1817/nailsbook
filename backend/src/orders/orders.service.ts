@@ -2685,7 +2685,7 @@ export class OrdersService {
         .join('')
         .replace(/\s+/g, '');
       return (
-        item.enabled !== false &&
+        item.enabled !== false && item.bookingSelected === true &&
         (fullAddress === normalizedAddress ||
           (item.detailAddress &&
             normalizedAddress.includes(String(item.detailAddress).replace(/\s+/g, ''))))
