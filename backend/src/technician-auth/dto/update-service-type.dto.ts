@@ -176,6 +176,14 @@ export class ShopAddressDto {
   @Type(() => ShopGuidanceDto)
   guidance?: ShopGuidanceDto;
 
+  @IsString()
+  @IsOptional()
+  tencentMapUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  amapUrl?: string;
+
   @ApiPropertyOptional({
     description: '店铺环境照片 URL 列表',
     type: [String],

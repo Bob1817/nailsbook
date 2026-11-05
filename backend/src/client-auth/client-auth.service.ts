@@ -894,7 +894,7 @@ export class ClientAuthService {
         bindings: {
           where: { status: { in: ['active', 'pending'] } },
           include: {
-            technician: true,
+            technician: { include: { brandProfile: true } },
           },
           orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
         },
@@ -962,7 +962,10 @@ export class ClientAuthService {
             bindSource: defaultBinding.bindSource,
             technician: {
               id: defaultBinding.technician.id,
-              name: defaultBinding.technician.name,
+              name: defaultBinding.technician.brandProfile?.publicationStatus === 'published'
+                ? defaultBinding.technician.brandProfile.brandName || defaultBinding.technician.name
+                : defaultBinding.technician.name,
+              accountName: defaultBinding.technician.name,
               phone: defaultBinding.technician.phone,
               status: defaultBinding.technician.status,
               homeService: defaultBinding.technician.homeService,
@@ -980,7 +983,10 @@ export class ClientAuthService {
       pendingTechnicianIds: pendingBindings.map((b) => b.techId),
       pendingTechnicians: pendingBindings.map((b) => ({
         id: b.technician.id,
-        name: b.technician.name,
+        name: b.technician.brandProfile?.publicationStatus === 'published'
+          ? b.technician.brandProfile.brandName || b.technician.name
+          : b.technician.name,
+        accountName: b.technician.name,
         phone: b.technician.phone,
         avatarUrl: b.technician.avatarUrl,
         city: b.technician.city,
@@ -1008,7 +1014,10 @@ export class ClientAuthService {
         const nextTier = tiers.find((tier) => metrics[tier.thresholdType as keyof typeof metrics] < Number(tier.thresholdValue || 0)) || null;
         return ({
         id: b.technician.id,
-        name: b.technician.name,
+        name: b.technician.brandProfile?.publicationStatus === 'published'
+          ? b.technician.brandProfile.brandName || b.technician.name
+          : b.technician.name,
+        accountName: b.technician.name,
         phone: b.technician.phone,
         avatarUrl: b.technician.avatarUrl,
         city: b.technician.city,
