@@ -28,7 +28,7 @@ describe('ClientOrdersService.create 下单校验', () => {
       ],
     }),
     shopAddresses: JSON.stringify([
-      { id: 'shop-1', name:'测试门店', detailAddress: '测试路 1 号', enabled: true },
+      { id: 'shop-1', name:'测试门店', detailAddress: '测试路 1 号', enabled: true, bookingSelected: true },
     ]),
     ...over,
   });
