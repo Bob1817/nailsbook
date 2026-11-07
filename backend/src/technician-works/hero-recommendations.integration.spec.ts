@@ -72,7 +72,7 @@ describe('Hero 与绑定名额（真实隔离 SQLite）', () => {
     expect(new Set(result.works.map(w => w.id)).size).toBe(result.works.length);
   });
 
-  it('未绑定、待审批和禁用账号不参与推荐', async () => {
+  it('未绑定和待审批不参与推荐，暂停接单保留展示，禁用账号不展示', async () => {
     const customer = await client();
     expect((await home.getHome(customer.id)).works).toEqual([]);
     const artist = await tech(), item = await work(artist.id);
@@ -82,6 +82,8 @@ describe('Hero 与绑定名额（真实隔离 SQLite）', () => {
     await prisma.clientTechBinding.update({ where: { id: binding.id }, data: { status: 'active' } });
     expect((await home.getHome(customer.id)).works).toHaveLength(1);
     await prisma.technician.update({ where: { id: artist.id }, data: { status: 'inactive' } });
+    expect((await home.getHome(customer.id)).works.map(work => work.id)).toEqual([item.id]);
+    await prisma.technician.update({ where: { id: artist.id }, data: { status: 'disabled' } });
     expect((await home.getHome(customer.id)).works).toEqual([]);
   });
 

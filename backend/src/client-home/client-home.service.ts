@@ -46,7 +46,7 @@ export class ClientHomeService {
 
   async getHome(clientUserId: number) {
     const bindings = await this.prisma.clientTechBinding.findMany({
-      where: { clientId: clientUserId, status: 'active', technician: { status: 'active' } },
+      where: { clientId: clientUserId, status: 'active', technician: { status: { in: ['active', 'inactive'] } } },
       orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
       include: { technician: true },
     });
@@ -63,6 +63,15 @@ export class ClientHomeService {
       orderBy: [{ heroSlot: 'asc' }, { id: 'desc' }],
       include: { likes: true, comments: true, technician: { select: { name: true, id: true, avatarUrl: true, shopAddresses: true } } },
     });
+    // 没有有效手动推荐时，使用最近发布的公开作品；不写入手动排序配置。
+    const missing = bindings.filter(item => !candidates.some(work => work.techId === item.techId && work.coverUrl?.trim()));
+    const defaults = await Promise.all(missing.map(item => this.prisma.nailWork.findMany({
+      where: { techId: item.techId, isVisible: true, visibilityScope: 'public',
+        publicationStatus: 'approved', archivedAt: null, coverUrl: { not: null, notIn: [''] } },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 3,
+      include: { likes: true, comments: true, technician: { select: { name: true, id: true, avatarUrl: true, shopAddresses: true } } },
+    })));
+    candidates.push(...defaults.flat());
     const groups = bindings.map((item) => candidates.filter((work) => work.techId === item.techId && work.coverUrl?.trim()).slice(0, 3))
       .filter((items) => items.length).slice(0, 5);
     const works: typeof candidates = [];

@@ -847,7 +847,7 @@ describe('Client booking and design HTTP contract', () => {
             name: 'Contract Studio',
             city: 'Shanghai',
             detailAddress: '88 Test Road',
-            enabled: true,
+            enabled: true, bookingSelected: true,
           },
         ]),
         serviceItems:

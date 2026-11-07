@@ -43,7 +43,7 @@ describe('PublicArtistController', () => {
           id: 'shop-1',
           name: '静安工作室',
           detailAddress: '静安路1号',
-          enabled: true,
+          enabled: true, bookingSelected: true,
         },
         { id: 'shop-2', name: '停用门店', enabled: false },
       ]),
@@ -92,7 +92,7 @@ describe('PublicArtistController', () => {
         id: 'shop-1',
         name: '静安工作室',
         detailAddress: '静安路1号',
-        enabled: true,
+        enabled: true, bookingSelected: true,
         guidance: {
           enabled: true,
           metro: { blocks: [{ id: 'image-1', type: 'image', url: '/uploads/guide.png' }] },

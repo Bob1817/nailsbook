@@ -99,6 +99,34 @@ describe('ClientHomeService', () => {
     });
   });
 
+  it('暂停接单仍保留绑定；未设置 Hero 时默认使用合格公开作品', async () => {
+    prisma.clientTechBinding.findMany.mockResolvedValue([{techId:7,technician:{id:7,name:'Anna',status:'inactive'}}]);
+    prisma.nailWork.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      {id:8,techId:7,title:'默认推荐',coverUrl:'/cover.jpg',images:'[]',likes:[],comments:[]}
+    ]);
+    prisma.order.findFirst.mockResolvedValue(null);
+    const result = await service.getHome(11);
+    expect(result.technicianCount).toBe(1);
+    expect(result.technician?.id).toBe(7);
+    expect(result.works.map(work => work.id)).toEqual([8]);
+    expect(prisma.clientTechBinding.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where:expect.objectContaining({status:'active',technician:{status:{in:['active','inactive']}}})
+    }));
+    expect(prisma.nailWork.findMany).toHaveBeenNthCalledWith(2,expect.objectContaining({
+      where:expect.objectContaining({techId:7,isVisible:true,visibilityScope:'public',publicationStatus:'approved',archivedAt:null}),
+      orderBy:[{createdAt:'desc'},{id:'desc'}],take:3
+    }));
+  });
+
+  it('已有手动推荐时不查询默认作品', async () => {
+    prisma.clientTechBinding.findMany.mockResolvedValue([{techId:7,technician:{id:7,name:'Anna'}}]);
+    prisma.nailWork.findMany.mockResolvedValue([{id:9,techId:7,coverUrl:'/manual.jpg',likes:[],comments:[]}]);
+    prisma.order.findFirst.mockResolvedValue(null);
+    const result=await service.getHome(11);
+    expect(result.works.map(work=>work.id)).toEqual([9]);
+    expect(prisma.nailWork.findMany).toHaveBeenCalledTimes(1);
+  });
+
   it('getHome：客户无绑定返回明确空态', async () => {
     prisma.clientTechBinding.findMany.mockResolvedValue([]);
     await expect(service.getHome(11)).resolves.toMatchObject({ works: [], technician: null, technicianCount: 0 });

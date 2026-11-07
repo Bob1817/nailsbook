@@ -193,7 +193,7 @@ export class OrdersService {
     if (dto.submitQuote) {
       if (initialStart <= new Date()) throw new BadRequestException('预约时间已过期，请重新选择');
       if (['shop', '到店美甲'].includes(dto.serviceType || '')) {
-        await this.assertTechnicianShopSchedule(technicianId, dto.address, initialStart, initialEnd, true);
+        await this.assertTechnicianShopSchedule(technicianId, dto.address, initialStart, initialEnd, true, true);
       }
     }
 
@@ -2660,6 +2660,7 @@ export class OrdersService {
     startTime: Date,
     endTime: Date,
     allowDefaultHours = false,
+    requireSelectedShop = false,
   ) {
     const technician = await this.prisma.technician.findUnique({
       where: { id: technicianId },
@@ -2685,7 +2686,7 @@ export class OrdersService {
         .join('')
         .replace(/\s+/g, '');
       return (
-        item.enabled !== false && item.bookingSelected === true &&
+        (!requireSelectedShop || (item.enabled !== false && item.bookingSelected === true)) &&
         (fullAddress === normalizedAddress ||
           (item.detailAddress &&
             normalizedAddress.includes(String(item.detailAddress).replace(/\s+/g, ''))))

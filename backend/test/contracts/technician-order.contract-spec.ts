@@ -120,7 +120,7 @@ describe('Technician operation HTTP contract', () => {
               name: 'New Studio',
               city: 'Beijing',
               detailAddress: '100 Art Road',
-              enabled: true,
+              enabled: true, bookingSelected: true,
             },
           ],
         })
@@ -677,7 +677,7 @@ describe('Technician operation HTTP contract', () => {
             name: 'Contract Studio',
             city: 'Shanghai',
             detailAddress: '88 Test Road',
-            enabled: true,
+            enabled: true, bookingSelected: true,
           },
         ]),
         serviceItems: JSON.stringify([
