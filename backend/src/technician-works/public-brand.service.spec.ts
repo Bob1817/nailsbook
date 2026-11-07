@@ -2,6 +2,16 @@ import { NotFoundException } from '@nestjs/common';
 import { PublicBrandService } from './public-brand.service';
 
 describe('PublicBrandService public DTO snapshots', () => {
+  it('暂停接单仍允许浏览，且可预约状态保持关闭', async () => {
+    const prisma = { technician:{ count:jest.fn().mockResolvedValue(1), findFirst:jest.fn<any, any>().mockResolvedValue({ status:'inactive', homeService:false, shopService:false }) } };
+    const service = new PublicBrandService(prisma as never);
+    await (service as any).assertVisible(7);
+    expect(prisma.technician.count).toHaveBeenCalledWith({where:{id:7,status:{in:['active','inactive']}}});
+    const result = await service.availability(7, {});
+    expect(result.bookingReady).toBe(false);
+    expect(prisma.technician.findFirst.mock.calls[0][0].where.status).toEqual({in:['active','inactive']});
+  });
+
   it('品牌主页 DTO 只包含公开资料并保留来源参数', async () => {
     const prisma = {
       technician: {
@@ -47,7 +57,7 @@ describe('PublicBrandService public DTO snapshots', () => {
             homepageComments: 1,
           },
           phone: '13800000000',
-          shopAddresses: '[{"name":"工作室","detailAddress":"内部精确地址"}]',
+          shopAddresses: '[{"name":"工作室","detailAddress":"内部精确地址","bookingSelected":true}]',
         }),
       },
     };

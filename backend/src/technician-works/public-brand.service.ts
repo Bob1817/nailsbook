@@ -37,9 +37,10 @@ export class PublicBrandService {
       60_000,
       async () => {
         const technician = await this.prisma.technician.findFirst({
-          where: { id, status: 'active' },
+          where: { id, status: { in: ['active', 'inactive'] } },
           select: {
             id: true,
+            status: true,
             name: true,
             avatarUrl: true,
             city: true,
@@ -205,7 +206,7 @@ export class PublicBrandService {
   }
 
   async services(id: number, query: Record<string, string | undefined>) {
-    await this.assertActive(id);
+    await this.assertVisible(id);
     const { page, pageSize, skip } = this.page(query);
     const profile = await this.prisma.brandProfile.findUnique({
       where: { technicianId: id },
@@ -261,7 +262,7 @@ export class PublicBrandService {
     id: number,
     query: Record<string, string | undefined>,
   ) {
-    await this.assertActive(id);
+    await this.assertVisible(id);
     const { page, pageSize, skip } = this.page(query);
     const where = { technicianId: id, isHidden: false };
     const [items, total] = await Promise.all([
@@ -304,7 +305,7 @@ export class PublicBrandService {
   }
 
   async works(id: number, query: Record<string, string | undefined>) {
-    await this.assertActive(id);
+    await this.assertVisible(id);
     const { page, pageSize, skip } = this.page(query);
     const where = {
       techId: id,
@@ -375,7 +376,7 @@ export class PublicBrandService {
     workId: number,
     query: Record<string, string | undefined>,
   ) {
-    await this.assertActive(id);
+    await this.assertVisible(id);
     const item = await this.prisma.nailWork.findFirst({
       where: {
         id: workId,
@@ -446,7 +447,7 @@ export class PublicBrandService {
   }
 
   async reviews(id: number, query: Record<string, string | undefined>) {
-    await this.assertActive(id);
+    await this.assertVisible(id);
     const { page, pageSize, skip } = this.page(query);
     const where = {
       technicianId: id,
@@ -505,8 +506,9 @@ export class PublicBrandService {
 
   async availability(id: number, query: Record<string, string | undefined>) {
     const technician = await this.prisma.technician.findFirst({
-      where: { id, status: 'active' },
+      where: { id, status: { in: ['active', 'inactive'] } },
       select: {
+        status: true,
         homeService: true,
         homeServiceSettings: true,
         shopService: true,
@@ -528,12 +530,12 @@ export class PublicBrandService {
     };
   }
 
-  private async assertActive(id: number) {
+  private async assertVisible(id: number) {
     if (!isLaunchTechnician(id)) {
       throw new NotFoundException('公开品牌主页不存在或已下架');
     }
     const exists = await this.prisma.technician.count({
-      where: { id, status: 'active' },
+      where: { id, status: { in: ['active', 'inactive'] } },
     });
     if (!exists) throw new NotFoundException('公开品牌主页不存在或已下架');
   }
