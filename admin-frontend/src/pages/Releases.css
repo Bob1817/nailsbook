@@ -1,0 +1,6 @@
+.release-settings .ant-btn, .release-editor .ant-btn { min-height: 44px; }
+.release-editor .ant-input:not(textarea) { min-height: 44px; }
+.release-editor .ant-select-single { height: 44px; }
+.release-editor .ant-checkbox-wrapper { min-height: 44px; align-items: center; }
+
+.release-editor .ant-picker { min-height: 44px; }

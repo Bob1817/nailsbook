@@ -2141,3 +2141,18 @@ model WechatOfficialMessage {
   @@index([status, createdAt])
   @@index([createdAt])
 }
+
+model ReleaseNotice {
+  id          Int      @id @default(autoincrement())
+  version     String
+  audience    String   @default("all")
+  title       String
+  content     String
+  important   Boolean  @default(true)
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([version, audience])
+  @@index([publishedAt])
+}

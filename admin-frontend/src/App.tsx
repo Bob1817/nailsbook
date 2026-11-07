@@ -29,6 +29,7 @@ import WechatOfficial from './pages/WechatOfficial';
 import WechatMessages from './pages/WechatMessages';
 import LaunchConfig from './pages/LaunchConfig';
 import Orders from './pages/Orders';
+import Releases from './pages/Releases';
 
 const App: React.FC = () => {
   return (
@@ -130,6 +131,7 @@ const App: React.FC = () => {
               <Route path="wechat-official" element={<ProtectedRoute permission="feature_flag:view"><WechatOfficial /></ProtectedRoute>} />
               <Route path="wechat-messages" element={<ProtectedRoute permission="feature_flag:view"><WechatMessages /></ProtectedRoute>} />
               <Route path="launch-config" element={<ProtectedRoute permission="feature_flag:view"><LaunchConfig /></ProtectedRoute>} />
+              <Route path="releases" element={<ProtectedRoute superAdmin><Releases /></ProtectedRoute>} />
               <Route path="admin-users" element={<ProtectedRoute superAdmin><AdminUsers /></ProtectedRoute>} />
               <Route path="roles" element={<ProtectedRoute superAdmin><Roles /></ProtectedRoute>} />
               <Route path="invite-keys" element={<ProtectedRoute permission="technician:create"><InviteKeys /></ProtectedRoute>} />

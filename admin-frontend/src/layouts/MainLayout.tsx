@@ -87,6 +87,7 @@ const navigationGroups: NavigationGroup[] = [
   },
   {
     key: 'system', icon: <SafetyOutlined />, label: '系统与审计', children: [
+      { key: '/releases', icon: <RocketOutlined />, label: '版本与更新通知', superAdmin: true },
       { key: '/admin-users', icon: <UserOutlined />, label: '管理员账号', superAdmin: true },
       { key: '/roles', icon: <SafetyOutlined />, label: '角色权限', superAdmin: true },
       { key: '/logs', icon: <HistoryOutlined />, label: '操作日志', permission: 'log:view' },

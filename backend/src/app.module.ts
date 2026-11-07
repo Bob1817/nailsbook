@@ -1,3 +1,4 @@
+import { ReleasesModule } from './releases/releases.module';
 import { AccountDeletionModule } from './account-deletion/account-deletion.module';
 import { ActionTasksModule } from './action-tasks/action-tasks.module';
 import { Module } from '@nestjs/common';
@@ -63,6 +64,7 @@ import { BookingQuotesModule } from './booking-quotes/booking-quotes.module';
 
 @Module({
   imports: [
+    ReleasesModule,
     AccountDeletionModule,
     ActionTasksModule,
     BookingQuotesModule,

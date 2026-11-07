@@ -228,6 +228,27 @@ exports[`Admin authorization HTTP contract covers every admin business route wit
   },
   {
     "method": "GET",
+    "path": "/api/admin/releases",
+    "permissions": [
+      "feature_flag:view",
+    ],
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/releases",
+    "permissions": [
+      "feature_flag:update",
+    ],
+  },
+  {
+    "method": "PUT",
+    "path": "/api/admin/releases/:id",
+    "permissions": [
+      "feature_flag:update",
+    ],
+  },
+  {
+    "method": "GET",
     "path": "/api/admin/reports",
     "permissions": [
       "report:view",
