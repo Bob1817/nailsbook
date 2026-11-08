@@ -25,6 +25,26 @@ describe('OrdersScheduler reminders', () => {
     return { scheduler, prisma };
   }
 
+  it('微信部分失败不会重复生成站内提醒', async () => {
+    const { scheduler, prisma } = createScheduler({ id: 91, status: 'partial' });
+    await (scheduler as any).processReminder(order, 'hour_before', '提醒', new Date());
+    expect(prisma.orderReminder.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('未绑定客户的美甲师提醒也在站内事务中入队', async () => {
+    const tx = { orderReminder: { update: jest.fn() }, order: { update: jest.fn() } };
+    const prisma = { $transaction: jest.fn(async callback => callback(tx)) };
+    const enqueueOrderReminder = jest.fn();
+    const scheduler = new OrdersScheduler(prisma as never, {} as never,
+      { sendToTechnician: jest.fn() } as never, {} as never, { enqueueOrderReminder } as never);
+    const offlineOrder = { ...order, clientUserId: null };
+    await (scheduler as any).broadcastOrderReminder(offlineOrder, 91, 'day_before', '提醒');
+    expect(enqueueOrderReminder).toHaveBeenCalledWith(tx, offlineOrder, 'day_before');
+    expect(tx.orderReminder.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ status: 'queued', sentAt: null }),
+    }));
+  });
+
   it('按北京时间查询次日预约并生成提醒时间', async () => {
     const startTime = new Date('2026-10-12T02:30:00.000Z');
     const prisma = {

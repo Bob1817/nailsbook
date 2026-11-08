@@ -48,7 +48,7 @@ export class ClientHomeService {
     const bindings = await this.prisma.clientTechBinding.findMany({
       where: { clientId: clientUserId, status: 'active', technician: { status: { in: ['active', 'inactive'] } } },
       orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
-      include: { technician: true },
+      include: { technician: { include: { brandProfile: true } } },
     });
     const binding = bindings[0];
     if (!binding) return { technician: null, works: [], latestOrder: null, technicianCount: 0 };
@@ -108,7 +108,9 @@ export class ClientHomeService {
       technicianCount: bindings.length,
       technician: {
         id: binding.technician.id,
-        name: binding.technician.name,
+        name: binding.technician.brandProfile?.publicationStatus === 'published'
+          ? binding.technician.brandProfile.brandName || binding.technician.name
+          : binding.technician.name,
         phone: binding.technician.phone,
         avatarUrl: toAbsoluteUrl(binding.technician.avatarUrl),
         city: binding.technician.city,

@@ -36,6 +36,28 @@ describe('ClientHomeService', () => {
     service = new ClientHomeService(prisma as never);
   });
 
+  it.each([
+    [{ publicationStatus: 'published', brandName: '听栖美甲' }, '听栖美甲'],
+    [{ publicationStatus: 'draft', brandName: '未发布名称' }, 'Anna'],
+    [{ publicationStatus: 'published', brandName: '' }, 'Anna'],
+    [null, 'Anna'],
+  ])('首页绑定美甲师名称与绑定列表的发布规则一致：%j', async (brandProfile, expectedName) => {
+    prisma.clientTechBinding.findMany.mockResolvedValue([{
+      clientId: 11, techId: 7,
+      technician: { id: 7, name: 'Anna', brandProfile },
+    }]);
+    prisma.nailWork.findMany.mockResolvedValue([]);
+    prisma.order.findFirst.mockResolvedValue(null);
+
+    const result = await service.getHome(11);
+
+    expect(result.technician).toMatchObject({ id: 7, name: expectedName });
+    expect(prisma.clientTechBinding.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ clientId: 11, status: 'active' }),
+      include: { technician: { include: { brandProfile: true } } },
+    }));
+  });
+
   it('getHome：返回有效绑定美甲师的Hero推荐 + 最近预约', async () => {
     prisma.clientTechBinding.findMany.mockResolvedValueOnce([{
       clientId: 11,

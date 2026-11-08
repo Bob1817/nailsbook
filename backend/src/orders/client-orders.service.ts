@@ -590,6 +590,7 @@ export class ClientOrdersService {
           },
         });
 
+        if (!quoteOverride) await this.wechatSubscribe?.enqueueBookingEvent(tx, createdOrder, 'technician_new');
         return createdOrder;
       });
     let order: any;
@@ -617,7 +618,6 @@ export class ClientOrdersService {
       body: `${client.nickname || client.phone || '客户'} · ${dto.serviceType}`,
       data: { type: 'order', orderId: String(order.id) },
     });
-    void this.wechatSubscribe?.sendBookingEvent(order, 'technician_new');
 
     this.chatGateway.broadcastBookingChanged?.(order);
     return this.mapOrder(order);
@@ -896,6 +896,7 @@ export class ClientOrdersService {
           },
         });
 
+        await this.wechatSubscribe?.enqueueBookingEvent(tx, createdOrder, 'technician_new');
         return createdOrder;
       });
     let order: any;
@@ -923,7 +924,6 @@ export class ClientOrdersService {
       body: `${client.nickname || client.phone || '客户'} · ${dto.serviceType}`,
       data: { type: 'order', orderId: String(order.id) },
     });
-    void this.wechatSubscribe?.sendBookingEvent(order, 'technician_new');
 
     this.chatGateway.broadcastBookingChanged?.(order);
     return this.mapOrder(order);
@@ -1229,15 +1229,9 @@ export class ClientOrdersService {
         },
       });
 
+      await this.wechatSubscribe?.enqueueBookingStatusEvent(tx, updated, 'technician', '已改期', '客户修改了预约时间，请及时查看');
       return updated;
     });
-
-    void this.wechatSubscribe?.sendBookingStatusEvent(
-      updatedOrder,
-      'technician',
-      '已改期',
-      '客户修改了预约时间，请及时查看',
-    );
 
     this.chatGateway.broadcastBookingChanged?.(updatedOrder);
     return this.mapOrder(updatedOrder);
@@ -1347,6 +1341,7 @@ export class ClientOrdersService {
         },
       });
 
+      await this.wechatSubscribe?.enqueueBookingStatusEvent(tx, updated, 'technician', '已确认', '客户已确认预约方案，请及时查看');
       return updated;
     });
 
@@ -1368,13 +1363,6 @@ export class ClientOrdersService {
         );
       }
     }
-
-    void this.wechatSubscribe?.sendBookingStatusEvent(
-      updatedOrder,
-      'technician',
-      '已确认',
-      '客户已确认预约方案，请及时查看',
-    );
 
     this.chatGateway.broadcastBookingChanged?.(updatedOrder);
     return this.mapOrder(updatedOrder);
@@ -1481,6 +1469,7 @@ export class ClientOrdersService {
         },
       });
 
+      await this.wechatSubscribe?.enqueueBookingStatusEvent(tx, updated, 'technician', '已拒绝', '客户拒绝了报价，请重新处理');
       return updated;
     });
 
@@ -1502,13 +1491,6 @@ export class ClientOrdersService {
         );
       }
     }
-
-    void this.wechatSubscribe?.sendBookingStatusEvent(
-      updatedOrder,
-      'technician',
-      '已拒绝',
-      '客户拒绝了报价，请重新处理',
-    );
 
     this.chatGateway.broadcastBookingChanged?.(updatedOrder);
     return this.mapOrder(updatedOrder);
@@ -1635,21 +1617,16 @@ export class ClientOrdersService {
         await this.rewardFunds.reverseOrderRedemption(tx, id);
       }
 
-      return tx.order.update({
+      const updated = await tx.order.update({
         where: { id },
         data: {
           cancelledAt: new Date(),
         },
         include: this.orderInclude(),
       });
+      await this.wechatSubscribe?.enqueueBookingStatusEvent(tx, updated, 'technician', '已取消', '客户取消了预约，请及时查看');
+      return updated;
     });
-
-    void this.wechatSubscribe?.sendBookingStatusEvent(
-      updatedOrder,
-      'technician',
-      '已取消',
-      '客户取消了预约，请及时查看',
-    );
 
     this.chatGateway.broadcastBookingChanged?.(updatedOrder);
     return this.mapOrder(updatedOrder);

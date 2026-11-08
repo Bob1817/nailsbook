@@ -244,12 +244,15 @@ describe('BookingQuotesService', () => {
     const clientOrders: any = {
       create: jest.fn().mockResolvedValue({ id: 33 }),
     };
-    const service = new BookingQuotesService(prisma, clientOrders, {} as never);
+    const notifications = { enqueueBookingEvent: jest.fn().mockResolvedValue({ sent: 1 }) };
+    const service = new BookingQuotesService(prisma, clientOrders, {} as never, notifications as never);
     await service.book(8, 'b'.repeat(48), {
       version: 1,
       serviceDate: '2099-01-01',
       startTime: '10:00',
     });
+    expect(notifications.enqueueBookingEvent).toHaveBeenCalledWith(tx, expect.objectContaining({ id: 33 }), 'client_success');
+    expect(notifications.enqueueBookingEvent).toHaveBeenCalledWith(tx, expect.objectContaining({ id: 33 }), 'technician_new');
     expect(clientOrders.create).toHaveBeenCalledWith(
       8,
       expect.objectContaining({

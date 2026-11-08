@@ -29,16 +29,20 @@ describe('WechatSubscribeMessagesService', () => {
         findFirst: jest.fn().mockResolvedValue({ openId: 'openid-1' }),
       },
       notificationEvent: {
+        findMany: jest.fn().mockResolvedValue([]),
         findUnique: jest.fn().mockResolvedValue(null),
         upsert: jest.fn().mockResolvedValue({ id: 9 }),
         update: jest.fn().mockResolvedValue({}),
       },
       notificationDelivery: {
+        count: jest.fn().mockResolvedValue(2),
         upsert: jest.fn().mockResolvedValue({ id: 10, status: 'pending' }),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
         update: jest.fn().mockResolvedValue({}),
         findMany: jest.fn().mockResolvedValue([]),
       },
+      order: { findUnique: jest.fn() },
+      orderReminder: { updateMany: jest.fn() },
       message: {
         findMany: jest.fn().mockResolvedValue([]),
       },
@@ -71,6 +75,7 @@ describe('WechatSubscribeMessagesService', () => {
         platform as never,
       ),
       prisma,
+      platform,
     };
   }
 
@@ -89,6 +94,183 @@ describe('WechatSubscribeMessagesService', () => {
 
   afterEach(() => jest.restoreAllMocks());
 
+  it('通知只写入传入事务，写入失败必须向上抛出', async () => {
+    const { service, prisma } = createService();
+    const tx = { notificationEvent: { upsert: jest.fn().mockResolvedValue({ id: 42 }) } };
+    await service.enqueueBookingEvent(tx as never, { ...order, status: 'pending_shop' }, 'client_success');
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(prisma.notificationEvent.upsert).not.toHaveBeenCalled();
+    const saved = tx.notificationEvent.upsert.mock.calls[0][0].create;
+    expect(saved.recipientId).toBe(7);
+    expect(JSON.parse(saved.payloadSnapshot).kind).toBe('booking_event');
+    tx.notificationEvent.upsert.mockRejectedValue(new Error('db unavailable'));
+    await expect(service.enqueueBookingEvent(tx as never, order, 'client_success')).rejects.toThrow('db unavailable');
+  });
+
+  it('重启后从数据库恢复通知，复用事件键并隔离重复执行', async () => {
+    const { service, prisma } = createService();
+    const liveOrder = { ...order, status: 'pending_shop', startTime: new Date(Date.now() + 3600000) };
+    prisma.order.findUnique.mockResolvedValue(liveOrder);
+    prisma.notificationEvent.findMany.mockResolvedValue([{
+      id: 42, eventKey: 'persisted-event', orderId: order.id, recipientRole: 'client', recipientId: 7,
+      createdAt: new Date(), payloadSnapshot: JSON.stringify({ kind: 'booking_event', type: 'client_success', order: liveOrder }),
+    }] as never);
+    await service.processBookingOutbox();
+    expect(prisma.notificationEvent.upsert).toHaveBeenCalledWith(expect.objectContaining({ where: { eventKey: 'persisted-event' } }));
+    const calls = (global.fetch as jest.Mock).mock.calls.length;
+    prisma.notificationEvent.findUnique.mockResolvedValue({ status: 'delivered', deliveries: [{ status: 'sent' }] } as never);
+    await service.processBookingOutbox();
+    expect((global.fetch as jest.Mock).mock.calls.length).toBe(calls);
+  });
+
+  it.each([false, true])('使用已发布名称及唯一匹配门店，歧义地址不猜测（%s）', async ambiguous => {
+    const { service, prisma } = createService();
+    const current = { ...order, status: 'pending_shop', startTime: new Date(Date.now() + 3600000),
+      technician: { name: '登录名', brandProfile: { publicationStatus: 'published', brandName: '客户绑定的美甲师' },
+        shopAddresses: JSON.stringify([{ name: '实际预约门店', address: order.address }, ...(ambiguous ? [{ name: '另一门店', address: order.address }] : [])]) } };
+    prisma.order.findUnique.mockResolvedValue(current);
+    prisma.notificationEvent.findMany.mockResolvedValue([{ id: 42, eventKey: 'name-check', orderId: order.id,
+      recipientRole: 'client', recipientId: 7, createdAt: new Date(),
+      payloadSnapshot: JSON.stringify({ kind: 'booking_event', type: 'client_success', order: { ...order, status: current.status, startTime: current.startTime } }) }] as never);
+    const send = jest.spyOn(service, 'sendBookingEvent').mockResolvedValue({ sent: 1 });
+    await service.processBookingOutbox();
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({ technicianName: '客户绑定的美甲师' }), 'client_success', 'name-check');
+    expect(send.mock.calls[0][0].shopName).toBe(ambiguous ? undefined : '实际预约门店');
+  });
+
+  it('已取消的队列消息不会继续发送', async () => {
+    const { service, prisma } = createService();
+    prisma.order.findUnique.mockResolvedValue({ ...order, status: 'cancelled' });
+    prisma.notificationEvent.findMany.mockResolvedValue([{
+      id: 42, orderId: order.id, createdAt: new Date(), recipientRole: 'client', recipientId: 7,
+      payloadSnapshot: JSON.stringify({ kind: 'booking_event', order: { ...order, status: 'pending_shop' } }),
+    }] as never);
+    await service.processBookingOutbox();
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(prisma.notificationEvent.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ status: 'obsolete' }) }));
+  });
+
+  it('缺少模板也有渠道流水，且不消耗授权', async () => {
+    const { service, prisma, platform } = createService();
+    platform.getBookingEventTemplateIds.mockResolvedValue({ clientSuccess: '', technicianNew: '' });
+    await service.sendBookingEvent(order, 'client_success');
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(prisma.wechatSubscriptionAuthorization.updateMany).not.toHaveBeenCalled();
+    expect(prisma.notificationDelivery.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ status: 'skipped', providerCode: 'template_not_configured' }),
+    }));
+  });
+
+  it('接收人缺失保留原因而不是静默返回', async () => {
+    const { service, prisma } = createService();
+    await service.sendBookingEvent({ ...order, clientUserId: null }, 'client_success');
+    expect(prisma.notificationDelivery.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ status: 'skipped', providerCode: 'recipient_missing' }),
+    }));
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it.each([0, 1, 2])('微信接受 %s/2 时汇总状态准确', async (sent) => {
+    const { service, prisma } = createService();
+    prisma.notificationDelivery.count.mockResolvedValue(sent);
+    await (service as any).reconcileReminder(order, 'booking.hour_before', order.startTime.toISOString());
+    expect(prisma.orderReminder.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ status: sent === 2 ? 'sent' : 'partial', sentAt: sent === 2 ? expect.any(Date) : null }),
+    }));
+  });
+
+  it('到店提醒按收件人生成两个持久任务，不在事务中访问微信', async () => {
+    const { service } = createService();
+    const tx = { notificationEvent: { upsert: jest.fn() } };
+    await service.enqueueOrderReminder(tx as never, order, 'hour_before');
+    expect(tx.notificationEvent.upsert).toHaveBeenCalledTimes(2);
+    expect(tx.notificationEvent.upsert.mock.calls.map(call => call[0].create.recipientRole)).toEqual(['client', 'technician']);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('超时sending仅标记未知，不自动重新发送', async () => {
+    const { service, prisma } = createService();
+    await service.processBookingOutbox();
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(prisma.notificationDelivery.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ status: 'sending' }),
+      data: expect.objectContaining({ status: 'unknown', providerCode: 'delivery_outcome_unknown' }),
+    }));
+  });
+
+  it('已生成发送快照但尚未认领的任务能在重启后恢复', async () => {
+    const { service, prisma } = createService();
+    const startTime = new Date(Date.now() + 3600000).toISOString();
+    const input = { eventKey: 'rendered-key', eventType: 'booking.client_success', templateId: 'template',
+      role: 'client', ownerId: 7, orderId: 18, orderStatus: 'pending_shop', orderStartTime: startTime,
+      page: 'pages/client/order-detail/index?id=18', data: { thing9: { value: '预约已确认' } } };
+    prisma.order.findUnique.mockResolvedValue({ id: 18, clientUserId: 7, status: 'pending_shop', startTime });
+    prisma.notificationEvent.findMany.mockResolvedValue([{
+      id: 42, eventKey: 'rendered-key', eventType: 'booking.client_success', orderId: 18,
+      recipientRole: 'client', recipientId: 7, createdAt: new Date(), payloadSnapshot: JSON.stringify(input),
+    }] as never);
+    await service.processBookingOutbox();
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body);
+    expect(body.template_id).toBe('template');
+    expect(prisma.notificationDelivery.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      where: { dedupeKey: 'rendered-key:wechat_subscribe' },
+    }));
+  });
+
+  it('上门预约成功不提示到店，并保留实际门店', async () => {
+    const { service } = createService();
+    await service.sendBookingEvent({ ...order, serviceType: '上门美甲', shopName: '实际门店' }, 'client_success');
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body);
+    expect(body.data.thing8.value).toBe('实际门店');
+    expect(body.data.thing9.value).toContain('上门');
+  });
+
+  it('报价预约最终确认后通知美甲师无需再次确认', async () => {
+    const { service } = createService();
+    await service.sendBookingEvent({ ...order, status: 'pending_shop' }, 'technician_new');
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body);
+    expect(body.data.thing9.value).toBe('收到已确认预约，请按时安排服务');
+  });
+
+  it.each(['pending_shop', 'cancelled'])('补发前校验订单状态 %s', async (status) => {
+    const { service, prisma } = createService();
+    const startTime = new Date(Date.now() + 3600000).toISOString();
+    const input = { templateId: 'template', role: 'client', ownerId: 7, orderId: 18, orderStatus: 'pending_shop', orderStartTime: startTime };
+    prisma.notificationDelivery.findMany.mockResolvedValue([{
+      id: 10, providerCode: '-1', notificationEvent: {
+        eventType: 'booking.hour_before', createdAt: new Date(), payloadSnapshot: JSON.stringify(input),
+      },
+    }] as never);
+    prisma.order.findUnique.mockResolvedValue({ id: 18, clientUserId: 7, technicianId: 55, status, startTime });
+    const dispatch = jest.spyOn(service as any, 'dispatchAuthorized').mockResolvedValue(true);
+    await service.retryBookingNotifications();
+    expect(dispatch).toHaveBeenCalledTimes(status === 'pending_shop' ? 1 : 0);
+    expect(prisma.notificationDelivery.updateMany).toHaveBeenCalledTimes(status === 'pending_shop' ? 0 : 1);
+  });
+
+  it.each(['rescheduled', 'started', 'old', 'new_quote', 'missing_snapshot'])('过期或不可重放事件不补发：%s', async (scenario) => {
+    const { service, prisma } = createService();
+    const startTime = new Date(Date.now() + (scenario === 'started' ? -1 : 1) * 3600000).toISOString();
+    const input = { templateId: 'template', role: 'client', ownerId: 7, orderId: 18,
+      orderStatus: 'pending_shop', orderQuoteVersion: 1, orderStartTime: startTime };
+    prisma.notificationDelivery.findMany.mockResolvedValue([{
+      id: 10, providerCode: '-1', notificationEvent: {
+        eventType: 'booking.hour_before',
+        createdAt: new Date(Date.now() - (scenario === 'old' ? 25 : 0) * 3600000),
+        payloadSnapshot: JSON.stringify(scenario === 'missing_snapshot' ? {} : input),
+      },
+    }] as never);
+    prisma.order.findUnique.mockResolvedValue({ id: 18, clientUserId: 7, status: 'pending_shop',
+      quoteVersion: scenario === 'new_quote' ? 2 : 1,
+      startTime: scenario === 'rescheduled' ? new Date(Date.now() + 7200000) : startTime });
+    const dispatch = jest.spyOn(service as any, 'dispatchAuthorized');
+    await service.retryBookingNotifications();
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(prisma.notificationDelivery.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ status: 'skipped' }),
+    }));
+  });
+
   it('uses the appointment-day template and its approved keyword mapping', async () => {
     const { service } = createService();
 
@@ -100,7 +282,7 @@ describe('WechatSubscribeMessagesService', () => {
     expect(body.data).toEqual({
       thing7: { value: '高级定制美甲' },
       time2: { value: '2026-10-12 14:00' },
-      thing8: { value: '杭州听栖美甲工作室' },
+      thing8: { value: '美甲服务' },
       thing9: { value: '明天有预约，请合理安排行程' },
     });
   });
@@ -116,7 +298,7 @@ describe('WechatSubscribeMessagesService', () => {
     expect(body.data).toEqual({
       thing32: { value: '高级定制美甲' },
       time2: { value: '2026-10-12 14:00' },
-      thing8: { value: '杭州听栖美甲工作室' },
+      thing8: { value: '美甲服务' },
       thing9: { value: '距离预约约1小时，请准备按时到店' },
     });
   });
@@ -146,7 +328,7 @@ describe('WechatSubscribeMessagesService', () => {
     expect(body.data).toEqual({
       thing7: { value: '高级定制美甲' },
       time2: { value: '2026-10-12 14:00' },
-      thing8: { value: '杭州听栖美甲工作室' },
+      thing8: { value: '美甲服务' },
       thing4: { value: '杭州市西湖区奥莱金街4号楼421室' },
       thing9: { value: '预约已确认，请按时到店' },
     });

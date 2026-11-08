@@ -310,6 +310,7 @@ export class OrdersService {
           },
         });
 
+        if (dto.submitQuote) await this.wechatSubscribe?.enqueueBookingStatusEvent(tx, order, 'client', '待确认报价', '美甲师已为您发起预约，请确认报价');
         return order;
       });
     let order;
@@ -338,8 +339,6 @@ export class OrdersService {
       }
       throwIfBookingSlotConflict(error);
     }
-
-    if (dto.submitQuote) void this.wechatSubscribe?.sendBookingStatusEvent(order, 'client', '待确认报价', '美甲师已为您发起预约，请确认报价');
 
     const result: Record<string, unknown> = { ...order };
     if (confirmToken) {
@@ -1223,14 +1222,9 @@ export class OrdersService {
         },
       });
 
+      await this.wechatSubscribe?.enqueueBookingStatusEvent(tx, { ...order, ...updated }, 'client', '已改期', '美甲师修改了预约时间，请及时查看');
       return updated;
     });
-    void this.wechatSubscribe?.sendBookingStatusEvent(
-      { ...order, ...updated },
-      'client',
-      '已改期',
-      '美甲师修改了预约时间，请及时查看',
-    );
     return updated;
   }
 
@@ -1238,12 +1232,6 @@ export class OrdersService {
     const work = () => this.reviewLocked(id, technicianId, dto);
     const updated = await (this.bookingMutex ? this.bookingMutex.runExclusive(technicianId, work) : work());
     if (updated.status === 'pending_confirm') return this.confirm(id);
-    void this.wechatSubscribe?.sendBookingStatusEvent(
-      updated,
-      'client',
-      '待确认',
-      '美甲师已发送报价，请及时确认',
-    );
     return updated;
   }
 
@@ -1300,12 +1288,14 @@ export class OrdersService {
         });
       }
 
-      return {
+      const withdrawn = {
         ...order,
         status: 'pending_quote',
         bookingPhase: 'application',
         quoteVersion: (order.quoteVersion || 0) + 1,
       };
+      await this.wechatSubscribe?.enqueueBookingStatusEvent(tx, withdrawn, 'client', '已撤回', '美甲师撤回了报价，请等待新方案');
+      return withdrawn;
     });
 
     if (systemMessage && conversationId) {
@@ -1323,13 +1313,6 @@ export class OrdersService {
         console.error('[OrdersService] Failed to push notification via WebSocket:', e);
       }
     }
-
-    void this.wechatSubscribe?.sendBookingStatusEvent(
-      updated,
-      'client',
-      '已撤回',
-      '美甲师撤回了报价，请等待新方案',
-    );
 
     return updated;
   }
@@ -1547,6 +1530,7 @@ export class OrdersService {
         });
       }
 
+      if (updated.status !== 'pending_confirm') await this.wechatSubscribe?.enqueueBookingStatusEvent(tx, updated, 'client', '待确认', '美甲师已发送报价，请及时确认');
       return updated;
     });
 
@@ -1823,6 +1807,8 @@ export class OrdersService {
           });
         }
 
+        await this.wechatSubscribe?.enqueueBookingEvent(tx, updated, 'client_success');
+        if (acceptance) await this.wechatSubscribe?.enqueueBookingStatusEvent(tx, updated, 'technician', '已确认', '客户已确认预约方案，请及时查看');
         return updated;
       });
     const updated = this.bookingMutex
@@ -1846,16 +1832,6 @@ export class OrdersService {
           e,
         );
       }
-    }
-
-    void this.wechatSubscribe?.sendBookingEvent(updated, 'client_success');
-    if (acceptance) {
-      void this.wechatSubscribe?.sendBookingStatusEvent(
-        updated,
-        'technician',
-        '已确认',
-        '客户已确认预约方案，请及时查看',
-      );
     }
 
     return updated;
@@ -2170,6 +2146,7 @@ export class OrdersService {
         });
       }
 
+      await this.wechatSubscribe?.enqueueBookingStatusEvent(tx, { ...order, status: 'completed', updatedAt: actualEnd }, 'client', '已完成', order.serviceType === '上门美甲' ? '本次上门服务已完成，感谢您的预约' : '本次服务已完成，感谢您的到店', actualEnd.toISOString());
       return revenue;
     });
 
@@ -2192,13 +2169,6 @@ export class OrdersService {
       }
     }
 
-    void this.wechatSubscribe?.sendBookingStatusEvent(
-      { ...order, status: 'completed', updatedAt: actualEnd },
-      'client',
-      '已完成',
-      '本次服务已完成，感谢您的到店',
-      actualEnd.toISOString(),
-    );
 
     return revenue;
   }
@@ -2356,6 +2326,9 @@ export class OrdersService {
         systemMessages = [msg1];
       }
 
+      await this.wechatSubscribe?.enqueueBookingStatusEvent(tx, { ...order, ...updated }, 'client', terminalStatus === 'rejected' ? '已驳回' : '已取消', terminalStatus === 'rejected'
+        ? '预约已被驳回，请查看具体原因'
+        : '美甲师已取消预约，请及时查看');
       return updated;
     });
 
@@ -2379,15 +2352,6 @@ export class OrdersService {
         );
       }
     }
-
-    void this.wechatSubscribe?.sendBookingStatusEvent(
-      { ...order, ...updated },
-      'client',
-      terminalStatus === 'rejected' ? '已驳回' : '已取消',
-      terminalStatus === 'rejected'
-        ? '预约已被驳回，请查看具体原因'
-        : '美甲师已取消预约，请及时查看',
-    );
 
     return updated;
   }

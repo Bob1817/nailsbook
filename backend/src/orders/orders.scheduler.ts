@@ -142,7 +142,7 @@ export class OrdersScheduler {
       },
       update: { scheduledFor },
     });
-    if (reminder.status === 'sent' || reminder.status === 'cancelled') return;
+    if (['sent', 'queued', 'partial', 'cancelled'].includes(reminder.status)) return;
 
     const claimed = await this.prisma.orderReminder.updateMany({
       where: {
@@ -182,19 +182,14 @@ export class OrdersScheduler {
     preview: string,
   ) {
     if (!order.clientUserId) {
-      await this.prisma.$transaction([
-        this.prisma.orderReminder.update({
-          where: { id: reminderId },
-          data: { status: 'sent', sentAt: new Date() },
-        }),
-        this.prisma.order.update({
-          where: { id: order.id },
-          data:
-            type === 'day_before'
-              ? { reminderDaySent: true }
-              : { reminderHourSent: true },
-        }),
-      ]);
+      await this.prisma.$transaction(async (tx) => {
+        await this.wechatSubscribe?.enqueueOrderReminder(tx, order, type);
+        await tx.orderReminder.update({ where: { id: reminderId },
+          data: { status: this.wechatSubscribe ? 'queued' : 'partial', sentAt: null,
+            lastError: this.wechatSubscribe ? null : '微信通知服务未启用' } });
+        await tx.order.update({ where: { id: order.id }, data: type === 'day_before'
+          ? { reminderDaySent: true } : { reminderHourSent: true } });
+      });
       await this.push.sendToTechnician(order.technicianId, {
         title: '预约提醒',
         body: preview,
@@ -252,9 +247,11 @@ export class OrdersScheduler {
       });
       messages.push(msgClient, msgTech);
 
+      await this.wechatSubscribe?.enqueueOrderReminder(tx, order, type);
       await tx.orderReminder.update({
         where: { id: reminderId },
-        data: { status: 'sent', sentAt: new Date() },
+        data: { status: this.wechatSubscribe ? 'queued' : 'partial', sentAt: null,
+          lastError: this.wechatSubscribe ? null : '微信通知服务未启用' },
       });
       await tx.order.update({
         where: { id: order.id },
@@ -266,9 +263,6 @@ export class OrdersScheduler {
     });
 
     await Promise.all([
-      this.wechatSubscribe
-        ? this.wechatSubscribe.sendOrderReminder(order, type)
-        : Promise.resolve({ sent: 0 }),
       this.push.sendToClient(order.clientUserId, {
         title: '预约提醒',
         body: preview,

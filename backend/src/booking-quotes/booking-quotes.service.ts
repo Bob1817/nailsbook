@@ -2,8 +2,10 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Optional,
   NotFoundException,
 } from '@nestjs/common';
+import { WechatSubscribeMessagesService } from '../wechat-subscribe-messages/wechat-subscribe-messages.service';
 import sharp from 'sharp';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -34,6 +36,7 @@ export class BookingQuotesService {
     private readonly prisma: PrismaService,
     private readonly clientOrders: ClientOrdersService,
     private readonly shareCode: WorkShareCodeService,
+    @Optional() private readonly wechatSubscribe?: WechatSubscribeMessagesService,
   ) {}
 
   async create(technicianId: number, dto: CreateBookingQuoteDto) {
@@ -435,11 +438,15 @@ export class BookingQuotesService {
           confirmedEndTime: order.endTime,
         },
       });
-      return tx.bookingQuote.update({
+      const booked = await tx.bookingQuote.update({
         where: { id: quote.id },
         data: { status: 'booked', orderId: order.id, bookedAt: new Date() },
-        include: { lines: { orderBy: { sortOrder: 'asc' } }, order: true },
+        include: { lines: { orderBy: { sortOrder: 'asc' } }, order: { include: { customer: true } } },
       });
+      const notificationOrder = { ...booked.order, shopName: quote.shopNameSnapshot };
+      await this.wechatSubscribe?.enqueueBookingEvent(tx, notificationOrder, 'client_success');
+      await this.wechatSubscribe?.enqueueBookingEvent(tx, notificationOrder, 'technician_new');
+      return booked;
     });
     return this.mapQuote(updated, false);
   }
