@@ -48,6 +48,7 @@ for icon in (root/'client-wxapp/static/icons').glob('*.svg'):
  if icon.name == 'wechat.svg': continue  # Official third-party mark.
  source=icon.read_text()
  inverse=any(x in icon.stem for x in ['-white','-light'])
+ dark=any(x in icon.stem for x in ['-dark','-black'])
  selected=icon.stem.endswith('-active')
  def icon_color(m):
   attr,value=m[1],m[2]
@@ -61,6 +62,7 @@ for icon in (root/'client-wxapp/static/icons').glob('*.svg'):
   elif icon.stem in ['tab-home-active', 'tab-calendar-active', 'tab-compass-active', 'tab-chat-active', 'tab-profile-active', 'tab-customers-active']: value=semantic['textLink']
   elif selected and icon.stem.startswith('tab-'): value=semantic['textLink'] if attr=='stroke' else semantic['softSurface']
   elif inverse: value=colors['inverse']
+  elif dark: value=colors['ink']
   elif selected: value=colors['ink'] if attr=='stroke' or value.upper()==colors['ink'] else colors['page']
   else: value=colors['muted']
   return attr+'="'+value+'"'
