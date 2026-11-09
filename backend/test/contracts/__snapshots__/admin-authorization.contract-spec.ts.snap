@@ -53,6 +53,27 @@ exports[`Admin authorization HTTP contract covers every admin business route wit
   },
   {
     "method": "GET",
+    "path": "/api/admin/booking-notifications",
+    "permissions": [
+      "booking:view",
+    ],
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/booking-notifications/:id/retry",
+    "permissions": [
+      "feature_flag:update",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/booking-notifications/health",
+    "permissions": [
+      "booking:view",
+    ],
+  },
+  {
+    "method": "GET",
     "path": "/api/admin/comments",
     "permissions": [
       "comment:view",
