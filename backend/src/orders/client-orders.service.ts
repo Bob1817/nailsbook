@@ -126,6 +126,8 @@ export class ClientOrdersService {
       finalPriceFen: number;
       totalDurationMinutes: number;
       quoteNo: string;
+      quoteId?: number;
+      quoteVersion?: number;
     },
   ) {
     assertLaunchShopService(dto.serviceType);
@@ -411,6 +413,14 @@ export class ClientOrdersService {
 
     const createOrder = () =>
       this.prisma.$transaction(async (tx) => {
+        if (quoteOverride?.quoteId) {
+          const quote = await tx.bookingQuote.findUnique({ where: { id: quoteOverride.quoteId } });
+          if (!quote || quote.clientUserId !== clientUserId ||
+              quote.status !== 'accepted_pending_schedule' || quote.version !== quoteOverride.quoteVersion ||
+              quote.expiresAt <= new Date()) {
+            throw new BadRequestException('报价状态已变化，请重新确认');
+          }
+        }
         await assertBookingAccountState(tx, dto.techId, clientUserId);
         const serviceBlockEndTime = new Date(
           startTime.getTime() + availabilityDuration * 60000,

@@ -175,20 +175,7 @@ export class WechatAuthService {
     // 已有账号但未绑定微信 → 关联身份
     if (!isNewClient) await this.linkIdentity(session, 'client', client.id);
 
-    if (!isNewClient && (dto.quickBookingTechId || resolvedInviteCode)) {
-      try {
-        let techId = dto.quickBookingTechId;
-        if (!techId && resolvedInviteCode) {
-          const tech = await this.clientAuth.findTechnicianByInviteCode(resolvedInviteCode);
-          techId = tech?.id;
-        }
-        if (techId && resolvedInviteCode) {
-          await this.clientAuth.bindQuickBookingInvite(client.id, techId, resolvedInviteCode);
-        }
-      } catch {
-        // 邀请上下文失效不能阻断已有账号登录。
-      }
-    }
+    // Existing accounts only authenticate here. Booking/quote actions own binding.
 
     return {
       authenticated: true,

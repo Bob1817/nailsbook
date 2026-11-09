@@ -270,12 +270,11 @@ export class BookingQuotesService {
     let quote = await this.findByToken(token);
     quote = await this.refreshState(quote);
     if (quote.status === 'issued') {
-      const viewedQuote = await this.prisma.bookingQuote.update({
-        where: { id: quote.id },
+      await this.prisma.bookingQuote.updateMany({
+        where: { id: quote.id, status: 'issued', version: quote.version },
         data: { status: 'viewed', viewedAt: quote.viewedAt ?? new Date() },
-        include: { lines: { orderBy: { sortOrder: 'asc' } }, order: true },
       });
-      quote = { ...quote, ...viewedQuote };
+      quote = await this.findByToken(token);
     }
     return this.mapQuote(quote, false);
   }
@@ -284,6 +283,9 @@ export class BookingQuotesService {
     let quote = await this.findByToken(token);
     quote = await this.refreshState(quote);
     this.assertAcceptable(quote, clientUserId);
+    if (quote.clientUserId === clientUserId && ['accepted_pending_schedule', 'booked'].includes(quote.status)) {
+      return this.mapQuote(quote, false);
+    }
     const client = await this.prisma.clientUser.findUnique({
       where: { id: clientUserId },
     });
@@ -293,6 +295,17 @@ export class BookingQuotesService {
       where: { clientId: clientUserId, status: 'active', isDefault: true },
     });
     const accepted = await this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.bookingQuote.updateMany({
+        where: { id: quote.id, clientUserId: null, status: { in: ['issued', 'viewed'] },
+          version: quote.version, expiresAt: { gt: new Date() } },
+        data: { clientUserId, status: 'accepted_pending_schedule', acceptedAt: new Date() },
+      });
+      if (claimed.count !== 1) {
+        const current = await tx.bookingQuote.findUnique({ where: { id: quote.id },
+          include: { lines: { orderBy: { sortOrder: 'asc' } }, order: true } });
+        if (current?.clientUserId === clientUserId && ['accepted_pending_schedule', 'booked'].includes(current.status)) return current;
+        throw new BadRequestException('报价已被确认、修改或失效，请刷新后查看');
+      }
       await tx.clientTechBinding.upsert({
         where: {
           clientId_techId: {
@@ -353,9 +366,31 @@ export class BookingQuotesService {
         status: { in: ['issued', 'viewed'] },
         clientUserId: null,
       },
-      data: { status: 'declined', declinedAt: new Date(), declineReason: reason },
+      data: { declineReason: `访客暂缓反馈：${reason}` },
     });
     if (!result.count) throw new BadRequestException('当前报价不能提交反馈');
+    return { saved: true, status: quote.status };
+  }
+
+  async clientDetail(clientUserId: number, token: string) {
+    const quote = await this.refreshState(await this.findByToken(token));
+    const mine = quote.clientUserId === clientUserId;
+    return { ...this.mapQuote(quote, false), isMine: mine,
+      canSchedule: mine && quote.status === 'accepted_pending_schedule',
+      canAccept: !quote.clientUserId && ['issued', 'viewed'].includes(quote.status) };
+  }
+
+  async declineOwned(clientUserId: number, token: string, reason: string) {
+    const quote = await this.findByToken(token);
+    await this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({ where: { applicationKey: `booking-quote-${quote.id}` } });
+      if (order) throw new BadRequestException('预约已创建，不能放弃报价');
+      const changed = await tx.bookingQuote.updateMany({
+        where: { id: quote.id, clientUserId, status: 'accepted_pending_schedule', version: quote.version },
+        data: { status: 'declined', declinedAt: new Date(), declineReason: reason },
+      });
+      if (changed.count !== 1) throw new ForbiddenException('只能放弃本人已确认且尚未预约的报价');
+    });
     return { saved: true, status: 'declined' };
   }
 
@@ -402,6 +437,8 @@ export class BookingQuotesService {
       },
       {
         quoteNo: quote.quoteNo,
+        quoteId: quote.id,
+        quoteVersion: quote.version,
         serviceSubtotalFen:
           quote.serviceSubtotalFen +
           quote.materialSubtotalFen +
@@ -523,11 +560,12 @@ export class BookingQuotesService {
       ['issued', 'viewed'].includes(quote.status) &&
       quote.expiresAt.getTime() <= Date.now()
     ) {
-      return this.prisma.bookingQuote.update({
-        where: { id: quote.id },
+      await this.prisma.bookingQuote.updateMany({
+        where: { id: quote.id, status: { in: ['issued', 'viewed'] }, expiresAt: { lte: new Date() } },
         data: { status: 'expired' },
-        include: { lines: { orderBy: { sortOrder: 'asc' } }, order: true },
       });
+      return this.prisma.bookingQuote.findUniqueOrThrow({ where: { id: quote.id },
+        include: { lines: { orderBy: { sortOrder: 'asc' } }, order: true } });
     }
     return quote as any;
   }
@@ -537,7 +575,7 @@ export class BookingQuotesService {
       throw new ForbiddenException('该报价已由其他客户确认');
     }
     if (
-      !['issued', 'viewed', 'accepted_pending_schedule'].includes(quote.status)
+      !['issued', 'viewed', 'accepted_pending_schedule', 'booked'].includes(quote.status)
     ) {
       throw new BadRequestException('当前报价不能确认');
     }

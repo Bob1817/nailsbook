@@ -11,8 +11,8 @@ describe('BookingQuotesService', () => {
     };
     const prisma: any = {
       bookingQuote: {
-        findUnique: jest.fn().mockResolvedValue(quote),
-        update: jest.fn().mockResolvedValue({ id: 1, status: 'viewed', lines: [] }),
+        findUnique: jest.fn().mockResolvedValueOnce(quote).mockResolvedValue({ ...quote, status: 'viewed' }),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
     };
     const service = new BookingQuotesService(prisma, {} as never, {} as never);
@@ -86,7 +86,7 @@ describe('BookingQuotesService', () => {
     expect(result.sharePath).toContain('invite=ABCD1234');
   });
 
-  it('records a standard decline reason without taking ownership of the quote', async () => {
+  it('records anonymous postponement without ending or claiming the quote', async () => {
     const prisma: any = {
       bookingQuote: {
         findUnique: jest.fn().mockResolvedValue({
@@ -102,12 +102,12 @@ describe('BookingQuotesService', () => {
     const service = new BookingQuotesService(prisma, {} as never, {} as never);
     await expect(service.decline('c'.repeat(48), '最近没空')).resolves.toEqual({
       saved: true,
-      status: 'declined',
+      status: 'viewed',
     });
     expect(prisma.bookingQuote.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ id: 1, clientUserId: null }),
-        data: expect.objectContaining({ declineReason: '最近没空' }),
+        data: { declineReason: '访客暂缓反馈：最近没空' },
       }),
     );
   });
@@ -127,6 +127,7 @@ describe('BookingQuotesService', () => {
       clientTechBinding: { upsert: jest.fn() },
       customer: { upsert: jest.fn().mockResolvedValue({ id: 22 }) },
       bookingQuote: {
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
         update: jest.fn().mockResolvedValue({
           ...quote,
           clientUserId: 8,

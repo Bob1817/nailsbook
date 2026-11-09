@@ -182,4 +182,20 @@ describe('ClientOrdersService.create 下单校验', () => {
     });
     expect(prisma.clientUser.findUnique).not.toHaveBeenCalled();
   });
+  it.each(['declined', 'withdrawn', 'expired'])('rejects a quote changed to %s before the order transaction', async (status) => {
+    prisma.clientTechBinding.findFirst.mockResolvedValue({ technician: tech() });
+    prisma.clientUser.findUnique.mockResolvedValue({ id: 11, name: '客户' });
+    const tx = {
+      bookingQuote: { findUnique: jest.fn().mockResolvedValue({ clientUserId: 11, status, version: 1, expiresAt: new Date(Date.now() + 60000) }) },
+      order: { create: jest.fn() },
+    };
+    prisma.$transaction = jest.fn(callback => callback(tx));
+    jest.spyOn(service, 'resolveOrderAddressAndCustomerName').mockResolvedValue({ customerName: '客户' });
+    await expect(service.create(11, { ...baseDto, serviceType: '到店美甲' }, {
+      quoteId: 1, quoteVersion: 1, quoteNo: 'Q1', serviceLines: [],
+      serviceSubtotalFen: 100, finalPriceFen: 100, totalDurationMinutes: 60,
+    })).rejects.toThrow('报价状态已变化');
+    expect(tx.order.create).not.toHaveBeenCalled();
+  });
+
 });

@@ -71,6 +71,13 @@ export class PublicBookingQuotesController {
 @UseGuards(ClientJwtAuthGuard)
 export class ClientBookingQuotesController {
   constructor(private readonly quotes: BookingQuotesService) {}
+  @Get(':token') detail(@Req() req: { user: { clientUserId: number } }, @Param('token') token: string) {
+    return this.quotes.clientDetail(req.user.clientUserId, token);
+  }
+  @Post(':token/decline') decline(@Req() req: { user: { clientUserId: number } },
+    @Param('token') token: string, @Body() dto: DeclineBookingQuoteDto) {
+    return this.quotes.declineOwned(req.user.clientUserId, token, dto.reason);
+  }
   @Post(':token/accept') accept(
     @Req() req: { user: { clientUserId: number } },
     @Param('token') token: string,

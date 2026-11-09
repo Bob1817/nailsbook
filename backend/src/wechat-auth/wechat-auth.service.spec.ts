@@ -199,13 +199,15 @@ describe('WechatAuthService', () => {
     prisma.wechatIdentity.findFirst.mockResolvedValue(null);
     prisma.wechatIdentity.upsert.mockResolvedValue({});
 
+    clientAuth.bindQuickBookingInvite = jest.fn();
     await expect(
       service.completeClient({
         wechatSessionToken: 'session',
         phoneCode: 'phone-code',
-        shareWorkId: 9,
+        shareWorkId: 9, inviteCode: 'INVITE7', quickBookingTechId: 7,
       }),
     ).resolves.toMatchObject({ authenticated: true, role: 'client' });
+    expect(clientAuth.bindQuickBookingInvite).not.toHaveBeenCalled();
     expect(prisma.conversionEvent.upsert).not.toHaveBeenCalled();
     expect(prisma.wechatIdentity.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
