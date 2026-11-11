@@ -281,6 +281,7 @@ export class TechnicianWorksService {
           description: dto.description ?? null,
           designIdea: dto.designIdea ?? null,
           suitableScene: dto.suitableScene ?? null,
+          outfitSuggestion: dto.outfitSuggestion?.trim() || null,
           recommendationScore: dto.recommendationScore ?? null,
           tags: dto.tags ?? null,
           price: dto.price ?? null,
@@ -329,6 +330,7 @@ export class TechnicianWorksService {
         description: dto.description ?? null,
         designIdea: dto.designIdea ?? null,
         suitableScene: dto.suitableScene ?? null,
+        outfitSuggestion: dto.outfitSuggestion?.trim() || null,
         recommendationScore: dto.recommendationScore ?? null,
         tags: dto.tags ?? null,
         price: dto.price ?? null,
@@ -481,6 +483,9 @@ export class TechnicianWorksService {
           ...(dto.suitableScene !== undefined && {
             suitableScene: dto.suitableScene,
           }),
+          ...(dto.outfitSuggestion !== undefined && {
+            outfitSuggestion: dto.outfitSuggestion?.trim() || null,
+          }),
           ...(dto.recommendationScore !== undefined && {
             recommendationScore: dto.recommendationScore,
           }),
@@ -536,6 +541,9 @@ export class TechnicianWorksService {
         }),
         ...(dto.suitableScene !== undefined && {
           suitableScene: dto.suitableScene || null,
+        }),
+        ...(dto.outfitSuggestion !== undefined && {
+          outfitSuggestion: dto.outfitSuggestion?.trim() || null,
         }),
         ...(dto.recommendationScore !== undefined && {
           recommendationScore: dto.recommendationScore,
@@ -1346,6 +1354,7 @@ export class TechnicianWorksService {
       description: string | null;
       designIdea?: string | null;
       suitableScene?: string | null;
+      outfitSuggestion?: string | null;
       recommendationScore?: number | null;
       tags: string | null;
       isVisible: boolean;
@@ -1438,6 +1447,7 @@ export class TechnicianWorksService {
       description: work.description ?? null,
       designIdea: work.designIdea ?? null,
       suitableScene: work.suitableScene ?? null,
+      outfitSuggestion: work.outfitSuggestion ?? null,
       recommendationScore: work.recommendationScore ?? null,
       tags: this.parseTags(work.tags ?? null),
       price: work.price ?? null,

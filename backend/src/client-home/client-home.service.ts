@@ -37,7 +37,7 @@ export class ClientHomeService {
       include: {
         likes: true,
         comments: true,
-        technician: { select: { name: true, id: true, avatarUrl: true } },
+        technician: { select: { name: true, id: true, avatarUrl: true, invitationCode: true } },
       },
     });
 
@@ -61,7 +61,7 @@ export class ClientHomeService {
         publicationStatus: 'approved', archivedAt: null, coverUrl: { not: null },
       },
       orderBy: [{ heroSlot: 'asc' }, { id: 'desc' }],
-      include: { likes: true, comments: true, technician: { select: { name: true, id: true, avatarUrl: true, shopAddresses: true } } },
+      include: { likes: true, comments: true, technician: { select: { name: true, id: true, avatarUrl: true, invitationCode: true, shopAddresses: true } } },
     });
     // 没有有效手动推荐时，使用最近发布的公开作品；不写入手动排序配置。
     const missing = bindings.filter(item => !candidates.some(work => work.techId === item.techId && work.coverUrl?.trim()));
@@ -69,7 +69,7 @@ export class ClientHomeService {
       where: { techId: item.techId, isVisible: true, visibilityScope: 'public',
         publicationStatus: 'approved', archivedAt: null, coverUrl: { not: null, notIn: [''] } },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 3,
-      include: { likes: true, comments: true, technician: { select: { name: true, id: true, avatarUrl: true, shopAddresses: true } } },
+      include: { likes: true, comments: true, technician: { select: { name: true, id: true, avatarUrl: true, invitationCode: true, shopAddresses: true } } },
     })));
     candidates.push(...defaults.flat());
     const groups = bindings.map((item) => candidates.filter((work) => work.techId === item.techId && work.coverUrl?.trim()).slice(0, 3))
@@ -314,7 +314,7 @@ export class ClientHomeService {
             likes: true,
             comments: true,
             favorites: true,
-            technician: { select: { id: true, name: true, avatarUrl: true } },
+            technician: { select: { id: true, name: true, avatarUrl: true, invitationCode: true } },
           },
         })
       : [];
@@ -396,7 +396,7 @@ export class ClientHomeService {
         comments: true,
         favorites: true,
         technician: {
-          select: { name: true, id: true, avatarUrl: true, shopAddresses: true },
+          select: { name: true, id: true, avatarUrl: true, invitationCode: true, shopAddresses: true },
         },
       },
     });
@@ -458,7 +458,7 @@ export class ClientHomeService {
           likes: true,
           comments: true,
           favorites: true,
-          technician: { select: { name: true, id: true, avatarUrl: true, shopAddresses: true } },
+          technician: { select: { name: true, id: true, avatarUrl: true, invitationCode: true, shopAddresses: true } },
         },
       }),
       this.prisma.nailWork.count({ where }),
@@ -486,7 +486,7 @@ export class ClientHomeService {
           include: {
             likes: true,
             comments: true,
-            technician: { select: { name: true, id: true, avatarUrl: true, shopAddresses: true } },
+            technician: { select: { name: true, id: true, avatarUrl: true, invitationCode: true, shopAddresses: true } },
           },
         },
       },
@@ -513,7 +513,7 @@ export class ClientHomeService {
           include: {
             likes: true,
             comments: true,
-            technician: { select: { name: true, id: true, avatarUrl: true, shopAddresses: true } },
+            technician: { select: { name: true, id: true, avatarUrl: true, invitationCode: true, shopAddresses: true } },
           },
         },
       },
@@ -566,7 +566,7 @@ export class ClientHomeService {
           },
         },
         technician: {
-          select: { name: true, avatarUrl: true, id: true },
+          select: { name: true, avatarUrl: true, id: true, invitationCode: true },
         },
         serviceLines: { orderBy: { sortOrder: 'asc' } },
         clientAccesses: { where: { clientUserId }, take: 1 },
@@ -646,6 +646,7 @@ export class ClientHomeService {
     description?: string | null;
     designIdea?: string | null;
     suitableScene?: string | null;
+    outfitSuggestion?: string | null;
     recommendationScore?: number | null;
     tags?: string | null;
     createdAt: Date;
@@ -657,6 +658,7 @@ export class ClientHomeService {
       name: string | null;
       id?: number;
       avatarUrl?: string | null;
+      invitationCode?: string | null;
       shopAddresses?: string | null;
     };
     techId?: number;
@@ -722,6 +724,7 @@ export class ClientHomeService {
       description: work.description ?? null,
       designIdea: work.designIdea ?? null,
       suitableScene: work.suitableScene ?? null,
+      outfitSuggestion: work.outfitSuggestion ?? null,
       recommendationScore: work.recommendationScore ?? null,
       tags: this.parseTags(work.tags ?? null),
       likeCount: work.likes?.length ?? 0,
@@ -732,6 +735,7 @@ export class ClientHomeService {
         ? toAbsoluteUrl(work.technician.avatarUrl)
         : null,
       technicianId: technicianId,
+      invitationCode: work.technician?.invitationCode ?? null,
       technicianShopName: firstShop?.name ?? null,
       technicianShopAddress: firstShop?.address ?? null,
       visibilityScope: work.visibilityScope ?? 'public',
@@ -840,7 +844,7 @@ export class ClientHomeService {
           likes: true,
           comments: true,
           favorites: true,
-          technician: { select: { name: true, id: true, avatarUrl: true, shopAddresses: true } },
+          technician: { select: { name: true, id: true, avatarUrl: true, invitationCode: true, shopAddresses: true } },
         },
       }),
       this.prisma.nailWork.count({ where }),

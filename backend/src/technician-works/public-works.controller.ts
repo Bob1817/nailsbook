@@ -112,6 +112,8 @@ export class PublicWorksController {
       return {
         id: work.id,
         title: work.title,
+        suitableScene: work.suitableScene ?? null,
+        outfitSuggestion: work.outfitSuggestion ?? null,
         coverUrl: toAbsoluteUrl(work.coverUrl) ?? imageUrls[0] ?? null,
         imageUrls,
         tags: work.tags
@@ -218,6 +220,8 @@ export class PublicWorksController {
       return {
         id: work.id,
         title: work.title,
+        suitableScene: work.suitableScene ?? null,
+        outfitSuggestion: work.outfitSuggestion ?? null,
         coverUrl: toAbsoluteUrl(work.coverUrl) ?? imageUrls[0] ?? null,
         imageUrls,
         tags: work.tags
@@ -341,6 +345,7 @@ export class PublicWorksController {
       description: work.description ?? null,
       designIdea: work.designIdea ?? null,
       suitableScene: work.suitableScene ?? null,
+      outfitSuggestion: work.outfitSuggestion ?? null,
       recommendationScore: work.recommendationScore ?? null,
       tags: work.tags
         ? work.tags

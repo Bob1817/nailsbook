@@ -72,6 +72,8 @@ describe('PublicWorksController publication filter', () => {
       {
         id: 1,
         title: '法式美甲',
+        suitableScene: '日常通勤,约会',
+        outfitSuggestion: '搭配浅色系针织或白衬衫',
         coverUrl: null,
         images: null,
         tags: null,
@@ -89,6 +91,8 @@ describe('PublicWorksController publication filter', () => {
     const result = await controller.getPublicFeed('20');
 
     expect(result[0]).toEqual(expect.objectContaining({
+      suitableScene: '日常通勤,约会',
+      outfitSuggestion: '搭配浅色系针织或白衬衫',
       price: 598,
       serviceSubtotalFen: 49800,
       standardPriceFen: 59800,

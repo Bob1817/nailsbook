@@ -7,6 +7,7 @@ import {
   IsOptional,
   IsString,
   Max,
+  MaxLength,
   Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -67,6 +68,12 @@ export class CreateWorkDto {
   @IsOptional()
   @IsString()
   suitableScene?: string;
+
+  @ApiPropertyOptional({ description: '穿搭建议（选填）' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  outfitSuggestion?: string;
 
   @ApiPropertyOptional({ description: '推荐指数，1-5', minimum: 1, maximum: 5 })
   @Transform(({ value }) => Number(value))
@@ -171,6 +178,12 @@ export class UpdateWorkDto {
   @IsOptional()
   @IsString()
   suitableScene?: string;
+
+  @ApiPropertyOptional({ description: '穿搭建议（选填）' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  outfitSuggestion?: string;
 
   @ApiPropertyOptional({ description: '推荐指数，1-5', minimum: 1, maximum: 5 })
   @Transform(({ value }) => Number(value))

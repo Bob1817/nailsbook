@@ -839,6 +839,7 @@ model NailWork {
   description               String?
   designIdea                String?
   suitableScene             String?
+  outfitSuggestion          String?
   recommendationScore       Int?
   tags                      String?
   isVisible                 Boolean                @default(true)

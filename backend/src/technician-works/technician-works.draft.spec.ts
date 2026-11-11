@@ -45,6 +45,14 @@ describe('TechnicianWorksService draft publication flow', () => {
     return { service, prisma, baseWork };
   }
 
+  it.each([['  白衬衫  ', '白衬衫'], ['', null], [null, null]])('保存穿搭建议并支持清空：%s', async (input, expected) => {
+    const { service, prisma } = setup();
+    await service.saveDraft(7, 11, { outfitSuggestion: input } as any);
+    expect(prisma.nailWork.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ outfitSuggestion: expected }),
+    }));
+  });
+
   it('允许在标题和封面尚未完成时创建不可公开的服务端草稿', async () => {
     const { service, prisma } = setup();
     await service.createDraft(7, { description: '先记录灵感' });
