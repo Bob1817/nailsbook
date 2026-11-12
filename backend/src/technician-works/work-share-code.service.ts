@@ -36,6 +36,17 @@ export class WorkShareCodeService {
     return this.generateForScene(Buffer.from(publicToken, 'hex').toString('base64url'), 'pages/client/quote-confirm/index');
   }
 
+  // 美甲师主页海报内嵌的小程序码，扫码直达公开美甲师主页。
+  async generateForArtist(artistId: number) {
+    return this.generateForScene(`a${artistId}`, 'pages/client/artist-home/index');
+  }
+
+  // 店铺主页海报内嵌的小程序码，扫码直达公开店铺主页。
+  async generateForShop(techId: number, shopIndex?: number) {
+    const scene = Number.isInteger(shopIndex) && shopIndex! >= 0 ? `s${techId}_${shopIndex}` : `s${techId}`;
+    return this.generateForScene(scene, 'pages/client/shop-guidance/index');
+  }
+
   private async generateForScene(scene: string, page: string) {
     const configured = process.env.WECHAT_SHARE_CODE_ENV;
     const envVersion = configured === 'trial' || configured === 'develop' ? configured : 'release';

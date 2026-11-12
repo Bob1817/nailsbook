@@ -1,8 +1,10 @@
 import { publicHomeSettings } from '../technicians/service-forms';
 import {
+  BadRequestException,
   Controller,
   Get,
   NotFoundException,
+  Optional,
   Param,
   ParseIntPipe,
   Query,
@@ -14,6 +16,7 @@ import {
   isLaunchTechnician,
   isMiniProgramAuditMode,
 } from '../common/miniprogram-launch-mode';
+import { WorkShareCodeService } from './work-share-code.service';
 
 const UPLOAD_BASE_URL = process.env.UPLOAD_BASE_URL || 'http://localhost:3000';
 
@@ -45,12 +48,48 @@ function parseJsonArray(value: string | null): unknown[] {
 @ApiTags('公开-美甲师名片')
 @Controller('public/artist')
 export class PublicArtistController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly shareCodes?: WorkShareCodeService,
+  ) {}
 
   @Get('id/:id')
   @ApiOperation({ summary: '通过 ID 获取美甲师公开经营主页' })
   async getBusinessPage(@Param('id', ParseIntPipe) id: number) {
     return this.getPublicCard({ id });
+  }
+
+  @Get('id/:id/share-code')
+  @ApiOperation({ summary: '获取美甲师主页分享小程序码' })
+  async getArtistShareCode(@Param('id', ParseIntPipe) id: number) {
+    const technician = await this.prisma.technician.findFirst({
+      where: { id, status: 'active' },
+      select: { id: true },
+    });
+    if (!technician || !isLaunchTechnician(technician.id)) {
+      throw new NotFoundException('美甲师不存在或未启用');
+    }
+    if (!this.shareCodes) throw new BadRequestException('分享服务暂不可用');
+    return this.shareCodes.generateForArtist(id);
+  }
+
+  @Get('id/:id/shop-share-code')
+  @ApiOperation({ summary: '获取店铺主页分享小程序码' })
+  async getShopShareCode(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('shopIndex') shopIndexRaw?: string,
+  ) {
+    const technician = await this.prisma.technician.findFirst({
+      where: { id, status: 'active' },
+      select: { id: true },
+    });
+    if (!technician || !isLaunchTechnician(technician.id)) {
+      throw new NotFoundException('美甲师不存在或未启用');
+    }
+    if (!this.shareCodes) throw new BadRequestException('分享服务暂不可用');
+    const parsedIndex = shopIndexRaw !== undefined && shopIndexRaw !== '' ? Number(shopIndexRaw) : undefined;
+    const shopIndex = Number.isInteger(parsedIndex) && parsedIndex! >= 0 ? parsedIndex : undefined;
+    return this.shareCodes.generateForShop(id, shopIndex);
   }
 
   @Get('id/:id/shop-guidance')
