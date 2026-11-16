@@ -90,6 +90,9 @@ export class TechnicianWorksService {
       include: {
         likes: true,
         favorites: true,
+        technician: {
+          select: { name: true },
+        },
         comments: {
           orderBy: { createdAt: 'desc' },
         },

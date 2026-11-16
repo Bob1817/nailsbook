@@ -84,6 +84,22 @@ describe('TechnicianWorksService draft publication flow', () => {
     }));
   });
 
+  it('作品详情必须带出美甲师名，分享标题不得退化成「美甲师作品」', async () => {
+    const { service, prisma, baseWork } = setup();
+    prisma.nailWork.findFirst.mockResolvedValueOnce({
+      ...baseWork,
+      clientAccesses: [],
+      technician: { name: '听栖' },
+    });
+
+    const result = await service.findOne(7, 11);
+
+    expect(result).toEqual(expect.objectContaining({ technicianName: '听栖' }));
+    expect(prisma.nailWork.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      include: expect.objectContaining({ technician: { select: { name: true } } }),
+    }));
+  });
+
   it('保存草稿会撤回审核状态并清理旧审核结论', async () => {
     const { service, prisma } = setup();
     await service.saveDraft(7, 11, { title: '修改后的标题' });
