@@ -8,7 +8,11 @@ export type PricedService = {
   durationMinutes: number | null;
 };
 
-export type ServiceQuantity = { servicePublicId: string; quantity?: number };
+export type ServiceQuantity = {
+  servicePublicId: string;
+  quantity?: number;
+  unitPriceFen?: number;
+};
 
 export type ServiceSnapshotLine = {
   serviceId: number | null;
@@ -44,14 +48,17 @@ export function buildServiceSnapshotLines(
     ) {
       throw new BadRequestException('所选服务价格或时长配置异常，请重新选择');
     }
+    const unitPriceFen = (selection.unitPriceFen != null && selection.unitPriceFen >= 0)
+      ? selection.unitPriceFen
+      : service.priceMinFen;
     return {
       serviceId: service.id,
       servicePublicIdSnapshot: service.publicId,
       nameSnapshot: service.name,
-      unitPriceFen: service.priceMinFen,
+      unitPriceFen,
       durationMinutes: service.durationMinutes,
       quantity,
-      subtotalFen: service.priceMinFen * quantity,
+      subtotalFen: unitPriceFen * quantity,
       sortOrder: index,
     };
   });

@@ -507,16 +507,20 @@ export class BookingQuotesService {
       if (!service || service.priceMinFen == null) {
         throw new BadRequestException('基础服务不存在或未设置价格');
       }
-      const quantity = input.quantity ?? 1;
+      const quantity = 1;
+      const unitPriceFen =
+        input.unitPriceFen != null && input.unitPriceFen >= 0
+          ? input.unitPriceFen
+          : service.priceMinFen;
       return {
         lineType: input.lineType,
         serviceId: service.id,
         servicePublicIdSnapshot: service.publicId,
         nameSnapshot: service.name,
-        unitPriceFen: service.priceMinFen,
+        unitPriceFen,
         durationMinutes: service.durationMinutes ?? 0,
         quantity,
-        subtotalFen: service.priceMinFen * quantity,
+        subtotalFen: unitPriceFen * quantity,
         sortOrder,
       };
     }

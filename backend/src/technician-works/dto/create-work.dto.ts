@@ -107,6 +107,16 @@ export class CreateWorkDto {
   @IsString({ each: true })
   selectedServiceIds: string[];
 
+  @ApiPropertyOptional({ description: '作品基础服务自定义价格映射 { [publicId]: priceInYuan }' })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try { return JSON.parse(value); } catch (_) { return undefined; }
+    }
+    return value;
+  })
+  @IsOptional()
+  serviceCustomPrices?: Record<string, number>;
+
   @ApiProperty({ description: '作品标准报价（元）' })
   @Transform(({ value }) => Number(value))
   @IsNumber()
@@ -217,6 +227,16 @@ export class UpdateWorkDto {
   @IsArray()
   @IsString({ each: true })
   selectedServiceIds?: string[];
+
+  @ApiPropertyOptional({ description: '作品基础服务自定义价格映射 { [publicId]: priceInYuan }' })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try { return JSON.parse(value); } catch (_) { return undefined; }
+    }
+    return value;
+  })
+  @IsOptional()
+  serviceCustomPrices?: Record<string, number>;
 
   @ApiPropertyOptional({ description: '作品标准报价（元）' })
   @Transform(({ value }) => Number(value))

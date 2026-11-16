@@ -62,7 +62,7 @@ describe('BookingQuotesService', () => {
     const service = new BookingQuotesService(prisma, {} as never, {} as never);
     const result = await service.create(7, {
       lines: [
-        { lineType: 'service', servicePublicId: 'svc-1', unitPriceFen: 1 },
+        { lineType: 'service', servicePublicId: 'svc-1' },
         {
           lineType: 'material',
           name: '珍珠饰品',

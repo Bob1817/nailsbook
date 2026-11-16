@@ -266,6 +266,7 @@ export class TechnicianWorksService {
       technicianId,
       dto.selectedServiceIds,
       dto.standardPrice,
+      dto.serviceCustomPrices,
     );
     let work;
     try {
@@ -462,6 +463,7 @@ export class TechnicianWorksService {
             technicianId,
             dto.selectedServiceIds ?? [],
             dto.standardPrice,
+            dto.serviceCustomPrices,
           )
         : null;
     const work = await this.prisma.$transaction(async (tx) => {
@@ -1294,6 +1296,7 @@ export class TechnicianWorksService {
     technicianId: number,
     selectedServiceIds: string[],
     standardPrice?: number,
+    serviceCustomPrices?: Record<string, number>,
   ) {
     if (!selectedServiceIds.length) {
       throw new BadRequestException('请选择至少一项作品基础服务');
@@ -1321,19 +1324,20 @@ export class TechnicianWorksService {
         durationMinutes: true,
       },
     });
-    const quantities = selectedServiceIds.reduce(
-      (result, servicePublicId) => {
-        result.set(servicePublicId, (result.get(servicePublicId) ?? 0) + 1);
-        return result;
-      },
-      new Map<string, number>(),
-    );
+    const uniqueIds = Array.from(new Set(selectedServiceIds));
     const lines = buildServiceSnapshotLines(
       services,
-      Array.from(quantities, ([servicePublicId, quantity]) => ({
-        servicePublicId,
-        quantity,
-      })),
+      uniqueIds.map((servicePublicId) => {
+        const customPrice = serviceCustomPrices ? serviceCustomPrices[servicePublicId] : undefined;
+        const unitPriceFen = customPrice != null && Number(customPrice) >= 0
+          ? Math.round(Number(customPrice) * 100)
+          : undefined;
+        return {
+          servicePublicId,
+          quantity: 1,
+          unitPriceFen,
+        };
+      }),
     );
     const summary = summarizeSnapshotLines(lines);
     return {
