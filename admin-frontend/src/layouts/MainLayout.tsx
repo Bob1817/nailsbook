@@ -78,6 +78,7 @@ const navigationGroups: NavigationGroup[] = [
   },
   {
     key: 'platform', icon: <WechatOutlined />, label: '微信与发布', children: [
+      { key: '/booking-notifications', icon: <NotificationOutlined />, label: '预约通知', permission: 'booking:view' },
       { key: '/wechat-messages', icon: <MessageOutlined />, label: '公众号消息', permission: 'feature_flag:view' },
       { key: '/wechat-config', icon: <SettingOutlined />, label: '微信能力配置', permission: 'feature_flag:view' },
       { key: '/wechat-official', icon: <WechatOutlined />, label: '公众号配置', permission: 'feature_flag:view' },

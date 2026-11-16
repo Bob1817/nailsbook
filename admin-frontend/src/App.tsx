@@ -29,6 +29,7 @@ import WechatOfficial from './pages/WechatOfficial';
 import WechatMessages from './pages/WechatMessages';
 import LaunchConfig from './pages/LaunchConfig';
 import Orders from './pages/Orders';
+import BookingNotifications from './pages/BookingNotifications';
 import Releases from './pages/Releases';
 
 const App: React.FC = () => {
@@ -116,6 +117,7 @@ const App: React.FC = () => {
               <Route index element={<ProtectedRoute permission="dashboard:view"><Dashboard /></ProtectedRoute>} />
               <Route path="technicians" element={<ProtectedRoute permission="technician:view"><Technicians /></ProtectedRoute>} />
               <Route path="customers" element={<ProtectedRoute permission="customer:view"><Customers /></ProtectedRoute>} />
+              <Route path="booking-notifications" element={<ProtectedRoute permission="booking:view"><BookingNotifications /></ProtectedRoute>} />
               <Route path="orders" element={<ProtectedRoute permission="booking:view"><Orders /></ProtectedRoute>} />
               <Route path="works" element={<ProtectedRoute permission="work:view"><Works /></ProtectedRoute>} />
               <Route path="comments" element={<ProtectedRoute permission="comment:view"><Comments /></ProtectedRoute>} />
