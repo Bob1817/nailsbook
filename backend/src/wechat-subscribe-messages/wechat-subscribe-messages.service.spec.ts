@@ -123,7 +123,7 @@ describe('WechatSubscribeMessagesService', () => {
     expect((global.fetch as jest.Mock).mock.calls.length).toBe(calls);
   });
 
-  it.each([false, true])('使用已发布名称及唯一匹配门店，歧义地址不猜测（%s）', async ambiguous => {
+  it.each([false, true])('使用美甲师真实姓名及唯一匹配门店，歧义地址不猜测（%s）', async ambiguous => {
     const { service, prisma } = createService();
     const current = { ...order, status: 'pending_shop', startTime: new Date(Date.now() + 3600000),
       technician: { name: '登录名', brandProfile: { publicationStatus: 'published', brandName: '客户绑定的美甲师' },
@@ -134,7 +134,7 @@ describe('WechatSubscribeMessagesService', () => {
       payloadSnapshot: JSON.stringify({ kind: 'booking_event', type: 'client_success', order: { ...order, status: current.status, startTime: current.startTime } }) }] as never);
     const send = jest.spyOn(service, 'sendBookingEvent').mockResolvedValue({ sent: 1 });
     await service.processBookingOutbox();
-    expect(send).toHaveBeenCalledWith(expect.objectContaining({ technicianName: '客户绑定的美甲师' }), 'client_success', 'name-check');
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({ technicianName: '登录名' }), 'client_success', 'name-check');
     expect(send.mock.calls[0][0].shopName).toBe(ambiguous ? undefined : '实际预约门店');
   });
 

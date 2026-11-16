@@ -37,11 +37,11 @@ describe('ClientHomeService', () => {
   });
 
   it.each([
-    [{ publicationStatus: 'published', brandName: '听栖美甲' }, '听栖美甲'],
-    [{ publicationStatus: 'draft', brandName: '未发布名称' }, 'Anna'],
-    [{ publicationStatus: 'published', brandName: '' }, 'Anna'],
-    [null, 'Anna'],
-  ])('首页绑定美甲师名称与绑定列表的发布规则一致：%j', async (brandProfile, expectedName) => {
+    [{ publicationStatus: 'published', brandName: '听栖美甲' }, 'Anna', '听栖美甲'],
+    [{ publicationStatus: 'draft', brandName: '未发布名称' }, 'Anna', null],
+    [{ publicationStatus: 'published', brandName: '' }, 'Anna', ''],
+    [null, 'Anna', null],
+  ])('首页绑定美甲师名称只显示美甲师姓名，不携带店铺品牌名：%j', async (brandProfile, expectedName, expectedBrandName) => {
     prisma.clientTechBinding.findMany.mockResolvedValue([{
       clientId: 11, techId: 7,
       technician: { id: 7, name: 'Anna', brandProfile },
@@ -51,7 +51,7 @@ describe('ClientHomeService', () => {
 
     const result = await service.getHome(11);
 
-    expect(result.technician).toMatchObject({ id: 7, name: expectedName });
+    expect(result.technician).toMatchObject({ id: 7, name: expectedName, brandName: expectedBrandName });
     expect(prisma.clientTechBinding.findMany).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({ clientId: 11, status: 'active' }),
       include: { technician: { include: { brandProfile: true } } },

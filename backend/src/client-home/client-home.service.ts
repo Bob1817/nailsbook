@@ -108,9 +108,10 @@ export class ClientHomeService {
       technicianCount: bindings.length,
       technician: {
         id: binding.technician.id,
-        name: binding.technician.brandProfile?.publicationStatus === 'published'
-          ? binding.technician.brandProfile.brandName || binding.technician.name
-          : binding.technician.name,
+        name: binding.technician.name,
+        brandName: binding.technician.brandProfile?.publicationStatus === 'published'
+          ? binding.technician.brandProfile.brandName
+          : null,
         phone: binding.technician.phone,
         avatarUrl: toAbsoluteUrl(binding.technician.avatarUrl),
         city: binding.technician.city,

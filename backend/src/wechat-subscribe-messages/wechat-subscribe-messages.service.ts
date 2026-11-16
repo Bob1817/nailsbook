@@ -247,8 +247,7 @@ export class WechatSubscribeMessagesService {
         }
         if (command.order && order.technician) {
           const technician = order.technician;
-          command.order.technicianName = technician.brandProfile?.publicationStatus === 'published'
-            ? technician.brandProfile.brandName || technician.name : technician.name;
+          command.order.technicianName = technician.name;
           if (!command.order.shopName && command.order.serviceType !== '上门美甲') {
             // Only an exact, unambiguous address match identifies the booked shop.
             let shops: any[] = [];

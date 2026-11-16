@@ -987,9 +987,10 @@ export class ClientAuthService {
             bindSource: defaultBinding.bindSource,
             technician: {
               id: defaultBinding.technician.id,
-              name: defaultBinding.technician.brandProfile?.publicationStatus === 'published'
-                ? defaultBinding.technician.brandProfile.brandName || defaultBinding.technician.name
-                : defaultBinding.technician.name,
+              name: defaultBinding.technician.name,
+              brandName: defaultBinding.technician.brandProfile?.publicationStatus === 'published'
+                ? defaultBinding.technician.brandProfile.brandName
+                : null,
               accountName: defaultBinding.technician.name,
               phone: defaultBinding.technician.phone,
               status: defaultBinding.technician.status,
@@ -1008,9 +1009,10 @@ export class ClientAuthService {
       pendingTechnicianIds: pendingBindings.map((b) => b.techId),
       pendingTechnicians: pendingBindings.map((b) => ({
         id: b.technician.id,
-        name: b.technician.brandProfile?.publicationStatus === 'published'
-          ? b.technician.brandProfile.brandName || b.technician.name
-          : b.technician.name,
+        name: b.technician.name,
+        brandName: b.technician.brandProfile?.publicationStatus === 'published'
+          ? b.technician.brandProfile.brandName
+          : null,
         accountName: b.technician.name,
         phone: b.technician.phone,
         avatarUrl: b.technician.avatarUrl,
@@ -1039,9 +1041,10 @@ export class ClientAuthService {
         const nextTier = tiers.find((tier) => metrics[tier.thresholdType as keyof typeof metrics] < Number(tier.thresholdValue || 0)) || null;
         return ({
         id: b.technician.id,
-        name: b.technician.brandProfile?.publicationStatus === 'published'
-          ? b.technician.brandProfile.brandName || b.technician.name
-          : b.technician.name,
+        name: b.technician.name,
+        brandName: b.technician.brandProfile?.publicationStatus === 'published'
+          ? b.technician.brandProfile.brandName
+          : null,
         accountName: b.technician.name,
         phone: b.technician.phone,
         avatarUrl: b.technician.avatarUrl,
