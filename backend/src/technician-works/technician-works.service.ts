@@ -1547,9 +1547,29 @@ export class TechnicianWorksService {
       return [];
     }
 
-    return tags
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean);
+    let source: string[] = [];
+    const trimmed = tags.trim();
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) source = parsed.map(String);
+      } catch {}
+    }
+    if (!source.length) {
+      source = trimmed.split(/[,，]/);
+    }
+
+    return [
+      ...new Set(
+        source
+          .map((item) => {
+            let str = String(item || '').trim();
+            str = str.replace(/^[\["'\s\\]+|[\]"'\s\\]+$/g, '').trim();
+            str = str.replace(/\\"/g, '').replace(/["']/g, '').trim();
+            return str;
+          })
+          .filter(Boolean),
+      ),
+    ];
   }
 }
