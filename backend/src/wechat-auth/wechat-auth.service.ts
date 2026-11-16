@@ -180,6 +180,7 @@ export class WechatAuthService {
     return {
       authenticated: true,
       role: 'client' as const,
+      isNewClient,
       ...(await this.clientAuth.loginByWechat(client.id)),
     };
   }

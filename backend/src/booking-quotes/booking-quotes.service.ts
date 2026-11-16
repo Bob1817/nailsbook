@@ -30,6 +30,13 @@ type ShopAddress = {
   longitude?: number | string;
 };
 
+const UPLOAD_BASE_URL = process.env.UPLOAD_BASE_URL || 'http://localhost:3000';
+
+function toAbsoluteUrl(url: string | null): string | null {
+  if (!url) return null;
+  return url.startsWith('http') ? url : `${UPLOAD_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+}
+
 @Injectable()
 export class BookingQuotesService {
   constructor(
@@ -605,7 +612,7 @@ export class BookingQuotesService {
       serviceType: quote.serviceType,
       technicianId: quote.technicianId,
       technicianName: quote.technicianNameSnapshot,
-      technicianAvatarUrl: quote.technicianAvatarSnapshot,
+      technicianAvatarUrl: toAbsoluteUrl(quote.technicianAvatarSnapshot),
       technicianCity: quote.technician?.city || null,
       technicianProvince: quote.technician?.province || null,
       technicianServiceArea: quote.technician?.serviceArea || null,

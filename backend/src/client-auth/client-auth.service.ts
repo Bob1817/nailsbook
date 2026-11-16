@@ -167,6 +167,7 @@ export class ClientAuthService {
     }
 
     // 没有绑定的纯客户登录
+    const isDefaultPassword = !client.passwordHash || Boolean(client.managedPasswordCiphertext);
     return {
       accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
       refreshToken: this.signRefreshToken(
@@ -182,10 +183,13 @@ export class ClientAuthService {
         city: client.city,
         bio: client.bio,
         status: client.status,
+        isDefaultPassword,
       },
       technicians: [],
       roles,
       needsOnboarding,
+      isDefaultPassword,
+      passwordSetupToken: isDefaultPassword ? this.createPasswordSetupToken(client.id) : undefined,
     };
   }
 
@@ -492,6 +496,7 @@ export class ClientAuthService {
     }
 
     // 没有绑定的客户登录，返回 needsOnboarding 让前端引导
+    const isDefaultPassword = !client.passwordHash || Boolean(client.managedPasswordCiphertext);
     return {
       accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
       refreshToken: this.signRefreshToken(
@@ -507,10 +512,13 @@ export class ClientAuthService {
         city: client.city,
         bio: client.bio,
         status: client.status,
+        isDefaultPassword,
       },
       technicians: [],
       roles,
       needsOnboarding,
+      isDefaultPassword,
+      passwordSetupToken: isDefaultPassword ? this.createPasswordSetupToken(client.id) : undefined,
     };
   }
 
@@ -643,8 +651,9 @@ export class ClientAuthService {
       throw new UnauthorizedException('账号已被禁用');
     }
 
-    // 3. 幂等：密码已存在则直接登录
-    if (client.passwordHash) {
+    // 3. 幂等：已设置自定义密码则直接登录
+    const hasCustomPassword = Boolean(client.passwordHash && !client.managedPasswordCiphertext);
+    if (hasCustomPassword) {
       return this.loginByWechat(client.id);
     }
 
@@ -754,6 +763,7 @@ export class ClientAuthService {
       };
     }
 
+    const isDefaultPassword = !client.passwordHash || Boolean(client.managedPasswordCiphertext);
     return {
       accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
       refreshToken: this.signRefreshToken(
@@ -769,10 +779,13 @@ export class ClientAuthService {
         city: client.city,
         bio: client.bio,
         status: client.status,
+        isDefaultPassword,
       },
       technicians: [],
       roles,
       needsOnboarding,
+      isDefaultPassword,
+      passwordSetupToken: isDefaultPassword ? this.createPasswordSetupToken(client.id) : undefined,
     };
   }
 
@@ -790,6 +803,7 @@ export class ClientAuthService {
    * 避免把发布范围过滤误报成「没有绑定美甲师」。
    */
   private buildOutOfScopeLoginResult(client: ClientWithBindings) {
+    const isDefaultPassword = !client.passwordHash || Boolean(client.managedPasswordCiphertext);
     return {
       accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
       refreshToken: this.signRefreshToken(
@@ -805,10 +819,13 @@ export class ClientAuthService {
         city: client.city,
         bio: client.bio,
         status: client.status,
+        isDefaultPassword,
       },
       technician: null,
       technicians: [],
       bindingsOutsideLaunchScope: true,
+      isDefaultPassword,
+      passwordSetupToken: isDefaultPassword ? this.createPasswordSetupToken(client.id) : undefined,
     };
   }
 
@@ -827,6 +844,8 @@ export class ClientAuthService {
       throw new NotFoundException('当前账号尚未绑定指定美甲店');
     }
 
+    const isDefaultPassword = !client.passwordHash || Boolean(client.managedPasswordCiphertext);
+
     return {
       accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
       refreshToken: this.signRefreshToken(
@@ -842,6 +861,7 @@ export class ClientAuthService {
         city: client.city,
         bio: client.bio,
         status: client.status,
+        isDefaultPassword,
       },
       technician: {
         id: defaultBinding.technician.id,
@@ -884,6 +904,8 @@ export class ClientAuthService {
         showOnProfile: b.showOnProfile,
         bindSource: b.bindSource,
       })),
+      isDefaultPassword,
+      passwordSetupToken: isDefaultPassword ? this.createPasswordSetupToken(client.id) : undefined,
     };
   }
 
@@ -941,6 +963,8 @@ export class ClientAuthService {
       },
     });
 
+    const isDefaultPassword = !client.passwordHash || Boolean(client.managedPasswordCiphertext);
+
     return {
       id: client.id,
       nickname: client.nickname,
@@ -949,6 +973,7 @@ export class ClientAuthService {
       city: client.city,
       bio: client.bio,
       status: client.status,
+      isDefaultPassword,
       capabilities: {
         hasBoundTechnician: activeBindings.length > 0,
         isTechnician: !!technicianAccount,

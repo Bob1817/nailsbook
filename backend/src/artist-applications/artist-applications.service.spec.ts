@@ -32,6 +32,27 @@ describe('artist application contracts', () => {
     const { service } = setup();
     expect(await service.checkPhone(input.phone)).toEqual({ status: 'none' });
   });
+  it('returns application progress for valid phone numbers', async () => {
+    const { service, prisma } = setup();
+    (prisma.artistApplication as any).findFirst = jest.fn().mockResolvedValue({
+      status: 'pending',
+      name: '测试美甲师',
+      city: '上海',
+      createdAt: new Date('2026-11-16T10:00:00Z'),
+      reviewedAt: null,
+    });
+    const result = await service.getProgress('13900001111');
+    expect(result.status).toBe('pending');
+    expect(result.name).toBe('测试美甲师');
+    expect(result.city).toBe('上海');
+
+    // Phone not found
+    (prisma.artistApplication as any).findFirst = jest.fn().mockResolvedValue(null);
+    expect(await service.getProgress('13900002222')).toEqual({ status: 'none' });
+
+    // Invalid phone
+    await expect(service.getProgress('123')).rejects.toThrow('请输入正确的11位手机号码');
+  });
   it.each([['home', true, false], ['shop', false, true], ['both', true, true], ['到店服务', false, true]])('approves %s with the correct service configuration', async (mode, homeService, shopService) => {
     const { service, tx, prisma } = setup();
     prisma.artistApplication.findUnique.mockResolvedValue({ id: 1, ...input, serviceMode: mode as string });

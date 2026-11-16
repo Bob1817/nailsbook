@@ -48,6 +48,14 @@ export class ArtistApplicationsController {
     return this.service.checkPhone(phone);
   }
 
+  @Get('artist-applications/progress')
+  @ApiOperation({ summary: '查询美甲师试用申请进度' })
+  @ApiQuery({ name: 'phone', type: String, description: '申请手机号', required: true })
+  @ApiResponse({ status: 200, description: '返回申请进度状态' })
+  getProgress(@Query('phone') phone: string) {
+    return this.service.getProgress(phone);
+  }
+
   @Get('admin/artist-applications')
   @UseGuards(JwtAuthGuard)
   @Permissions('application:view')

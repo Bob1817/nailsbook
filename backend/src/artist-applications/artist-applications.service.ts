@@ -32,6 +32,39 @@ export class ArtistApplicationsService {
     return { status: 'none' };
   }
 
+  async getProgress(phone: string): Promise<{
+    status: 'pending' | 'approved' | 'rejected' | 'none';
+    name?: string;
+    city?: string;
+    appliedAt?: Date;
+    reviewedAt?: Date;
+  }> {
+    if (!phone || !/^1\d{10}$/.test(phone)) {
+      throw new BadRequestException('请输入正确的11位手机号码');
+    }
+    const latest = await this.prisma.artistApplication.findFirst({
+      where: { phone },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        status: true,
+        name: true,
+        city: true,
+        createdAt: true,
+        reviewedAt: true,
+      },
+    });
+    if (!latest) {
+      return { status: 'none' };
+    }
+    return {
+      status: latest.status as 'pending' | 'approved' | 'rejected',
+      name: latest.name,
+      city: latest.city,
+      appliedAt: latest.createdAt,
+      reviewedAt: latest.reviewedAt ?? undefined,
+    };
+  }
+
   async findAll(page = 1, limit = 20, status?: string) {
     const where = status ? { status } : {};
     const [data, total] = await Promise.all([
