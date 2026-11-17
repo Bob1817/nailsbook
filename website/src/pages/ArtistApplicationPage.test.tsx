@@ -30,6 +30,7 @@ describe('invitation application', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', fetchMock)
     fetchMock.mockReset()
+    window.localStorage.clear()
   })
   afterEach(() => vi.unstubAllGlobals())
 
