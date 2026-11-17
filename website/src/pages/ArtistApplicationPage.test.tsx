@@ -91,4 +91,72 @@ describe('invitation application', () => {
     resolve({ ok: true, json: async () => ({ received: true }) })
     await waitFor(() => expect(screen.getByText('申请已收到')).toBeVisible())
   })
+
+  it('switches to progress tab and queries pending status', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        status: 'pending',
+        name: '张小丽',
+        city: '上海',
+        appliedAt: '2026-11-16T10:00:00.000Z',
+      }),
+    })
+    renderPage()
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('tab', { name: '查询申请进度' }))
+    const phoneInput = screen.getByLabelText(/申请手机号/)
+    await user.type(phoneInput, '13812345678')
+    await user.click(screen.getByRole('button', { name: '查询进度' }))
+
+    expect(await screen.findByText('审核中')).toBeVisible()
+    expect(screen.getByText('张小丽')).toBeVisible()
+    expect(screen.getByText('上海')).toBeVisible()
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/artist-applications/progress?phone=13812345678',
+      expect.objectContaining({ method: 'GET' })
+    )
+  })
+
+  it('queries approved status and displays keyless direct WeChat login guide', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        status: 'approved',
+        name: '贝贝',
+        city: '杭州',
+        reviewedAt: '2026-11-16T12:00:00.000Z',
+      }),
+    })
+    renderPage()
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('tab', { name: '查询申请进度' }))
+    const phoneInput = screen.getByLabelText(/申请手机号/)
+    await user.type(phoneInput, '13988889999')
+    await user.click(screen.getByRole('button', { name: '查询进度' }))
+
+    expect(await screen.findByText(/美甲师入驻申请已审核通过/)).toBeVisible()
+    expect(screen.getByText(/免密免码 · 微信一键授权登入/)).toBeVisible()
+    expect(screen.getByText(/无需输入任何激活码或密钥/)).toBeVisible()
+    expect(screen.getByRole('button', { name: '微信扫码进入美甲师工作台' })).toBeVisible()
+  })
+
+  it('handles none status and allows going to apply form', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        status: 'none',
+      }),
+    })
+    renderPage()
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('tab', { name: '查询申请进度' }))
+    const phoneInput = screen.getByLabelText(/申请手机号/)
+    await user.type(phoneInput, '13500001111')
+    await user.click(screen.getByRole('button', { name: '查询进度' }))
+
+    expect(await screen.findByText('未查询到申请记录')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: '立即填写入驻申请' }))
+    expect(screen.getByRole('tab', { name: '填写入驻申请' })).toHaveAttribute('aria-selected', 'true')
+  })
 })

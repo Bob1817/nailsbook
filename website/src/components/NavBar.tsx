@@ -10,10 +10,10 @@ export default function NavBar() {
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
   const links = [
-    { href: '/#audience', label: isZh ? '适合谁' : 'For whom' },
-    { href: '/#features', label: isZh ? '如何帮你' : 'Features' },
-    { href: '/#mini-program', label: isZh ? '小程序体验' : 'Mini program' },
-    { href: '/#flow', label: isZh ? '入驻方式' : 'How to join' },
+    { href: '/#features', label: isZh ? '美甲师赋能' : 'Features' },
+    { href: '/#flow', label: isZh ? '入驻流程' : 'Join' },
+    { href: '/#flagship', label: isZh ? '标杆样板' : 'Flagship' },
+    { href: '/apply?tab=progress', label: isZh ? '申请进度' : 'Status' },
     { href: '/faq', label: isZh ? '常见问题' : 'FAQ' },
   ]
   return (

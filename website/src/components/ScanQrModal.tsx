@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { X, Download, Copy, Check } from 'lucide-react'
 import { useLang } from '../i18n/LanguageContext'
 
-export type ScanType = 'follow' | 'try'
+export type ScanType = 'follow' | 'try' | 'artist'
 
 export const scanCodes = {
   follow: {
@@ -16,22 +16,89 @@ export const scanCodes = {
     alt: 'OnlyNail 小程序码',
     name: 'OnlyNail',
   },
+  artist: {
+    src: '/miniprogram-code.jpg',
+    alt: '听栖美甲工作室 · 小程序码',
+    name: 'OnlyNail',
+  },
 }
 
 interface ScanQrModalProps {
   type: ScanType
+  artistId?: number
+  artistName?: string
+  shopName?: string
+  workTitle?: string
   onClose: () => void
 }
 
-export default function ScanQrModal({ type, onClose }: ScanQrModalProps) {
+export default function ScanQrModal({
+  type,
+  artistId = 55,
+  artistName = '贝贝',
+  shopName = '听栖美甲工作室',
+  workTitle,
+  onClose,
+}: ScanQrModalProps) {
   const { t, isZh } = useLang()
   const [copied, setCopied] = useState(false)
   const dialog = useRef<HTMLDivElement>(null)
   const [copyFailed, setCopyFailed] = useState(false)
+  const [artistQrSrc, setArtistQrSrc] = useState<string | null>(null)
+
+  const isArtist = type === 'artist'
   const code = scanCodes[type]
-  const title = type === 'follow' ? t.scanModal.followTitle : t.scanModal.tryTitle
-  const hint = type === 'follow' ? t.scanModal.followHint : t.scanModal.tryHint
-  const copyLabel = type === 'follow' ? t.scanModal.copyMpName : t.scanModal.copyAppName
+
+  useEffect(() => {
+    if (isArtist && artistId) {
+      fetch(`/api/public/artist/id/${artistId}/share-code`)
+        .then((res) => {
+          if (!res.ok) throw new Error('fetch share code failed')
+          return res.json()
+        })
+        .then((data) => {
+          if (data && data.imageBase64) {
+            setArtistQrSrc(`data:image/jpeg;base64,${data.imageBase64}`)
+          }
+        })
+        .catch(() => {
+          // fallback remains code.src
+        })
+    }
+  }, [isArtist, artistId])
+
+  const qrSrc = isArtist && artistQrSrc ? artistQrSrc : code.src
+  const qrAlt = isArtist ? `${shopName} · 小程序码` : code.alt
+
+  const title = isArtist
+    ? isZh
+      ? `${shopName} · 预约主页`
+      : `${shopName} · Booking Page`
+    : type === 'follow'
+      ? t.scanModal.followTitle
+      : t.scanModal.tryTitle
+
+  const hint = isArtist
+    ? workTitle
+      ? isZh
+        ? `微信扫码直达「${workTitle}」预约页面与详情。`
+        : `Scan with WeChat to view "${workTitle}" and book.`
+      : isZh
+        ? '微信扫码直达美甲师主页，查看12款在架高定作品与服务报价；美甲师亦可体验线上店铺。'
+        : 'Scan with WeChat to explore the artist homepage, 12 works and transparent pricing.'
+    : type === 'follow'
+      ? t.scanModal.followHint
+      : t.scanModal.tryHint
+
+  const copyLabel = isArtist
+    ? isZh
+      ? '复制美甲师微信'
+      : 'Copy WeChat ID'
+    : type === 'follow'
+      ? t.scanModal.copyMpName
+      : t.scanModal.copyAppName
+
+  const textToCopy = isArtist ? 'Luna_Nails321' : code.name
 
   useEffect(() => {
     const previousFocus =
@@ -68,7 +135,7 @@ export default function ScanQrModal({ type, onClose }: ScanQrModalProps) {
 
   const copyName = async () => {
     try {
-      await navigator.clipboard.writeText(code.name)
+      await navigator.clipboard.writeText(textToCopy)
       setCopyFailed(false)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
@@ -101,21 +168,26 @@ export default function ScanQrModal({ type, onClose }: ScanQrModalProps) {
         </button>
 
         <h3 className="px-6 text-base font-semibold tracking-tight text-ink">{title}</h3>
+        {isArtist && (
+          <p className="mt-1 text-xs text-ink-muted">
+            {artistName} · 中国美院本硕毕业 · 杭州西湖区
+          </p>
+        )}
         <div className="mt-4 rounded-2xl border border-line bg-white p-3">
           <img
-            src={code.src}
-            alt={code.alt}
+            src={qrSrc}
+            alt={qrAlt}
             width={240}
             height={240}
-            className="mx-auto rounded-xl"
+            className="mx-auto rounded-xl object-contain"
           />
         </div>
         <p className="mt-4 text-[13px] text-ink-muted">{hint}</p>
 
         <div className="mt-5 flex gap-2">
           <a
-            href={code.src}
-            download
+            href={qrSrc}
+            download={isArtist ? `${shopName}-小程序码.jpg` : `${code.name}.jpg`}
             className="flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-line bg-surface text-[13px] font-bold text-ink transition hover:border-brand/40 active:scale-[0.98]"
           >
             <Download className="h-4 w-4" aria-hidden="true" />
@@ -137,8 +209,8 @@ export default function ScanQrModal({ type, onClose }: ScanQrModalProps) {
         <p className="mt-3 text-xs text-ink-muted" role="status">
           {copyFailed
             ? isZh
-              ? `未能复制，请在微信中搜索「${code.name}」。`
-              : `Could not copy. Search for ${code.name} in WeChat.`
+              ? `未能复制，请在微信中搜索「${textToCopy}」。`
+              : `Could not copy. Search for ${textToCopy} in WeChat.`
             : copied
               ? t.scanModal.copied
               : ''}

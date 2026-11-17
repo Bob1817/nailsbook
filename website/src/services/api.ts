@@ -121,3 +121,30 @@ export async function submitArtistApplication(data: ArtistApplicationPayload): P
     clearTimeout(timeout)
   }
 }
+
+export interface ArtistApplicationProgress {
+  status: 'pending' | 'approved' | 'rejected' | 'none'
+  name?: string
+  city?: string
+  appliedAt?: string
+  reviewedAt?: string
+}
+
+export async function getArtistApplicationProgress(phone: string): Promise<ArtistApplicationProgress> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 10000)
+  try {
+    const res = await fetch(`${API_BASE}/artist-applications/progress?phone=${encodeURIComponent(phone.trim())}`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      signal: controller.signal,
+    })
+    if (!res.ok) {
+      const errData = (await res.json().catch(() => ({}))) as { message?: string }
+      throw new Error(errData?.message || 'get progress failed')
+    }
+    return (await res.json()) as ArtistApplicationProgress
+  } finally {
+    clearTimeout(timeout)
+  }
+}
