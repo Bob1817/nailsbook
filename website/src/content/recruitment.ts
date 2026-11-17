@@ -14,8 +14,6 @@ export const recruitment = {
     inviteNote: '首批入驻享受免费体验期，专属一对一协助开通与配置。',
     audienceTitle: '一个人经营，也可以井井有条。',
     audienceIntro: '适合已有微信客户，希望把日常接待安排得更清楚的你。',
-    taglineLines: ['一个人经营，', '也可以井井有条。'],
-    taglineNote: '适合已有微信客户，希望把日常接待安排得更清楚的你。',
     audiences: [
       { title: '独立接单的美甲师', desc: '不再反复翻找聊天记录，把作品和预约入口一起分享给客户。' },
       { title: '一人预约制工作室', desc: '自己决定接待量和服务间隔，让每一次服务都有准备的时间。' },
@@ -284,8 +282,6 @@ export const recruitment = {
     inviteNote: 'Free during the trial period. Future pricing will be announced separately.',
     audienceTitle: 'Working independently. Feeling organised.',
     audienceIntro: 'For artists who want a clearer way to look after their WeChat clients.',
-    taglineLines: ['Working independently.', 'Feeling organised.'],
-    taglineNote: 'For artists who want a clearer way to look after their WeChat clients.',
     audiences: [
       {
         title: 'Independent nail artists',

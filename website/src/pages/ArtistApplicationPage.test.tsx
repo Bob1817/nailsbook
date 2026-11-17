@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
@@ -27,12 +27,24 @@ async function fillApplication(user: ReturnType<typeof userEvent.setup>, mode = 
 
 describe('invitation application', () => {
   const fetchMock = vi.fn()
+  const localStorageStore = new Map<string, string>()
+  beforeAll(() => {
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => localStorageStore.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        localStorageStore.set(key, String(value))
+      },
+      removeItem: (key: string) => {
+        localStorageStore.delete(key)
+      },
+      clear: () => localStorageStore.clear(),
+    })
+  })
   beforeEach(() => {
     vi.stubGlobal('fetch', fetchMock)
     fetchMock.mockReset()
-    window.localStorage.clear()
+    localStorageStore.clear()
   })
-  afterEach(() => vi.unstubAllGlobals())
 
   it('rejects empty and invalid fields without a network request', async () => {
     renderPage()
