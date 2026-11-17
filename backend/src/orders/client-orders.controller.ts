@@ -1,3 +1,4 @@
+import { BookingEventsInterceptor } from './booking-events.interceptor';
 import {
   Body,
   Controller,
@@ -8,6 +9,7 @@ import {
   Post,
   Req,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -28,10 +30,11 @@ import { ServiceReviewDto } from './dto/service-review.dto';
 import { ClientOrderPhotosDto } from './dto/client-order-photos.dto';
 import { ClientOrderRecordNoteDto } from './dto/client-order-record-note.dto';
 
-@Controller('client/orders')
-@UseGuards(ClientJwtAuthGuard)
 @ApiTags('客户端-订单')
 @ApiBearerAuth()
+@UseInterceptors(BookingEventsInterceptor)
+@Controller('client/orders')
+@UseGuards(ClientJwtAuthGuard)
 export class ClientOrdersController {
   constructor(private readonly clientOrdersService: ClientOrdersService) {}
 

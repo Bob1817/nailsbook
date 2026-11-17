@@ -1266,7 +1266,8 @@ export class ClientOrdersService {
     if (order.quoteVersion > 0) {
       if (!this.orders || !Number.isInteger(quoteVersion) || quoteVersion !== order.quoteVersion) throw new BadRequestException('报价已更新，请刷新并确认最新方案');
       if (fundAmount) throw new BadRequestException('请按当前最终报价确认');
-      await this.orders.confirm(id, undefined, undefined, undefined, { clientUserId, quoteVersion });
+      const confirmed = await this.orders.confirm(id, undefined, undefined, undefined, { clientUserId, quoteVersion });
+      this.chatGateway.broadcastBookingChanged?.(confirmed);
       return this.findOne(clientUserId, id);
     }
 

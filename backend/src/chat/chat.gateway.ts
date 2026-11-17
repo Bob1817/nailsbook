@@ -41,10 +41,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private prisma: PrismaService,
   ) {}
 
-  broadcastBookingChanged(order: { id: number; technicianId: number }) {
+  broadcastBookingChanged(order: { id: number; technicianId: number; clientUserId?: number | null }) {
     try {
-      this.server?.to(`account:technician:${order.technicianId}`)
-        .emit('booking:changed', { orderId: order.id });
+      const rooms: string[] = [`account:technician:${order.technicianId}`];
+      if (order.clientUserId) {
+        rooms.push(`account:client:${order.clientUserId}`);
+      }
+      this.server?.to(rooms).emit('booking:changed', { orderId: order.id });
     } catch {
       console.warn('[ChatGateway] Booking invalidation could not be delivered');
     }

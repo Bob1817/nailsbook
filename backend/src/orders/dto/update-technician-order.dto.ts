@@ -7,6 +7,11 @@ export class UpdateTechnicianOrderDto {
   @IsString()
   serviceType?: string;
 
+  @ApiPropertyOptional({ description: '服务地址', example: '杭州市西湖区文三路 100 号' })
+  @IsOptional()
+  @IsString()
+  address?: string;
+
   @ApiPropertyOptional({ description: '开始时间', example: '2026-05-15T10:00:00' })
   @IsOptional()
   @IsString()

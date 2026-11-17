@@ -25,6 +25,13 @@ export class QuoteServiceSelectionDto {
   @Min(1)
   @Max(20)
   quantity?: number;
+
+  @ApiPropertyOptional({ description: '单价（分）' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100000000)
+  unitPriceFen?: number;
 }
 
 export class ReviewOrderDto {

@@ -1081,6 +1081,7 @@ export class OrdersService {
     technicianId: number,
     dto: {
       serviceType?: string;
+      address?: string;
       startTime?: string;
       endTime?: string;
       price?: number;
@@ -1093,16 +1094,17 @@ export class OrdersService {
     const order = await this.findOneForTechnician(id, technicianId);
 
     if ((order.acceptedProposal || order.quoteVersion > 0) && ['pending_quote', 'pending_confirm', 'pending_agree'].includes(order.status)) {
-      if (dto.price !== undefined || dto.depositAmount !== undefined || dto.isDepositPaid !== undefined || dto.startTime !== undefined || dto.endTime !== undefined || dto.serviceType !== undefined) {
-        throw new BadRequestException('请在确认方案中修改价格、定金或时间，调整后由客户确认');
+      if (dto.price !== undefined || dto.depositAmount !== undefined || dto.isDepositPaid !== undefined) {
+        throw new BadRequestException('请在报价方案中修改价格或定金，调整后由客户确认');
       }
     }
-    if (order.quickBooking && (dto.price !== undefined || (order.status === 'pending_agree' && (dto.startTime !== undefined || dto.endTime !== undefined || dto.serviceType !== undefined)))) throw new BadRequestException('报价已提交，调整安排需先由客户拒绝后重新报价');
+    if (order.quickBooking && dto.price !== undefined) throw new BadRequestException('报价已提交，调整报价需先由客户拒绝后重新报价');
     const updateData: any = {};
     const timeChanged =
       dto.startTime !== undefined || dto.endTime !== undefined;
 
     if (dto.serviceType !== undefined) updateData.serviceType = dto.serviceType;
+    if (dto.address !== undefined) updateData.address = dto.address;
     if (dto.price !== undefined) {
       const finalPriceFen = Math.round(dto.price * 100);
       updateData.quotePrice = dto.price;
@@ -1539,12 +1541,18 @@ export class OrdersService {
         const updatedConversation = await this.prisma.conversation.findUnique({
           where: { id: conversationId },
         });
-        this.chatGateway.server
-          .to(`conversation:${String(conversationId)}`)
-          .emit('message:new', {
-            message: systemMessage,
-            conversation: updatedConversation,
-          });
+        if (updatedConversation) {
+          if (typeof this.chatGateway?.broadcastMessage === 'function') {
+            this.chatGateway.broadcastMessage(systemMessage, updatedConversation);
+          } else {
+            this.chatGateway.server
+              ?.to(`conversation:${String(conversationId)}`)
+              .emit('message:new', {
+                message: systemMessage,
+                conversation: updatedConversation,
+              });
+          }
+        }
       } catch (e) {
         console.error(
           '[OrdersService] Failed to push notification via WebSocket:',
@@ -1553,6 +1561,7 @@ export class OrdersService {
       }
     }
 
+    this.chatGateway.broadcastBookingChanged?.(updated);
     return updated;
   }
 
@@ -1769,11 +1778,15 @@ export class OrdersService {
         });
 
         if (order.clientUserId) {
-          const preview = requiresDeposit
-            ? `双方已确认预约，订单已生成，请支付定金 ¥${Number(depositAmount).toFixed(2)}`
-            : targetStatus === 'pending_home'
-              ? '美甲师已确认订单，届时将上门服务～'
-              : '美甲师已确认订单，请准时到店～';
+          const preview = acceptance
+            ? (requiresDeposit
+                ? `客户已同意报价方案，待支付定金 ¥${Number(depositAmount).toFixed(2)}`
+                : '客户已同意报价方案，预约已确认～')
+            : (requiresDeposit
+                ? `双方已确认预约，订单已生成，请支付定金 ¥${Number(depositAmount).toFixed(2)}`
+                : targetStatus === 'pending_home'
+                  ? '美甲师已确认订单，届时将上门服务～'
+                  : '美甲师已确认订单，请准时到店～');
           const conversation = await tx.conversation.upsert({
             where: {
               clientId_techId: {
@@ -1795,10 +1808,10 @@ export class OrdersService {
           systemMessage = await tx.message.create({
             data: {
               conversationId: conversation.id,
-              senderType: 'system',
-              senderId: 0,
-              receiverType: 'client',
-              receiverId: order.clientUserId,
+              senderType: acceptance ? 'client' : 'system',
+              senderId: acceptance ? order.clientUserId : 0,
+              receiverType: acceptance ? 'technician' : 'client',
+              receiverId: acceptance ? order.technicianId : order.clientUserId,
               messageType: 'system',
               content: preview,
               relatedType: 'order',
@@ -1820,12 +1833,18 @@ export class OrdersService {
         const updatedConversation = await this.prisma.conversation.findUnique({
           where: { id: conversationId },
         });
-        this.chatGateway.server
-          .to(`conversation:${String(conversationId)}`)
-          .emit('message:new', {
-            message: systemMessage,
-            conversation: updatedConversation,
-          });
+        if (updatedConversation) {
+          if (typeof this.chatGateway?.broadcastMessage === 'function') {
+            this.chatGateway.broadcastMessage(systemMessage, updatedConversation);
+          } else {
+            this.chatGateway.server
+              ?.to(`conversation:${String(conversationId)}`)
+              .emit('message:new', {
+                message: systemMessage,
+                conversation: updatedConversation,
+              });
+          }
+        }
       } catch (e) {
         console.error(
           '[OrdersService] Failed to push notification via WebSocket:',
@@ -1834,6 +1853,7 @@ export class OrdersService {
       }
     }
 
+    this.chatGateway.broadcastBookingChanged?.(updated);
     return updated;
   }
 
