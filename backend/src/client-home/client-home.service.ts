@@ -104,6 +104,58 @@ export class ClientHomeService {
       return `${UPLOAD_BASE_URL}${url}`;
     };
 
+    const now = new Date();
+    const boundTechIds = bindings.map((item) => item.techId);
+    let activeActivities: any[] = [];
+    try {
+      if (
+        this.prisma.technicianActivity &&
+        typeof this.prisma.technicianActivity.findMany === 'function'
+      ) {
+        activeActivities = await this.prisma.technicianActivity.findMany({
+          where: {
+            technicianId: { in: boundTechIds },
+            status: 'active',
+            recommendToHero: true,
+            OR: [{ endTime: null }, { endTime: { gte: now } }],
+          },
+          orderBy: [{ publishedAt: 'desc' }, { id: 'desc' }],
+          take: 2,
+          include: {
+            technician: {
+              select: {
+                id: true,
+                name: true,
+                avatarUrl: true,
+                invitationCode: true,
+                shopAddresses: true,
+              },
+            },
+          },
+        });
+      }
+    } catch {
+      activeActivities = [];
+    }
+
+    const activityHeroItems = activeActivities.map((act) => ({
+      id: act.id,
+      title: act.title,
+      coverUrl: toAbsoluteUrl(act.coverUrl),
+      images: [toAbsoluteUrl(act.coverUrl)],
+      technicianId: act.technicianId,
+      technicianName: act.technician?.name || '',
+      technicianAvatarUrl: toAbsoluteUrl(act.technician?.avatarUrl),
+      isActivity: true,
+      itemType: 'activity',
+      targetUrl: `/pages/client/activity-detail/index?id=${act.id}`,
+      likes: [],
+      comments: [],
+      isLiked: false,
+      likeCount: 0,
+      createdAt: act.createdAt,
+    }));
+
     return {
       technicianCount: bindings.length,
       technician: {
@@ -117,11 +169,14 @@ export class ClientHomeService {
         city: binding.technician.city,
         serviceArea: binding.technician.serviceArea,
       },
-      works: works.map((work) => ({
-        ...this.mapWork(work),
-        technicianId: work.techId,
-        isLiked: work.likes.some((like) => like.clientId === clientUserId),
-      })),
+      works: [
+        ...activityHeroItems,
+        ...works.map((work) => ({
+          ...this.mapWork(work),
+          technicianId: work.techId,
+          isLiked: work.likes.some((like) => like.clientId === clientUserId),
+        })),
+      ].slice(0, 5),
       latestOrder: latestBooking
         ? (() => {
             // 从美甲师店铺地址中匹配店铺名称（与小程序首页逻辑一致）

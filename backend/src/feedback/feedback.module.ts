@@ -7,10 +7,12 @@ import { FeedbackService } from './feedback.service';
 import { ClientFeedbackController } from './client-feedback.controller';
 import { TechnicianFeedbackController } from './technician-feedback.controller';
 import { AdminFeedbackController } from './admin-feedback.controller';
+import { PublicCustomerServiceController } from './public-customer-service.controller';
 
 @Module({
   imports: [PrismaModule, AuthModule, ClientAuthModule, TechnicianAuthModule],
   controllers: [
+    PublicCustomerServiceController,
     ClientFeedbackController,
     TechnicianFeedbackController,
     AdminFeedbackController,

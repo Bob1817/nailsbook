@@ -1,11 +1,15 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { DingtalkAlertService } from '../notifications/dingtalk-alert.service';
 import { CreateArtistApplicationDto } from './dto/create-artist-application.dto';
 
 @Injectable()
 export class ArtistApplicationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly dingtalkAlert?: DingtalkAlertService,
+  ) {}
 
   async create(dto: CreateArtistApplicationDto) {
     // One SQLite write statement keeps the duplicate check atomic across workers.
@@ -23,6 +27,20 @@ export class ArtistApplicationsService {
         WHERE "phone" = ${dto.phone} AND "status" IN ('pending', 'approved')
       )
     `;
+
+    // 触发钉钉实时通知超管
+    if (this.dingtalkAlert) {
+      this.dingtalkAlert
+        .notifyArtistApplication({
+          name: dto.name,
+          phone: dto.phone,
+          city: dto.city,
+          serviceMode: dto.serviceMode,
+          note: dto.note,
+        })
+        .catch(() => {});
+    }
+
     return { received: true };
   }
 

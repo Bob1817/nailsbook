@@ -4,6 +4,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CreateWorkDto, UpdateWorkDto } from './dto/create-work.dto';
@@ -12,6 +13,7 @@ import { SaveHeroRecommendationsDto } from './dto/hero-recommendations.dto';
 import { SaveWorkPromotionDto } from './dto/work-promotion.dto';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { StorageService } from '../common/storage/storage.service';
+import { DingtalkAlertService } from '../notifications/dingtalk-alert.service';
 import {
   buildServiceSnapshotLines,
   summarizeSnapshotLines,
@@ -37,6 +39,7 @@ export class TechnicianWorksService {
     private readonly prisma: PrismaService,
     private readonly subscriptions: SubscriptionsService,
     private readonly storage: StorageService,
+    @Optional() private readonly dingtalkAlert?: DingtalkAlertService,
   ) {}
 
   async findAll(technicianId: number) {
@@ -316,6 +319,17 @@ export class TechnicianWorksService {
         if (existing) return this.findOne(technicianId, existing.id);
       }
       throw error;
+    }
+
+    if (this.dingtalkAlert && work) {
+      this.prisma.technician.findUnique({ where: { id: technicianId }, select: { name: true } }).then(tech => {
+        this.dingtalkAlert?.notifyWorkSubmission({
+          workId: work.id,
+          title: work.title || '无标题作品',
+          technicianId,
+          technicianName: tech?.name,
+        }).catch(() => {});
+      }).catch(() => {});
     }
 
     return this.mapWork(work, technicianId);

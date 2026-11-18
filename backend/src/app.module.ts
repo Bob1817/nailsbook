@@ -53,6 +53,7 @@ import { TechnicianInsightsModule } from './technician-insights/technician-insig
 import { ReferralsModule } from './referrals/referrals.module';
 import { PaymentsModule } from './payments/payments.module';
 import { MarketingMaterialsModule } from './marketing-materials/marketing-materials.module';
+import { MarketingCampaignsModule } from './marketing-campaigns/marketing-campaigns.module';
 import { WechatAuthModule } from './wechat-auth/wechat-auth.module';
 import { WechatPlatformConfigModule } from './wechat-platform-config/wechat-platform-config.module';
 import { ThrottlerCleanupService } from './common/throttler-cleanup.service';
@@ -127,6 +128,7 @@ import { BookingQuotesModule } from './booking-quotes/booking-quotes.module';
     ReferralsModule,
     PaymentsModule,
     MarketingMaterialsModule,
+    MarketingCampaignsModule,
     WechatAuthModule,
     WechatPlatformConfigModule,
     WechatSubscribeMessagesModule,

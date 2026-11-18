@@ -157,6 +157,8 @@ model Technician {
   customerLifecycleHistories CustomerLifecycleHistory[]
   attributionCorrections     AttributionCorrection[]
   contentPublicationTasks    ContentPublicationTask[]
+  notices                    TechnicianNotice[]
+  activities                 TechnicianActivity[]
 }
 
 model TechnicianQualification {
@@ -1363,6 +1365,44 @@ model MarketingMaterial {
   technician        Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
 
   @@index([technicianId, updatedAt])
+}
+
+model TechnicianNotice {
+  id              Int         @id @default(autoincrement())
+  technicianId    Int
+  title           String
+  content         String
+  status          String      @default("draft") // draft, scheduled, published, revoked
+  scheduledAt     DateTime?
+  publishedAt     DateTime?
+  coveredCount    Int         @default(0)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @default(now()) @updatedAt
+  technician      Technician  @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId, status, scheduledAt])
+}
+
+model TechnicianActivity {
+  id              Int         @id @default(autoincrement())
+  technicianId    Int
+  title           String
+  coverUrl        String
+  recommendToHero Boolean     @default(true)
+  contentBlocks   String      @default("[]") // JSON string of blocks: [{ type: 'text', content: '...' }, { type: 'image', url: '...' }]
+  status          String      @default("draft") // draft, scheduled, active, ended, offline
+  startTime       DateTime?
+  endTime         DateTime?
+  scheduledAt     DateTime?
+  publishedAt     DateTime?
+  viewCount       Int         @default(0)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @default(now()) @updatedAt
+  technician      Technician  @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId, status, recommendToHero])
+  @@index([technicianId, status, scheduledAt])
+  @@index([technicianId, status, endTime])
 }
 
 model DataExportAudit {
