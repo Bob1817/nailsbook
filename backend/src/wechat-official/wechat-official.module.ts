@@ -10,6 +10,7 @@ import {
 } from './wechat-official.controller';
 import { WechatOfficialConfigService } from './wechat-official-config.service';
 import { WechatOfficialMessageService } from './wechat-official-message.service';
+import { WechatOfficialAlertService } from './wechat-official-alert.service';
 
 /**
  * 微信公众号（服务号）接入模块。
@@ -30,6 +31,7 @@ import { WechatOfficialMessageService } from './wechat-official-message.service'
     OfficialMenuService,
     OfficialInboxService,
     WechatOfficialMessageService,
+    WechatOfficialAlertService,
   ],
   exports: [
     WechatOfficialConfigService,
@@ -37,6 +39,7 @@ import { WechatOfficialMessageService } from './wechat-official-message.service'
     OfficialMenuService,
     OfficialInboxService,
     WechatOfficialMessageService,
+    WechatOfficialAlertService,
   ],
 })
 export class WechatOfficialModule {}

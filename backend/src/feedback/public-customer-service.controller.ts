@@ -1,6 +1,7 @@
 import { Body, Controller, HttpCode, HttpStatus, Logger, Post } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { DingtalkAlertService } from '../notifications/dingtalk-alert.service';
+import { WechatOfficialAlertService } from '../wechat-official/wechat-official-alert.service';
 import { CustomerServiceMessageDto } from './dto/customer-service-message.dto';
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -22,6 +23,7 @@ export class PublicCustomerServiceController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly dingtalkAlert: DingtalkAlertService,
+    private readonly wechatAlert: WechatOfficialAlertService,
   ) {}
 
   @Post('message')
@@ -36,7 +38,7 @@ export class PublicCustomerServiceController {
     const sourceLabel = SOURCE_LABELS[source] || source;
     const roleLabel = ROLE_LABELS[role] || role;
 
-    // 1. 保存到反馈表留存
+    // 1. 保存到反馈表留存，超管可在后台随时查看与回复
     try {
       await this.prisma.feedback.create({
         data: {
@@ -65,6 +67,19 @@ export class PublicCustomerServiceController {
       })
       .catch((pushErr) => {
         this.logger.error(`推送客服留言到钉钉异常: ${String(pushErr)}`);
+      });
+
+    // 3. 异步通过微信公众号（服务号）向超管微信号发送实时客服消息通知
+    this.wechatAlert
+      .notifyCustomerServiceMessage({
+        source: sourceLabel,
+        role: roleLabel,
+        name,
+        phone,
+        content,
+      })
+      .catch((wechatErr) => {
+        this.logger.error(`推送客服留言到微信公众号异常: ${String(wechatErr)}`);
       });
 
     return {
