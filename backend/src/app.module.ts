@@ -62,6 +62,7 @@ import { WechatSubscribeMessagesModule } from './wechat-subscribe-messages/wecha
 import { WechatOfficialModule } from './wechat-official/wechat-official.module';
 import { BrandProfilesModule } from './brand-profiles/brand-profiles.module';
 import { BookingQuotesModule } from './booking-quotes/booking-quotes.module';
+import { PlatformCampaignsModule } from './platform-campaigns/platform-campaigns.module';
 
 @Module({
   imports: [
@@ -134,6 +135,7 @@ import { BookingQuotesModule } from './booking-quotes/booking-quotes.module';
     WechatSubscribeMessagesModule,
     WechatOfficialModule,
     BrandProfilesModule,
+    PlatformCampaignsModule,
   ],
   controllers: [AppController],
   providers: [

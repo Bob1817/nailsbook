@@ -4,12 +4,14 @@ import type { MenuProps } from 'antd';
 import {
   AppstoreOutlined,
   CalendarOutlined,
+  CloseOutlined,
   CrownOutlined,
   DashboardOutlined,
   DollarOutlined,
   DownOutlined,
   FlagOutlined,
   FormOutlined,
+  GiftOutlined,
   HistoryOutlined,
   KeyOutlined,
   LogoutOutlined,
@@ -50,6 +52,7 @@ const navigationGroups: NavigationGroup[] = [
   {
     key: 'operation', icon: <DashboardOutlined />, label: '运营总览', children: [
       { key: '/', icon: <DashboardOutlined />, label: '数据看板', permission: 'dashboard:view' },
+      { key: '/campaigns', icon: <GiftOutlined />, label: '活动中心', permission: 'dashboard:view' },
     ],
   },
   {
@@ -194,8 +197,19 @@ const MainLayout: React.FC = () => {
         onClose={() => setMobileMenuOpen(false)}
         styles={{ body: { padding: 0, background: 'var(--nb-action)' }, header: { display: 'none' } }}
       >
-        {brand}
-        {navigation}
+        <div className="admin-mobile-drawer-head">
+          {brand}
+          <Button
+            type="text"
+            icon={<CloseOutlined style={{ color: '#fff', fontSize: 16 }} />}
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="关闭导航"
+            style={{ width: 44, height: 44, minHeight: 44 }}
+          />
+        </div>
+        <div className="admin-sidebar-nav">
+          {navigation}
+        </div>
       </Drawer>
       <Layout className="admin-main" style={{ marginLeft: mobile ? 0 : collapsed ? 80 : 224 }}>
         <Header className="admin-topbar">
@@ -207,6 +221,11 @@ const MainLayout: React.FC = () => {
               onClick={() => mobile ? setMobileMenuOpen(true) : setCollapsed(current => !current)}
               className="admin-collapse-btn"
             />
+            {mobile && (
+              <span className="admin-mobile-header-title">
+                {currentRoute?.item.label || '管理后台'}
+              </span>
+            )}
             {!mobile && currentRoute && (
               <Breadcrumb
                 className="admin-breadcrumb"

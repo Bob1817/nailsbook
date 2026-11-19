@@ -8,6 +8,8 @@ import {
   TechnicianBookingQuotesController,
 } from './booking-quotes.controller';
 import { BookingQuotesService } from './booking-quotes.service';
+import { PublicQuickQuotesController } from './quick-quotes.controller';
+import { QuickQuotesService } from './quick-quotes.service';
 
 @Module({
   imports: [PrismaModule, OrdersModule, TechnicianWorksModule],
@@ -15,7 +17,10 @@ import { BookingQuotesService } from './booking-quotes.service';
     TechnicianBookingQuotesController,
     PublicBookingQuotesController,
     ClientBookingQuotesController,
+    PublicQuickQuotesController,
   ],
-  providers: [BookingQuotesService],
+  providers: [BookingQuotesService, QuickQuotesService],
+  exports: [BookingQuotesService, QuickQuotesService],
 })
 export class BookingQuotesModule {}
+

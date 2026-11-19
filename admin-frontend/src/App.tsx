@@ -31,6 +31,7 @@ import LaunchConfig from './pages/LaunchConfig';
 import Orders from './pages/Orders';
 import BookingNotifications from './pages/BookingNotifications';
 import Releases from './pages/Releases';
+import Campaigns from './pages/Campaigns';
 
 const App: React.FC = () => {
   return (
@@ -115,6 +116,7 @@ const App: React.FC = () => {
               }
             >
               <Route index element={<ProtectedRoute permission="dashboard:view"><Dashboard /></ProtectedRoute>} />
+              <Route path="campaigns" element={<ProtectedRoute permission="dashboard:view"><Campaigns /></ProtectedRoute>} />
               <Route path="technicians" element={<ProtectedRoute permission="technician:view"><Technicians /></ProtectedRoute>} />
               <Route path="customers" element={<ProtectedRoute permission="customer:view"><Customers /></ProtectedRoute>} />
               <Route path="booking-notifications" element={<ProtectedRoute permission="booking:view"><BookingNotifications /></ProtectedRoute>} />
@@ -125,6 +127,7 @@ const App: React.FC = () => {
               <Route path="account-deletions" element={<ProtectedRoute permission="account-deletion:view"><AccountDeletions /></ProtectedRoute>} />
               <Route path="feedback" element={<ProtectedRoute permission="feedback:view"><Feedback /></ProtectedRoute>} />
               <Route path="applications" element={<ProtectedRoute permission="application:view"><ArtistApplications /></ProtectedRoute>} />
+              <Route path="artist-applications" element={<Navigate to="/applications" replace />} />
               <Route path="revenues" element={<ProtectedRoute permission="revenue:view"><Revenues /></ProtectedRoute>} />
               <Route path="subscriptions" element={<ProtectedRoute permission="subscription:view"><Subscriptions /></ProtectedRoute>} />
               <Route path="logs" element={<ProtectedRoute permission="log:view"><OperationLogs /></ProtectedRoute>} />

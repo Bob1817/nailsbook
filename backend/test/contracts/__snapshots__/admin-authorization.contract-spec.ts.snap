@@ -249,6 +249,48 @@ exports[`Admin authorization HTTP contract covers every admin business route wit
   },
   {
     "method": "GET",
+    "path": "/api/admin/platform-campaigns",
+    "permissions": [
+      "dashboard:view",
+    ],
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/platform-campaigns",
+    "permissions": [
+      "dashboard:view",
+    ],
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/admin/platform-campaigns/:id",
+    "permissions": [
+      "dashboard:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/platform-campaigns/:id",
+    "permissions": [
+      "dashboard:view",
+    ],
+  },
+  {
+    "method": "PUT",
+    "path": "/api/admin/platform-campaigns/:id",
+    "permissions": [
+      "dashboard:view",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/platform-campaigns/:id/status",
+    "permissions": [
+      "dashboard:view",
+    ],
+  },
+  {
+    "method": "GET",
     "path": "/api/admin/releases",
     "permissions": [
       "feature_flag:view",

@@ -1405,6 +1405,32 @@ model TechnicianActivity {
   @@index([technicianId, status, endTime])
 }
 
+model PlatformCampaign {
+  id               Int       @id @default(autoincrement())
+  title            String
+  summary          String?
+  coverUrl         String?
+  badgeText        String?   // 角标文字，如 "官方扶持", "限量 10 席", "精选", "热门"
+  content          String    @default("") // 富文本 HTML 或内容块
+  targetAudience   String    @default("all") // all, client, technician, guest
+  displayLocations String    @default("[]") // JSON array: ["client_home_hero", "technician_home_hero", "website_banner", "client_discover", "system_notice"]
+  actionType       String    @default("page") // page, internal_link, external_link
+  actionUrl        String?   // 项目内页路由或外链
+  startTime        DateTime?
+  endTime          DateTime?
+  status           String    @default("draft") // draft, active, offline, ended
+  sortOrder        Int       @default(0)
+  viewCount        Int       @default(0)
+  clickCount       Int       @default(0)
+  createdBy        Int?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+
+  @@index([status, startTime, endTime])
+  @@index([targetAudience, status])
+  @@index([sortOrder, createdAt])
+}
+
 model DataExportAudit {
   id                Int        @id @default(autoincrement())
   technicianId      Int
@@ -2197,3 +2223,37 @@ model ReleaseNotice {
   @@unique([version, audience])
   @@index([publishedAt])
 }
+
+model QuickQuoteSnapshot {
+  id               Int       @id @default(autoincrement())
+  quoteNo          String    @unique
+  publicToken      String    @unique
+  themeCode        String    @default("minimal-white")
+
+  // 美甲师/店铺信息（选填）
+  technicianName   String?
+  technicianPhone  String?
+  shopName         String?
+  technicianId     Int?
+
+  // 服务明细与调平数据 (JSON 数组)
+  itemsJson        String
+  sumPriceFen      Int
+  finalPriceFen    Int
+  adjustmentType   String    @default("NONE") // NONE | OTHER | DISCOUNT
+  adjustmentFen    Int       @default(0)
+  adjustmentNote   String?
+
+  // 核心约束
+  isInteractive    Boolean   @default(false) // 免费版为 false，收费版为 true
+  expiresAt        DateTime  // 免费版创建时间 + 2小时
+  viewCount        Int       @default(0)
+  viewedAt         DateTime?
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+
+  @@index([publicToken])
+  @@index([expiresAt])
+}
+

@@ -13,6 +13,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "seed:demo": "ts-node -r tsconfig-paths/register src/scripts/seed-demo.ts",
+    "deduplicate:artist-applications": "ts-node -r tsconfig-paths/register src/scripts/deduplicate-artist-applications.ts",
     "wechat-official:setup": "ts-node -r tsconfig-paths/register src/scripts/setup-official-account.ts",
     "wechat-official:menu": "ts-node -r tsconfig-paths/register src/scripts/sync-official-menu.ts",
     "check:production-readiness": "ts-node -r tsconfig-paths/register src/scripts/check-production-readiness.ts",

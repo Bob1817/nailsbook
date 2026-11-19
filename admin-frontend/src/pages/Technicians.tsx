@@ -242,10 +242,23 @@ const Technicians: React.FC = () => {
       },
     },
     {
+      title: '最近登录',
+      dataIndex: 'lastLoginAt',
+      key: 'lastLoginAt',
+      width: 170,
+      render: (text?: string | null) =>
+        text ? (
+          new Date(text).toLocaleString('zh-CN', { hour12: false })
+        ) : (
+          <Text type="secondary" style={{ color: 'var(--nb-muted)' }}>从未登录</Text>
+        ),
+    },
+    {
       title: '创建时间',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      render: (text: string) => new Date(text).toLocaleString('zh-CN'),
+      width: 170,
+      render: (text: string) => new Date(text).toLocaleString('zh-CN', { hour12: false }),
     },
     {
       title: '操作',
@@ -330,6 +343,7 @@ const Technicians: React.FC = () => {
           dataSource={data?.data || []}
           rowKey="id"
           loading={loading}
+          scroll={{ x: 'max-content' }}
           pagination={{
             current: filters.page,
             pageSize: filters.limit,
@@ -401,6 +415,12 @@ const Technicians: React.FC = () => {
             )}
             <p><strong>状态:</strong> {selectedTechnician.status}</p>
             <p><strong>邀请码:</strong> {selectedTechnician.invitationCode || '-'}</p>
+            <p>
+              <strong>最近登录:</strong>{' '}
+              {selectedTechnician.lastLoginAt
+                ? new Date(selectedTechnician.lastLoginAt).toLocaleString('zh-CN', { hour12: false })
+                : '从未登录'}
+            </p>
             <p><strong>创建时间:</strong> {new Date(selectedTechnician.createdAt).toLocaleString('zh-CN')}</p>
           </div>
         )}

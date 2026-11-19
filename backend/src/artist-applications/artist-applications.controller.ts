@@ -56,6 +56,13 @@ export class ArtistApplicationsController {
     return this.service.getProgress(phone);
   }
 
+  @Get('artist-applications/quota')
+  @ApiOperation({ summary: '查询官方指导配置标杆美甲师活动名额统计' })
+  @ApiResponse({ status: 200, description: '返回活动名额统计及是否已结束' })
+  getCampaignQuota() {
+    return this.service.getCampaignQuota();
+  }
+
   @Get('admin/artist-applications')
   @UseGuards(JwtAuthGuard)
   @Permissions('application:view')

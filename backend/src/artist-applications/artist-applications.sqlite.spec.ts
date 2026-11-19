@@ -19,6 +19,11 @@ describe('artist application SQLite submission', () => {
     const options = { datasources: { db: { url: `file:${join(directory, 'test.db')}` } } };
     db = new PrismaClient(options);
     secondDb = new PrismaClient(options);
+    await db.$executeRawUnsafe(`CREATE TABLE "Technician" (
+      "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      "name" TEXT NOT NULL, "phone" TEXT NOT NULL UNIQUE, "passwordHash" TEXT NOT NULL DEFAULT '',
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`);
     await db.$executeRawUnsafe(`CREATE TABLE "ArtistApplication" (
       "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
       "name" TEXT NOT NULL, "phone" TEXT NOT NULL, "city" TEXT NOT NULL,
@@ -37,8 +42,11 @@ describe('artist application SQLite submission', () => {
   });
 
   it('deduplicates concurrent submissions from separate clients', async () => {
-    const results = await Promise.all([service.create(input), secondService.create(input), service.create(input)]);
-    expect(results).toEqual([{ received: true }, { received: true }, { received: true }]);
+    const settled = await Promise.allSettled([service.create(input), secondService.create(input), service.create(input)]);
+    const fulfilled = settled.filter((r) => r.status === 'fulfilled');
+    const rejected = settled.filter((r) => r.status === 'rejected');
+    expect(fulfilled).toHaveLength(1);
+    expect(rejected).toHaveLength(2);
     const rows = await db.artistApplication.findMany();
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ phone: input.phone, serviceMode: 'shop', followedMp: false });
@@ -50,7 +58,7 @@ describe('artist application SQLite submission', () => {
     await secondService.create(input);
     expect(await db.artistApplication.count()).toBe(2);
     await db.artistApplication.updateMany({ where: { status: 'pending' }, data: { status: 'approved' } });
-    expect(await service.create(input)).toEqual({ received: true });
+    await expect(service.create(input)).rejects.toThrow('该手机号码的试用申请已通过，无需重复申请');
     expect(await db.artistApplication.count()).toBe(2);
   });
 });

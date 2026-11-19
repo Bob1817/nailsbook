@@ -10,6 +10,8 @@
 export const MINI_PROGRAM_APP_ID = 'wx05644a205a1844a0';
 /** 备用网页：低版本微信客户端或不支持小程序时打开。 */
 export const FALLBACK_URL = 'https://m.lunails.cn/';
+/** 美甲师快捷报价 H5 页面链接（免登录、即开即用出单器）。 */
+export const QUOTE_H5_URL = process.env.QUOTE_H5_URL || 'https://lunails.cn/quote';
 
 export interface MenuButton {
   type?: string;
@@ -45,14 +47,15 @@ export const DEFAULT_OFFICIAL_MENU = {
       ],
     },
     {
-      name: '了解我们',
+      name: '美甲师专区',
       sub_button: [
+        { type: 'view', name: '快捷报价', url: QUOTE_H5_URL },
+        { type: 'view', name: '美甲师招募', url: 'https://lunails.cn/' },
         miniProgram('作品精选', 'pages/client/works/index'),
         miniProgram('发现美甲师', 'pages/client/discover/index'),
-        { type: 'view', name: '门店与服务', url: FALLBACK_URL },
-        { type: 'view', name: '美甲师招募', url: 'https://lunails.cn/' },
         { type: 'click', name: '关于我们', key: 'MENU_ABOUT_US' },
       ],
     },
   ],
 };
+

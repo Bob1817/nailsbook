@@ -12,10 +12,43 @@ export class ArtistApplicationsService {
   ) {}
 
   async create(dto: CreateArtistApplicationDto) {
-    // One SQLite write statement keeps the duplicate check atomic across workers.
-    // Public responses never expose an existing applicant's id or review status.
+    // 1. 已注册成功的手机号码无法进行申请
+    const registeredTechnician = await this.prisma.technician.findUnique({
+      where: { phone: dto.phone },
+      select: { id: true },
+    });
+    if (registeredTechnician) {
+      throw new BadRequestException('该手机号码已注册为美甲师账号，无需申请，请直接登录');
+    }
+
+    // 2. 已经申请的手机号码或微信号在申请中(pending)或者已通过(approved)的无法进行重复申请
+    const orConditions: Array<{ phone?: string; wechat?: string }> = [{ phone: dto.phone }];
+    if (dto.wechat?.trim()) {
+      orConditions.push({ wechat: dto.wechat.trim() });
+    }
+
+    const existingApplication = await this.prisma.artistApplication.findFirst({
+      where: {
+        OR: orConditions,
+        status: { in: ['pending', 'approved'] },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, status: true, phone: true, wechat: true },
+    });
+
+    if (existingApplication) {
+      const matchType = existingApplication.phone === dto.phone ? '手机号码' : '微信号';
+      if (existingApplication.status === 'pending') {
+        throw new BadRequestException(`该${matchType}已有申请在审核中，请耐心等待，无需重复提交`);
+      }
+      if (existingApplication.status === 'approved') {
+        throw new BadRequestException(`该${matchType}的试用申请已通过，无需重复申请`);
+      }
+    }
+
+    // 3. 并发安全插入：使用原子条件写入确保分布式/并发环境下不会插入重复记录
     const now = new Date();
-    await this.prisma.$executeRaw`
+    const inserted = await this.prisma.$executeRaw`
       INSERT INTO "ArtistApplication"
         ("name", "phone", "city", "serviceMode", "experience", "specialty",
          "wechat", "note", "followedMp", "status", "createdAt", "updatedAt")
@@ -24,9 +57,14 @@ export class ArtistApplicationsService {
         ${dto.note ?? null}, ${dto.followedMp ?? false}, 'pending', ${now}, ${now}
       WHERE NOT EXISTS (
         SELECT 1 FROM "ArtistApplication"
-        WHERE "phone" = ${dto.phone} AND "status" IN ('pending', 'approved')
+        WHERE ("phone" = ${dto.phone} OR (${dto.wechat ?? ''} != '' AND "wechat" = ${dto.wechat ?? ''}))
+          AND "status" IN ('pending', 'approved')
       )
     `;
+
+    if (inserted === 0) {
+      throw new BadRequestException('该手机号码已有申请在审核中，请勿重复提交');
+    }
 
     // 触发钉钉实时通知超管
     if (this.dingtalkAlert) {
@@ -83,6 +121,27 @@ export class ArtistApplicationsService {
     };
   }
 
+  async getCampaignQuota() {
+    const TOTAL_QUOTA = 10;
+    const approvedCount = await this.prisma.artistApplication.count({
+      where: {
+        status: 'approved',
+        OR: [
+          { serviceMode: 'model_artist' },
+          { note: { contains: '标杆' } },
+          { note: { contains: '指导配置' } },
+        ],
+      },
+    });
+    const remainingQuota = Math.max(0, TOTAL_QUOTA - approvedCount);
+    return {
+      totalQuota: TOTAL_QUOTA,
+      approvedCount,
+      remainingQuota,
+      isEnded: remainingQuota <= 0,
+    };
+  }
+
   async findAll(page = 1, limit = 20, status?: string) {
     const where = status ? { status } : {};
     const [data, total] = await Promise.all([
@@ -114,11 +173,11 @@ export class ArtistApplicationsService {
 
     // Recognize known legacy labels; never silently approve unknown service modes.
     const legacyModes: Record<string, string> = {
-      '到店服务': 'shop', '上门服务': 'home', '两者皆可': 'both',
+      '到店服务': 'shop', '上门服务': 'home', '两者皆可': 'both', 'model_artist': 'both',
     };
     const rawMode = application.serviceMode?.trim() || '';
     const mode = legacyModes[rawMode] || rawMode;
-    if (!['home', 'shop', 'both'].includes(mode)) {
+    if (!['home', 'shop', 'both', 'model_artist'].includes(mode)) {
       throw new BadRequestException('服务方式不明确，请联系申请人确认；可拒绝此申请后请其重新选择到店、上门或两者均可');
     }
     const homeService = mode === 'home' || mode === 'both';
@@ -164,5 +223,98 @@ export class ArtistApplicationsService {
       where: { id },
       data: { status: 'rejected', reviewedBy, reviewedAt: new Date() },
     });
+  }
+
+  /**
+   * 清洗并去重系统中的历史重复申请记录。
+   * 去重保留策略：
+   * 1. 状态优先级：approved (3) > pending (2) > rejected (1) > 其它 (0)
+   * 2. 同状态下：按创建时间 createdAt 倒序，保留最新一条
+   * 3. 同一手机号的多余记录予以删除
+   */
+  async deduplicateApplications(): Promise<{
+    scannedCount: number;
+    duplicatePhoneCount: number;
+    deletedCount: number;
+    details: Array<{
+      phone: string;
+      keptId: number;
+      keptStatus: string;
+      deletedIds: number[];
+    }>;
+  }> {
+    const all = await this.prisma.artistApplication.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const phoneGroups = new Map<string, typeof all>();
+    for (const item of all) {
+      const list = phoneGroups.get(item.phone) || [];
+      list.push(item);
+      phoneGroups.set(item.phone, list);
+    }
+
+    const statusScore = (status: string) => {
+      switch (status) {
+        case 'approved':
+          return 3;
+        case 'pending':
+          return 2;
+        case 'rejected':
+          return 1;
+        default:
+          return 0;
+      }
+    };
+
+    const details: Array<{
+      phone: string;
+      keptId: number;
+      keptStatus: string;
+      deletedIds: number[];
+    }> = [];
+
+    const allDeletedIds: number[] = [];
+
+    for (const [phone, group] of phoneGroups.entries()) {
+      if (group.length <= 1) {
+        continue;
+      }
+
+      // 按状态权重倒序，同权重按创建时间倒序
+      group.sort((a, b) => {
+        const scoreDiff = statusScore(b.status) - statusScore(a.status);
+        if (scoreDiff !== 0) {
+          return scoreDiff;
+        }
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+
+      const kept = group[0];
+      const redundant = group.slice(1);
+      const deletedIds = redundant.map((item) => item.id);
+
+      details.push({
+        phone,
+        keptId: kept.id,
+        keptStatus: kept.status,
+        deletedIds,
+      });
+
+      allDeletedIds.push(...deletedIds);
+    }
+
+    if (allDeletedIds.length > 0) {
+      await this.prisma.artistApplication.deleteMany({
+        where: { id: { in: allDeletedIds } },
+      });
+    }
+
+    return {
+      scannedCount: all.length,
+      duplicatePhoneCount: details.length,
+      deletedCount: allDeletedIds.length,
+      details,
+    };
   }
 }
