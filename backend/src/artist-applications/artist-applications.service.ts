@@ -224,6 +224,10 @@ export class ArtistApplicationsService {
             tokenVersion: { increment: 1 },
           },
         });
+        await tx.wechatIdentity.updateMany({
+          where: { clientUserId: existingClient.id },
+          data: { clientUserId: null },
+        });
       }
 
       // 已存在同手机号美甲师则不重复创建；新建时 passwordHash 留空，

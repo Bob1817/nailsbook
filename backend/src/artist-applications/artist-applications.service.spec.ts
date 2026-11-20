@@ -19,6 +19,9 @@ function setup() {
       findFirst: jest.fn().mockResolvedValue(null),
       update: jest.fn().mockResolvedValue({ id: 3 }),
     },
+    wechatIdentity: {
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+    },
   };
   const prisma = {
     artistApplication: { findUnique: jest.fn().mockResolvedValue({ id: 1, ...input }) },

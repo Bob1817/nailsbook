@@ -267,8 +267,37 @@ export class WechatAuthService {
       role === 'client' ? identity?.clientUserId : identity?.technicianId;
     const oppositeRoleId =
       role === 'client' ? identity?.technicianId : identity?.clientUserId;
-    if (oppositeRoleId || (linkedId && linkedId !== accountId)) {
-      throw new ConflictException('该微信已绑定其他账号');
+
+    if (oppositeRoleId) {
+      const isOppositeActive =
+        role === 'client'
+          ? await this.prisma.technician.findFirst({
+              where: { id: oppositeRoleId, status: { not: 'deleted' } },
+              select: { id: true },
+            })
+          : await this.prisma.clientUser.findFirst({
+              where: { id: oppositeRoleId, status: { not: 'deleted' } },
+              select: { id: true },
+            });
+      if (isOppositeActive) {
+        throw new ConflictException('该微信已绑定其他账号');
+      }
+    }
+
+    if (linkedId && linkedId !== accountId) {
+      const isLinkedActive =
+        role === 'client'
+          ? await this.prisma.clientUser.findFirst({
+              where: { id: linkedId, status: { not: 'deleted' } },
+              select: { id: true },
+            })
+          : await this.prisma.technician.findFirst({
+              where: { id: linkedId, status: { not: 'deleted' } },
+              select: { id: true },
+            });
+      if (isLinkedActive) {
+        throw new ConflictException('该微信已绑定其他账号');
+      }
     }
 
     const accountIdentity = await this.prisma.wechatIdentity.findFirst({
@@ -290,14 +319,14 @@ export class WechatAuthService {
         openId: session.openId,
         unionId: session.unionId,
         ...(role === 'client'
-          ? { clientUserId: accountId }
-          : { technicianId: accountId }),
+          ? { clientUserId: accountId, technicianId: null }
+          : { technicianId: accountId, clientUserId: null }),
       },
       update: {
         unionId: session.unionId,
         ...(role === 'client'
-          ? { clientUserId: accountId }
-          : { technicianId: accountId }),
+          ? { clientUserId: accountId, technicianId: null }
+          : { technicianId: accountId, clientUserId: null }),
       },
     });
   }

@@ -135,9 +135,21 @@ describe('WechatAuthService', () => {
 
     it('preserves the existing WeChat identity conflict check', async () => {
       prisma.wechatIdentity.findUnique.mockResolvedValue({ clientUserId: 92 });
+      prisma.clientUser.findFirst.mockImplementation((args: any) => {
+        if (args?.where?.id === 92) return Promise.resolve({ id: 92, status: 'active' });
+        return Promise.resolve(null);
+      });
       await expect(service.completeClient({ wechatSessionToken: 'session', phoneCode: 'phone-code' }))
         .rejects.toThrow('该微信已绑定其他账号');
       expect(prisma.wechatIdentity.upsert).not.toHaveBeenCalled();
+    });
+
+    it('allows linking technician when previous bound client account is deleted', async () => {
+      prisma.wechatIdentity.findUnique.mockResolvedValue({ clientUserId: 92 });
+      prisma.clientUser.findFirst.mockResolvedValue(null);
+      await expect(service.completeClient({ wechatSessionToken: 'session', phoneCode: 'phone-code' }))
+        .resolves.toMatchObject({ role: 'technician' });
+      expect(prisma.wechatIdentity.upsert).toHaveBeenCalled();
     });
   });
 
