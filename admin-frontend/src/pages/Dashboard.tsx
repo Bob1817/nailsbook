@@ -5,7 +5,8 @@ import {
   Card,
   Col,
   Drawer,
-  List,
+  Empty,
+  Grid,
   Popconfirm,
   Row,
   Space,
@@ -61,6 +62,7 @@ const ORDER_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const screens = Grid.useBreakpoint();
   const revenueChartRef = useRef<HTMLDivElement | null>(null);
   const subscriptionChartRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState(true);
@@ -384,7 +386,13 @@ const Dashboard: React.FC = () => {
         title="美甲师入驻快速审批"
         open={quickDrawerOpen}
         onClose={() => setQuickDrawerOpen(false)}
-        width={480}
+        width={screens.md ? 480 : '100%'}
+        styles={{
+          body: {
+            padding: screens.md ? 20 : 12,
+            background: 'var(--nb-page, #F5F5F7)',
+          },
+        }}
         extra={
           <Button
             type="link"
@@ -397,72 +405,112 @@ const Dashboard: React.FC = () => {
           </Button>
         }
       >
-        <List
-          loading={loadingApps}
-          dataSource={pendingApps}
-          locale={{ emptyText: '当前没有待审批的美甲师申请' }}
-          renderItem={(item) => (
-            <List.Item
-              key={item.id}
-              actions={[
-                <Popconfirm
-                  key="approve"
-                  title="确认审批通过并开通专属美甲师账号？"
-                  onConfirm={() => handleQuickApprove(item.id)}
-                  okText="通过"
-                  cancelText="取消"
-                >
-                  <Button
-                    type="primary"
-                    size="small"
-                    icon={<CheckCircleOutlined />}
-                    loading={approvingId === item.id}
-                  >
-                    通过
-                  </Button>
-                </Popconfirm>,
-                <Popconfirm
-                  key="reject"
-                  title="确认驳回该入驻申请？"
-                  onConfirm={() => handleQuickReject(item.id)}
-                  okText="驳回"
-                  cancelText="取消"
-                  okButtonProps={{ danger: true }}
-                >
-                  <Button
-                    danger
-                    size="small"
-                    icon={<CloseCircleOutlined />}
-                    loading={approvingId === item.id}
-                  >
-                    驳回
-                  </Button>
-                </Popconfirm>,
-              ]}
-            >
-              <List.Item.Meta
-                title={
-                  <Space wrap>
-                    <Text strong>{item.name}</Text>
+        {loadingApps ? (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <Spin tip="加载待审批列表中..." />
+          </div>
+        ) : pendingApps.length === 0 ? (
+          <Empty description="当前没有待审批的美甲师申请" style={{ marginTop: 60 }} />
+        ) : (
+          <div>
+            {pendingApps.map((item) => (
+              <div key={item.id} className="admin-app-card">
+                <div className="admin-app-card-head">
+                  <Space align="center" wrap>
+                    <span className="admin-app-card-title">{item.name}</span>
                     <Tag>{item.city || '未知城市'}</Tag>
-                    {item.experience && <Tag color="blue">{item.experience}</Tag>}
+                    {item.serviceMode === 'model_artist' && (
+                      <Tag color="purple">标杆美甲师</Tag>
+                    )}
                   </Space>
-                }
-                description={
-                  <div style={{ marginTop: 4 }}>
-                    <div><Text type="secondary">手机号: </Text><Text copyable>{item.phone}</Text></div>
-                    {item.wechat && <div><Text type="secondary">微信: </Text>{item.wechat}</div>}
-                    {item.specialty && <div><Text type="secondary">擅长: </Text>{item.specialty}</div>}
-                    {item.note && <div><Text type="secondary">申请备注: </Text>{item.note}</div>}
-                    <div style={{ marginTop: 4, fontSize: 12, color: 'var(--nb-muted)' }}>
-                      申请时间: {new Date(item.createdAt).toLocaleString('zh-CN')}
-                    </div>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {item.createdAt ? new Date(item.createdAt).toLocaleDateString('zh-CN') : ''}
+                  </Text>
+                </div>
+
+                <div className="admin-app-card-body">
+                  <div className="admin-app-card-row">
+                    <span className="admin-app-card-label">手机号</span>
+                    <span className="admin-app-card-value">
+                      <Text copyable strong>{item.phone}</Text>
+                    </span>
                   </div>
-                }
-              />
-            </List.Item>
-          )}
-        />
+
+                  {item.wechat && (
+                    <div className="admin-app-card-row">
+                      <span className="admin-app-card-label">微信</span>
+                      <span className="admin-app-card-value">
+                        <Text copyable>{item.wechat}</Text>
+                      </span>
+                    </div>
+                  )}
+
+                  {item.experience && (
+                    <div className="admin-app-card-row">
+                      <span className="admin-app-card-label">经验</span>
+                      <span className="admin-app-card-value">{item.experience}</span>
+                    </div>
+                  )}
+
+                  {item.specialty && (
+                    <div className="admin-app-card-row">
+                      <span className="admin-app-card-label">擅长</span>
+                      <span className="admin-app-card-value">{item.specialty}</span>
+                    </div>
+                  )}
+
+                  {item.note && (
+                    <div className="admin-app-card-row">
+                      <span className="admin-app-card-label">申请备注</span>
+                      <span className="admin-app-card-value" style={{ wordBreak: 'break-word', color: 'var(--nb-ink)' }}>
+                        {item.note}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="admin-app-card-row">
+                    <span className="admin-app-card-label">申请时间</span>
+                    <span className="admin-app-card-value" style={{ color: 'var(--nb-muted)', fontSize: 12 }}>
+                      {new Date(item.createdAt).toLocaleString('zh-CN', { hour12: false })}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="admin-app-card-actions">
+                  <Popconfirm
+                    title="确认审批通过并开通专属美甲师账号？"
+                    onConfirm={() => handleQuickApprove(item.id)}
+                    okText="通过"
+                    cancelText="取消"
+                  >
+                    <Button
+                      type="primary"
+                      icon={<CheckCircleOutlined />}
+                      loading={approvingId === item.id}
+                    >
+                      通过
+                    </Button>
+                  </Popconfirm>
+                  <Popconfirm
+                    title="确认驳回该入驻申请？"
+                    onConfirm={() => handleQuickReject(item.id)}
+                    okText="驳回"
+                    cancelText="取消"
+                    okButtonProps={{ danger: true }}
+                  >
+                    <Button
+                      danger
+                      icon={<CloseCircleOutlined />}
+                      loading={approvingId === item.id}
+                    >
+                      驳回
+                    </Button>
+                  </Popconfirm>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </Drawer>
     </div>
   );
