@@ -8,6 +8,7 @@ import { technicianService } from '../services/technician';
 import type { Technician } from '../services/technician';
 import { useAuth } from '../contexts/AuthContext';
 import AdminPageHeader from '../components/AdminPageHeader';
+import TableActions, { type TableActionItem } from '../components/TableActions';
 
 const { Text } = Typography;
 
@@ -147,18 +148,28 @@ const Customers: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      render: (_: unknown, record: Customer) => (
-        <Space>
-          <Button type="link" size="small" onClick={() => { setSelectedCustomer(record); setDetailVisible(true); }}>
-            详情
-          </Button>
-          {canResetPassword && record.account?.linked && record.account.status === 'active' && (
-            <Button type="link" icon={<KeyOutlined />} style={{ minHeight: 44 }} onClick={() => handleResetPassword(record)}>
-              重置密码
-            </Button>
-          )}
-        </Space>
-      ),
+      width: 140,
+      render: (_: unknown, record: Customer) => {
+        const actionItems: TableActionItem[] = [
+          {
+            key: 'detail',
+            label: '详情',
+            onClick: () => {
+              setSelectedCustomer(record);
+              setDetailVisible(true);
+            },
+          },
+        ];
+        if (canResetPassword && record.account?.linked && record.account.status === 'active') {
+          actionItems.push({
+            key: 'resetPassword',
+            label: '重置密码',
+            icon: <KeyOutlined />,
+            onClick: () => handleResetPassword(record),
+          });
+        }
+        return <TableActions items={actionItems} maxInline={1} />;
+      },
     },
   ];
 
@@ -191,6 +202,7 @@ const Customers: React.FC = () => {
           dataSource={data?.data || []}
           rowKey="id"
           loading={loading}
+          scroll={{ x: 950 }}
           pagination={{
             current: filters.page,
             pageSize: filters.limit,

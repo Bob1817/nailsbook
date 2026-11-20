@@ -5,6 +5,7 @@ import { CheckOutlined, CloseOutlined, EyeOutlined, CopyOutlined } from '@ant-de
 import { artistApplicationService } from '../services/artistApplication';
 import type { ArtistApplication, ApplicationListResponse } from '../services/artistApplication';
 import AdminPageHeader from '../components/AdminPageHeader';
+import TableActions, { type TableActionItem } from '../components/TableActions';
 
 const statusColor: Record<string, string> = {
   pending: 'processing',
@@ -157,23 +158,38 @@ const ArtistApplications: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      render: (_: unknown, record: ArtistApplication) => (
-        <Space>
-          <Button type="link" size="small" style={{ minHeight: 36 }} onClick={() => openDetail(record)}>
-            详情
-          </Button>
-          {record.status === 'pending' && (
-            <>
-              <Button type="link" size="small" style={{ minHeight: 36 }} onClick={() => handleApprove(record.id)}>
-                通过
-              </Button>
-              <Button type="link" size="small" danger style={{ minHeight: 36 }} onClick={() => handleReject(record.id)}>
-                拒绝
-              </Button>
-            </>
-          )}
-        </Space>
-      ),
+      width: 140,
+      render: (_: unknown, record: ArtistApplication) => {
+        const actionItems: TableActionItem[] = [
+          {
+            key: 'detail',
+            label: '详情',
+            onClick: () => openDetail(record),
+          },
+        ];
+        if (record.status === 'pending') {
+          actionItems.push(
+            {
+              key: 'approve',
+              label: '通过',
+              popconfirm: {
+                title: '确认审批通过并生成美甲师专属账号？',
+                onConfirm: () => handleApprove(record.id),
+              },
+            },
+            {
+              key: 'reject',
+              label: '拒绝',
+              danger: true,
+              popconfirm: {
+                title: '确认拒绝该入驻申请？',
+                onConfirm: () => handleReject(record.id),
+              },
+            }
+          );
+        }
+        return <TableActions items={actionItems} maxInline={1} />;
+      },
     },
   ];
 

@@ -20,6 +20,11 @@ export class DashboardService {
       activeSubscriptions,
       recentOrders,
       recentRevenues,
+      pendingApplications,
+      pendingWorks,
+      pendingDeletions,
+      pendingReports,
+      pendingFeedbacks,
     ] = await Promise.all([
       this.prisma.technician.count(),
       this.prisma.technician.count({ where: { status: 'active' } }),
@@ -48,6 +53,11 @@ export class DashboardService {
           customer: { select: { id: true, name: true } },
         },
       }),
+      this.prisma.artistApplication.count({ where: { status: 'pending' } }),
+      this.prisma.nailWork.count({ where: { publicationStatus: 'pending' } }),
+      this.prisma.accountDeletionRequest.count({ where: { status: 'pending' } }),
+      this.prisma.nailWorkReport.count({ where: { status: 'pending' } }),
+      this.prisma.feedback.count({ where: { status: 'pending' } }),
     ]);
 
     const thirtyDaysAgo = new Date();
@@ -114,6 +124,19 @@ export class DashboardService {
         total: totalSubscriptions,
         active: activeSubscriptions,
         byPlan: subscriptionStats,
+      },
+      approvalStats: {
+        pendingApplications,
+        pendingWorks,
+        pendingDeletions,
+        pendingReports,
+        pendingFeedbacks,
+        totalPending:
+          pendingApplications +
+          pendingWorks +
+          pendingDeletions +
+          pendingReports +
+          pendingFeedbacks,
       },
       recentOrders,
       recentRevenues,

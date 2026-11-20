@@ -1,9 +1,34 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Card, Col, Row, Spin, Statistic, Table, Tabs, Tag, Typography, message } from 'antd';
 import {
+  Badge,
+  Button,
+  Card,
+  Col,
+  Drawer,
+  List,
+  Popconfirm,
+  Row,
+  Space,
+  Spin,
+  Statistic,
+  Table,
+  Tabs,
+  Tag,
+  Typography,
+  message,
+} from 'antd';
+import {
+  AlertOutlined,
   CalendarOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  CommentOutlined,
+  FileTextOutlined,
+  PictureOutlined,
+  RightOutlined,
   ShopOutlined,
   TeamOutlined,
+  UserDeleteOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -15,6 +40,8 @@ import { colors } from '../colors.generated';
 import AdminPageHeader from '../components/AdminPageHeader';
 import { dashboardService } from '../services/dashboard';
 import type { BusinessStats, DashboardOverview } from '../services/dashboard';
+import { artistApplicationService } from '../services/artistApplication';
+import type { ArtistApplication } from '../services/artistApplication';
 
 const { Text, Title } = Typography;
 
@@ -39,6 +66,59 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
   const [businessStats, setBusinessStats] = useState<BusinessStats | null>(null);
+
+  // 快捷审批抽屉状态
+  const [quickDrawerOpen, setQuickDrawerOpen] = useState(false);
+  const [pendingApps, setPendingApps] = useState<ArtistApplication[]>([]);
+  const [loadingApps, setLoadingApps] = useState(false);
+  const [approvingId, setApprovingId] = useState<number | null>(null);
+
+  const fetchPendingApps = async () => {
+    setLoadingApps(true);
+    try {
+      const res = await artistApplicationService.getAll({ status: 'pending', page: 1, limit: 10 });
+      setPendingApps(res.data || []);
+    } catch {
+      message.error('加载待审批申请失败');
+    } finally {
+      setLoadingApps(false);
+    }
+  };
+
+  const openQuickApprovalDrawer = () => {
+    setQuickDrawerOpen(true);
+    fetchPendingApps();
+  };
+
+  const handleQuickApprove = async (id: number) => {
+    setApprovingId(id);
+    try {
+      await artistApplicationService.approve(id);
+      message.success('已审批通过并生成美甲师账号');
+      setPendingApps((prev) => prev.filter((app) => app.id !== id));
+      dashboardService.getOverview().then((res) => setOverview(res));
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
+      message.error(e.response?.data?.message || '审批操作失败');
+    } finally {
+      setApprovingId(null);
+    }
+  };
+
+  const handleQuickReject = async (id: number) => {
+    setApprovingId(id);
+    try {
+      await artistApplicationService.reject(id);
+      message.success('已驳回该入驻申请');
+      setPendingApps((prev) => prev.filter((app) => app.id !== id));
+      dashboardService.getOverview().then((res) => setOverview(res));
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
+      message.error(e.response?.data?.message || '驳回操作失败');
+    } finally {
+      setApprovingId(null);
+    }
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -129,9 +209,71 @@ const Dashboard: React.FC = () => {
     { label: '待客户到店', value: overview.orderStats.pendingShop, status: 'pending_shop', icon: <ShopOutlined /> },
   ];
 
+  const approvalStats = overview?.approvalStats;
+  const totalPendingApprovals =
+    (approvalStats?.pendingApplications ?? 0) +
+    (approvalStats?.pendingWorks ?? 0) +
+    (approvalStats?.pendingDeletions ?? 0) +
+    (approvalStats?.pendingReports ?? 0) +
+    (approvalStats?.pendingFeedbacks ?? 0);
+
+  const approvalCards = [
+    {
+      key: 'applications',
+      title: '美甲师入驻申请',
+      count: approvalStats?.pendingApplications ?? 0,
+      desc: '新美甲师实名及作品入驻审核',
+      icon: <FileTextOutlined />,
+      actionText: (approvalStats?.pendingApplications ?? 0) > 0 ? '快速审批 ›' : '查看列表 ›',
+      onClick: () => {
+        if ((approvalStats?.pendingApplications ?? 0) > 0) {
+          openQuickApprovalDrawer();
+        } else {
+          navigate('/applications?status=pending');
+        }
+      },
+    },
+    {
+      key: 'works',
+      title: '作品上架审核',
+      count: approvalStats?.pendingWorks ?? 0,
+      desc: '美甲师发布作品与款式合规审核',
+      icon: <PictureOutlined />,
+      actionText: '进入作品队列 ›',
+      onClick: () => navigate('/works?status=pending'),
+    },
+    {
+      key: 'deletions',
+      title: '账号注销申请',
+      count: approvalStats?.pendingDeletions ?? 0,
+      desc: '用户/美甲师账号注销人工复核',
+      icon: <UserDeleteOutlined />,
+      actionText: '复核注销 ›',
+      onClick: () => navigate('/account-deletions'),
+    },
+    {
+      key: 'reports',
+      title: '违规侵权举报',
+      count: approvalStats?.pendingReports ?? 0,
+      desc: '作品/评价/服务违规举报处理',
+      icon: <AlertOutlined />,
+      actionText: '核查举报 ›',
+      onClick: () => navigate('/reports?status=pending'),
+    },
+    {
+      key: 'feedbacks',
+      title: '用户体验反馈',
+      count: approvalStats?.pendingFeedbacks ?? 0,
+      desc: '用户与美甲师提交的建议与故障',
+      icon: <CommentOutlined />,
+      actionText: '跟进反馈 ›',
+      onClick: () => navigate('/feedbacks'),
+    },
+  ];
+
   return (
     <div>
-      <AdminPageHeader title="运营总览" description="查看平台经营状态，并优先处理影响履约的预约。" />
+      <AdminPageHeader title="运营总览" description="查看平台经营状态，并优先处理影响履约的预约与审批。" />
 
       <Row gutter={[16, 16]}>
         <Col xs={12} xl={6}>
@@ -147,6 +289,48 @@ const Dashboard: React.FC = () => {
           <Card className="admin-metric-card"><Statistic title="确认收入" value={overview.revenueStats.total} prefix="¥" precision={2} /><Text type="secondary">近30天 ¥{Number(overview.revenueStats.last30Days).toFixed(2)}</Text></Card>
         </Col>
       </Row>
+
+      {/* 审批待办任务中心（移动端友好 + 首页直通审批） */}
+      <section className="admin-section">
+        <div className="admin-section-heading">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Title level={4} style={{ margin: 0 }}>审批待办中心</Title>
+            {totalPendingApprovals > 0 && (
+              <Badge count={totalPendingApprovals} overflowCount={99} />
+            )}
+          </div>
+          <Text type="secondary">支持首页一键快捷审批入驻，或直达对应事项审核队列</Text>
+        </div>
+        <div className="admin-approval-grid">
+          {approvalCards.map(card => (
+            <div
+              key={card.key}
+              className={`admin-approval-card ${card.count > 0 ? 'is-urgent' : ''}`}
+              role="button"
+              tabIndex={0}
+              onClick={card.onClick}
+              onKeyDown={(e) => { if (e.key === 'Enter') card.onClick(); }}
+            >
+              <div className="admin-approval-card__top">
+                <span className="admin-approval-card__icon">{card.icon}</span>
+                <Badge
+                  count={card.count}
+                  showZero
+                  className={card.count > 0 ? 'badge-urgent' : 'badge-idle'}
+                />
+              </div>
+              <div className="admin-approval-card__main">
+                <div className="admin-approval-card__title">{card.title}</div>
+                <div className="admin-approval-card__desc">{card.desc}</div>
+              </div>
+              <div className="admin-approval-card__foot">
+                <span className="admin-approval-card__action">{card.actionText}</span>
+                <RightOutlined className="admin-approval-card__arrow" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <section className="admin-section">
         <div className="admin-section-heading"><Title level={4}>预约待办</Title><Text type="secondary">点击后进入对应预约队列</Text></div>
@@ -194,6 +378,92 @@ const Dashboard: React.FC = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* 首页快捷审批抽屉 */}
+      <Drawer
+        title="美甲师入驻快速审批"
+        open={quickDrawerOpen}
+        onClose={() => setQuickDrawerOpen(false)}
+        width={480}
+        extra={
+          <Button
+            type="link"
+            onClick={() => {
+              setQuickDrawerOpen(false);
+              navigate('/applications?status=pending');
+            }}
+          >
+            进入完整审批队列
+          </Button>
+        }
+      >
+        <List
+          loading={loadingApps}
+          dataSource={pendingApps}
+          locale={{ emptyText: '当前没有待审批的美甲师申请' }}
+          renderItem={(item) => (
+            <List.Item
+              key={item.id}
+              actions={[
+                <Popconfirm
+                  key="approve"
+                  title="确认审批通过并开通专属美甲师账号？"
+                  onConfirm={() => handleQuickApprove(item.id)}
+                  okText="通过"
+                  cancelText="取消"
+                >
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<CheckCircleOutlined />}
+                    loading={approvingId === item.id}
+                  >
+                    通过
+                  </Button>
+                </Popconfirm>,
+                <Popconfirm
+                  key="reject"
+                  title="确认驳回该入驻申请？"
+                  onConfirm={() => handleQuickReject(item.id)}
+                  okText="驳回"
+                  cancelText="取消"
+                  okButtonProps={{ danger: true }}
+                >
+                  <Button
+                    danger
+                    size="small"
+                    icon={<CloseCircleOutlined />}
+                    loading={approvingId === item.id}
+                  >
+                    驳回
+                  </Button>
+                </Popconfirm>,
+              ]}
+            >
+              <List.Item.Meta
+                title={
+                  <Space wrap>
+                    <Text strong>{item.name}</Text>
+                    <Tag>{item.city || '未知城市'}</Tag>
+                    {item.experience && <Tag color="blue">{item.experience}</Tag>}
+                  </Space>
+                }
+                description={
+                  <div style={{ marginTop: 4 }}>
+                    <div><Text type="secondary">手机号: </Text><Text copyable>{item.phone}</Text></div>
+                    {item.wechat && <div><Text type="secondary">微信: </Text>{item.wechat}</div>}
+                    {item.specialty && <div><Text type="secondary">擅长: </Text>{item.specialty}</div>}
+                    {item.note && <div><Text type="secondary">申请备注: </Text>{item.note}</div>}
+                    <div style={{ marginTop: 4, fontSize: 12, color: 'var(--nb-muted)' }}>
+                      申请时间: {new Date(item.createdAt).toLocaleString('zh-CN')}
+                    </div>
+                  </div>
+                }
+              />
+            </List.Item>
+          )}
+        />
+      </Drawer>
     </div>
   );
 };

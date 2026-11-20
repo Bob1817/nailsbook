@@ -5,6 +5,7 @@ import { CheckOutlined, CloseOutlined, DeleteOutlined, EyeOutlined, StarOutlined
 import { adminWorkService } from '../services/adminWork';
 import type { AdminWork } from '../services/adminWork';
 import AdminPageHeader from '../components/AdminPageHeader';
+import TableActions, { type TableActionItem } from '../components/TableActions';
 
 const placeholderStyle: React.CSSProperties = {
   width: 48,
@@ -226,26 +227,46 @@ const Works: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      render: (_, record) => (
-        <Space>
-          <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => setDrawerWork(record)}>
-            详情
-          </Button>
-          {record.publicationStatus !== 'approved' && record.publicationStatus !== 'draft' && (
-            <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => handleApprove(record)}>
-              通过
-            </Button>
-          )}
-          {record.publicationStatus !== 'rejected' && record.publicationStatus !== 'draft' && (
-            <Button type="link" size="small" danger icon={<CloseOutlined />} onClick={() => handleReject(record)}>
-              驳回
-            </Button>
-          )}
-          <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>
-            删除
-          </Button>
-        </Space>
-      ),
+      width: 140,
+      render: (_, record) => {
+        const actionItems: TableActionItem[] = [
+          {
+            key: 'detail',
+            label: '详情',
+            icon: <EyeOutlined />,
+            onClick: () => setDrawerWork(record),
+          },
+        ];
+        if (record.publicationStatus !== 'approved' && record.publicationStatus !== 'draft') {
+          actionItems.push({
+            key: 'approve',
+            label: '通过',
+            icon: <CheckOutlined />,
+            onClick: () => handleApprove(record),
+          });
+        }
+        if (record.publicationStatus !== 'rejected' && record.publicationStatus !== 'draft') {
+          actionItems.push({
+            key: 'reject',
+            label: '驳回',
+            danger: true,
+            icon: <CloseOutlined />,
+            onClick: () => handleReject(record),
+          });
+        }
+        actionItems.push({
+          key: 'delete',
+          label: '删除',
+          danger: true,
+          icon: <DeleteOutlined />,
+          popconfirm: {
+            title: '确定要删除该作品吗？',
+            description: '删除后无法恢复，并从美甲师主页和发现流下架。',
+            onConfirm: () => handleDelete(record.id),
+          },
+        });
+        return <TableActions items={actionItems} maxInline={1} />;
+      },
     },
   ];
 
@@ -315,6 +336,7 @@ const Works: React.FC = () => {
           dataSource={items}
           rowKey="id"
           loading={loading}
+          scroll={{ x: 1000 }}
           pagination={{
             current: page,
             pageSize,

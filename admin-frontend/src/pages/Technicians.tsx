@@ -5,6 +5,7 @@ import { technicianService } from '../services/technician';
 import type { Technician, PaginatedResponse } from '../services/technician';
 import { useAuth } from '../contexts/AuthContext';
 import AdminPageHeader from '../components/AdminPageHeader';
+import TableActions, { type TableActionItem } from '../components/TableActions';
 
 const { Text } = Typography;
 
@@ -263,36 +264,61 @@ const Technicians: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      render: (_: unknown, record: Technician) => (
-        <Space>
-          {record.status !== 'deleted' && (
-            <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>
-              编辑
-            </Button>
-          )}
-          <Button type="link" size="small" onClick={() => { setSelectedTechnician(record); setDetailVisible(true); }}>
-            详情
-          </Button>
-          {record.status === 'active' && (
-            <>
-              <Popconfirm title="确定要禁用该美甲师吗？" description="禁用后该账号将无法登录。" onConfirm={() => handleDisable(record.id)}>
-                <Button type="link" size="small" danger>禁用</Button>
-              </Popconfirm>
-              {canResetPassword && (
-                <Popconfirm title="确定要重置该美甲师的密码？" description="重置后原密码立即失效，并强制当前登录状态失效。" onConfirm={() => handleResetFromList(record.id)}>
-                  <Button type="link" style={{ minHeight: 44 }}>重置密码</Button>
-                </Popconfirm>
-              )}
-            </>
-          )}
-          {record.status === 'suspended' && (
-            <Popconfirm title="确定要启用该美甲师吗？" onConfirm={() => handleStatusChange(record.id, 'active')}>
-              <Button type="link" size="small">启用</Button>
-            </Popconfirm>
-          )}
-
-        </Space>
-      ),
+      width: 140,
+      render: (_: unknown, record: Technician) => {
+        const actionItems: TableActionItem[] = [
+          {
+            key: 'detail',
+            label: '详情',
+            onClick: () => {
+              setSelectedTechnician(record);
+              setDetailVisible(true);
+            },
+          },
+        ];
+        if (record.status !== 'deleted') {
+          actionItems.push({
+            key: 'edit',
+            label: '编辑',
+            icon: <EditOutlined />,
+            onClick: () => openEdit(record),
+          });
+        }
+        if (record.status === 'active') {
+          actionItems.push({
+            key: 'disable',
+            label: '禁用',
+            danger: true,
+            popconfirm: {
+              title: '确定要禁用该美甲师吗？',
+              description: '禁用后该账号将无法登录。',
+              onConfirm: () => handleDisable(record.id),
+            },
+          });
+          if (canResetPassword) {
+            actionItems.push({
+              key: 'resetPassword',
+              label: '重置密码',
+              popconfirm: {
+                title: '确定要重置该美甲师的密码？',
+                description: '重置后原密码立即失效，并强制当前登录状态失效。',
+                onConfirm: () => handleResetFromList(record.id),
+              },
+            });
+          }
+        }
+        if (record.status === 'suspended') {
+          actionItems.push({
+            key: 'enable',
+            label: '启用',
+            popconfirm: {
+              title: '确定要启用该美甲师吗？',
+              onConfirm: () => handleStatusChange(record.id, 'active'),
+            },
+          });
+        }
+        return <TableActions items={actionItems} maxInline={1} />;
+      },
     },
   ];
 

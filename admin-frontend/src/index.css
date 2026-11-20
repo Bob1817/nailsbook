@@ -334,6 +334,148 @@ body {
   font-size: 22px;
 }
 
+/* 审批待办中心 */
+.admin-approval-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+}
+
+.admin-approval-card {
+  min-height: 82px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--nb-surface);
+  color: var(--nb-ink);
+  box-shadow: inset 0 0 0 1px var(--nb-line);
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.18s ease;
+}
+
+.admin-approval-card:hover,
+.admin-approval-card:focus-visible {
+  background: var(--nb-active-surface);
+  box-shadow: inset 0 0 0 1px var(--nb-link);
+  outline: none;
+}
+
+.admin-approval-card.has-pending {
+  box-shadow: inset 0 0 0 1px var(--nb-ink);
+  background: var(--nb-surface);
+}
+
+.admin-approval-card__icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 10px;
+  background: var(--nb-soft-surface);
+  color: var(--nb-ink);
+  font-size: 18px;
+}
+
+.admin-approval-card.has-pending .admin-approval-card__icon {
+  background: var(--nb-active-surface);
+  color: var(--nb-ink);
+}
+
+.admin-approval-card__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-approval-card__count-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.admin-approval-card__num {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--nb-ink);
+}
+
+.admin-approval-card.has-pending .admin-approval-card__num {
+  color: var(--nb-ink);
+}
+
+.admin-approval-card__title {
+  display: block;
+  margin-top: 3px;
+  color: var(--nb-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-approval-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.admin-approval-quick-btn {
+  font-size: 12px !important;
+  padding: 0 8px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  border-radius: 6px !important;
+}
+
+/* 表格操作列与自适应强化 */
+.admin-table-actions {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.admin-table-action-btn {
+  padding: 0 4px !important;
+  font-size: 13px;
+}
+
+.admin-table-action-more {
+  padding: 0 4px !important;
+  font-size: 13px;
+  color: var(--nb-secondary);
+}
+
+.admin-table-action-more:hover {
+  color: var(--nb-link);
+}
+
+/* 全局表格防撑破容器保护 */
+.admin-list-card {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.admin-list-card .ant-card-body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.ant-table-wrapper {
+  max-width: 100%;
+}
+
+.ant-table {
+  max-width: 100%;
+}
+
 .admin-chart {
   width: 100%;
   height: 300px;
@@ -638,7 +780,8 @@ body {
     line-height: 1.5;
   }
 
-  .admin-task-grid {
+  .admin-task-grid,
+  .admin-approval-grid {
     grid-template-columns: 1fr;
     gap: 10px;
   }

@@ -31,6 +31,14 @@ export interface DashboardOverview {
       count: number;
     }>;
   };
+  approvalStats?: {
+    pendingApplications: number;
+    pendingWorks: number;
+    pendingDeletions: number;
+    pendingReports: number;
+    pendingFeedbacks: number;
+    totalPending: number;
+  };
   recentOrders: Array<{
     id: number;
     orderNo: string;

@@ -56,6 +56,14 @@ export class ArtistApplicationsController {
     return this.service.getProgress(phone);
   }
 
+  @Get('artist-applications/progress/:phone')
+  @ApiOperation({ summary: '查询美甲师试用申请进度（路径参数兼容）' })
+  @ApiParam({ name: 'phone', type: String, description: '申请手机号', required: true })
+  @ApiResponse({ status: 200, description: '返回申请进度状态' })
+  getProgressByParam(@Param('phone') phone: string) {
+    return this.service.getProgress(phone);
+  }
+
   @Get('artist-applications/quota')
   @ApiOperation({ summary: '查询官方指导配置标杆美甲师活动名额统计' })
   @ApiResponse({ status: 200, description: '返回活动名额统计及是否已结束' })
