@@ -41,8 +41,8 @@ export class TechnicianJwtStrategy extends PassportStrategy(
     if ((payload.tv ?? 0) !== technician.tokenVersion) {
       throw new UnauthorizedException('登录状态已失效，请重新登录');
     }
-    // 游客美甲师：passwordHash 为空且 status 为 inactive
-    const isTourist = !technician.passwordHash && technician.status === 'inactive';
+    // 已认证美甲师即为合法美甲师，非游客
+    const isTourist = false;
     return {
       technicianId: payload.sub,
       phone: payload.phone,

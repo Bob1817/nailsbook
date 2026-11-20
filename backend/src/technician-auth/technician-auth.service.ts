@@ -368,9 +368,9 @@ export class TechnicianAuthService {
       homeService: technician.homeService,
       homeServiceSettings: parseHomeSettings(technician.homeServiceSettings),
       shopService: technician.shopService,
-      // 是否已通过激活密钥认证（游客模式为 false）
+      // 是否已通过激活密钥认证
       isActivated: !!technician.passwordHash,
-      isTourist: !technician.passwordHash,
+      isTourist: false,
       // 接单就绪：至少开启一种服务类型；未就绪则锁定邀请码/邀请链接
       bookingReady: bookingReadiness(technician).ready,
       bookingReadinessIssues: bookingReadiness(technician).issues,
@@ -598,9 +598,9 @@ export class TechnicianAuthService {
       homeService: technician.homeService,
       homeServiceSettings: parseHomeSettings(technician.homeServiceSettings),
       shopService: technician.shopService,
-      // 是否已通过激活密钥认证（游客模式为 false）
+      // 是否已通过激活密钥认证
       isActivated: !!technician.passwordHash,
-      isTourist: !technician.passwordHash,
+      isTourist: false,
       // 接单就绪：至少开启一种服务类型；未就绪则锁定邀请码/邀请链接
       bookingReady: technician.homeService || technician.shopService,
       auditMode: isMiniProgramAuditMode(),

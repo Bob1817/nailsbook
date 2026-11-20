@@ -33,36 +33,7 @@ export class TouristGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    // 检查路由是否标记了 @AllowTourist()
-    const allowTourist = this.reflector.getAllAndOverride<boolean>(
-      ALLOW_TOURIST,
-      [context.getHandler(), context.getClass()],
-    );
-    if (allowTourist) {
-      return true;
-    }
-
-    const request = context.switchToHttp().getRequest();
-    const user = request.user;
-
-    // 非 technician 用户放行（例如 client）
-    if (!user || user.userType !== 'technician') {
-      return true;
-    }
-
-    // 非游客用户放行
-    if (!user.isTourist) {
-      return true;
-    }
-
-    // GET/HEAD/OPTIONS 等读取操作放行
-    const method = request.method?.toUpperCase();
-    if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
-      return true;
-    }
-
-    throw new ForbiddenException(
-      '游客模式仅支持浏览，请激活美甲师账户后操作',
-    );
+    // 已通过 TechnicianJwtAuthGuard 的美甲师均为合法用户，直接放行
+    return true;
   }
 }
