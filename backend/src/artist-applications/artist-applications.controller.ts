@@ -22,6 +22,7 @@ import {
 import { ArtistApplicationsService } from './artist-applications.service';
 import { CreateArtistApplicationDto } from './dto/create-artist-application.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { TechnicianOptionalJwtAuthGuard } from '../technician-auth/technician-optional-jwt-auth.guard';
 import { Permissions } from '../auth/permission.decorator';
 import { OperationLog } from '../auth/operation-log.decorator';
 
@@ -32,12 +33,14 @@ export class ArtistApplicationsController {
   constructor(private readonly service: ArtistApplicationsService) {}
 
   @Post('artist-applications')
-  @ApiOperation({ summary: '提交艺术家申请（公开）' })
+  @UseGuards(TechnicianOptionalJwtAuthGuard)
+  @ApiOperation({ summary: '提交艺术家申请（公开或美甲师登录）' })
   @ApiBody({ type: CreateArtistApplicationDto })
   @ApiResponse({ status: 201, description: '申请提交成功' })
   @ApiResponse({ status: 400, description: '参数校验失败' })
-  create(@Body() dto: CreateArtistApplicationDto) {
-    return this.service.create(dto);
+  create(@Body() dto: CreateArtistApplicationDto, @Req() req: any) {
+    const currentTechnicianId = req.user?.technicianId;
+    return this.service.create(dto, currentTechnicianId);
   }
 
   @Get('artist-applications/check-phone')
@@ -51,17 +54,19 @@ export class ArtistApplicationsController {
   @Get('artist-applications/progress')
   @ApiOperation({ summary: '查询美甲师试用申请进度' })
   @ApiQuery({ name: 'phone', type: String, description: '申请手机号', required: true })
+  @ApiQuery({ name: 'mode', type: String, description: '申请类型', required: false })
   @ApiResponse({ status: 200, description: '返回申请进度状态' })
-  getProgress(@Query('phone') phone: string) {
-    return this.service.getProgress(phone);
+  getProgress(@Query('phone') phone: string, @Query('mode') mode?: string) {
+    return this.service.getProgress(phone, mode);
   }
 
   @Get('artist-applications/progress/:phone')
   @ApiOperation({ summary: '查询美甲师试用申请进度（路径参数兼容）' })
-  @ApiParam({ name: 'phone', type: String, description: '申请手机号', required: true })
+  @ApiParam({ name: 'phone', type: String, description: '申请手机号' })
+  @ApiQuery({ name: 'mode', type: String, description: '申请类型', required: false })
   @ApiResponse({ status: 200, description: '返回申请进度状态' })
-  getProgressByParam(@Param('phone') phone: string) {
-    return this.service.getProgress(phone);
+  getProgressByParam(@Param('phone') phone: string, @Query('mode') mode?: string) {
+    return this.service.getProgress(phone, mode);
   }
 
   @Get('artist-applications/quota')

@@ -29,7 +29,12 @@ function setup() {
       findUnique: jest.fn().mockResolvedValue(null),
       findFirst: jest.fn().mockResolvedValue(null),
     },
+    clientUser: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
+    },
     $transaction: jest.fn().mockImplementation(fn => fn(tx)),
+    $executeRaw: jest.fn().mockResolvedValue(1),
   };
   return { tx, prisma, service: new ArtistApplicationsService(prisma as unknown as PrismaService) };
 }
@@ -88,18 +93,36 @@ describe('artist application contracts', () => {
     });
     expect(tx.technician.create).toHaveBeenCalled();
   });
-  it('rejects submission if phone is already a registered technician', async () => {
+  it('rejects submission if phone is already a registered client', async () => {
+    const { service, prisma } = setup();
+    (prisma as any).clientUser = {
+      findFirst: jest.fn().mockResolvedValue({ id: 8, phone: input.phone }),
+    };
+    await expect(service.create(input)).rejects.toThrow('该手机号码已经注册过OnlyNail，无法申请试用');
+  });
+
+  it('rejects submission if phone is already a registered technician in guest mode', async () => {
     const { service, prisma } = setup();
     (prisma as any).technician = {
-      findUnique: jest.fn().mockResolvedValue({ id: 10, phone: input.phone }),
+      findFirst: jest.fn().mockResolvedValue({ id: 10, phone: input.phone }),
     };
-    await expect(service.create(input)).rejects.toThrow('该手机号码已注册为美甲师账号，无需申请，请直接登录');
+    await expect(service.create(input)).rejects.toThrow('该手机号码已经注册过OnlyNail，无法申请试用');
+  });
+
+  it('allows logged in registered technician to apply for model_artist official campaign', async () => {
+    const { service, prisma } = setup();
+    (prisma as any).technician = {
+      findFirst: jest.fn().mockResolvedValue({ id: 10, phone: input.phone }),
+    };
+    (prisma.artistApplication as any).findFirst = jest.fn().mockResolvedValue(null);
+    const result = await service.create({ ...input, serviceMode: 'model_artist' }, 10);
+    expect(result).toEqual({ received: true });
   });
 
   it('rejects submission if phone already has a pending application', async () => {
     const { service, prisma } = setup();
     (prisma as any).technician = {
-      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
     };
     (prisma.artistApplication as any).findFirst = jest.fn().mockResolvedValue({
       id: 5,
@@ -112,7 +135,7 @@ describe('artist application contracts', () => {
   it('rejects submission if phone already has an approved application', async () => {
     const { service, prisma } = setup();
     (prisma as any).technician = {
-      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
     };
     (prisma.artistApplication as any).findFirst = jest.fn().mockResolvedValue({
       id: 6,

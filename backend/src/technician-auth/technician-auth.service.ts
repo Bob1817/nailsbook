@@ -1,4 +1,8 @@
-import { assertPhoneAvailable, resolvePhoneRole } from '../common/account-role-policy';
+import {
+  assertPhoneAvailable,
+  resolvePhoneRole,
+  phoneAccounts,
+} from '../common/account-role-policy';
 import {
   BadRequestException,
   ConflictException,
@@ -15,7 +19,6 @@ import { SmsService } from '../common/sms/sms.service';
 import type { Prisma } from '@prisma/client';
 import { buildDefaultServiceItems } from '../common/default-service-items';
 import {
-  isLaunchTechnician,
   isMiniProgramAuditMode,
   isMiniProgramLaunchMode,
 } from '../common/miniprogram-launch-mode';
@@ -93,9 +96,9 @@ export class TechnicianAuthService {
   }
 
   async checkPhone(phone: string) {
-    const technician = await this.findTechnicianByPhone(phone);
+    const { client, technician } = await phoneAccounts(this.prisma, phone);
     return {
-      exists: !!technician,
+      exists: !!(client || technician),
       activated: !!(technician && technician.passwordHash),
     };
   }
@@ -313,9 +316,6 @@ export class TechnicianAuthService {
   }
 
   private async issueTokens(technicianId: number, phone: string) {
-    if (!isLaunchTechnician(technicianId)) {
-      throw new UnauthorizedException('该美甲师账号未在小程序首期开放');
-    }
     const technician = await this.prisma.technician.findUnique({
       where: { id: technicianId },
       include: { subscription: { include: { plan: true } } },

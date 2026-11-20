@@ -1,5 +1,12 @@
 import { publicHomeSettings } from '../technicians/service-forms';
-import { assertPhoneAvailable, assertClientBinding, resolvePhoneRole, ROLE_SWITCH_DISABLED, INVALID_ARTIST_INVITE } from '../common/account-role-policy';
+import {
+  assertPhoneAvailable,
+  assertClientBinding,
+  resolvePhoneRole,
+  phoneAccounts,
+  ROLE_SWITCH_DISABLED,
+  INVALID_ARTIST_INVITE,
+} from '../common/account-role-policy';
 import { recordWorkShareRegistration } from '../common/work-share-registration';
 import { BindSharedWorkDto } from './dto/bind-shared-work.dto';
 import {
@@ -99,10 +106,10 @@ export class ClientAuthService {
   }
 
   async checkPhone(phone: string) {
-    const client = await this.prisma.clientUser.findUnique({
-      where: { phone },
-    });
-    return { exists: !!client };
+    const { client, technician } = await phoneAccounts(this.prisma, phone);
+    return {
+      exists: !!(client || technician),
+    };
   }
 
   // ── SMS 验证码登录 / 注册（免邀请码） ──

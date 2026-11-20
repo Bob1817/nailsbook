@@ -22,6 +22,13 @@ describe('artist application SQLite submission', () => {
     await db.$executeRawUnsafe(`CREATE TABLE "Technician" (
       "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
       "name" TEXT NOT NULL, "phone" TEXT NOT NULL UNIQUE, "passwordHash" TEXT NOT NULL DEFAULT '',
+      "status" TEXT NOT NULL DEFAULT 'active',
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await db.$executeRawUnsafe(`CREATE TABLE "ClientUser" (
+      "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      "phone" TEXT NOT NULL UNIQUE,
+      "status" TEXT NOT NULL DEFAULT 'active',
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`);
     await db.$executeRawUnsafe(`CREATE TABLE "ArtistApplication" (

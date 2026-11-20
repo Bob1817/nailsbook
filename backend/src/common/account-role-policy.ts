@@ -17,9 +17,11 @@ export async function phoneAccounts(db: Prisma.TransactionClient, phone: string)
   const [client, technician] = await Promise.all([
     db.clientUser.findFirst({
       where: { phone: { in: phones }, status: { not: 'deleted' } },
+      select: { id: true, phone: true, status: true },
     }),
     db.technician.findFirst({
       where: { phone: { in: phones }, status: { not: 'deleted' } },
+      select: { id: true, phone: true, status: true, passwordHash: true },
     }),
   ]);
   return { client, technician };
