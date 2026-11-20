@@ -10,10 +10,22 @@ function setup() {
     artistApplication: {
       update: jest.fn().mockResolvedValue({ id: 1, status: 'approved' }),
     },
-    technician: { findUnique: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ id: 2 }) },
+    technician: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
+      create: jest.fn().mockResolvedValue({ id: 2 }),
+    },
+    clientUser: {
+      findFirst: jest.fn().mockResolvedValue(null),
+      update: jest.fn().mockResolvedValue({ id: 3 }),
+    },
   };
   const prisma = {
     artistApplication: { findUnique: jest.fn().mockResolvedValue({ id: 1, ...input }) },
+    technician: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
+    },
     $transaction: jest.fn().mockImplementation(fn => fn(tx)),
   };
   return { tx, prisma, service: new ArtistApplicationsService(prisma as unknown as PrismaService) };
@@ -58,6 +70,20 @@ describe('artist application contracts', () => {
     prisma.artistApplication.findUnique.mockResolvedValue({ id: 1, ...input, serviceMode: mode as string });
     await service.approve(1, 9);
     expect(tx.technician.create).toHaveBeenCalledWith({ data: expect.objectContaining({ homeService, shopService }) });
+  });
+  it('deactivates existing client account when approving applicant with same phone', async () => {
+    const { service, tx, prisma } = setup();
+    prisma.artistApplication.findUnique.mockResolvedValue({ id: 1, ...input, serviceMode: 'shop' });
+    (tx.clientUser.findFirst as jest.Mock).mockResolvedValue({ id: 363, phone: input.phone, nickname: '老客户' });
+    await service.approve(1, 9);
+    expect(tx.clientUser.update).toHaveBeenCalledWith({
+      where: { id: 363 },
+      data: expect.objectContaining({
+        status: 'deleted',
+        phone: `migrated_tech_363_${input.phone}`,
+      }),
+    });
+    expect(tx.technician.create).toHaveBeenCalled();
   });
   it('rejects submission if phone is already a registered technician', async () => {
     const { service, prisma } = setup();

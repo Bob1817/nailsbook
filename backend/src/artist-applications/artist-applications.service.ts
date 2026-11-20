@@ -3,6 +3,7 @@ import * as crypto from 'crypto';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { DingtalkAlertService } from '../notifications/dingtalk-alert.service';
 import { CreateArtistApplicationDto } from './dto/create-artist-application.dto';
+import { phoneVariants } from '../common/account-role-policy';
 
 @Injectable()
 export class ArtistApplicationsService {
@@ -110,6 +111,20 @@ export class ArtistApplicationsService {
       },
     });
     if (!latest) {
+      const phones = phoneVariants(phone);
+      const activeTech = await this.prisma.technician.findFirst({
+        where: { phone: { in: phones }, status: { in: ['active', 'inactive'] } },
+        select: { name: true, city: true, createdAt: true },
+      });
+      if (activeTech) {
+        return {
+          status: 'approved',
+          name: activeTech.name,
+          city: activeTech.city || undefined,
+          appliedAt: activeTech.createdAt,
+          reviewedAt: activeTech.createdAt,
+        };
+      }
       return { status: 'none' };
     }
     return {
@@ -190,9 +205,26 @@ export class ArtistApplicationsService {
         data: { status: 'approved', reviewedBy, reviewedAt: new Date() },
       });
 
-      const existing = await tx.technician.findUnique({
-        where: { phone: application.phone },
+      const phones = phoneVariants(application.phone);
+      const existing = await tx.technician.findFirst({
+        where: { phone: { in: phones } },
       });
+
+      // 若申请人此前曾使用过客户身份，角色晋升美甲师前先清理客户账号，解除单手机单角色触发器约束
+      const existingClient = await tx.clientUser.findFirst({
+        where: { phone: { in: phones }, status: { not: 'deleted' } },
+      });
+      if (existingClient) {
+        await tx.clientUser.update({
+          where: { id: existingClient.id },
+          data: {
+            status: 'deleted',
+            phone: `migrated_tech_${existingClient.id}_${existingClient.phone}`,
+            nickname: `${existingClient.nickname || '客户'}(已转美甲师)`,
+            tokenVersion: { increment: 1 },
+          },
+        });
+      }
 
       // 已存在同手机号美甲师则不重复创建；新建时 passwordHash 留空，
       // 美甲师凭手机号首次登录时设置登录密码（与 technicians.create 一致）

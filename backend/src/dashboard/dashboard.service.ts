@@ -193,8 +193,14 @@ export class DashboardService {
       };
     });
 
+    const formattedDailyRevenue = ((dailyRevenue as any[]) || []).map((row) => ({
+      date: row.date,
+      totalAmount: Number(row.totalAmount || 0),
+      count: Number(row.count || 0),
+    }));
+
     return {
-      dailyRevenue,
+      dailyRevenue: formattedDailyRevenue,
       topTechnicians: topTechniciansWithInfo,
     };
   }
