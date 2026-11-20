@@ -25,8 +25,8 @@ export class CreateArtistApplicationDto {
   @MaxLength(50)
   city: string;
 
-  @ApiPropertyOptional({ description: '服务模式', enum: ['home', 'shop', 'both'] })
-  @IsIn(['home', 'shop', 'both'])
+  @ApiPropertyOptional({ description: '服务模式', enum: ['home', 'shop', 'both', 'model_artist'] })
+  @IsIn(['home', 'shop', 'both', 'model_artist'])
   @IsOptional()
   serviceMode?: string;
 

@@ -20,7 +20,7 @@ function setup() {
 }
 
 describe('artist application contracts', () => {
-  it.each(['home', 'shop', 'both'])('accepts %s without a follow requirement', async mode => {
+  it.each(['home', 'shop', 'both', 'model_artist'])('accepts %s without a follow requirement', async mode => {
     const dto = plainToInstance(CreateArtistApplicationDto, { ...input, serviceMode: mode, name: ' 测试 ' });
     expect(await validate(dto)).toEqual([]);
     expect(dto.name).toBe('测试');
