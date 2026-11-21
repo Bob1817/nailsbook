@@ -148,3 +148,39 @@ export async function getArtistApplicationProgress(phone: string): Promise<Artis
     clearTimeout(timeout)
   }
 }
+
+/* ─── Quick Quotes (快捷报价) ─── */
+
+export async function createQuickQuote(data: {
+  items: { name: string; priceFen: number; durationMinutes?: number }[];
+  finalPriceFen: number;
+  themeCode?: string;
+  technicianName?: string;
+  technicianPhone?: string;
+  shopName?: string;
+  adjustmentNote?: string;
+}) {
+  const response = await fetch(`${API_BASE}/public/quick-quotes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.message || '生成报价单失败');
+  }
+  return response.json();
+}
+
+export async function getQuickQuoteDetail(token: string) {
+  const response = await fetch(`${API_BASE}/public/quick-quotes/${token}`);
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    const error = new Error(err.message || '获取报价单失败');
+    (error as any).status = response.status;
+    (error as any).code = err.code;
+    throw error;
+  }
+  return response.json();
+}
+
