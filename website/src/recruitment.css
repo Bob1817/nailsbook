@@ -343,8 +343,14 @@
   font-size: 13px;
   color: var(--nb-muted);
 }
-.pricing-target {
+.recruitment-site .pricing-stage {
   margin-top: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--nb-ink);
+}
+.recruitment-site .pricing-target {
+  margin-top: 4px;
   font-size: 13px;
   line-height: 1.65;
   color: var(--nb-secondary);
@@ -356,7 +362,7 @@
   border-top: 1px solid var(--nb-line);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
 }
 .pricing-metrics li {
   display: flex;
@@ -365,8 +371,28 @@
   font-size: 13px;
   color: var(--nb-ink);
 }
-.pricing-footnote {
-  margin-top: 20px;
+.pricing-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--nb-line);
+}
+.pricing-feature-tag {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--nb-page);
+  border: 1px solid var(--nb-line);
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--nb-secondary);
+}
+.pricing-card-featured .pricing-feature-tag {
+  background: var(--nb-surface);
+}
+.recruitment-site .pricing-footnote {
+  margin-top: 22px;
   font-size: 13px;
   color: var(--nb-muted);
 }

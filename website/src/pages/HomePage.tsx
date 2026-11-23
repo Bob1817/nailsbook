@@ -164,6 +164,7 @@ export default function HomePage() {
                   <strong className="pricing-price">{tier.price}</strong>
                   <span className="pricing-cycle">{tier.cycle}</span>
                 </div>
+                {tier.stage ? <p className="pricing-stage">{tier.stage}</p> : null}
                 <p className="pricing-target">{tier.target}</p>
                 <ul className="pricing-metrics">
                   {tier.metrics.map((metric) => (
@@ -173,6 +174,15 @@ export default function HomePage() {
                     </li>
                   ))}
                 </ul>
+                {tier.features && tier.features.length > 0 ? (
+                  <div className="pricing-features">
+                    {tier.features.map((feat) => (
+                      <span key={feat} className="pricing-feature-tag">
+                        {feat}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
               </article>
             ))}
           </div>
