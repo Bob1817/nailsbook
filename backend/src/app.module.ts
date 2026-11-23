@@ -63,6 +63,7 @@ import { WechatOfficialModule } from './wechat-official/wechat-official.module';
 import { BrandProfilesModule } from './brand-profiles/brand-profiles.module';
 import { BookingQuotesModule } from './booking-quotes/booking-quotes.module';
 import { PlatformCampaignsModule } from './platform-campaigns/platform-campaigns.module';
+import { SystemErrorsModule } from './system-errors/system-errors.module';
 
 @Module({
   imports: [
@@ -136,6 +137,7 @@ import { PlatformCampaignsModule } from './platform-campaigns/platform-campaigns
     WechatOfficialModule,
     BrandProfilesModule,
     PlatformCampaignsModule,
+    SystemErrorsModule,
   ],
   controllers: [AppController],
   providers: [

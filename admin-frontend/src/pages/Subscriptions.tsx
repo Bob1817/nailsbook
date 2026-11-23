@@ -141,7 +141,7 @@ const Subscriptions: React.FC = () => {
               新增套餐
             </Button>
           </div>
-          <Table columns={planColumns} dataSource={plans} rowKey="id" pagination={false} />
+          <Table columns={planColumns} dataSource={plans} rowKey="id" pagination={false} scroll={{ x: 900 }} />
         </div>
       ),
     },
@@ -152,6 +152,7 @@ const Subscriptions: React.FC = () => {
         <Table
           columns={subscriptionColumns}
           dataSource={technicianSubscriptions}
+          scroll={{ x: 860 }}
           rowKey="id"
           loading={loading}
           pagination={false}
@@ -166,6 +167,7 @@ const Subscriptions: React.FC = () => {
           <Table
             rowKey={(row) => `${row.source}-${row.planCode || 'unknown'}`}
             pagination={false}
+            scroll={{ x: 640 }}
             dataSource={metrics.upgradeTriggers}
             columns={[
               { title: '触发场景', dataIndex: 'source', key: 'source' },
@@ -176,6 +178,7 @@ const Subscriptions: React.FC = () => {
           <Table
             style={{ marginTop: 24 }}
             rowKey="reason"
+            scroll={{ x: 560 }}
             pagination={false}
             dataSource={metrics.subscriptionChanges}
             columns={[

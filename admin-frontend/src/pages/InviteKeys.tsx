@@ -227,6 +227,7 @@ export default function InviteKeys() {
         <Table
           rowKey="id"
           loading={loading}
+          scroll={{ x: 860 }}
           dataSource={items}
           columns={columns}
           pagination={{

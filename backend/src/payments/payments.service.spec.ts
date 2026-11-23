@@ -15,6 +15,9 @@ describe('PaymentsService', () => {
       findMany: jest.fn(),
     },
     order: { findFirst: jest.fn() },
+    subscriptionPlan: { findFirst: jest.fn(), findUnique: jest.fn() },
+    technicianSubscription: { findUnique: jest.fn(), upsert: jest.fn() },
+    subscriptionChange: { create: jest.fn() },
     wechatIdentity: { findFirst: jest.fn() },
     $transaction: jest.fn(),
   };
@@ -221,5 +224,114 @@ describe('PaymentsService', () => {
         status: 'completed', bookingPhase: 'finished', tradeStatus: 'paid', paymentStatus: 'paid',
       }),
     }));
+  });
+
+  it('创建订阅支付单并计算分', async () => {
+    config.get.mockReturnValue('mock');
+    prisma.subscriptionPlan.findFirst.mockResolvedValue({
+      id: 2,
+      code: 'starter',
+      name: '起步版',
+      price: 39,
+      billingCycle: 'monthly',
+      status: 'active',
+    });
+    prisma.technicianSubscription.findUnique.mockResolvedValue({ id: 10 });
+    prisma.paymentOrder.create.mockImplementation(({ data }: any) => ({
+      id: 101,
+      paymentNo: 'SUB101',
+      createdAt: new Date(),
+      paidAt: null,
+      ...data,
+    }));
+
+    const result = await service.createSubscriptionPayment(
+      5,
+      'starter',
+      'idemp-sub-1',
+    );
+
+    expect(prisma.paymentOrder.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        subscriptionId: 10,
+        technicianId: 5,
+        paymentType: 'subscription',
+        amountCents: 3900,
+        status: 'pending',
+      }),
+    });
+    expect(result.amount).toBe(39);
+  });
+
+  it('订阅支付成功后更新美甲师订阅并延长30天', async () => {
+    const tx: any = {
+      paymentOrder: {
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        findUniqueOrThrow: jest.fn().mockResolvedValue({
+          id: 101,
+          paymentNo: 'SUB101',
+          paymentType: 'subscription',
+          subscriptionId: 2,
+          technicianId: 5,
+          amountCents: 3900,
+          channel: 'wechat',
+          status: 'paid',
+          paidAt: new Date(),
+        }),
+      },
+      subscriptionPlan: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 2,
+          code: 'starter',
+          name: '起步版',
+          price: 39,
+        }),
+        findUnique: jest.fn().mockResolvedValue({
+          id: 2,
+          code: 'starter',
+          name: '起步版',
+          price: 39,
+        }),
+      },
+      technicianSubscription: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        upsert: jest.fn().mockResolvedValue({ id: 1, status: 'active' }),
+      },
+      subscriptionChange: {
+        create: jest.fn().mockResolvedValue({ id: 1 }),
+      },
+    };
+    prisma.paymentOrder.findUnique.mockResolvedValue({
+      id: 101,
+      paymentNo: 'SUB101',
+      subscriptionId: 10,
+      technicianId: 5,
+      paymentType: 'subscription',
+      amountCents: 3900,
+      status: 'pending',
+      providerPayload: JSON.stringify({ targetPlanCode: 'starter', targetPlanId: 2 }),
+    });
+    prisma.$transaction.mockImplementation((callback: any) => callback(tx));
+
+    const res = await service.confirmPaid('SUB101', 'WX_SUB_101');
+    expect(tx.technicianSubscription.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { technicianId: 5 },
+        create: expect.objectContaining({
+          technicianId: 5,
+          planId: 2,
+          status: 'active',
+        }),
+      }),
+    );
+    expect(tx.subscriptionChange.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          technicianId: 5,
+          toPlanCode: 'starter',
+          reason: 'wechat_pay',
+        }),
+      }),
+    );
   });
 });

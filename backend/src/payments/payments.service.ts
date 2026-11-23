@@ -14,6 +14,7 @@ import { ReferralQualificationService } from '../referrals/referral-qualificatio
 import { revenueSnapshot } from '../orders/order-accounting';
 import { WechatPlatformConfigService } from '../wechat-platform-config/wechat-platform-config.service';
 import { WechatPayService } from './wechat-pay.service';
+import { WechatAuthService } from '../wechat-auth/wechat-auth.service';
 import {
   assertMiniProgramFeatureDisabled,
   isMiniProgramLaunchMode,
@@ -33,6 +34,7 @@ export class PaymentsService {
     @Optional()
     private readonly wechatPay?: WechatPayService,
     @Optional() private readonly chatGateway?: ChatGateway,
+    @Optional() private readonly wechatAuth?: WechatAuthService,
   ) {}
 
   async createOrderPayment(
@@ -188,6 +190,151 @@ export class PaymentsService {
     }
   }
 
+  async createSubscriptionPayment(
+    technicianId: number,
+    planCode: string,
+    idempotencyKey?: string,
+    wechatCode?: string,
+  ) {
+    const normalizedKey = (
+      idempotencyKey || `SUB_${technicianId}_${planCode}_${Date.now()}`
+    ).trim();
+
+    const plan = await this.prisma.subscriptionPlan.findFirst({
+      where: { code: planCode, status: 'active' },
+    });
+    if (!plan) throw new NotFoundException('套餐不存在');
+    if (plan.price <= 0) {
+      throw new BadRequestException('免费套餐无需在线支付');
+    }
+
+    const existing = await this.prisma.paymentOrder.findUnique({
+      where: { idempotencyKey: normalizedKey },
+    });
+    if (existing) {
+      if (existing.technicianId !== technicianId) {
+        throw new ConflictException('支付幂等键已被其他美甲师使用');
+      }
+      return this.mapPayment(existing);
+    }
+
+    const amountCents = this.toCents(plan.price);
+    const mockEnabled =
+      this.config.get('PAYMENT_PROVIDER') === 'mock' ||
+      !this.wechatPay ||
+      !(await this.platformConfig?.isPaymentAvailable().catch(() => false));
+
+    let openId: string | null = null;
+    if (!mockEnabled) {
+      const credentials = await this.platformConfig!.getPaymentCredentials();
+      let identity = await this.prisma.wechatIdentity.findFirst({
+        where: { technicianId, appId: credentials.appId },
+        select: { openId: true },
+      });
+
+      if (!identity && wechatCode && this.wechatAuth) {
+        try {
+          const session = await (this.wechatAuth as any).exchangeCode(
+            wechatCode,
+          );
+          if (session?.openid) {
+            identity = await this.prisma.wechatIdentity.upsert({
+              where: {
+                appId_openId: {
+                  appId: credentials.appId,
+                  openId: session.openid,
+                },
+              },
+              create: {
+                appId: credentials.appId,
+                openId: session.openid,
+                unionId: session.unionid,
+                technicianId,
+              },
+              update: {
+                unionId: session.unionid,
+                technicianId,
+              },
+              select: { openId: true },
+            });
+          }
+        } catch (err) {
+          console.warn('exchangeCode for technician payment failed', err);
+        }
+      }
+
+      if (!identity?.openId) {
+        throw new BadRequestException('请使用微信授权或登录后发起支付');
+      }
+      openId = identity.openId;
+    }
+
+    const currentSub = await this.prisma.technicianSubscription.findUnique({
+      where: { technicianId },
+      select: { id: true },
+    });
+
+    const payment = await this.prisma.paymentOrder.create({
+      data: {
+        paymentNo: `SUB${Date.now()}${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
+        subscriptionId: currentSub?.id ?? null,
+        technicianId,
+        paymentType: 'subscription',
+        amountCents,
+        channel: 'wechat',
+        status: 'pending',
+        idempotencyKey: normalizedKey,
+        failureReason: null,
+        providerPayload: JSON.stringify(
+          mockEnabled
+            ? { mock: true, targetPlanCode: plan.code, targetPlanId: plan.id }
+            : { targetPlanCode: plan.code, targetPlanId: plan.id },
+        ),
+      },
+    });
+
+    if (mockEnabled) {
+      return this.mapPayment(payment);
+    }
+
+    try {
+      const jsapiPayload = await this.wechatPay!.createJsapiPayment({
+        paymentNo: payment.paymentNo,
+        amountCents,
+        description: `OnlyNail美甲师工作台-${plan.name}`,
+        openId: openId!,
+      });
+      const providerPayload = {
+        ...jsapiPayload,
+        targetPlanCode: plan.code,
+        targetPlanId: plan.id,
+      };
+      const ready = await this.prisma.paymentOrder.update({
+        where: { id: payment.id },
+        data: { providerPayload: JSON.stringify(providerPayload) },
+      });
+      return this.mapPayment(ready);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : '微信支付下单失败';
+      await this.markFailed(payment.id, message);
+      throw error;
+    }
+  }
+
+  async confirmMockSubscriptionPayment(
+    technicianId: number,
+    paymentNo: string,
+  ) {
+    const payment = await this.prisma.paymentOrder.findUnique({
+      where: { paymentNo },
+    });
+    if (!payment || payment.technicianId !== technicianId) {
+      throw new NotFoundException('支付单不存在');
+    }
+    return this.confirmPaid(paymentNo, `MOCK_TR_${Date.now()}`);
+  }
+
   async listForOrder(clientUserId: number, orderId: number) {
     const owned = await this.prisma.order.findFirst({
       where: { id: orderId, clientUserId },
@@ -338,6 +485,75 @@ export class PaymentsService {
               settledOrder,
             );
           }
+        }
+      }
+      if (payment.paymentType === 'subscription' && payment.technicianId) {
+        let payload: any = null;
+        try {
+          payload = payment.providerPayload
+            ? JSON.parse(payment.providerPayload)
+            : null;
+        } catch {}
+        const targetPlanCode = payload?.targetPlanCode;
+        const targetPlanId = payload?.targetPlanId;
+        const plan = targetPlanCode
+          ? await tx.subscriptionPlan.findFirst({
+              where: { code: targetPlanCode },
+            })
+          : targetPlanId
+            ? await tx.subscriptionPlan.findUnique({
+                where: { id: targetPlanId },
+              })
+            : payment.subscriptionId
+              ? await tx.subscriptionPlan.findUnique({
+                  where: { id: payment.subscriptionId },
+                })
+              : null;
+        if (plan) {
+          const currentSub = await tx.technicianSubscription.findUnique({
+            where: { technicianId: payment.technicianId },
+            include: { plan: true },
+          });
+          const now = new Date();
+          const baseDate =
+            currentSub?.expiredAt && currentSub.expiredAt > now
+              ? currentSub.expiredAt
+              : now;
+          const durationDays = plan.billingCycle === 'yearly' ? 365 : 30;
+          const newExpiredAt = new Date(
+            baseDate.getTime() + durationDays * 24 * 60 * 60 * 1000,
+          );
+
+          await tx.technicianSubscription.upsert({
+            where: { technicianId: payment.technicianId },
+            create: {
+              technicianId: payment.technicianId,
+              planId: plan.id,
+              status: 'active',
+              startedAt: now,
+              expiredAt: newExpiredAt,
+            },
+            update: {
+              planId: plan.id,
+              status: 'active',
+              startedAt:
+                currentSub?.status === 'active' ? currentSub.startedAt : now,
+              expiredAt: newExpiredAt,
+              pendingPlanCode: null,
+              changeEffectiveAt: null,
+              cancelledAt: null,
+            },
+          });
+
+          await tx.subscriptionChange.create({
+            data: {
+              technicianId: payment.technicianId,
+              fromPlanCode: currentSub?.plan?.code ?? null,
+              toPlanCode: plan.code,
+              reason: 'wechat_pay',
+              effectiveAt: now,
+            },
+          });
         }
       }
       return tx.paymentOrder.findUniqueOrThrow({ where: { id: payment.id } });

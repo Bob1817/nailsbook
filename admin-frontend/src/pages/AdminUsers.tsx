@@ -74,6 +74,7 @@ export default function AdminUsers() {
           <Table
             rowKey="id"
             loading={loading}
+            scroll={{ x: 860 }}
             dataSource={users}
             columns={[
               { title: '账号', dataIndex: 'username', render: (text) => <strong>{text}</strong> },

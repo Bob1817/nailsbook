@@ -17,12 +17,15 @@ import {
   ApiParam,
   ApiQuery,
   ApiBody,
+  ApiProperty,
+  ApiPropertyOptional,
 } from '@nestjs/swagger';
 import {
   SubscriptionsService,
   CreateSubscriptionPlanDto,
   UpdateTechnicianSubscriptionDto,
 } from './subscriptions.service';
+import { PaymentsService } from '../payments/payments.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TechnicianJwtAuthGuard } from '../technician-auth/technician-jwt-auth.guard';
 import { TouristGuard } from '../technician-auth/tourist.guard';
@@ -33,18 +36,34 @@ import {
   isMiniProgramLaunchMode,
 } from '../common/miniprogram-launch-mode';
 
+export class CreateSubscriptionPaymentDto {
+  @ApiProperty({ description: '套餐代码', example: 'starter' })
+  planCode: string;
+
+  @ApiPropertyOptional({ description: '幂等键' })
+  idempotencyKey?: string;
+
+  @ApiPropertyOptional({ description: '微信登录code，用于换取openId' })
+  code?: string;
+}
+
+export class ConfirmMockSubscriptionPaymentDto {
+  @ApiProperty({ description: '支付单号' })
+  paymentNo: string;
+}
+
 @Controller('technician/subscriptions')
 @UseGuards(TechnicianJwtAuthGuard, TouristGuard)
 export class TechnicianSubscriptionsPublicController {
-  constructor(private readonly subscriptionsService: SubscriptionsService) {}
+  constructor(
+    private readonly subscriptionsService: SubscriptionsService,
+    private readonly paymentsService: PaymentsService,
+  ) {}
 
   @Get('plans')
   @ApiOperation({ summary: '获取订阅套餐列表' })
   @ApiResponse({ status: 200, description: '返回套餐列表' })
   findPlans() {
-    if (isMiniProgramLaunchMode()) {
-      assertMiniProgramFeatureDisabled('订阅套餐');
-    }
     return this.subscriptionsService.findPlans(true);
   }
 
@@ -56,15 +75,40 @@ export class TechnicianSubscriptionsPublicController {
     );
   }
 
+  @Post('pay')
+  @ApiOperation({ summary: '创建订阅微信支付预下单' })
+  @ApiBody({ type: CreateSubscriptionPaymentDto })
+  createPayment(
+    @Req() request: { user: { technicianId: number } },
+    @Body() dto: CreateSubscriptionPaymentDto,
+  ) {
+    return this.paymentsService.createSubscriptionPayment(
+      request.user.technicianId,
+      dto.planCode,
+      dto.idempotencyKey,
+      dto.code,
+    );
+  }
+
+  @Post('confirm-mock')
+  @ApiOperation({ summary: '确认模拟订阅支付' })
+  @ApiBody({ type: ConfirmMockSubscriptionPaymentDto })
+  confirmMock(
+    @Req() request: { user: { technicianId: number } },
+    @Body() dto: ConfirmMockSubscriptionPaymentDto,
+  ) {
+    return this.paymentsService.confirmMockSubscriptionPayment(
+      request.user.technicianId,
+      dto.paymentNo,
+    );
+  }
+
   @Get('change-preview/:planId')
   @ApiOperation({ summary: '预览套餐变更后的额度和只读影响' })
   previewChange(
     @Req() request: { user: { technicianId: number } },
     @Param('planId') planId: string,
   ) {
-    if (isMiniProgramLaunchMode()) {
-      assertMiniProgramFeatureDisabled('订阅变更');
-    }
     return this.subscriptionsService.previewPlanChange(
       request.user.technicianId,
       parseInt(planId, 10),

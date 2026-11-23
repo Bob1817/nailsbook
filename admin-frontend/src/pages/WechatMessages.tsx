@@ -369,6 +369,7 @@ export default function WechatMessages() {
           <Table
             rowKey="id"
             columns={columns}
+            scroll={{ x: 880 }}
             dataSource={items}
             loading={loading}
             pagination={{
@@ -389,10 +390,9 @@ export default function WechatMessages() {
 
       <Drawer
         title={thread ? `会话 · ${shortOpenId(thread.openId)}` : '会话'}
-        width={520}
+        styles={{ wrapper: { width: 520, maxWidth: '100vw' }, body: { display: 'flex', flexDirection: 'column' } }}
         open={threadOpen}
         onClose={() => setThreadOpen(false)}
-        styles={{ body: { display: 'flex', flexDirection: 'column' } }}
       >
         {thread ? (
           <>

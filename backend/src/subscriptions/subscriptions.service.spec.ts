@@ -38,21 +38,21 @@ describe('SubscriptionsService current entitlement', () => {
       name: '免费版',
       price: 0,
       billingCycle: 'free',
-      maxCustomers: 30,
-      maxMonthlyBookings: 30,
-      maxWorks: 50,
-      maxStorageBytes: 500 * 1024 * 1024,
-      maxMarketingExports: 5,
-      maxMonthlySms: 10,
+      maxCustomers: 3,
+      maxMonthlyBookings: 5,
+      maxWorks: 6,
+      maxStorageBytes: 50 * 1024 * 1024,
+      maxMarketingExports: 3,
+      maxMonthlySms: 5,
       maxEmployees: 1,
       maxBookingPages: 1,
       features: '["booking","works","referral_5_percent"]',
     };
     prisma.subscriptionPlan.upsert.mockResolvedValue(freePlan);
     prisma.subscriptionPlan.findUniqueOrThrow.mockResolvedValue(freePlan);
-    prisma.customer.count.mockResolvedValue(8);
-    prisma.order.count.mockResolvedValue(3);
-    prisma.nailWork.count.mockResolvedValue(4);
+    prisma.customer.count.mockResolvedValue(2);
+    prisma.order.count.mockResolvedValue(1);
+    prisma.nailWork.count.mockResolvedValue(2);
     prisma.subscriptionResourceUsage.findUnique.mockResolvedValue(null);
     prisma.subscriptionChange.create.mockResolvedValue({});
     prisma.subscriptionUsageEvent.findUnique.mockResolvedValue(null);
@@ -77,17 +77,17 @@ describe('SubscriptionsService current entitlement', () => {
     expect(result.plan.code).toBe('free');
     expect(result.plan.features).toContain('referral_5_percent');
     expect(result.usage).toEqual({
-      customerCount: 8,
-      monthlyBookings: 3,
-      worksCount: 4,
+      customerCount: 2,
+      monthlyBookings: 1,
+      worksCount: 2,
       storageBytes: 0,
       marketingExports: 0,
       monthlySms: 0,
     });
     expect(result.entitlements.customers).toEqual(
-      expect.objectContaining({ used: 8, limit: 30, reached: false }),
+      expect.objectContaining({ used: 2, limit: 3, reached: false }),
     );
-    expect(result.paymentReady).toBe(false);
+    expect(result.paymentReady).toBe(true);
   });
 
   it('已过期专业版自动降级免费版', async () => {

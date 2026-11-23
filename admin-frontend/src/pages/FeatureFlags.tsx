@@ -99,6 +99,7 @@ export default function FeatureFlags() {
         <Table
           columns={columns}
           dataSource={flags}
+          scroll={{ x: 820 }}
           rowKey="id"
           loading={loading}
           pagination={false}

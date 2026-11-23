@@ -237,6 +237,7 @@ const Feedback: React.FC = () => {
         <Table
           columns={columns}
           dataSource={items}
+          scroll={{ x: 900 }}
           rowKey="id"
           loading={loading}
           pagination={{

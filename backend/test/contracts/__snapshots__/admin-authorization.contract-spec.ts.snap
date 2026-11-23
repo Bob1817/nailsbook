@@ -424,6 +424,41 @@ exports[`Admin authorization HTTP contract covers every admin business route wit
   },
   {
     "method": "GET",
+    "path": "/api/admin/system-errors",
+    "permissions": [
+      "log:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/system-errors/:id",
+    "permissions": [
+      "log:view",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/system-errors/:id/resolve",
+    "permissions": [
+      "log:view",
+    ],
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/system-errors/batch-resolve",
+    "permissions": [
+      "log:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/system-errors/stats",
+    "permissions": [
+      "log:view",
+    ],
+  },
+  {
+    "method": "GET",
     "path": "/api/admin/technician-invite-keys",
     "permissions": [
       "technician:create",

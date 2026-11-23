@@ -854,6 +854,7 @@ const Campaigns: React.FC = () => {
             <Table
               columns={columns}
               dataSource={items}
+              scroll={{ x: 960 }}
               rowKey="id"
               pagination={false}
               bordered={false}

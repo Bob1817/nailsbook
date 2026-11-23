@@ -2257,3 +2257,28 @@ model QuickQuoteSnapshot {
   @@index([expiresAt])
 }
 
+model SystemErrorLog {
+  id           Int       @id @default(autoincrement())
+  source       String    @default("mini_program") // mini_program | backend | admin
+  errorType    String    // js_error | unhandled_rejection | api_error | http_500
+  message      String
+  stack        String?
+  route        String?
+  method       String?
+  statusCode   Int?
+  userRole     String?   // technician | client | guest | admin
+  userId       Int?
+  deviceInfo   String?
+  networkType  String?
+  ip           String?
+  resolved     Boolean   @default(false)
+  resolvedAt   DateTime?
+  resolvedNote String?
+  createdAt    DateTime  @default(now())
+
+  @@index([source, errorType])
+  @@index([createdAt])
+  @@index([resolved])
+}
+
+

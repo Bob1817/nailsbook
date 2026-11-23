@@ -158,7 +158,7 @@ const Orders: React.FC = () => {
           <Descriptions.Item label="地址" span={2}>{detail.address || '-'}</Descriptions.Item>
           <Descriptions.Item label="客户备注" span={2}>{detail.remark || '-'}</Descriptions.Item>
         </Descriptions>
-        <Table style={{ marginTop: 20 }} size="small" pagination={false} rowKey="id" dataSource={detail.serviceLines || []}
+        <Table style={{ marginTop: 20 }} size="small" pagination={false} rowKey="id" dataSource={detail.serviceLines || []} scroll={{ x: 480 }}
           columns={[
             { title: '费用项目', dataIndex: 'nameSnapshot' },
             { title: '类型', dataIndex: 'source', render: (value: string) => value === 'surcharge' ? '附加费' : '基础服务' },

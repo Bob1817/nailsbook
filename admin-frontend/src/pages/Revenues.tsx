@@ -180,6 +180,7 @@ const Revenues: React.FC = () => {
         <Table
           columns={columns}
           dataSource={data?.data || []}
+          scroll={{ x: 920 }}
           rowKey="id"
           loading={loading}
           pagination={{

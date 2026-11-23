@@ -172,4 +172,42 @@ describe('TechnicianAuthService.setInitialPassword', () => {
     await expect(service.updateStatus(7, 'inactive')).rejects.toThrow('账号不可用');
     expect(prisma.technician.update).not.toHaveBeenCalled();
   });
+
+  describe('register', () => {
+    it('registers without invite key directly', async () => {
+      prisma.technician.findFirst.mockResolvedValue(null);
+      prisma.clientUser.findFirst.mockResolvedValue(null);
+
+      const createdTech = {
+        ...baseTechnician,
+        id: 99,
+        name: 'OpenArtist',
+        phone: '13900000000',
+        passwordHash: 'hashed',
+      };
+
+      (prisma as any).$transaction = jest.fn().mockImplementation(async (cb) => {
+        const tx = {
+          clientUser: { findFirst: jest.fn().mockResolvedValue(null) },
+          technician: {
+            findFirst: jest.fn().mockResolvedValue(null),
+            findUnique: jest.fn().mockResolvedValue(null),
+            create: jest.fn().mockResolvedValue(createdTech),
+          },
+        };
+        return cb(tx);
+      });
+
+      prisma.technician.findUnique.mockResolvedValue(createdTech);
+
+      const result = await service.register({
+        name: 'OpenArtist',
+        phone: '13900000000',
+        password: 'Password123',
+      });
+
+      expect(result).toHaveProperty('accessToken');
+      expect(result.technician.name).toBe('OpenArtist');
+    });
+  });
 });

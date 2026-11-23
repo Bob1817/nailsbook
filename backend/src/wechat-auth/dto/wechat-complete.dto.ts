@@ -34,7 +34,7 @@ export class WechatClientCompleteDto extends WechatPhoneBaseDto {
 }
 
 export class WechatTechnicianCompleteDto extends WechatPhoneBaseDto {
-  @ApiPropertyOptional({ description: '管理员邀请密钥；新美甲师必填' })
+  @ApiPropertyOptional({ description: '推荐码（选填，用于追踪渠道来源）' })
   @IsOptional()
   @IsString()
   inviteKey?: string;
@@ -44,7 +44,7 @@ export class WechatTechnicianCompleteDto extends WechatPhoneBaseDto {
   @IsString()
   name?: string;
 
-  @ApiPropertyOptional({ description: '备用密码；新美甲师必填' })
+  @ApiPropertyOptional({ description: '备用密码（选填，不填则仅限微信登录）' })
   @IsOptional()
   @IsString()
   @IsStrongPassword()

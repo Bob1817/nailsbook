@@ -3,6 +3,7 @@ import { Avatar, Breadcrumb, Button, Drawer, Dropdown, Grid, Layout, Menu, Space
 import type { MenuProps } from 'antd';
 import {
   AppstoreOutlined,
+  BugOutlined,
   CalendarOutlined,
   CloseOutlined,
   CrownOutlined,
@@ -95,13 +96,15 @@ const navigationGroups: NavigationGroup[] = [
       { key: '/admin-users', icon: <UserOutlined />, label: '管理员账号', superAdmin: true },
       { key: '/roles', icon: <SafetyOutlined />, label: '角色权限', superAdmin: true },
       { key: '/logs', icon: <HistoryOutlined />, label: '操作日志', permission: 'log:view' },
+      { key: '/system-errors', icon: <BugOutlined />, label: '系统错误监控', permission: 'log:view' },
     ],
   },
 ];
 
 const MainLayout: React.FC = () => {
   const screens = Grid.useBreakpoint();
-  const mobile = !screens.md;
+  const mobile = screens.md === false;
+  const compactDesktop = Boolean(screens.md && !screens.xl);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, logout, hasPermission } = useAuth();
@@ -109,6 +112,10 @@ const MainLayout: React.FC = () => {
   const location = useLocation();
   const activeGroup = navigationGroups.find(group => group.children.some(item => item.key === location.pathname))?.key;
   const [openGroups, setOpenGroups] = useState<string[]>([activeGroup || 'operation']);
+
+  useEffect(() => {
+    setCollapsed(compactDesktop);
+  }, [compactDesktop]);
 
   useEffect(() => {
     setMobileMenuOpen(false);

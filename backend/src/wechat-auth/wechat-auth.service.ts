@@ -198,15 +198,17 @@ export class WechatAuthService {
     const isNewTechnician = !technician;
 
     if (!technician) {
-      if (!dto.inviteKey || !dto.name || !dto.password) {
-        throw new BadRequestException('新美甲师需要邀请码、姓名和备用密码');
+      if (!dto.name) {
+        throw new BadRequestException('请输入美甲师姓名');
       }
+      // 密码可选：不填则生成随机密码，用户后续通过微信免密登录
+      const password = dto.password || this.generateRandomPassword();
       const registered = await this.technicianAuth.register(
         {
           inviteKey: dto.inviteKey,
           name: dto.name,
           phone,
-          password: dto.password,
+          password,
         },
         session,
       );
@@ -428,6 +430,16 @@ export class WechatAuthService {
         Date.now() + Math.max((result.expires_in ?? 7200) - 300, 60) * 1000,
     };
     return result.access_token;
+  }
+
+  private generateRandomPassword(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    let pwd = '';
+    for (let i = 0; i < 16; i++) {
+      pwd += chars[Math.floor(Math.random() * chars.length)];
+    }
+    // 确保同时包含字母和数字以通过 IsStrongPassword 校验
+    return pwd.slice(0, 14) + 'A1';
   }
 
   private wechatTimeoutMs() {

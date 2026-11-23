@@ -124,4 +124,81 @@ export class DingtalkAlertService {
 
     return this.sendMarkdown('OnlyNail 作品待审核提醒', text);
   }
+
+  /** 发送系统异常报警（带 5 分钟去重防刷） */
+  private lastAlertTimestamps = new Map<string, number>();
+
+  async notifySystemError(params: {
+    source: string;
+    errorType: string;
+    message: string;
+    stack?: string;
+    route?: string;
+    userRole?: string;
+    userId?: number;
+    deviceInfo?: string;
+    ip?: string;
+  }) {
+    const dedupeKey = `${params.source}_${params.errorType}_${params.message.slice(0, 100)}`;
+    const now = Date.now();
+    const lastTime = this.lastAlertTimestamps.get(dedupeKey) || 0;
+    if (now - lastTime < 5 * 60 * 1000) {
+      return false;
+    }
+    this.lastAlertTimestamps.set(dedupeKey, now);
+    if (this.lastAlertTimestamps.size > 200) {
+      this.lastAlertTimestamps.clear();
+    }
+
+    const timeStr = new Date().toLocaleString('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+    });
+
+    let deviceSummary = '';
+    if (params.deviceInfo) {
+      try {
+        const parsed = JSON.parse(params.deviceInfo);
+        const parts = [
+          parsed.brand || parsed.model,
+          parsed.system,
+          parsed.version ? `微信${parsed.version}` : null,
+          parsed.SDKVersion ? `基础库${parsed.SDKVersion}` : null,
+        ].filter(Boolean);
+        deviceSummary = parts.join(' · ');
+      } catch {
+        deviceSummary = params.deviceInfo.slice(0, 100);
+      }
+    }
+
+    const sourceLabel =
+      params.source === 'mini_program'
+        ? '📱 微信小程序'
+        : params.source === 'backend'
+          ? '🖥️ 后端服务'
+          : '🌐 管理后台';
+
+    const text = [
+      `### 🚨 OnlyNail 系统异常监控告警！`,
+      `**系统捕获到真机/线上环境未处理异常**`,
+      `• **报错来源**：${sourceLabel}`,
+      `• **异常类型**：\`${params.errorType}\``,
+      params.route ? `• **发生页面/接口**：\`${params.route}\`` : '',
+      params.userRole
+        ? `• **受影响用户**：${params.userRole}${params.userId ? ` (ID: ${params.userId})` : ''}`
+        : '',
+      deviceSummary ? `• **终端环境**：${deviceSummary}` : '',
+      `• **告警时间**：${timeStr}`,
+      `• **报错信息**：`,
+      `> ${params.message.slice(0, 300).replace(/\n/g, '\n> ')}`,
+      params.stack
+        ? `• **堆栈摘要**：\n\`\`\`\n${params.stack.slice(0, 350)}\n\`\`\``
+        : '',
+      ``,
+      `👉 [点击登录超管后台查看完整日志与堆栈](https://admin.lunails.cn/#/system-errors)`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    return this.sendMarkdown('OnlyNail 系统异常告警', text);
+  }
 }

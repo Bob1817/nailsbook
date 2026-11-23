@@ -137,17 +137,22 @@ const Dashboard: React.FC = () => {
     fetchDashboardData();
   }, []);
 
+  const revenueSeries = useMemo(() => {
+    return [...(businessStats?.dailyRevenue || [])]
+      .reverse()
+      .filter((item) => item && item.date && String(item.date).toLowerCase() !== 'null');
+  }, [businessStats]);
+
   const revenueOption = useMemo(() => {
-    const values = [...(businessStats?.dailyRevenue || [])].reverse();
     return {
       color: [colors.link],
       grid: { left: 54, right: 18, top: 24, bottom: 36 },
       tooltip: { trigger: 'axis', valueFormatter: (value: number) => `¥${Number(value).toFixed(2)}` },
-      xAxis: { type: 'category', boundaryGap: false, data: values.map(item => item.date), axisLine: { lineStyle: { color: colors.line } }, axisLabel: { color: colors.muted } },
+      xAxis: { type: 'category', boundaryGap: false, data: revenueSeries.map(item => item.date), axisLine: { lineStyle: { color: colors.line } }, axisLabel: { color: colors.muted } },
       yAxis: { type: 'value', axisLine: { show: false }, splitLine: { lineStyle: { color: colors.line } }, axisLabel: { color: colors.muted } },
-      series: [{ name: '确认收入', type: 'line', smooth: true, symbol: 'circle', symbolSize: 7, lineStyle: { width: 3 }, areaStyle: { color: 'rgba(82, 100, 119, 0.10)' }, data: values.map(item => Number(item.totalAmount)) }],
+      series: [{ name: '确认收入', type: 'line', smooth: true, symbol: 'circle', symbolSize: 7, lineStyle: { width: 3 }, areaStyle: { color: 'rgba(82, 100, 119, 0.10)' }, data: revenueSeries.map(item => Number(item.totalAmount)) }],
     };
-  }, [businessStats]);
+  }, [revenueSeries]);
 
   const subscriptionOption = useMemo(() => ({
     color: [colors.ink, colors.link, colors.muted, colors.control],
@@ -165,23 +170,32 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const charts: echarts.ECharts[] = [];
-    if (revenueChartRef.current && businessStats) {
+    const observedNodes: HTMLDivElement[] = [];
+    if (revenueChartRef.current && revenueSeries.length > 0) {
       const chart = echarts.init(revenueChartRef.current);
       chart.setOption(revenueOption);
       charts.push(chart);
+      observedNodes.push(revenueChartRef.current);
     }
     if (subscriptionChartRef.current && overview) {
       const chart = echarts.init(subscriptionChartRef.current);
       chart.setOption(subscriptionOption);
       charts.push(chart);
+      observedNodes.push(subscriptionChartRef.current);
     }
     const resize = () => charts.forEach(chart => chart.resize());
     window.addEventListener('resize', resize);
+    let observer: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined' && observedNodes.length > 0) {
+      observer = new ResizeObserver(() => resize());
+      observedNodes.forEach((node) => observer?.observe(node));
+    }
     return () => {
       window.removeEventListener('resize', resize);
+      observer?.disconnect();
       charts.forEach(chart => chart.dispose());
     };
-  }, [businessStats, overview, revenueOption, subscriptionOption]);
+  }, [overview, revenueOption, revenueSeries.length, subscriptionOption]);
 
   if (loading || !overview) {
     return <div className="admin-loading"><Spin size="large" /></div>;
@@ -226,7 +240,7 @@ const Dashboard: React.FC = () => {
       count: approvalStats?.pendingApplications ?? 0,
       desc: '新美甲师实名及作品入驻审核',
       icon: <FileTextOutlined />,
-      actionText: (approvalStats?.pendingApplications ?? 0) > 0 ? '快速审批 ›' : '查看列表 ›',
+      actionText: (approvalStats?.pendingApplications ?? 0) > 0 ? '快速审批' : '查看列表',
       onClick: () => {
         if ((approvalStats?.pendingApplications ?? 0) > 0) {
           openQuickApprovalDrawer();
@@ -241,7 +255,7 @@ const Dashboard: React.FC = () => {
       count: approvalStats?.pendingWorks ?? 0,
       desc: '美甲师发布作品与款式合规审核',
       icon: <PictureOutlined />,
-      actionText: '进入作品队列 ›',
+      actionText: '进入作品队列',
       onClick: () => navigate('/works?status=pending'),
     },
     {
@@ -250,7 +264,7 @@ const Dashboard: React.FC = () => {
       count: approvalStats?.pendingDeletions ?? 0,
       desc: '用户/美甲师账号注销人工复核',
       icon: <UserDeleteOutlined />,
-      actionText: '复核注销 ›',
+      actionText: '复核注销',
       onClick: () => navigate('/account-deletions'),
     },
     {
@@ -259,7 +273,7 @@ const Dashboard: React.FC = () => {
       count: approvalStats?.pendingReports ?? 0,
       desc: '作品/评价/服务违规举报处理',
       icon: <AlertOutlined />,
-      actionText: '核查举报 ›',
+      actionText: '核查举报',
       onClick: () => navigate('/reports?status=pending'),
     },
     {
@@ -268,8 +282,8 @@ const Dashboard: React.FC = () => {
       count: approvalStats?.pendingFeedbacks ?? 0,
       desc: '用户与美甲师提交的建议与故障',
       icon: <CommentOutlined />,
-      actionText: '跟进反馈 ›',
-      onClick: () => navigate('/feedbacks'),
+      actionText: '跟进反馈',
+      onClick: () => navigate('/feedback'),
     },
   ];
 
@@ -278,21 +292,21 @@ const Dashboard: React.FC = () => {
       <AdminPageHeader title="运营总览" description="查看平台经营状态，并优先处理影响履约的预约与审批。" />
 
       <Row gutter={[16, 16]}>
-        <Col xs={12} xl={6}>
+        <Col xs={12} sm={12} lg={6}>
           <Card className="admin-metric-card"><Statistic title="美甲师" value={overview.technicianStats.total} prefix={<TeamOutlined />} /><Text type="secondary">活跃 {overview.technicianStats.active} · 近30天新增 {overview.technicianStats.newLast30Days}</Text></Card>
         </Col>
-        <Col xs={12} xl={6}>
+        <Col xs={12} sm={12} lg={6}>
           <Card className="admin-metric-card"><Statistic title="客户" value={overview.customerStats.total} prefix={<UserOutlined />} /><Text type="secondary">近30天新增 {overview.customerStats.newLast30Days}</Text></Card>
         </Col>
-        <Col xs={12} xl={6}>
+        <Col xs={12} sm={12} lg={6}>
           <Card className="admin-metric-card"><Statistic title="预约" value={overview.orderStats.total} prefix={<CalendarOutlined />} /><Text type="secondary">已完成 {overview.orderStats.completed}</Text></Card>
         </Col>
-        <Col xs={12} xl={6}>
+        <Col xs={12} sm={12} lg={6}>
           <Card className="admin-metric-card"><Statistic title="确认收入" value={overview.revenueStats.total} prefix="¥" precision={2} /><Text type="secondary">近30天 ¥{Number(overview.revenueStats.last30Days).toFixed(2)}</Text></Card>
         </Col>
       </Row>
 
-      {/* 审批待办任务中心（移动端友好 + 首页直通审批） */}
+      {/* 审批待办任务中心（纵向分层卡片 + 响应式列数） */}
       <section className="admin-section">
         <div className="admin-section-heading">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -315,11 +329,9 @@ const Dashboard: React.FC = () => {
             >
               <div className="admin-approval-card__top">
                 <span className="admin-approval-card__icon">{card.icon}</span>
-                <Badge
-                  count={card.count}
-                  showZero
-                  className={card.count > 0 ? 'badge-urgent' : 'badge-idle'}
-                />
+                <span className={`admin-approval-card__count ${card.count > 0 ? 'is-urgent' : ''}`}>
+                  {card.count}
+                </span>
               </div>
               <div className="admin-approval-card__main">
                 <div className="admin-approval-card__title">{card.title}</div>
@@ -348,16 +360,24 @@ const Dashboard: React.FC = () => {
       </section>
 
       <Row gutter={[16, 16]} className="admin-section">
-        <Col xs={24} xl={16}>
-          <Card title="近30天确认收入" className="admin-dashboard-card"><div ref={revenueChartRef} className="admin-chart" /></Card>
+        <Col xs={24} lg={15} xl={16}>
+          <Card title="近30天确认收入" className="admin-dashboard-card">
+            {revenueSeries.length > 0 ? (
+              <div ref={revenueChartRef} className="admin-chart" />
+            ) : (
+              <div className="admin-chart" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Empty description="近30天暂无按日确认收入数据" />
+              </div>
+            )}
+          </Card>
         </Col>
-        <Col xs={24} xl={8}>
+        <Col xs={24} lg={9} xl={8}>
           <Card title="有效订阅分布" extra={<Text type="secondary">{overview.subscriptionStats.active} 个</Text>} className="admin-dashboard-card"><div ref={subscriptionChartRef} className="admin-chart" /></Card>
         </Col>
       </Row>
 
       <Row gutter={[16, 16]} className="admin-section">
-        <Col xs={24} xl={17}>
+        <Col xs={24} lg={16} xl={17}>
           <Card className="admin-dashboard-card">
             <Tabs items={[
               { key: 'orders', label: '最近预约', children: <Table columns={orderColumns} dataSource={overview.recentOrders} rowKey="id" pagination={false} size="small" scroll={{ x: 720 }} onRow={row => ({ onClick: () => navigate(`/orders?order=${row.id}`), className: 'admin-clickable-row' })} /> },
@@ -365,7 +385,7 @@ const Dashboard: React.FC = () => {
             ]} />
           </Card>
         </Col>
-        <Col xs={24} xl={7}>
+        <Col xs={24} lg={8} xl={7}>
           <Card title="美甲师经营排行" className="admin-dashboard-card">
             <div className="admin-ranking-list">
               {(businessStats?.topTechnicians || []).slice(0, 5).map((item, index) => (

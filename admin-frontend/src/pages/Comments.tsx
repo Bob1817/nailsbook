@@ -188,6 +188,7 @@ const Comments: React.FC = () => {
         <Table
           columns={columns}
           dataSource={items}
+          scroll={{ x: 860 }}
           rowKey="id"
           loading={loading}
           pagination={{

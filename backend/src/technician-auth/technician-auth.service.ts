@@ -20,7 +20,6 @@ import type { Prisma } from '@prisma/client';
 import { buildDefaultServiceItems } from '../common/default-service-items';
 import {
   isMiniProgramAuditMode,
-  isMiniProgramLaunchMode,
 } from '../common/miniprogram-launch-mode';
 
 @Injectable()
@@ -105,13 +104,19 @@ export class TechnicianAuthService {
 
   async register(
     dto: {
-      inviteKey: string;
+      inviteKey?: string;
       name: string;
       phone: string;
       password: string;
     },
     wechatIdentity?: { appId: string; openId: string; unionId?: string },
   ) {
+    // ── 无密钥直接注册 ──
+    if (!dto.inviteKey) {
+      return this.registerWithoutKey(dto, wechatIdentity);
+    }
+
+    // ── 以下为密钥注册逻辑 ──
     const keyRecord = await this.prisma.technicianInviteKey.findUnique({
       where: { key: dto.inviteKey },
       include: { technician: true },
@@ -123,12 +128,6 @@ export class TechnicianAuthService {
 
     if (keyRecord.usedAt) {
       throw new BadRequestException('邀请密钥已被使用');
-    }
-
-    if (isMiniProgramLaunchMode() && !keyRecord.usedByTechnicianId) {
-      throw new BadRequestException(
-        '小程序首期不开放新美甲师入驻，请联系运营方预先开通账号',
-      );
     }
 
     await assertPhoneAvailable(this.prisma, dto.phone, keyRecord.usedByTechnicianId ?? undefined);
@@ -204,6 +203,43 @@ export class TechnicianAuthService {
         data: {
           usedByTechnicianId: created.id,
           usedAt: new Date(),
+        },
+      });
+
+      if (wechatIdentity) {
+        await tx.wechatIdentity.create({
+          data: { ...wechatIdentity, technicianId: created.id },
+        });
+      }
+
+      return created;
+    });
+
+    return this.issueTokens(technician.id, technician.phone);
+  }
+
+  /**
+   * 无密钥注册：直接创建免费版美甲师账号。
+   * 免费订阅由 SubscriptionsService.getCurrentForTechnician() 首次查询时 lazy 创建。
+   */
+  private async registerWithoutKey(
+    dto: { name: string; phone: string; password: string },
+    wechatIdentity?: { appId: string; openId: string; unionId?: string },
+  ) {
+    await assertPhoneAvailable(this.prisma, dto.phone);
+
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+
+    const technician = await this.prisma.$transaction(async (tx) => {
+      await assertPhoneAvailable(tx, dto.phone);
+      const invitationCode = await this.allocateInvitationCode(tx);
+      const created = await tx.technician.create({
+        data: {
+          name: dto.name.trim(),
+          phone: dto.phone,
+          passwordHash,
+          invitationCode,
+          status: 'active',
         },
       });
 

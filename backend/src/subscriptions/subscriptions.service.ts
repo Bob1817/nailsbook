@@ -231,8 +231,6 @@ export class SubscriptionsService {
           resourceUsage?.smsSent ?? 0,
           subscription.plan.maxMonthlySms,
         ),
-        employees: this.toEntitlement(1, subscription.plan.maxEmployees),
-        bookingPages: this.toEntitlement(1, subscription.plan.maxBookingPages),
       },
       limits: {
         customersReached:
@@ -242,8 +240,8 @@ export class SubscriptionsService {
           subscription.plan.maxMonthlyBookings != null &&
           monthlyBookings >= subscription.plan.maxMonthlyBookings,
       },
-      paymentReady: false,
-      upgradeMode: 'contact_admin',
+      paymentReady: true,
+      upgradeMode: 'wechat_pay',
     };
   }
 
@@ -281,7 +279,15 @@ export class SubscriptionsService {
         'booking_quota_reached',
         current.plan?.code,
       );
-      throw new ForbiddenException('当前套餐本月预约额度已用完，请升级套餐');
+      throw new ForbiddenException({
+        code: 'QUOTA_EXCEEDED',
+        resource: 'monthlyBookings',
+        message: '当前套餐本月预约额度已用完，请升级套餐',
+        limit: current.plan?.maxMonthlyBookings ?? null,
+        used: current.usage?.monthlyBookings ?? 0,
+        planName: current.plan?.name ?? '免费版',
+        planCode: current.plan?.code ?? 'free',
+      });
     }
     return current;
   }
@@ -294,7 +300,15 @@ export class SubscriptionsService {
         'works_quota_reached',
         current.plan?.code,
       );
-      throw new ForbiddenException('当前套餐作品额度已用完，请升级套餐');
+      throw new ForbiddenException({
+        code: 'QUOTA_EXCEEDED',
+        resource: 'works',
+        message: '当前套餐作品额度已用完，请升级套餐',
+        limit: current.plan?.maxWorks ?? null,
+        used: current.usage?.worksCount ?? 0,
+        planName: current.plan?.name ?? '免费版',
+        planCode: current.plan?.code ?? 'free',
+      });
     }
     return current;
   }
@@ -318,7 +332,15 @@ export class SubscriptionsService {
         'customer_quota_reached',
         current.plan?.code,
       );
-      throw new ForbiddenException('当前套餐活跃客户额度已用完，请升级套餐');
+      throw new ForbiddenException({
+        code: 'QUOTA_EXCEEDED',
+        resource: 'customers',
+        message: '当前套餐活跃客户额度已用完，请升级套餐',
+        limit: current.plan?.maxCustomers ?? null,
+        used: current.usage?.customerCount ?? 0,
+        planName: current.plan?.name ?? '免费版',
+        planCode: current.plan?.code ?? 'free',
+      });
     }
   }
 
@@ -332,9 +354,15 @@ export class SubscriptionsService {
         current.plan?.code,
         { requestedBytes: bytes },
       );
-      throw new ForbiddenException(
-        '当前套餐存储空间不足，请清理素材或升级套餐',
-      );
+      throw new ForbiddenException({
+        code: 'QUOTA_EXCEEDED',
+        resource: 'storage',
+        message: '当前套餐存储空间不足，请清理素材或升级套餐',
+        limit: storage?.limit ?? null,
+        used: storage?.used ?? 0,
+        planName: current.plan?.name ?? '免费版',
+        planCode: current.plan?.code ?? 'free',
+      });
     }
   }
 
@@ -399,9 +427,15 @@ export class SubscriptionsService {
         current.plan?.code,
         { amount },
       );
-      throw new ForbiddenException(
-        `当前套餐${label}额度已用完，请购买资源包或升级套餐`,
-      );
+      throw new ForbiddenException({
+        code: 'QUOTA_EXCEEDED',
+        resource,
+        message: `当前套餐${label}额度已用完，请购买资源包或升级套餐`,
+        limit: entitlement?.limit ?? null,
+        used: entitlement?.used ?? 0,
+        planName: current.plan?.name ?? '免费版',
+        planCode: current.plan?.code ?? 'free',
+      });
     }
     const now = new Date();
     const period = this.monthPeriod(now);
@@ -428,9 +462,15 @@ export class SubscriptionsService {
         latestUsed + amount > entitlement.limit
       ) {
         const label = resource === 'marketingExports' ? '宣传导出' : '短信';
-        throw new ForbiddenException(
-          `当前套餐${label}额度已用完，请购买资源包或升级套餐`,
-        );
+        throw new ForbiddenException({
+          code: 'QUOTA_EXCEEDED',
+          resource,
+          message: `当前套餐${label}额度已用完，请购买资源包或升级套餐`,
+          limit: entitlement?.limit ?? null,
+          used: latestUsed,
+          planName: current.plan?.name ?? '免费版',
+          planCode: current.plan?.code ?? 'free',
+        });
       }
       await tx.subscriptionResourceUsage.upsert({
         where: { technicianId_period: { technicianId, period } },
@@ -730,16 +770,16 @@ export class SubscriptionsService {
         name: '免费版',
         price: 0,
         billingCycle: 'free',
-        maxCustomers: 30,
-        maxMonthlyBookings: 30,
-        maxWorks: 50,
-        maxStorageBytes: 500 * 1024 * 1024,
-        maxMarketingExports: 5,
-        maxMonthlySms: 10,
+        maxCustomers: 3,
+        maxMonthlyBookings: 5,
+        maxWorks: 6,
+        maxStorageBytes: 50 * 1024 * 1024,
+        maxMarketingExports: 3,
+        maxMonthlySms: 5,
         maxEmployees: 1,
         maxBookingPages: 1,
         targetStage: '新手体验、个人起步',
-        description: '免费建立完整、规范的经营流程',
+        description: '零门槛建立专属高定档案与预约避坑闭环',
         features: ['customer_management', 'booking', 'works', 'basic_insights'],
       },
       {
@@ -747,16 +787,16 @@ export class SubscriptionsService {
         name: '入门版',
         price: 29,
         billingCycle: 'monthly',
-        maxCustomers: 150,
-        maxMonthlyBookings: 150,
-        maxWorks: 300,
-        maxStorageBytes: 5 * 1024 * 1024 * 1024,
-        maxMarketingExports: 30,
-        maxMonthlySms: 30,
+        maxCustomers: 20,
+        maxMonthlyBookings: 20,
+        maxWorks: 30,
+        maxStorageBytes: 1 * 1024 * 1024 * 1024,
+        maxMarketingExports: 15,
+        maxMonthlySms: 20,
         maxEmployees: 1,
         maxBookingPages: 1,
-        targetStage: '稳定经营的个人美甲师',
-        description: '扩大经营规模并建立个人品牌',
+        targetStage: '成熟全职独立手艺人',
+        description: '全职独立手艺人专属，维系高净值私客圈',
         features: [
           'customer_management',
           'booking',
@@ -772,16 +812,16 @@ export class SubscriptionsService {
         name: '高阶版',
         price: 79,
         billingCycle: 'monthly',
-        maxCustomers: 500,
-        maxMonthlyBookings: 500,
-        maxWorks: 1500,
-        maxStorageBytes: 30 * 1024 * 1024 * 1024,
-        maxMarketingExports: 150,
-        maxMonthlySms: 100,
-        maxEmployees: 3,
-        maxBookingPages: 3,
-        targetStage: '成熟美甲师、小型工作室',
-        description: '提升复购率、客户价值和经营效率',
+        maxCustomers: 60,
+        maxMonthlyBookings: 60,
+        maxWorks: 80,
+        maxStorageBytes: 5 * 1024 * 1024 * 1024,
+        maxMarketingExports: 50,
+        maxMonthlySms: 60,
+        maxEmployees: 1,
+        maxBookingPages: 1,
+        targetStage: '知名美学主理人、客流外溢工坊',
+        description: '高定独立工坊首选，提升多客流管理效率',
         features: [
           'customer_management',
           'booking',
@@ -798,16 +838,16 @@ export class SubscriptionsService {
         name: '终极版',
         price: 199,
         billingCycle: 'monthly',
-        maxCustomers: 2000,
+        maxCustomers: 200,
         maxMonthlyBookings: null,
         maxWorks: null,
-        maxStorageBytes: 100 * 1024 * 1024 * 1024,
+        maxStorageBytes: 20 * 1024 * 1024 * 1024,
         maxMarketingExports: null,
-        maxMonthlySms: 300,
-        maxEmployees: 5,
+        maxMonthlySms: 200,
+        maxEmployees: 1,
         maxBookingPages: null,
-        targetStage: '多人工作室',
-        description: '支持团队化和多地点经营',
+        targetStage: '独立品牌工作室',
+        description: '支持个人美学品牌矩阵经营',
         features: [
           'customer_management',
           'booking',
@@ -829,7 +869,19 @@ export class SubscriptionsService {
             features: JSON.stringify(plan.features),
             status: 'active',
           },
-          update: {},
+          update: {
+            name: plan.name,
+            price: plan.price,
+            maxCustomers: plan.maxCustomers,
+            maxMonthlyBookings: plan.maxMonthlyBookings,
+            maxWorks: plan.maxWorks,
+            maxStorageBytes: plan.maxStorageBytes,
+            maxMarketingExports: plan.maxMarketingExports,
+            maxMonthlySms: plan.maxMonthlySms,
+            targetStage: plan.targetStage,
+            description: plan.description,
+            features: JSON.stringify(plan.features),
+          },
         }),
       ),
     );

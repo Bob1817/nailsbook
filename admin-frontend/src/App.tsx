@@ -32,6 +32,7 @@ import Orders from './pages/Orders';
 import BookingNotifications from './pages/BookingNotifications';
 import Releases from './pages/Releases';
 import Campaigns from './pages/Campaigns';
+import SystemErrors from './pages/SystemErrors';
 
 const App: React.FC = () => {
   return (
@@ -131,6 +132,7 @@ const App: React.FC = () => {
               <Route path="revenues" element={<ProtectedRoute permission="revenue:view"><Revenues /></ProtectedRoute>} />
               <Route path="subscriptions" element={<ProtectedRoute permission="subscription:view"><Subscriptions /></ProtectedRoute>} />
               <Route path="logs" element={<ProtectedRoute permission="log:view"><OperationLogs /></ProtectedRoute>} />
+              <Route path="system-errors" element={<ProtectedRoute permission="log:view"><SystemErrors /></ProtectedRoute>} />
               <Route path="feature-flags" element={<ProtectedRoute permission="feature_flag:view"><FeatureFlags /></ProtectedRoute>} />
               <Route path="wechat-config" element={<ProtectedRoute permission="feature_flag:view"><WechatConfig /></ProtectedRoute>} />
               <Route path="wechat-official" element={<ProtectedRoute permission="feature_flag:view"><WechatOfficial /></ProtectedRoute>} />

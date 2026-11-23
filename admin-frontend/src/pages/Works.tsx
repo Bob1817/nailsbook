@@ -349,7 +349,7 @@ const Works: React.FC = () => {
 
       <Drawer
         title="作品详情"
-        styles={{ wrapper: { width: 480 } }}
+        styles={{ wrapper: { width: 480, maxWidth: '100vw' } }}
         open={!!drawerWork}
         onClose={() => setDrawerWork(null)}
       >

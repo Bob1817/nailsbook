@@ -8,11 +8,12 @@ import {
 import { PaymentsService } from './payments.service';
 import { ReferralsModule } from '../referrals/referrals.module';
 import { WechatPayService } from './wechat-pay.service';
+import { WechatAuthModule } from '../wechat-auth/wechat-auth.module';
 
 @Module({
-  imports: [PrismaModule, ReferralsModule, ChatModule],
+  imports: [PrismaModule, ReferralsModule, ChatModule, WechatAuthModule],
   controllers: [ClientPaymentsController, WechatPaymentNotificationController],
   providers: [PaymentsService, WechatPayService],
-  exports: [PaymentsService],
+  exports: [PaymentsService, WechatPayService],
 })
 export class PaymentsModule {}

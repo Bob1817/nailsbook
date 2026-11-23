@@ -151,6 +151,7 @@ const OperationLogs: React.FC = () => {
         <Table
           columns={columns}
           dataSource={data?.data || []}
+          scroll={{ x: 860 }}
           rowKey="id"
           loading={loading}
           pagination={{

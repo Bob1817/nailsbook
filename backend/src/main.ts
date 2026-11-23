@@ -7,6 +7,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { AvatarUrlInterceptor } from './common/avatar-url.interceptor';
 import { TRUSTED_PROXY_ADDRESSES } from './common/trusted-proxy';
+import { GlobalExceptionsFilter } from './common/filters/global-exceptions.filter';
+import { SystemErrorsService } from './system-errors/system-errors.service';
 
 function getAllowedOrigins() {
   const configuredOrigins = process.env.CORS_ORIGINS?.split(',')
@@ -91,6 +93,9 @@ async function bootstrap() {
   );
 
   app.useGlobalInterceptors(new AvatarUrlInterceptor());
+
+  const systemErrorsService = app.get(SystemErrorsService, { strict: false });
+  app.useGlobalFilters(new GlobalExceptionsFilter(systemErrorsService));
 
   if (shouldEnableSwagger()) {
     const swaggerConfig = new DocumentBuilder()
