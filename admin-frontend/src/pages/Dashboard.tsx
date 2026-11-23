@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   Badge,
   Button,
   Card,
@@ -216,6 +217,7 @@ const Dashboard: React.FC = () => {
   const mrr = overview.subscriptionStats.mrr ?? 0;
 
   const approvalStats = overview.approvalStats;
+  const pendingApplications = approvalStats?.pendingApplications ?? 0;
   const governancePending =
     (approvalStats?.pendingWorks ?? 0) +
     (approvalStats?.pendingDeletions ?? 0) +
@@ -267,6 +269,25 @@ const Dashboard: React.FC = () => {
         title="经营总览"
         description="聚焦平台用户规模、订阅转化与订阅实收；美甲师私域业务明细可下钻至美甲师详情查看。"
       />
+
+      {pendingApplications > 0 && (
+        <Alert
+          type="warning"
+          showIcon
+          style={{ marginBottom: 16, borderRadius: 12 }}
+          message={`当前有 ${pendingApplications} 条美甲师试用申请 / 1v1 指导配置待处理`}
+          description="开放注册小程序过审前可在此直达审批；全部处理完毕后该提示自动隐藏。"
+          action={
+            <Button
+              type="primary"
+              style={{ minHeight: 44 }}
+              onClick={() => navigate('/campaigns?tab=guidance')}
+            >
+              立即处理
+            </Button>
+          }
+        />
+      )}
 
       {/* 第一层：核心 SaaS 经营 KPI */}
       <Row gutter={[16, 16]}>

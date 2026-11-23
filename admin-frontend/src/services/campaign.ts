@@ -59,32 +59,32 @@ export interface CreateCampaignInput {
 
 export const campaignService = {
   list: async (params?: CampaignListParams): Promise<CampaignListResponse> => {
-    const res = await api.get('/admin/platform-campaigns', { params });
+    const res = await api.get('/platform-campaigns', { params });
     return res.data;
   },
 
   getDetail: async (id: number): Promise<PlatformCampaign> => {
-    const res = await api.get(`/admin/platform-campaigns/${id}`);
+    const res = await api.get(`/platform-campaigns/${id}`);
     return res.data;
   },
 
   create: async (data: CreateCampaignInput): Promise<PlatformCampaign> => {
-    const res = await api.post('/admin/platform-campaigns', data);
+    const res = await api.post('/platform-campaigns', data);
     return res.data;
   },
 
   update: async (id: number, data: Partial<CreateCampaignInput>): Promise<PlatformCampaign> => {
-    const res = await api.put(`/admin/platform-campaigns/${id}`, data);
+    const res = await api.put(`/platform-campaigns/${id}`, data);
     return res.data;
   },
 
   setStatus: async (id: number, status: 'draft' | 'active' | 'offline' | 'ended'): Promise<PlatformCampaign> => {
-    const res = await api.patch(`/admin/platform-campaigns/${id}/status`, { status });
+    const res = await api.patch(`/platform-campaigns/${id}/status`, { status });
     return res.data;
   },
 
   delete: async (id: number): Promise<{ success: boolean; message: string }> => {
-    const res = await api.delete(`/admin/platform-campaigns/${id}`);
+    const res = await api.delete(`/platform-campaigns/${id}`);
     return res.data;
   },
 };

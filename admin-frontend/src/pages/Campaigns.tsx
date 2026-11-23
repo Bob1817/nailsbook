@@ -200,6 +200,9 @@ const Campaigns: React.FC = () => {
 
   // 获取活动列表数据
   const fetchCampaigns = useCallback(async () => {
+    if (activeModule !== 'campaigns') {
+      return;
+    }
     setLoading(true);
     try {
       const res = await campaignService.list({
@@ -218,7 +221,7 @@ const Campaigns: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, searchKeyword, selectedStatusTab, filterAudience, filterLocation]);
+  }, [activeModule, page, pageSize, searchKeyword, selectedStatusTab, filterAudience, filterLocation]);
 
   useEffect(() => {
     fetchCampaigns();

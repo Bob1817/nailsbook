@@ -46,27 +46,27 @@ export const systemErrorService = {
     startDate?: string;
     endDate?: string;
   }): Promise<SystemErrorListResponse> => {
-    const response = await api.get('/admin/system-errors', { params });
+    const response = await api.get('/system-errors', { params });
     return response.data;
   },
 
   getStats: async (): Promise<SystemErrorStats> => {
-    const response = await api.get('/admin/system-errors/stats');
+    const response = await api.get('/system-errors/stats');
     return response.data;
   },
 
   getById: async (id: number): Promise<SystemErrorLog> => {
-    const response = await api.get(`/admin/system-errors/${id}`);
+    const response = await api.get(`/system-errors/${id}`);
     return response.data;
   },
 
   resolve: async (id: number, note?: string): Promise<SystemErrorLog> => {
-    const response = await api.patch(`/admin/system-errors/${id}/resolve`, { note });
+    const response = await api.patch(`/system-errors/${id}/resolve`, { note });
     return response.data;
   },
 
   batchResolve: async (ids: number[], note?: string): Promise<{ success: boolean; count: number }> => {
-    const response = await api.post('/admin/system-errors/batch-resolve', { ids, note });
+    const response = await api.post('/system-errors/batch-resolve', { ids, note });
     return response.data;
   },
 };
