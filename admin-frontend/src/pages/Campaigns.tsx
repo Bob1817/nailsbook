@@ -119,6 +119,8 @@ export const AUDIENCE_TEXT_MAP: Record<string, string> = {
 
 // 展示位置选项
 export const DISPLAY_LOCATION_OPTIONS = [
+  { label: '美甲师端消息页顶部卡片', value: 'technician_chat_top_card' },
+  { label: '客户端消息页顶部卡片', value: 'client_chat_top_card' },
   { label: '客户端首页 Hero', value: 'client_home_hero' },
   { label: '美甲师端首页 Hero', value: 'technician_home_hero' },
   { label: '官网首页 Banner', value: 'website_banner' },
@@ -127,6 +129,8 @@ export const DISPLAY_LOCATION_OPTIONS = [
 ];
 
 export const DISPLAY_LOCATION_TEXT_MAP: Record<string, string> = {
+  technician_chat_top_card: '美甲师消息顶卡',
+  client_chat_top_card: '客户消息顶卡',
   client_home_hero: '客户端首页Hero',
   technician_home_hero: '美甲师首页Hero',
   website_banner: '官网Banner',
@@ -960,6 +964,7 @@ const Campaigns: React.FC = () => {
                 <Form.Item
                   label="活动展示位置（多选）"
                   name="displayLocations"
+                  extra="勾选「美甲师端/客户端消息页顶部卡片」后，将在对应消息页顶部以卡片展示；活动结束、名额已满或账号已申请时自动隐藏。"
                   rules={[{ required: true, message: '请至少选择一个投放展示位置' }]}
                 >
                   <Checkbox.Group options={DISPLAY_LOCATION_OPTIONS} />

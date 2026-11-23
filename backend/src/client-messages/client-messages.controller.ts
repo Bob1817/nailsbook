@@ -38,6 +38,29 @@ export class ClientMessagesController {
     );
   }
 
+  @Get('system-notifications')
+  @ApiOperation({ summary: '获取系统通知列表（含官方活动通知）' })
+  @ApiResponse({ status: 200, description: '返回系统通知列表' })
+  getSystemNotifications(@Req() request: { user: { clientUserId: number } }) {
+    return this.clientMessagesService.getSystemNotifications(
+      request.user.clientUserId,
+    );
+  }
+
+  @Patch('system-notifications/read')
+  @ApiOperation({ summary: '标记系统通知已读' })
+  @ApiResponse({ status: 200, description: '标记成功' })
+  markSystemNotificationsAsRead(
+    @Req() request: { user: { clientUserId: number } },
+    @Body() body: { ids?: number[]; all?: boolean },
+  ) {
+    return this.clientMessagesService.markSystemNotificationsAsRead(
+      request.user.clientUserId,
+      body?.ids,
+      body?.all,
+    );
+  }
+
   @Get()
   @ApiOperation({ summary: '获取消息列表' })
   @ApiResponse({ status: 200, description: '返回消息列表' })

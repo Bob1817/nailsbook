@@ -105,6 +105,67 @@ export class TechnicianMessagesService {
     return { updated: result.count };
   }
 
+  async getSystemNotifications(technicianId: number) {
+    const events = await this.prisma.notificationEvent.findMany({
+      where: {
+        recipientRole: 'technician',
+        recipientId: technicianId,
+        eventType: 'platform_campaign',
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    return events.map((event) => {
+      let payload: any = {};
+      try {
+        payload = JSON.parse(event.payloadSnapshot || '{}');
+      } catch {
+        payload = {};
+      }
+      return {
+        id: event.id,
+        eventType: event.eventType,
+        type: 'system',
+        categoryLabel: '活动通知',
+        campaignId: payload.campaignId ?? null,
+        title: payload.title || '官方活动通知',
+        summary: payload.summary || '点击查看官方活动详情',
+        badgeText: payload.badgeText || '活动通知',
+        coverUrl: payload.coverUrl || '',
+        actionType: payload.actionType || 'page',
+        actionUrl: payload.actionUrl || '',
+        isRead: event.status === 'resolved',
+        createdAt: event.createdAt,
+      };
+    });
+  }
+
+  async markSystemNotificationsAsRead(
+    technicianId: number,
+    ids?: number[],
+    all?: boolean,
+  ) {
+    const where: any = {
+      recipientRole: 'technician',
+      recipientId: technicianId,
+      eventType: 'platform_campaign',
+      status: 'pending',
+    };
+    if (!all) {
+      const validIds = Array.isArray(ids)
+        ? ids.map((n) => Number(n)).filter((n) => Number.isFinite(n) && n > 0)
+        : [];
+      if (validIds.length === 0) return { updated: 0 };
+      where.id = { in: validIds };
+    }
+    const result = await this.prisma.notificationEvent.updateMany({
+      where,
+      data: { status: 'resolved', resolvedAt: new Date() },
+    });
+    return { updated: result.count };
+  }
+
   async forward(technicianId: number, orderId: number) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },

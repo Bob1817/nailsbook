@@ -186,6 +186,10 @@ export class PlatformCampaignsService {
       },
     });
 
+    if (created.status === 'active') {
+      await this.dispatchCampaignSystemNotifications(created);
+    }
+
     return this.getAdminDetail(created.id);
   }
 
@@ -216,10 +220,14 @@ export class PlatformCampaignsService {
     if (dto.status !== undefined) updateData.status = dto.status;
     if (dto.sortOrder !== undefined) updateData.sortOrder = dto.sortOrder;
 
-    await this.prisma.platformCampaign.update({
+    const updated = await this.prisma.platformCampaign.update({
       where: { id },
       data: updateData,
     });
+
+    if (updated.status === 'active') {
+      await this.dispatchCampaignSystemNotifications(updated);
+    }
 
     return this.getAdminDetail(id);
   }
@@ -229,11 +237,116 @@ export class PlatformCampaignsService {
    */
   async setStatus(id: number, status: 'draft' | 'active' | 'offline' | 'ended') {
     await this.getAdminDetail(id);
-    await this.prisma.platformCampaign.update({
+    const updated = await this.prisma.platformCampaign.update({
       where: { id },
       data: { status },
     });
+    if (status === 'active') {
+      await this.dispatchCampaignSystemNotifications(updated);
+    }
     return this.getAdminDetail(id);
+  }
+
+  /**
+   * 官方发布活动时，向目标受众生成系统通知（消息类型：活动通知），幂等去重
+   */
+  async dispatchCampaignSystemNotifications(campaign: {
+    id: number;
+    title: string;
+    summary?: string | null;
+    badgeText?: string | null;
+    coverUrl?: string | null;
+    targetAudience?: string | null;
+    actionType?: string | null;
+    actionUrl?: string | null;
+    status?: string | null;
+  }) {
+    if (!campaign || campaign.status !== 'active') return { created: 0 };
+    if (!this.prisma.notificationEvent) return { created: 0 };
+
+    const audience = campaign.targetAudience || 'all';
+    const roles: Array<'technician' | 'client'> =
+      audience === 'technician'
+        ? ['technician']
+        : audience === 'client'
+          ? ['client']
+          : audience === 'all'
+            ? ['technician', 'client']
+            : [];
+    if (roles.length === 0) return { created: 0 };
+
+    const recipients: Array<{ role: 'technician' | 'client'; id: number }> = [];
+    if (roles.includes('technician') && this.prisma.technician?.findMany) {
+      const techs = await this.prisma.technician.findMany({
+        where: { status: { not: 'deleted' } },
+        select: { id: true },
+      });
+      for (const t of techs) recipients.push({ role: 'technician', id: t.id });
+    }
+    if (roles.includes('client') && this.prisma.clientUser?.findMany) {
+      const clients = await this.prisma.clientUser.findMany({
+        where: { status: { not: 'deleted' } },
+        select: { id: true },
+      });
+      for (const c of clients) recipients.push({ role: 'client', id: c.id });
+    }
+    if (recipients.length === 0) return { created: 0 };
+
+    const payloadSnapshot = JSON.stringify({
+      campaignId: campaign.id,
+      title: campaign.title,
+      summary: campaign.summary || '',
+      badgeText: campaign.badgeText || '活动通知',
+      coverUrl: campaign.coverUrl || '',
+      actionType: campaign.actionType || 'page',
+      actionUrl: campaign.actionUrl || '',
+      publishedAt: new Date().toISOString(),
+    });
+
+    const eventKeys = recipients.map(
+      (r) => `platform_campaign:${campaign.id}:${r.role}:${r.id}`,
+    );
+    const existing = this.prisma.notificationEvent.findMany
+      ? await this.prisma.notificationEvent.findMany({
+          where: { eventKey: { in: eventKeys } },
+          select: { eventKey: true },
+        })
+      : [];
+    const existingSet = new Set(existing.map((e) => e.eventKey));
+
+    const toCreate = recipients
+      .filter(
+        (r) => !existingSet.has(`platform_campaign:${campaign.id}:${r.role}:${r.id}`),
+      )
+      .map((r) => ({
+        eventKey: `platform_campaign:${campaign.id}:${r.role}:${r.id}`,
+        eventType: 'platform_campaign',
+        recipientRole: r.role,
+        recipientId: r.id,
+        priority: 'normal',
+        status: 'pending',
+        payloadSnapshot,
+      }));
+
+    if (toCreate.length === 0) return { created: 0 };
+
+    if (typeof this.prisma.notificationEvent.createMany === 'function') {
+      const res = await this.prisma.notificationEvent.createMany({
+        data: toCreate,
+      });
+      return { created: res.count ?? toCreate.length };
+    }
+
+    let createdCount = 0;
+    for (const item of toCreate) {
+      await this.prisma.notificationEvent.upsert({
+        where: { eventKey: item.eventKey },
+        create: item,
+        update: {},
+      });
+      createdCount += 1;
+    }
+    return { created: createdCount };
   }
 
   /**
