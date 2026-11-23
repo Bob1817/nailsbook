@@ -101,7 +101,20 @@ export default function FlagshipShowcaseSection({ onOpenScan }: FlagshipShowcase
   return (
     <section id="flagship" className="site-section flagship-compact-section">
       <div className="site-container">
-        {/* Studio Card Header */}
+        <div className="mb-8 max-w-2xl">
+          <p className="eyebrow">02 / {isZh ? '主页效果预览' : 'ARTIST PAGE PREVIEW'}</p>
+          <h2>
+            {isZh
+              ? '用上 OnlyNail 后，你的专属主页长这样。'
+              : 'See what your own artist page can look like.'}
+          </h2>
+          <p className="section-intro">
+            {isZh
+              ? '以下为已配置完成的真实美甲师主页示例。你入驻后拥有完全独立的专属主页与小程序码，客户仅通过你的分享进入，不与其他美甲师共享流量。'
+              : 'A real configured artist page example. Every artist gets a private storefront and QR code with zero client cross-routing.'}
+          </p>
+        </div>
+
         <div className="rounded-3xl border border-line bg-surface p-6 sm:p-8 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-line pb-6">
             <div className="flex items-start gap-4">
@@ -112,12 +125,12 @@ export default function FlagshipShowcaseSection({ onOpenScan }: FlagshipShowcase
               />
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-ink">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-ink">
                     <Sparkles size={12} className="text-brand" />
-                    {isZh ? '标杆样板店' : 'Flagship Studio'}
+                    {isZh ? '真实配置样板' : 'Live Page Example'}
                   </span>
                   <span className="text-xs text-ink-muted">
-                    {isZh ? 'OnlyNail 官方认证' : 'Verified'}
+                    {isZh ? '仅作主页效果展示' : 'Showcase preview'}
                   </span>
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold text-ink mt-1">
@@ -125,8 +138,8 @@ export default function FlagshipShowcaseSection({ onOpenScan }: FlagshipShowcase
                 </h3>
                 <p className="text-xs text-ink-muted mt-0.5">
                   {isZh
-                    ? '中国美院本硕毕业 · 专业美学设计 · 预约定制制'
-                    : 'China Academy of Art Graduate · Bespoke Studio'}
+                    ? '独立主理人主页 · 风格标签 · 透明价目与预约规则'
+                    : 'Independent Artist Storefront · Style Tags · Transparent Rules'}
                 </p>
               </div>
             </div>
@@ -138,43 +151,41 @@ export default function FlagshipShowcaseSection({ onOpenScan }: FlagshipShowcase
                 className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-ink px-5 py-2 text-xs font-bold text-white transition hover:bg-neutral-800 active:scale-[0.98]"
               >
                 <QrCode size={15} />
-                {isZh ? '微信扫码进店预约' : 'Scan to Book'}
+                {isZh ? '微信扫码预览效果' : 'Preview in WeChat'}
               </button>
               <span className="text-[11px] text-ink-muted">
-                {isZh ? '美甲师可参考此样本' : 'Demo for artists'}
+                {isZh ? '体验客户打开你主页时的真实视角' : 'See the client-side view'}
               </span>
             </div>
           </div>
 
-          {/* Quick Info Tags */}
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 py-4 text-xs text-ink-muted border-b border-line">
             <span className="inline-flex items-center gap-1.5">
               <MapPin size={14} className="text-brand shrink-0" />
-              {isZh ? '杭州西湖区紫萱路西城博司4幢421' : 'Hangzhou Xihu'}
+              {isZh ? '支持到店定位指引 / 上门服务范围' : 'Studio map or home-visit zone'}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Clock size={14} className="text-brand shrink-0" />
-              {isZh ? '10:00 - 21:00 (每日限4人)' : '10:00 - 21:00'}
+              {isZh ? '自定义每日接待上限与服务间隔' : 'Custom daily capacity & gaps'}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <ShieldCheck size={14} className="text-brand shrink-0" />
-              {isZh ? '一口价含建构 · 7天免费修补' : 'Fixed Price · 7-Day Care'}
+              {isZh ? '明码标价 · 客户仅绑定你本人' : 'Clear pricing · Private client binding'}
             </span>
           </div>
 
-          {/* Compact 4-Works Grid */}
           <div className="mt-6">
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-sm font-bold text-ink flex items-center gap-1.5">
                 <Gem size={14} />
-                {isZh ? '精选在架作品（部分）' : 'Featured Works'}
+                {isZh ? '作品集展示效果（示例）' : 'Portfolio Layout Example'}
               </h4>
               <button
                 type="button"
                 onClick={() => onOpenScan('artist')}
                 className="text-xs font-semibold text-brand hover:underline inline-flex min-h-[44px] items-center gap-0.5"
               >
-                {isZh ? '查看全部 12 款作品 ↗' : 'View all 12 works ↗'}
+                {isZh ? '扫码看完整主页效果 ↗' : 'Preview full page ↗'}
               </button>
             </div>
 
@@ -200,7 +211,7 @@ export default function FlagshipShowcaseSection({ onOpenScan }: FlagshipShowcase
                     <h5 className="line-clamp-1 text-xs font-bold text-ink">{work.title}</h5>
                     <div className="mt-1 flex items-center justify-between text-[11px] text-ink-muted">
                       <span>{work.style}</span>
-                      <span className="text-brand group-hover:underline">扫码预约</span>
+                      <span className="text-ink-muted group-hover:text-ink">预览效果</span>
                     </div>
                   </div>
                 </article>
@@ -208,22 +219,24 @@ export default function FlagshipShowcaseSection({ onOpenScan }: FlagshipShowcase
             </div>
           </div>
 
-          {/* Transparent Price Summary Row */}
           <div className="mt-6 rounded-2xl bg-neutral-50 p-4 text-xs text-ink-muted flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <strong className="text-ink">价目明细：</strong>
+              <strong className="text-ink">
+                {isZh ? '你的专属主页同样如此：' : 'Your page works the same way:'}
+              </strong>
               <span>
-                实色 ¥168 | 简单款 ¥238起 | 复杂款 ¥298起 | 甲片延长 ¥120 | 本店消费免卸甲费
+                {isZh
+                  ? '自主上传作品、自由定价、支持一键生成朋友圈名片海报与微信快捷报价单。'
+                  : 'Upload your own works, set your own prices, and share quote cards directly in WeChat.'}
               </span>
             </div>
-            <button
-              type="button"
-              onClick={() => onOpenScan('artist')}
+            <a
+              href="/apply"
               className="inline-flex min-h-[44px] items-center gap-1 font-bold text-ink hover:underline shrink-0"
             >
-              {isZh ? '查看完整价目单' : 'Full price list'}
+              {isZh ? '免费拥有同款主页' : 'Create your own page'}
               <ArrowUpRight size={13} />
-            </button>
+            </a>
           </div>
         </div>
       </div>

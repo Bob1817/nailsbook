@@ -115,7 +115,10 @@ export async function submitArtistApplication(data: ArtistApplicationPayload): P
       body: JSON.stringify(body),
       signal: controller.signal,
     })
-    if (!res.ok) throw new Error('submit application failed')
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'submit application failed');
+    }
     return await res.json() as unknown
   } finally {
     clearTimeout(timeout)

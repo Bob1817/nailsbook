@@ -10,10 +10,9 @@ export default function NavBar() {
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
   const links = [
-    { href: '/#features', label: isZh ? '美甲师赋能' : 'Features' },
-    { href: '/#flow', label: isZh ? '入驻流程' : 'Join' },
-    { href: '/#flagship', label: isZh ? '标杆样板' : 'Flagship' },
-    { href: '/apply?tab=progress', label: isZh ? '申请进度' : 'Status' },
+    { href: '/#features', label: isZh ? '核心能力' : 'Features' },
+    { href: '/#flagship', label: isZh ? '主页效果' : 'Preview' },
+    { href: '/#pricing', label: isZh ? '版本方案' : 'Pricing' },
     { href: '/faq', label: isZh ? '常见问题' : 'FAQ' },
   ]
   return (

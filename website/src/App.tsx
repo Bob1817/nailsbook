@@ -7,7 +7,7 @@ import WorksGalleryPage from './pages/WorksGalleryPage'
 import FAQPage from './pages/FAQPage'
 import ContactPage from './pages/ContactPage'
 import ApplicationInfoPage from './pages/ApplicationInfoPage'
-import ArtistApplicationPage from './pages/ArtistApplicationPage'
+import ModelArtistCampaignPage from './pages/ModelArtistCampaignPage'
 import { QuoteCalculatorPage } from './pages/quote/QuoteCalculatorPage'
 import { QuoteDetailPage } from './pages/quote/QuoteDetailPage'
 
@@ -25,7 +25,9 @@ function AppRouter() {
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/apply" element={<ArtistApplicationPage />} />
+        <Route path="/apply" element={<ModelArtistCampaignPage />} />
+        <Route path="/model-artists" element={<ModelArtistCampaignPage />} />
+        <Route path="/campaign" element={<ModelArtistCampaignPage />} />
         <Route path="/gallery" element={<WorksGalleryPage />} />
         <Route path="/faq" element={<FAQPage />} />
         <Route path="/contact" element={<ContactPage />} />

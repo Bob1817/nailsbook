@@ -73,6 +73,7 @@ export default function ArtistApplicationPage() {
 
   // Apply Form State
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [submitError, setSubmitError] = useState('')
   const [scan, setScan] = useState<'try' | 'follow' | null>(null)
   const submitting = useRef(false)
 
@@ -162,12 +163,19 @@ export default function ArtistApplicationPage() {
     if (submitting.current) return
     submitting.current = true
     setStatus('submitting')
+    setSubmitError('')
     try {
       await submitArtistApplication(values)
       setStoredApplyPhone(values.phone)
       setQueryPhone(values.phone)
       setStatus('success')
-    } catch {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : ''
+      if (message && !['offline', 'Failed to fetch', 'submit application failed'].includes(message)) {
+        setSubmitError(message)
+      } else {
+        setSubmitError('')
+      }
       setStatus('error')
     } finally {
       submitting.current = false
@@ -485,7 +493,7 @@ export default function ArtistApplicationPage() {
                   </p>
                   {status === 'error' && (
                     <p role="alert" className="submit-error">
-                      {c.error}
+                      {submitError ? `${submitError}。${c.error}` : c.error}
                     </p>
                   )}
                   <button

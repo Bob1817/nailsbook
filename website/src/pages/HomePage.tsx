@@ -1,5 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowRight, ArrowUpRight, CalendarDays, Flower2, NotebookPen, Sparkles } from 'lucide-react'
+import {
+  ArrowRight,
+  ArrowUpRight,
+  CalendarDays,
+  Check,
+  Flower2,
+  NotebookPen,
+  QrCode,
+  ReceiptText,
+  Sparkles,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 import NavBar from '../components/NavBar'
 import SiteFooter from '../components/SiteFooter'
@@ -10,7 +20,7 @@ import { Meta } from '../components/Meta'
 import { useLang } from '../i18n/LanguageContext'
 import { recruitment } from '../content/recruitment'
 
-const icons = [Flower2, CalendarDays, NotebookPen]
+const icons = [Flower2, ReceiptText, CalendarDays, NotebookPen]
 
 export default function HomePage() {
   const { lang, isZh } = useLang()
@@ -46,6 +56,18 @@ export default function HomePage() {
       <main id="main">
         <section ref={hero} className="site-container hero-section">
           <div className="hero-copy">
+            <Link to="/model-artists" className="hero-campaign-banner" role="banner">
+              <span className="hero-campaign-badge">
+                <Sparkles size={13} />
+                官方 1v1 指导配置 · 仅限10席
+              </span>
+              <span className="hero-campaign-text">
+                1v1 协助整理价目、作品与快捷报价，赠首年全功能
+              </span>
+              <span className="hero-campaign-arrow">
+                了解详情 <ArrowUpRight size={14} />
+              </span>
+            </Link>
             <p className="eyebrow">{c.eyebrow}</p>
             <h1>
               {c.title[0]}
@@ -54,14 +76,21 @@ export default function HomePage() {
             </h1>
             <p className="hero-intro">{c.intro}</p>
             <div className="button-row">
-              <Link to="/apply" className="site-button">
+              <button
+                type="button"
+                className="site-button"
+                onClick={() => {
+                  setScanMeta(null)
+                  setScan('try')
+                }}
+              >
+                <QrCode size={17} />
+                {c.scanTryBtn}
+              </button>
+              <Link to="/apply" className="site-button secondary">
                 {c.applyHero || c.apply}
                 <ArrowUpRight size={18} />
               </Link>
-              <a href="#flagship" className="site-button secondary">
-                <Sparkles size={16} />
-                {c.flagshipBtn || '查看先锋样板间（听栖美甲）'}
-              </a>
             </div>
             <div className="invitation-note">
               <span className="status-dot" />
@@ -73,28 +102,20 @@ export default function HomePage() {
           </div>
           <div className="hero-visual">
             <p className="visual-overline">
-              {isZh ? 'REAL PRODUCT SCREENS · 真实产品界面' : 'REAL PRODUCT SCREENS'}
+              {isZh ? 'REAL PRODUCT SCREENS · 真实工作台界面' : 'REAL PRODUCT SCREENS'}
             </p>
             <AppPreview />
           </div>
         </section>
 
-        {/* 标杆样板店（听栖美甲工作室 · 贝贝） */}
-        <FlagshipShowcaseSection
-          onOpenScan={(type, meta) => {
-            setScanMeta(meta || null)
-            setScan(type)
-          }}
-        />
-
-        {/* 美甲师核心赋能 */}
+        {/* 01 / 四大核心能力（先讲解决什么痛点） */}
         <section id="features" className="site-section site-container">
-          <p className="eyebrow">01 / {isZh ? '美甲师赋能' : 'FOR ARTISTS'}</p>
+          <p className="eyebrow">01 / {isZh ? '核心能力' : 'CORE CAPABILITIES'}</p>
           <h2>{c.scenarioTitle}</h2>
           <p className="section-intro">{c.scenarioIntro}</p>
           <div className="scenario-grid">
             {c.scenarios.map((item, i) => {
-              const Icon = icons[i]
+              const Icon = icons[i % icons.length]
               return (
                 <article key={item.title} className="scenario-card">
                   <div className="scenario-icon">
@@ -114,10 +135,54 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 入驻流程与常见问题 */}
+        {/* 02 / 主页配置效果预览（作为工具落地效果证明） */}
+        <FlagshipShowcaseSection
+          onOpenScan={(type, meta) => {
+            setScanMeta(meta || null)
+            setScan(type)
+          }}
+        />
+
+        {/* 03 / 透明版本方案（免费版 + 按额度阶梯付费） */}
+        <section id="pricing" className="site-section site-container">
+          <p className="eyebrow">{c.pricingEyebrow}</p>
+          <h2>{c.pricingTitle}</h2>
+          <p className="section-intro">{c.pricingIntro}</p>
+          <div className="pricing-grid">
+            {c.pricingTiers.map((tier) => (
+              <article
+                key={tier.name}
+                className={`pricing-card${tier.featured ? ' pricing-card-featured' : ''}`}
+              >
+                <div className="pricing-card-head">
+                  <h3>{tier.name}</h3>
+                  {tier.featured ? (
+                    <span className="pricing-badge">{isZh ? '常用推荐' : 'Popular'}</span>
+                  ) : null}
+                </div>
+                <div className="pricing-price-row">
+                  <strong className="pricing-price">{tier.price}</strong>
+                  <span className="pricing-cycle">{tier.cycle}</span>
+                </div>
+                <p className="pricing-target">{tier.target}</p>
+                <ul className="pricing-metrics">
+                  {tier.metrics.map((metric) => (
+                    <li key={metric}>
+                      <Check size={14} strokeWidth={2.2} />
+                      <span>{metric}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+          <p className="pricing-footnote">{c.pricingNote}</p>
+        </section>
+
+        {/* 04 / 快速开启与常见问题 */}
         <section id="flow" className="site-section site-container flow-faq-section">
           <div className="flow-heading">
-            <p className="eyebrow">02 / {isZh ? '开启新日常' : 'GETTING STARTED'}</p>
+            <p className="eyebrow">04 / {isZh ? '开始使用' : 'GETTING STARTED'}</p>
             <h2>{c.flowTitle}</h2>
             <p className="section-intro">{c.flowNote}</p>
           </div>
@@ -137,12 +202,20 @@ export default function HomePage() {
               <p>{c.finalIntro}</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2.5 shrink-0">
-              <Link to="/apply" className="site-button">
+              <button
+                type="button"
+                className="site-button"
+                onClick={() => {
+                  setScanMeta(null)
+                  setScan('try')
+                }}
+              >
+                <QrCode size={17} />
+                {c.scanTryBtn}
+              </button>
+              <Link to="/apply" className="site-button secondary">
                 {c.applyHero || c.apply}
                 <ArrowUpRight size={18} />
-              </Link>
-              <Link to="/apply?tab=progress" className="site-button secondary">
-                {c.checkProgress}
               </Link>
             </div>
           </div>
@@ -150,13 +223,16 @@ export default function HomePage() {
           <div className="compact-faq-block">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold text-ink">{c.faqTitle}</h3>
-              <Link to="/faq" className="text-xs text-ink-muted hover:text-ink flex items-center gap-1">
+              <Link
+                to="/faq"
+                className="text-xs text-ink-muted hover:text-ink flex items-center gap-1"
+              >
                 {c.allFaq}
                 <ArrowRight size={14} />
               </Link>
             </div>
             <div className="space-y-3">
-              {c.faqs.slice(0, 3).map((item) => (
+              {c.faqs.slice(0, 4).map((item) => (
                 <details key={item.q} className="faq-item">
                   <summary>
                     {item.q}
@@ -177,11 +253,11 @@ export default function HomePage() {
             className="site-button secondary mobile-btn-half"
             onClick={() => {
               setScanMeta(null)
-              setScan('artist')
+              setScan('try')
             }}
           >
-            <Sparkles size={15} />
-            <span>{c.flagshipBtnShort || '查看样板'}</span>
+            <QrCode size={15} />
+            <span>{c.flagshipBtnShort || '扫码体验'}</span>
           </button>
           <Link className="site-button mobile-btn-half" to="/apply">
             {c.applyHero || c.apply}

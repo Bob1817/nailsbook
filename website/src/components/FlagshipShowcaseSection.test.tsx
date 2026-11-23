@@ -15,20 +15,15 @@ function renderSection(onOpenScan = vi.fn()) {
 }
 
 describe('FlagshipShowcaseSection', () => {
-  it('renders benchmark studio details, hero works, and triggers scan modal', async () => {
+  it('renders artist page preview example and triggers scan modal', async () => {
     const handleScan = vi.fn()
     renderSection(handleScan)
 
-    // Heading & Studio
-    expect(screen.getByText(/标杆样板店/i)).toBeInTheDocument()
+    expect(screen.getByText(/真实配置样板/i)).toBeInTheDocument()
     expect(screen.getByText(/听栖美甲工作室 · 贝贝/i)).toBeInTheDocument()
-    expect(screen.getByText(/中国美院本硕毕业/i)).toBeInTheDocument()
+    expect(screen.getByText(/自主上传作品、自由定价/i)).toBeInTheDocument()
 
-    // Price summary
-    expect(screen.getByText(/实色 ¥168/i)).toBeInTheDocument()
-
-    // Triggering scan modal for studio
-    const scanButton = screen.getByRole('button', { name: /微信扫码进店预约/i })
+    const scanButton = screen.getByRole('button', { name: /微信扫码预览效果/i })
     expect(scanButton).toBeInTheDocument()
     fireEvent.click(scanButton)
     expect(handleScan).toHaveBeenCalledWith('artist')
