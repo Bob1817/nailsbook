@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage'
 import WorksGalleryPage from './pages/WorksGalleryPage'
 import FAQPage from './pages/FAQPage'
 import ContactPage from './pages/ContactPage'
+import AboutPage from './pages/AboutPage'
 import ApplicationInfoPage from './pages/ApplicationInfoPage'
 import ModelArtistCampaignPage from './pages/ModelArtistCampaignPage'
 import { QuoteCalculatorPage } from './pages/quote/QuoteCalculatorPage'
@@ -30,6 +31,7 @@ function AppRouter() {
         <Route path="/campaign" element={<ModelArtistCampaignPage />} />
         <Route path="/gallery" element={<WorksGalleryPage />} />
         <Route path="/faq" element={<FAQPage />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/application-info" element={<ApplicationInfoPage />} />
         <Route path="/quote" element={<QuoteCalculatorPage />} />

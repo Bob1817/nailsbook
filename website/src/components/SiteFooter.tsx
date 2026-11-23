@@ -13,6 +13,7 @@ export default function SiteFooter() {
         <p className="fine-print">{c.brandNote}</p>
       </div>
       <div className="footer-links">
+        <Link to="/about">{c.about}</Link>
         <Link to="/contact">{c.contact}</Link>
         <Link to="/application-info">{c.info}</Link>
         <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">

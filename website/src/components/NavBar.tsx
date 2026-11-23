@@ -14,6 +14,7 @@ export default function NavBar() {
     { href: '/#flagship', label: isZh ? '主页效果' : 'Preview' },
     { href: '/#pricing', label: isZh ? '版本方案' : 'Pricing' },
     { href: '/faq', label: isZh ? '常见问题' : 'FAQ' },
+    { href: '/about', label: isZh ? '关于我们' : 'About' },
   ]
   return (
     <header className="site-header">
@@ -22,15 +23,25 @@ export default function NavBar() {
           <img src="/onlynail-wordmark.jpg" alt="OnlyNail" width="110" height="40" />
         </Link>
         <div className="desktop-links">
-          {links.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              aria-current={pathname === link.href ? 'page' : undefined}
-            >
-              {link.label}
-            </a>
-          ))}
+          {links.map((link) =>
+            link.href.startsWith('/#') ? (
+              <a
+                key={link.href}
+                href={link.href}
+                aria-current={pathname === link.href ? 'page' : undefined}
+              >
+                {link.label}
+              </a>
+            ) : (
+              <Link
+                key={link.href}
+                to={link.href}
+                aria-current={pathname === link.href ? 'page' : undefined}
+              >
+                {link.label}
+              </Link>
+            )
+          )}
         </div>
         <div className="nav-actions">
           <Link to="/apply" className="site-button small nav-apply">
@@ -62,11 +73,17 @@ export default function NavBar() {
             if (e.key === 'Escape') setOpen(false)
           }}
         >
-          {links.map((link) => (
-            <a key={link.href} href={link.href} onClick={() => setOpen(false)}>
-              {link.label}
-            </a>
-          ))}
+          {links.map((link) =>
+            link.href.startsWith('/#') ? (
+              <a key={link.href} href={link.href} onClick={() => setOpen(false)}>
+                {link.label}
+              </a>
+            ) : (
+              <Link key={link.href} to={link.href} onClick={() => setOpen(false)}>
+                {link.label}
+              </Link>
+            )
+          )}
           <Link to="/apply" className="site-button" onClick={() => setOpen(false)}>
             {c.apply}
           </Link>
