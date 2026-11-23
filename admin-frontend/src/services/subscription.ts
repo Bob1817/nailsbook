@@ -51,6 +51,69 @@ export interface SubscriptionMetrics {
   subscriptionChanges: Array<{ reason: string; count: number }>;
 }
 
+export interface SubscriptionPayment {
+  id: number;
+  paymentNo: string;
+  providerTradeNo?: string | null;
+  amount: number;
+  channel: string;
+  status: string;
+  paidAt?: string | null;
+  createdAt: string;
+  technicianId?: number | null;
+  technician?: { id: number; name: string; phone: string } | null;
+  plan?: { id: number; name: string; code: string; price: number } | null;
+}
+
+export interface SubscriptionPaymentResponse {
+  data: SubscriptionPayment[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  summary: {
+    totalRevenue: number;
+    last30DaysRevenue: number;
+    paidCount: number;
+    paidLast30DaysCount: number;
+    expiringIn7Days: number;
+  };
+}
+
+export interface EntitlementItem {
+  used: number;
+  limit: number | null;
+  remaining: number | null;
+  percent: number | null;
+  reached: boolean;
+  reminderLevel: string;
+}
+
+export interface TechnicianSubscriptionDetail {
+  id: number;
+  status: string;
+  startedAt: string;
+  expiredAt?: string | null;
+  plan: {
+    id: number;
+    code: string;
+    name: string;
+    price: number;
+    billingCycle: string;
+    features: string[];
+  };
+  entitlements: {
+    customers: EntitlementItem;
+    monthlyBookings: EntitlementItem;
+    works: EntitlementItem;
+    storage: EntitlementItem;
+    marketingExports: EntitlementItem;
+    monthlySms: EntitlementItem;
+  };
+}
+
 export const subscriptionService = {
   getPlans: async (): Promise<SubscriptionPlan[]> => {
     const response = await api.get('/subscription-plans');
@@ -87,6 +150,21 @@ export const subscriptionService = {
 
   getMetrics: async (): Promise<SubscriptionMetrics> => {
     const response = await api.get('/technician-subscriptions/metrics/overview');
+    return response.data;
+  },
+
+  getPayments: async (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    technicianId?: number;
+  }): Promise<SubscriptionPaymentResponse> => {
+    const response = await api.get('/technician-subscriptions/payments', { params });
+    return response.data;
+  },
+
+  getTechnicianDetail: async (technicianId: number): Promise<TechnicianSubscriptionDetail> => {
+    const response = await api.get(`/technician-subscriptions/technicians/${technicianId}/detail`);
     return response.data;
   },
 };

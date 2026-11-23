@@ -19,8 +19,15 @@ export class AdminOrdersController {
     @Query('limit') limit?: string,
     @Query('status') status?: string,
     @Query('search') search?: string,
+    @Query('technicianId') technicianId?: string,
   ) {
-    return this.service.findAll(Number(page) || 1, Number(limit) || 20, status, search);
+    return this.service.findAll(
+      Number(page) || 1,
+      Number(limit) || 20,
+      status,
+      search,
+      technicianId ? Number(technicianId) : undefined,
+    );
   }
 
   @Get(':id')

@@ -3,6 +3,8 @@ import {
   NotFoundException,
   ConflictException,
   ForbiddenException,
+  OnModuleInit,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 
@@ -72,8 +74,58 @@ export class UpdateTechnicianSubscriptionDto {
 type MeteredResource = 'marketingExports' | 'monthlySms';
 
 @Injectable()
-export class SubscriptionsService {
+export class SubscriptionsService implements OnModuleInit {
+  private readonly logger = new Logger(SubscriptionsService.name);
+
   constructor(private prisma: PrismaService) {}
+
+  async onModuleInit() {
+    try {
+      await this.ensureDefaultPlans();
+      const backfilled = await this.backfillMissingFreeSubscriptions();
+      if (backfilled > 0) {
+        this.logger.log(`Initialized free subscription for ${backfilled} technician(s)`);
+      }
+    } catch (error) {
+      this.logger.error('Failed to initialize subscription plans or backfill free subscriptions', error);
+    }
+  }
+
+  async backfillMissingFreeSubscriptions(): Promise<number> {
+    try {
+      const freePlan = await this.ensureFreePlan();
+      const techniciansWithoutSub = await this.prisma.technician.findMany({
+        where: {
+          status: { not: 'deleted' },
+          subscription: null,
+        },
+        select: { id: true, createdAt: true },
+      });
+
+      if (!techniciansWithoutSub?.length) {
+        return 0;
+      }
+
+      let count = 0;
+      for (const tech of techniciansWithoutSub) {
+        await this.prisma.technicianSubscription.upsert({
+          where: { technicianId: tech.id },
+          create: {
+            technicianId: tech.id,
+            planId: freePlan.id,
+            status: 'active',
+            startedAt: tech.createdAt ?? new Date(),
+            expiredAt: null,
+          },
+          update: {},
+        });
+        count++;
+      }
+      return count;
+    } catch {
+      return 0;
+    }
+  }
 
   async findPlans(activeOnly = false) {
     await this.ensureDefaultPlans();
@@ -648,6 +700,8 @@ export class SubscriptionsService {
   }
 
   async findTechnicianSubscriptions(technicianId?: number, status?: string) {
+    await this.backfillMissingFreeSubscriptions();
+
     const where: any = {};
 
     if (technicianId) {
@@ -658,14 +712,110 @@ export class SubscriptionsService {
       where.status = status;
     }
 
+    where.technician = { status: { not: 'deleted' } };
+
     return this.prisma.technicianSubscription.findMany({
       where,
       include: {
         technician: { select: { id: true, name: true, phone: true } },
         plan: true,
       },
-      orderBy: { startedAt: 'desc' },
+      orderBy: [{ technicianId: 'desc' }, { startedAt: 'desc' }],
     });
+  }
+
+  async findSubscriptionPayments(params: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    technicianId?: number;
+  }) {
+    const page = Math.max(1, params.page || 1);
+    const limit = Math.min(100, Math.max(1, params.limit || 20));
+    const where: any = { paymentType: 'subscription' };
+    if (params.status) where.status = params.status;
+    if (params.technicianId) where.technicianId = params.technicianId;
+
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const sevenDaysLater = new Date(now);
+    sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
+
+    const [records, total, totalPaidAgg, last30DaysAgg, expiringIn7Days] =
+      await Promise.all([
+        this.prisma.paymentOrder.findMany({
+          where,
+          skip: (page - 1) * limit,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            technician: { select: { id: true, name: true, phone: true } },
+            subscription: {
+              include: {
+                plan: {
+                  select: { id: true, name: true, code: true, price: true },
+                },
+              },
+            },
+          },
+        }),
+        this.prisma.paymentOrder.count({ where }),
+        this.prisma.paymentOrder.aggregate({
+          where: { paymentType: 'subscription', status: 'paid' },
+          _sum: { amountCents: true },
+          _count: { id: true },
+        }),
+        this.prisma.paymentOrder.aggregate({
+          where: {
+            paymentType: 'subscription',
+            status: 'paid',
+            paidAt: { gte: thirtyDaysAgo },
+          },
+          _sum: { amountCents: true },
+          _count: { id: true },
+        }),
+        this.prisma.technicianSubscription.count({
+          where: {
+            status: 'active',
+            expiredAt: { gte: now, lte: sevenDaysLater },
+            plan: { price: { gt: 0 } },
+          },
+        }),
+      ]);
+
+    return {
+      data: records.map((item) => ({
+        id: item.id,
+        paymentNo: item.paymentNo,
+        providerTradeNo: item.providerTradeNo,
+        amount: Number((item.amountCents / 100).toFixed(2)),
+        channel: item.channel,
+        status: item.status,
+        paidAt: item.paidAt,
+        createdAt: item.createdAt,
+        technicianId: item.technicianId,
+        technician: item.technician,
+        plan: item.subscription?.plan || null,
+      })),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+      summary: {
+        totalRevenue: Number(
+          ((totalPaidAgg._sum.amountCents || 0) / 100).toFixed(2),
+        ),
+        last30DaysRevenue: Number(
+          ((last30DaysAgg._sum.amountCents || 0) / 100).toFixed(2),
+        ),
+        paidCount: totalPaidAgg._count.id || 0,
+        paidLast30DaysCount: last30DaysAgg._count.id || 0,
+        expiringIn7Days,
+      },
+    };
   }
 
   async updateTechnicianSubscription(

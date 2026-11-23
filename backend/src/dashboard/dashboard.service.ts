@@ -6,6 +6,12 @@ export class DashboardService {
   constructor(private prisma: PrismaService) {}
 
   async getOverview() {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const sevenDaysLater = new Date(now);
+    sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
+
     const [
       totalTechnicians,
       activeTechnicians,
@@ -17,7 +23,7 @@ export class DashboardService {
       completedOrders,
       totalRevenue,
       totalSubscriptions,
-      activeSubscriptions,
+      expiringIn7Days,
       recentOrders,
       recentRevenues,
       pendingApplications,
@@ -25,8 +31,14 @@ export class DashboardService {
       pendingDeletions,
       pendingReports,
       pendingFeedbacks,
+      newTechniciansLast30Days,
+      newCustomersLast30Days,
+      ordersLast30Days,
+      revenueLast30Days,
+      subPaymentTotal,
+      subPaymentLast30Days,
     ] = await Promise.all([
-      this.prisma.technician.count(),
+      this.prisma.technician.count({ where: { status: { not: 'deleted' } } }),
       this.prisma.technician.count({ where: { status: 'active' } }),
       this.prisma.customer.count(),
       this.prisma.order.count(),
@@ -36,7 +48,13 @@ export class DashboardService {
       this.prisma.order.count({ where: { status: 'completed' } }),
       this.prisma.revenue.aggregate({ _sum: { amount: true } }),
       this.prisma.technicianSubscription.count(),
-      this.prisma.technicianSubscription.count({ where: { status: 'active' } }),
+      this.prisma.technicianSubscription.count({
+        where: {
+          status: 'active',
+          expiredAt: { gte: now, lte: sevenDaysLater },
+          plan: { price: { gt: 0 } },
+        },
+      }),
       this.prisma.order.findMany({
         take: 5,
         orderBy: { createdAt: 'desc' },
@@ -58,46 +76,90 @@ export class DashboardService {
       this.prisma.accountDeletionRequest.count({ where: { status: 'pending' } }),
       this.prisma.nailWorkReport.count({ where: { status: 'pending' } }),
       this.prisma.feedback.count({ where: { status: 'pending' } }),
-    ]);
-
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const [
-      newTechniciansLast30Days,
-      newCustomersLast30Days,
-      revenueLast30Days,
-    ] = await Promise.all([
       this.prisma.technician.count({
-        where: { createdAt: { gte: thirtyDaysAgo } },
+        where: { status: { not: 'deleted' }, createdAt: { gte: thirtyDaysAgo } },
       }),
       this.prisma.customer.count({
+        where: { createdAt: { gte: thirtyDaysAgo } },
+      }),
+      this.prisma.order.count({
         where: { createdAt: { gte: thirtyDaysAgo } },
       }),
       this.prisma.revenue.aggregate({
         where: { recognizedAt: { gte: thirtyDaysAgo } },
         _sum: { amount: true },
       }),
+      this.prisma.paymentOrder.aggregate({
+        where: { paymentType: 'subscription', status: 'paid' },
+        _sum: { amountCents: true },
+        _count: { id: true },
+      }),
+      this.prisma.paymentOrder.aggregate({
+        where: {
+          paymentType: 'subscription',
+          status: 'paid',
+          paidAt: { gte: thirtyDaysAgo },
+        },
+        _sum: { amountCents: true },
+        _count: { id: true },
+      }),
     ]);
+
+    const activePlans = await this.prisma.subscriptionPlan.findMany({
+      where: { status: 'active' },
+      orderBy: { price: 'asc' },
+    });
 
     const subscriptionByPlan = await this.prisma.technicianSubscription.groupBy(
       {
         by: ['planId'],
         _count: { id: true },
-        where: { status: 'active' },
+        where: {
+          status: 'active',
+          technician: { status: { not: 'deleted' } },
+        },
       },
     );
 
-    const plans = await this.prisma.subscriptionPlan.findMany();
-    const subscriptionStats = subscriptionByPlan.map((item) => {
-      const plan = plans.find((p) => p.id === item.planId);
+    const totalActiveSubs = subscriptionByPlan.reduce(
+      (acc, curr) => acc + curr._count.id,
+      0,
+    );
+
+    let paidActive = 0;
+    let freeActive = 0;
+    let mrr = 0;
+
+    const subscriptionStats = activePlans.map((plan) => {
+      const found = subscriptionByPlan.find((item) => item.planId === plan.id);
+      const count = found?._count.id || 0;
+      if (plan.price > 0) {
+        paidActive += count;
+        mrr += plan.price * count;
+      } else {
+        freeActive += count;
+      }
       return {
-        planId: item.planId,
-        planName: plan?.name || 'Unknown',
-        planCode: plan?.code || 'unknown',
-        count: item._count.id,
+        planId: plan.id,
+        planName: plan.name,
+        planCode: plan.code,
+        price: plan.price,
+        billingCycle: plan.billingCycle,
+        count,
+        percentage:
+          totalActiveSubs > 0
+            ? Number(((count / totalActiveSubs) * 100).toFixed(1))
+            : 0,
       };
     });
+
+    const paidConversionRate =
+      totalTechnicians > 0
+        ? Number(((paidActive / totalTechnicians) * 100).toFixed(1))
+        : 0;
+
+    const governancePending =
+      pendingWorks + pendingDeletions + pendingReports + pendingFeedbacks;
 
     return {
       technicianStats: {
@@ -111,6 +173,7 @@ export class DashboardService {
       },
       orderStats: {
         total: totalOrders,
+        last30Days: ordersLast30Days,
         pending: pendingOrders,
         pendingHome,
         pendingShop,
@@ -120,9 +183,22 @@ export class DashboardService {
         total: totalRevenue._sum.amount || 0,
         last30Days: revenueLast30Days._sum.amount || 0,
       },
+      subscriptionRevenueStats: {
+        total: Number(((subPaymentTotal._sum.amountCents || 0) / 100).toFixed(2)),
+        last30Days: Number(
+          ((subPaymentLast30Days._sum.amountCents || 0) / 100).toFixed(2),
+        ),
+        paidOrdersCount: subPaymentTotal._count.id || 0,
+        paidOrdersLast30Days: subPaymentLast30Days._count.id || 0,
+      },
       subscriptionStats: {
         total: totalSubscriptions,
-        active: activeSubscriptions,
+        active: totalActiveSubs,
+        paidActive,
+        freeActive,
+        paidConversionRate,
+        expiringIn7Days,
+        mrr: Number(mrr.toFixed(2)),
         byPlan: subscriptionStats,
       },
       approvalStats: {
@@ -131,12 +207,7 @@ export class DashboardService {
         pendingDeletions,
         pendingReports,
         pendingFeedbacks,
-        totalPending:
-          pendingApplications +
-          pendingWorks +
-          pendingDeletions +
-          pendingReports +
-          pendingFeedbacks,
+        totalPending: governancePending,
       },
       recentOrders,
       recentRevenues,
@@ -144,33 +215,104 @@ export class DashboardService {
   }
 
   async getBusinessStats(startDate?: string, endDate?: string) {
-    const where: any = {};
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    if (startDate || endDate) {
-      where.recognizedAt = {};
-      if (startDate) {
-        where.recognizedAt.gte = new Date(startDate);
-      }
-      if (endDate) {
-        where.recognizedAt.lte = new Date(endDate);
-      }
+    const queryStartDate = startDate ? new Date(startDate) : thirtyDaysAgo;
+    const queryEndDate = endDate ? new Date(endDate) : new Date();
+
+    const formatDateStr = (date: Date) => {
+      const d = new Date(date);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    // 1. 美甲师入驻趋势
+    const technicians = await this.prisma.technician.findMany({
+      where: {
+        status: { not: 'deleted' },
+        createdAt: { gte: queryStartDate, lte: queryEndDate },
+      },
+      select: { createdAt: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const techDateMap = new Map<string, number>();
+    for (const t of technicians) {
+      if (!t.createdAt) continue;
+      const dateKey = formatDateStr(t.createdAt);
+      techDateMap.set(dateKey, (techDateMap.get(dateKey) || 0) + 1);
     }
 
-    const dailyRevenue = await this.prisma.$queryRaw`
-      SELECT 
-        date(recognizedAt) as date,
-        SUM(amount) as totalAmount,
-        COUNT(*) as count
-      FROM Revenue
-      WHERE status = 'confirmed'
-      GROUP BY date(recognizedAt)
-      ORDER BY date(recognizedAt) DESC
-      LIMIT 30
-    `;
+    const dailyTechnicians = Array.from(techDateMap.entries())
+      .map(([date, count]) => ({ date, count }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    // 2. 订阅及订阅收入趋势
+    const subscriptionOrders = await this.prisma.paymentOrder.findMany({
+      where: {
+        paymentType: 'subscription',
+        status: 'paid',
+        paidAt: { gte: queryStartDate, lte: queryEndDate },
+      },
+      select: { amountCents: true, paidAt: true },
+      orderBy: { paidAt: 'asc' },
+    });
+
+    const subRevMap = new Map<string, { totalAmount: number; count: number }>();
+    for (const order of subscriptionOrders) {
+      if (!order.paidAt) continue;
+      const dateKey = formatDateStr(order.paidAt);
+      const current = subRevMap.get(dateKey) || { totalAmount: 0, count: 0 };
+      current.totalAmount += (order.amountCents || 0) / 100;
+      current.count += 1;
+      subRevMap.set(dateKey, current);
+    }
+
+    const dailySubscriptionRevenue = Array.from(subRevMap.entries())
+      .map(([date, val]) => ({
+        date,
+        totalAmount: Number(val.totalAmount.toFixed(2)),
+        count: val.count,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    // 3. 预约履约确认收入
+    const revenues = await this.prisma.revenue.findMany({
+      where: {
+        status: 'confirmed',
+        recognizedAt: { gte: queryStartDate, lte: queryEndDate },
+      },
+      select: { amount: true, recognizedAt: true },
+      orderBy: { recognizedAt: 'asc' },
+    });
+
+    const revDateMap = new Map<string, { totalAmount: number; count: number }>();
+    for (const r of revenues) {
+      if (!r.recognizedAt) continue;
+      const dateKey = formatDateStr(r.recognizedAt);
+      const current = revDateMap.get(dateKey) || { totalAmount: 0, count: 0 };
+      current.totalAmount += Number(r.amount || 0);
+      current.count += 1;
+      revDateMap.set(dateKey, current);
+    }
+
+    const dailyRevenue = Array.from(revDateMap.entries())
+      .map(([date, val]) => ({
+        date,
+        totalAmount: Number(val.totalAmount.toFixed(2)),
+        count: val.count,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
 
     const topTechnicians = await this.prisma.revenue.groupBy({
       by: ['technicianId'],
-      where: { status: 'confirmed' },
+      where: {
+        status: 'confirmed',
+        recognizedAt: { gte: queryStartDate, lte: queryEndDate },
+      },
       _sum: { amount: true },
       _count: { id: true },
       orderBy: { _sum: { amount: 'desc' } },
@@ -178,13 +320,13 @@ export class DashboardService {
     });
 
     const technicianIds = topTechnicians.map((t) => t.technicianId);
-    const technicians = await this.prisma.technician.findMany({
+    const topTechs = await this.prisma.technician.findMany({
       where: { id: { in: technicianIds } },
       select: { id: true, name: true, phone: true },
     });
 
     const topTechniciansWithInfo = topTechnicians.map((t) => {
-      const tech = technicians.find((tr) => tr.id === t.technicianId);
+      const tech = topTechs.find((tr) => tr.id === t.technicianId);
       return {
         technicianId: t.technicianId,
         technicianName: tech?.name || 'Unknown',
@@ -193,14 +335,10 @@ export class DashboardService {
       };
     });
 
-    const formattedDailyRevenue = ((dailyRevenue as any[]) || []).map((row) => ({
-      date: row.date,
-      totalAmount: Number(row.totalAmount || 0),
-      count: Number(row.count || 0),
-    }));
-
     return {
-      dailyRevenue: formattedDailyRevenue,
+      dailyTechnicians,
+      dailySubscriptionRevenue,
+      dailyRevenue,
       topTechnicians: topTechniciansWithInfo,
     };
   }

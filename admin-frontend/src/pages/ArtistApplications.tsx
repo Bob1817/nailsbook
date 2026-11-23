@@ -14,29 +14,33 @@ const statusColor: Record<string, string> = {
 };
 
 const statusText: Record<string, string> = {
-  pending: '待审核',
-  approved: '已通过',
-  rejected: '已拒绝',
+  pending: '待跟进',
+  approved: '已确认',
+  rejected: '已关闭',
 };
 
 const serviceModeText: Record<string, string> = {
   home: '上门',
   shop: '到店',
   both: '均可',
-  model_artist: '标杆扶持',
+  model_artist: '1v1 指导配置',
 };
 
 const maskPhone = (phone: string) => phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
 
 const isModelArtist = (record: ArtistApplication) =>
   record.serviceMode === 'model_artist' ||
-  (record.note && (record.note.includes('标杆') || record.note.includes('样板') || record.note.includes('星火')));
+  (record.note && (record.note.includes('标杆') || record.note.includes('样板') || record.note.includes('星火') || record.note.includes('指导配置')));
 
 const renderStatusTag = (status: string) => (
   <Tag color={statusColor[status]}>{statusText[status] || status}</Tag>
 );
 
-const ArtistApplications: React.FC = () => {
+interface ArtistApplicationsProps {
+  embedded?: boolean;
+}
+
+const ArtistApplications: React.FC<ArtistApplicationsProps> = ({ embedded = false }) => {
   const screens = Grid.useBreakpoint();
   const mobile = !screens.md;
   const [loading, setLoading] = useState(false);
@@ -195,15 +199,17 @@ const ArtistApplications: React.FC = () => {
 
   return (
     <div>
-      <AdminPageHeader title="美甲师申请" description="审核外部独立美甲师与样板美甲师的入驻申请与资料认证。" />
+      {!embedded && (
+        <AdminPageHeader title="1v1 指导配置活动报名" description="跟进官网与小程序提交的 1v1 指导配置与标杆扶持活动报名线索。" />
+      )}
       <Card className="admin-list-card">
         <Tabs
           activeKey={status}
           onChange={handleTabChange}
           items={[
-            { key: 'pending', label: '待审核' },
-            { key: 'approved', label: '已通过' },
-            { key: 'rejected', label: '已拒绝' },
+            { key: 'pending', label: '待审核 / 待跟进' },
+            { key: 'approved', label: '已通过 / 已确认' },
+            { key: 'rejected', label: '已拒绝 / 已关闭' },
           ]}
         />
 

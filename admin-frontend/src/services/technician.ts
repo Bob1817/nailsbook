@@ -22,6 +22,17 @@ export interface Technician {
     status: string;
     startedAt: string;
     expiredAt?: string;
+    plan?: {
+      id: number;
+      name: string;
+      code: string;
+      price: number;
+    };
+  };
+  _count?: {
+    customers: number;
+    orders: number;
+    nailWorks: number;
   };
 }
 

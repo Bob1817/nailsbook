@@ -236,6 +236,32 @@ export class TechnicianSubscriptionsController {
     return this.subscriptionsService.getSubscriptionMetrics(startDate, endDate);
   }
 
+  @Get('payments')
+  @Permissions('subscription:view')
+  @ApiOperation({ summary: '获取订阅支付流水与实收汇总' })
+  payments(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: string,
+    @Query('technicianId') technicianId?: string,
+  ) {
+    return this.subscriptionsService.findSubscriptionPayments({
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 20,
+      status,
+      technicianId: technicianId ? parseInt(technicianId, 10) : undefined,
+    });
+  }
+
+  @Get('technicians/:technicianId/detail')
+  @Permissions('subscription:view')
+  @ApiOperation({ summary: '获取指定美甲师当前订阅与额度实时用量' })
+  technicianDetail(@Param('technicianId') technicianId: string) {
+    return this.subscriptionsService.getCurrentForTechnician(
+      parseInt(technicianId, 10),
+    );
+  }
+
   @Get('technicians/:technicianId/changes')
   @Permissions('subscription:view')
   @ApiOperation({ summary: '获取美甲师套餐变更审计记录' })

@@ -4,17 +4,14 @@ import type { MenuProps } from 'antd';
 import {
   AppstoreOutlined,
   BugOutlined,
-  CalendarOutlined,
   CloseOutlined,
   CrownOutlined,
   DashboardOutlined,
   DollarOutlined,
   DownOutlined,
   FlagOutlined,
-  FormOutlined,
   GiftOutlined,
   HistoryOutlined,
-  KeyOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -51,24 +48,15 @@ interface NavigationGroup {
 
 const navigationGroups: NavigationGroup[] = [
   {
-    key: 'operation', icon: <DashboardOutlined />, label: '运营总览', children: [
+    key: 'operation', icon: <DashboardOutlined />, label: '经营总览', children: [
       { key: '/', icon: <DashboardOutlined />, label: '数据看板', permission: 'dashboard:view' },
       { key: '/campaigns', icon: <GiftOutlined />, label: '活动中心', permission: 'dashboard:view' },
     ],
   },
   {
-    key: 'people', icon: <TeamOutlined />, label: '用户与入驻', children: [
-      { key: '/applications', icon: <FormOutlined />, label: '美甲师申请', permission: 'application:view' },
+    key: 'saas', icon: <CrownOutlined />, label: '用户与订阅', children: [
       { key: '/technicians', icon: <TeamOutlined />, label: '美甲师管理', permission: 'technician:view' },
-      { key: '/customers', icon: <UserOutlined />, label: '客户管理', permission: 'customer:view' },
-      { key: '/invite-keys', icon: <KeyOutlined />, label: '邀请密钥', permission: 'technician:create' },
-    ],
-  },
-  {
-    key: 'business', icon: <DollarOutlined />, label: '交易与财务', children: [
-      { key: '/orders', icon: <CalendarOutlined />, label: '预约管理', permission: 'booking:view' },
-      { key: '/revenues', icon: <DollarOutlined />, label: '收入管理', permission: 'revenue:view' },
-      { key: '/subscriptions', icon: <CrownOutlined />, label: '订阅管理', permission: 'subscription:view' },
+      { key: '/subscriptions', icon: <DollarOutlined />, label: '订阅与收入', permission: 'subscription:view' },
     ],
   },
   {
@@ -81,8 +69,8 @@ const navigationGroups: NavigationGroup[] = [
     ],
   },
   {
-    key: 'platform', icon: <WechatOutlined />, label: '微信与发布', children: [
-      { key: '/booking-notifications', icon: <NotificationOutlined />, label: '预约通知', permission: 'booking:view' },
+    key: 'platform', icon: <WechatOutlined />, label: '消息与配置', children: [
+      { key: '/booking-notifications', icon: <NotificationOutlined />, label: '消息推送与通知', permission: 'booking:view' },
       { key: '/wechat-messages', icon: <MessageOutlined />, label: '公众号消息', permission: 'feature_flag:view' },
       { key: '/wechat-config', icon: <SettingOutlined />, label: '微信能力配置', permission: 'feature_flag:view' },
       { key: '/wechat-official', icon: <WechatOutlined />, label: '公众号配置', permission: 'feature_flag:view' },

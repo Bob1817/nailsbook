@@ -16,6 +16,7 @@ import {
   decryptManagedPassword,
   encryptManagedPassword,
 } from '../common/auth/managed-password';
+import { ensureDefaultFreeSubscription } from '../subscriptions/subscription-defaults';
 
 @Injectable()
 export class TechniciansService {
@@ -75,7 +76,18 @@ export class TechniciansService {
         skip: (page - 1) * limit,
         take: limit,
         include: {
-          subscription: true,
+          subscription: {
+            include: {
+              plan: { select: { id: true, name: true, code: true, price: true } },
+            },
+          },
+          _count: {
+            select: {
+              customers: true,
+              orders: true,
+              nailWorks: true,
+            },
+          },
         },
         orderBy: {
           createdAt: 'desc',
@@ -140,6 +152,12 @@ export class TechniciansService {
         mustChangePassword: true,
       },
     });
+
+    await ensureDefaultFreeSubscription(
+      this.prisma,
+      technician.id,
+      technician.createdAt,
+    );
 
     return this.mapTechnician(technician);
   }

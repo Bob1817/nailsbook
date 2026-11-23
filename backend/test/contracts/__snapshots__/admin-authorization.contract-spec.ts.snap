@@ -493,6 +493,13 @@ exports[`Admin authorization HTTP contract covers every admin business route wit
     ],
   },
   {
+    "method": "GET",
+    "path": "/api/admin/technician-subscriptions/payments",
+    "permissions": [
+      "subscription:view",
+    ],
+  },
+  {
     "method": "PATCH",
     "path": "/api/admin/technician-subscriptions/technicians/:technicianId",
     "permissions": [
@@ -502,6 +509,13 @@ exports[`Admin authorization HTTP contract covers every admin business route wit
   {
     "method": "GET",
     "path": "/api/admin/technician-subscriptions/technicians/:technicianId/changes",
+    "permissions": [
+      "subscription:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/technician-subscriptions/technicians/:technicianId/detail",
     "permissions": [
       "subscription:view",
     ],

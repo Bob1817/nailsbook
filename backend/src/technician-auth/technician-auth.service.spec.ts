@@ -186,6 +186,7 @@ describe('TechnicianAuthService.setInitialPassword', () => {
         passwordHash: 'hashed',
       };
 
+      let subscriptionCreated = false;
       (prisma as any).$transaction = jest.fn().mockImplementation(async (cb) => {
         const tx = {
           clientUser: { findFirst: jest.fn().mockResolvedValue(null) },
@@ -193,6 +194,16 @@ describe('TechnicianAuthService.setInitialPassword', () => {
             findFirst: jest.fn().mockResolvedValue(null),
             findUnique: jest.fn().mockResolvedValue(null),
             create: jest.fn().mockResolvedValue(createdTech),
+          },
+          subscriptionPlan: {
+            findUnique: jest.fn().mockResolvedValue({ id: 4, code: 'free', name: '免费版' }),
+          },
+          technicianSubscription: {
+            findUnique: jest.fn().mockResolvedValue(null),
+            create: jest.fn().mockImplementation(({ data }) => {
+              subscriptionCreated = true;
+              return Promise.resolve({ id: 1, ...data });
+            }),
           },
         };
         return cb(tx);
@@ -208,6 +219,7 @@ describe('TechnicianAuthService.setInitialPassword', () => {
 
       expect(result).toHaveProperty('accessToken');
       expect(result.technician.name).toBe('OpenArtist');
+      expect(subscriptionCreated).toBe(true);
     });
   });
 });

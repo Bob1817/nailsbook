@@ -12,6 +12,7 @@ export interface DashboardOverview {
   };
   orderStats: {
     total: number;
+    last30Days?: number;
     pending: number;
     pendingHome: number;
     pendingShop: number;
@@ -21,14 +22,28 @@ export interface DashboardOverview {
     total: number;
     last30Days: number;
   };
+  subscriptionRevenueStats?: {
+    total: number;
+    last30Days: number;
+    paidOrdersCount: number;
+    paidOrdersLast30Days: number;
+  };
   subscriptionStats: {
     total: number;
     active: number;
+    paidActive?: number;
+    freeActive?: number;
+    paidConversionRate?: number;
+    expiringIn7Days?: number;
+    mrr?: number;
     byPlan: Array<{
       planId: number;
       planName: string;
       planCode: string;
+      price?: number;
+      billingCycle?: string;
       count: number;
+      percentage?: number;
     }>;
   };
   approvalStats?: {
@@ -58,6 +73,15 @@ export interface DashboardOverview {
 }
 
 export interface BusinessStats {
+  dailyTechnicians?: Array<{
+    date: string;
+    count: number;
+  }>;
+  dailySubscriptionRevenue?: Array<{
+    date: string;
+    totalAmount: number;
+    count: number;
+  }>;
   dailyRevenue: Array<{
     date: string;
     totalAmount: number;

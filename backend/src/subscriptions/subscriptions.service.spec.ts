@@ -8,11 +8,13 @@ describe('SubscriptionsService current entitlement', () => {
       findUnique: jest.fn(),
       findUniqueOrThrow: jest.fn(),
     },
-    technician: { findUnique: jest.fn() },
+    technician: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
     technicianSubscription: {
       findUnique: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
       upsert: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
     },
     customer: { count: jest.fn(), findFirst: jest.fn() },
     order: { count: jest.fn() },
@@ -279,5 +281,40 @@ describe('SubscriptionsService current entitlement', () => {
         },
       }),
     );
+  });
+
+  it('findTechnicianSubscriptions 自动补齐无订阅美甲师为免费版并返回全量美甲师订阅', async () => {
+    const mockFreePlan = { id: 4, code: 'free', name: '免费版' };
+    prisma.subscriptionPlan.findUniqueOrThrow.mockResolvedValue(mockFreePlan);
+    prisma.technician.findMany.mockResolvedValue([
+      { id: 65, createdAt: new Date('2026-11-23T15:38:35.000Z') },
+      { id: 64, createdAt: new Date('2026-11-23T15:38:30.000Z') },
+    ]);
+    prisma.technicianSubscription.findMany.mockResolvedValue([
+      {
+        id: 101,
+        technicianId: 65,
+        planId: 4,
+        status: 'active',
+        technician: { id: 65, name: '许', phone: '13173363003' },
+        plan: mockFreePlan,
+      },
+      {
+        id: 102,
+        technicianId: 64,
+        planId: 4,
+        status: 'active',
+        technician: { id: 64, name: '刘', phone: '17813305663' },
+        plan: mockFreePlan,
+      },
+    ]);
+
+    const result = await service.findTechnicianSubscriptions();
+
+    expect(prisma.technician.findMany).toHaveBeenCalled();
+    expect(prisma.technicianSubscription.upsert).toHaveBeenCalledTimes(2);
+    expect(result).toHaveLength(2);
+    expect(result[0].technician.name).toBe('许');
+    expect(result[0].plan.name).toBe('免费版');
   });
 });

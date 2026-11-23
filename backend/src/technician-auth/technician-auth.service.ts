@@ -21,6 +21,7 @@ import { buildDefaultServiceItems } from '../common/default-service-items';
 import {
   isMiniProgramAuditMode,
 } from '../common/miniprogram-launch-mode';
+import { ensureDefaultFreeSubscription } from '../subscriptions/subscription-defaults';
 
 @Injectable()
 export class TechnicianAuthService {
@@ -198,6 +199,8 @@ export class TechnicianAuthService {
         },
       });
 
+      await ensureDefaultFreeSubscription(tx, created.id, created.createdAt);
+
       await tx.technicianInviteKey.update({
         where: { id: keyRecord.id },
         data: {
@@ -219,8 +222,7 @@ export class TechnicianAuthService {
   }
 
   /**
-   * 无密钥注册：直接创建免费版美甲师账号。
-   * 免费订阅由 SubscriptionsService.getCurrentForTechnician() 首次查询时 lazy 创建。
+   * 无密钥注册：直接创建免费版美甲师账号并初始化默认免费版订阅。
    */
   private async registerWithoutKey(
     dto: { name: string; phone: string; password: string },
@@ -242,6 +244,8 @@ export class TechnicianAuthService {
           status: 'active',
         },
       });
+
+      await ensureDefaultFreeSubscription(tx, created.id, created.createdAt);
 
       if (wechatIdentity) {
         await tx.wechatIdentity.create({

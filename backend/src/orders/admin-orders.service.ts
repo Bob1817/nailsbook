@@ -6,12 +6,19 @@ import { PrismaService } from '../common/prisma/prisma.service';
 export class AdminOrdersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(page = 1, limit = 20, status?: string, search?: string) {
+  async findAll(
+    page = 1,
+    limit = 20,
+    status?: string,
+    search?: string,
+    technicianId?: number,
+  ) {
     const safePage = Math.max(1, page);
     const safeLimit = Math.min(100, Math.max(1, limit));
     const keyword = search?.trim();
     const where: Prisma.OrderWhereInput = {
       ...(status ? { status } : {}),
+      ...(technicianId ? { technicianId } : {}),
       ...(keyword ? {
         OR: [
           { orderNo: { contains: keyword } },

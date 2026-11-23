@@ -37,7 +37,7 @@ export interface AdminOrder {
 }
 
 export const orderService = {
-  getAll: async (params: { page: number; limit: number; status?: string; search?: string }): Promise<PaginatedResponse<AdminOrder>> =>
+  getAll: async (params: { page: number; limit: number; status?: string; search?: string; technicianId?: number }): Promise<PaginatedResponse<AdminOrder>> =>
     (await api.get('/orders', { params })).data,
   getById: async (id: number): Promise<AdminOrder> => (await api.get(`/orders/${id}`)).data,
 };

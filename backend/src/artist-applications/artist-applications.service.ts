@@ -4,6 +4,7 @@ import { PrismaService } from '../common/prisma/prisma.service';
 import { DingtalkAlertService } from '../notifications/dingtalk-alert.service';
 import { CreateArtistApplicationDto } from './dto/create-artist-application.dto';
 import { phoneVariants, phoneAccounts } from '../common/account-role-policy';
+import { ensureDefaultFreeSubscription } from '../subscriptions/subscription-defaults';
 
 @Injectable()
 export class ArtistApplicationsService {
@@ -284,6 +285,14 @@ export class ArtistApplicationsService {
             status: 'active',
           },
         }));
+
+      if (!existing) {
+        await ensureDefaultFreeSubscription(
+          tx,
+          technician.id,
+          technician.createdAt,
+        );
+      }
 
       return {
         application: updatedApplication,

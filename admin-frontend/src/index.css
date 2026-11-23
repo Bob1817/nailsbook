@@ -263,6 +263,112 @@ body {
   height: 100%;
 }
 
+.admin-metric-card.is-clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.admin-metric-card.is-clickable:hover {
+  border-color: var(--nb-ink);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.08), 0 4px 8px -2px rgba(0, 0, 0, 0.04);
+}
+
+.admin-metric-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.admin-metric-card__arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: normal;
+  color: var(--nb-muted);
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.admin-metric-card.is-clickable:hover .admin-metric-card__arrow {
+  color: var(--nb-ink);
+  transform: translateX(3px);
+}
+
+.admin-plan-pills-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--nb-line);
+}
+
+.admin-plan-pill-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--nb-page);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-plan-pill-item:hover {
+  background: var(--nb-surface);
+  border-color: var(--nb-ink);
+  transform: translateX(2px);
+}
+
+.admin-plan-pill-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-plan-pill-badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--nb-ink);
+}
+
+.admin-plan-pill-price {
+  font-size: 12px;
+  color: var(--nb-muted);
+}
+
+.admin-plan-pill-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.admin-plan-pill-count strong {
+  font-size: 14px;
+  color: var(--nb-ink);
+}
+
+.admin-plan-pill-percent {
+  font-size: 12px;
+  color: var(--nb-muted);
+  margin-left: 2px;
+}
+
+.admin-plan-pill-arrow {
+  font-size: 10px;
+  color: var(--nb-muted);
+  transition: transform 0.2s ease;
+}
+
+.admin-plan-pill-item:hover .admin-plan-pill-arrow {
+  transform: translateX(2px);
+  color: var(--nb-ink);
+}
+
 .admin-metric-card .ant-statistic {
   margin-bottom: 8px;
 }
@@ -349,10 +455,10 @@ body {
   font-size: 22px;
 }
 
-/* 审批待办中心（纵向分层卡片 + 响应式列数） */
+/* 平台治理与待办（4列对称卡片 + 响应式列数） */
 .admin-approval-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -755,7 +861,7 @@ body {
 /* 主流笔记本（1200px - 1439px） */
 @media (max-width: 1439px) {
   .admin-approval-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 

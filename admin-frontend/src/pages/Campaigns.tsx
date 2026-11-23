@@ -42,10 +42,12 @@ import {
   UserOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import { useSearchParams } from 'react-router-dom';
 import AdminPageHeader from '../components/AdminPageHeader';
 import { colors } from '../colors.generated';
 import { campaignService } from '../services/campaign';
 import type { CreateCampaignInput, PlatformCampaign } from '../services/campaign';
+import ArtistApplications from './ArtistApplications';
 
 const { Title, Text, Paragraph } = Typography;
 const { RangePicker } = DatePicker;
@@ -158,6 +160,19 @@ const Campaigns: React.FC = () => {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // 活动中心模块切换：活动页面管理 vs 1v1 指导配置报名（支持 ?tab=guidance 直达）
+  const [activeModule, setActiveModule] = useState<'campaigns' | 'guidance'>(() =>
+    searchParams.get('tab') === 'guidance' ? 'guidance' : 'campaigns',
+  );
+
+  useEffect(() => {
+    if (searchParams.get('tab') === 'guidance') {
+      setActiveModule('guidance');
+    }
+  }, [searchParams]);
 
   // 过滤项
   const [selectedStatusTab, setSelectedStatusTab] = useState('all');
@@ -719,20 +734,44 @@ const Campaigns: React.FC = () => {
     <div style={{ padding: isMobile ? 12 : 24, maxWidth: 1440, margin: '0 auto' }}>
       <AdminPageHeader
         title="活动中心"
-        description="统一管理平台各端（客户端、美甲师端、官网）营销活动与展示页面，支持富文本排版、项目内页链接深度跳转与起止时间自动化控制。"
+        description="统一管理平台各端营销活动页面，以及「1v1 指导配置」活动报名跟进。"
         extra={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            size="large"
-            style={{ background: colors.action, height: 44, borderRadius: 8 }}
-            onClick={handleOpenCreate}
-          >
-            新建活动页面
-          </Button>
+          activeModule === 'campaigns' ? (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              size="large"
+              style={{ background: colors.action, height: 44, borderRadius: 8 }}
+              onClick={handleOpenCreate}
+            >
+              新建活动页面
+            </Button>
+          ) : null
         }
       />
 
+      <Tabs
+        activeKey={activeModule}
+        onChange={(key) => {
+          const next = key as 'campaigns' | 'guidance';
+          setActiveModule(next);
+          if (next === 'guidance') {
+            setSearchParams({ tab: 'guidance' }, { replace: true });
+          } else {
+            setSearchParams({}, { replace: true });
+          }
+        }}
+        style={{ marginBottom: 12 }}
+        items={[
+          { key: 'campaigns', label: '活动页面管理' },
+          { key: 'guidance', label: '试用申请 / 1v1 指导配置' },
+        ]}
+      />
+
+      {activeModule === 'guidance' ? (
+        <ArtistApplications embedded />
+      ) : (
+        <>
       {/* 顶部状态统计 Tabs */}
       <Card style={{ marginBottom: 16 }} styles={{ body: { padding: '12px 16px' } }}>
         <Tabs
@@ -880,6 +919,8 @@ const Campaigns: React.FC = () => {
           </>
         )}
       </Card>
+        </>
+      )}
 
       {/* 创建 / 编辑活动抽屉 */}
       <Drawer
