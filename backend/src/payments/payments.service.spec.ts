@@ -334,4 +334,20 @@ describe('PaymentsService', () => {
       }),
     );
   });
+
+  it('createSubscriptionPayment 校验套餐代码有效性并禁止为免费套餐发起在线支付', async () => {
+    await expect(service.createSubscriptionPayment(5, '')).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+
+    prisma.subscriptionPlan.findFirst.mockResolvedValueOnce({
+      id: 1,
+      code: 'free',
+      name: '免费版',
+      price: 0,
+    });
+    await expect(service.createSubscriptionPayment(5, 'free')).rejects.toThrow(
+      '免费套餐无需在线支付',
+    );
+  });
 });

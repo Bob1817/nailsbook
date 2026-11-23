@@ -35,20 +35,29 @@ import {
   assertMiniProgramFeatureDisabled,
   isMiniProgramLaunchMode,
 } from '../common/miniprogram-launch-mode';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateSubscriptionPaymentDto {
   @ApiProperty({ description: '套餐代码', example: 'starter' })
+  @IsString()
+  @IsNotEmpty()
   planCode: string;
 
   @ApiPropertyOptional({ description: '幂等键' })
+  @IsOptional()
+  @IsString()
   idempotencyKey?: string;
 
   @ApiPropertyOptional({ description: '微信登录code，用于换取openId' })
+  @IsOptional()
+  @IsString()
   code?: string;
 }
 
 export class ConfirmMockSubscriptionPaymentDto {
   @ApiProperty({ description: '支付单号' })
+  @IsString()
+  @IsNotEmpty()
   paymentNo: string;
 }
 

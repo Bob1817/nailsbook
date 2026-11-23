@@ -196,12 +196,17 @@ export class PaymentsService {
     idempotencyKey?: string,
     wechatCode?: string,
   ) {
+    const normalizedPlanCode = String(planCode || '').trim().toLowerCase();
+    if (!normalizedPlanCode) {
+      throw new BadRequestException('请选择有效的套餐');
+    }
+
     const normalizedKey = (
-      idempotencyKey || `SUB_${technicianId}_${planCode}_${Date.now()}`
+      idempotencyKey || `SUB_${technicianId}_${normalizedPlanCode}_${Date.now()}`
     ).trim();
 
     const plan = await this.prisma.subscriptionPlan.findFirst({
-      where: { code: planCode, status: 'active' },
+      where: { code: normalizedPlanCode, status: 'active' },
     });
     if (!plan) throw new NotFoundException('套餐不存在');
     if (plan.price <= 0) {
