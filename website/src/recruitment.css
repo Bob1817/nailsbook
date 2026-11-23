@@ -1,3 +1,6 @@
+html {
+  scroll-behavior: smooth;
+}
 .recruitment-site {
   background: var(--nb-surface);
   color: var(--nb-ink);
@@ -125,11 +128,14 @@
   margin-top: 30px;
 }
 .site-header {
-  position: relative;
-  z-index: 30;
+  position: sticky;
+  top: 0;
+  z-index: 50;
   padding-top: env(safe-area-inset-top, 0px);
   border-bottom: 1px solid var(--nb-line);
   background: var(--nb-surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 .site-nav {
   display: flex;
@@ -153,13 +159,29 @@
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
 }
 .desktop-links a {
   min-height: 44px;
   display: flex;
   align-items: center;
   font-size: 14px;
+  color: var(--nb-secondary);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 500;
+  transition: color 0.18s ease, background-color 0.18s ease;
+}
+.desktop-links a:hover {
+  color: var(--nb-ink);
+  background-color: var(--nb-pressed);
+}
+.desktop-links a.active,
+.desktop-links a[aria-current="page"] {
+  color: var(--nb-ink);
+  font-weight: 600;
+  background-color: var(--nb-pressed);
 }
 .icon-button {
   width: 44px;
@@ -186,6 +208,23 @@
   min-height: 44px;
   display: flex;
   align-items: center;
+  font-size: 15px;
+  color: var(--nb-secondary);
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: color 0.18s ease, background-color 0.18s ease;
+}
+.mobile-navigation a:hover {
+  color: var(--nb-ink);
+  background-color: var(--nb-pressed);
+}
+.mobile-navigation a.active,
+.mobile-navigation a[aria-current="page"] {
+  color: var(--nb-ink);
+  font-weight: 600;
+  background-color: var(--nb-pressed);
 }
 /* ---- Real Phone Mockup Preview ---- */
 .app-preview-container {
@@ -248,7 +287,7 @@
 }
 .site-section {
   padding-block: 80px;
-  scroll-margin-top: 20px;
+  scroll-margin-top: 96px;
 }
 .recruitment-site .section-intro {
   margin-top: 18px;

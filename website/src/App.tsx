@@ -13,10 +13,20 @@ import { QuoteCalculatorPage } from './pages/quote/QuoteCalculatorPage'
 import { QuoteDetailPage } from './pages/quote/QuoteDetailPage'
 
 function ScrollToTop() {
-  const { pathname } = useLocation()
+  const { pathname, hash } = useLocation()
   useEffect(() => {
+    if (hash) {
+      const id = hash.replace('#', '')
+      const el = document.getElementById(id)
+      if (el) {
+        const timer = setTimeout(() => {
+          el.scrollIntoView({ behavior: 'smooth' })
+        }, 50)
+        return () => clearTimeout(timer)
+      }
+    }
     window.scrollTo(0, 0)
-  }, [pathname])
+  }, [pathname, hash])
   return null
 }
 
