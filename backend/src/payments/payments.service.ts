@@ -251,46 +251,36 @@ export class PaymentsService {
       const credentials = await this.platformConfig!.getPaymentCredentials({
         allowInLaunchMode: true,
       });
-      let identity = await this.prisma.wechatIdentity.findFirst({
-        where: { technicianId, appId: credentials.appId },
-        select: { openId: true },
-      });
 
-      if (!identity && wechatCode && this.wechatAuth) {
+      // 优先使用小程序本次 wx.login() 实时换取的当前付款手机微信 openId，
+      // 避免与账号历史绑定的微信号不一致触发微信「下单账号与支付账号不一致」拦截。
+      if (wechatCode && this.wechatAuth) {
         try {
-          const session = await (this.wechatAuth as any).exchangeCode(
-            wechatCode,
-          );
-          if (session?.openid) {
-            identity = await this.prisma.wechatIdentity.upsert({
-              where: {
-                appId_openId: {
-                  appId: credentials.appId,
-                  openId: session.openid,
-                },
-              },
-              create: {
-                appId: credentials.appId,
-                openId: session.openid,
-                unionId: session.unionid,
-                technicianId,
-              },
-              update: {
-                unionId: session.unionid,
-                technicianId,
-              },
-              select: { openId: true },
-            });
+          if (typeof this.wechatAuth.resolveOpenIdByCode === 'function') {
+            openId = await this.wechatAuth.resolveOpenIdByCode(wechatCode);
+          } else {
+            const session = await (this.wechatAuth as any).exchangeCode(
+              wechatCode,
+            );
+            openId = session?.openid ?? null;
           }
         } catch (err) {
-          console.warn('exchangeCode for technician payment failed', err);
+          console.warn('resolveOpenIdByCode for technician payment failed', err);
         }
       }
 
-      if (!identity?.openId) {
-        throw new BadRequestException('请使用微信授权或登录后发起支付');
+      // 仅当客户端未传 code 时，回退使用历史绑定 openId
+      if (!openId) {
+        const identity = await this.prisma.wechatIdentity.findFirst({
+          where: { technicianId, appId: credentials.appId },
+          select: { openId: true },
+        });
+        openId = identity?.openId ?? null;
       }
-      openId = identity.openId;
+
+      if (!openId) {
+        throw new BadRequestException('未获取到当前微信支付身份，请重新打开小程序后再试');
+      }
     }
 
     const currentSub = await this.prisma.technicianSubscription.findUnique({

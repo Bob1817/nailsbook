@@ -433,4 +433,76 @@ describe('PaymentsService', () => {
     expect(confirmSpy).toHaveBeenCalledWith('SUB999', 'WX_TX_999');
     expect(res.paid).toBe(true);
   });
+
+  it('createSubscriptionPayment 优先使用实时 wx.login code 换取的当前手机 openId 下单，不受历史绑定微信号限制', async () => {
+    config.get.mockImplementation((key: string) =>
+      key === 'NODE_ENV' ? 'production' : undefined,
+    );
+    const platformConfig = {
+      isPaymentAvailable: jest.fn().mockResolvedValue(true),
+      getPaymentCredentials: jest.fn().mockResolvedValue({ appId: 'wx-app' }),
+    };
+    const wechatPay = {
+      createJsapiPayment: jest.fn().mockResolvedValue({
+        timeStamp: '1700000000',
+        nonceStr: 'nonce123',
+        package: 'prepay_id=wx_prepay_live',
+        signType: 'RSA',
+        paySign: 'sig123',
+      }),
+    };
+    const wechatAuth = {
+      resolveOpenIdByCode: jest.fn().mockResolvedValue('live-device-openid'),
+    };
+    service = new PaymentsService(
+      prisma,
+      config as any,
+      undefined,
+      platformConfig as any,
+      wechatPay as any,
+      undefined,
+      wechatAuth as any,
+    );
+    prisma.subscriptionPlan.findFirst.mockResolvedValue({
+      id: 2,
+      code: 'starter',
+      name: '入门版',
+      price: 29,
+      billingCycle: 'monthly',
+      status: 'active',
+    });
+    prisma.technicianSubscription.findUnique.mockResolvedValue({ id: 10 });
+    prisma.wechatIdentity.findFirst.mockResolvedValue({ openId: 'stale-bound-openid' });
+    prisma.paymentOrder.create.mockImplementation(({ data }: any) => ({
+      id: 201,
+      createdAt: new Date(),
+      paidAt: null,
+      ...data,
+    }));
+    prisma.paymentOrder.update.mockImplementation(({ data }: any) => ({
+      id: 201,
+      paymentNo: 'SUB201',
+      paymentType: 'subscription',
+      amountCents: 2900,
+      channel: 'wechat',
+      status: 'pending',
+      createdAt: new Date(),
+      paidAt: null,
+      ...data,
+    }));
+
+    const result = await service.createSubscriptionPayment(
+      5,
+      'starter',
+      'live-code-pay-1',
+      'fresh-wx-code',
+    );
+
+    expect(wechatAuth.resolveOpenIdByCode).toHaveBeenCalledWith('fresh-wx-code');
+    expect(wechatPay.createJsapiPayment).toHaveBeenCalledWith(
+      expect.objectContaining({ openId: 'live-device-openid', amountCents: 2900 }),
+    );
+    expect(prisma.wechatIdentity.findFirst).not.toHaveBeenCalled();
+    expect(result.providerPayload.package).toBe('prepay_id=wx_prepay_live');
+  });
 });

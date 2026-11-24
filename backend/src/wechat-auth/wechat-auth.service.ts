@@ -333,6 +333,12 @@ export class WechatAuthService {
     });
   }
 
+  /** 仅通过小程序 wx.login() 临时 code 实时换取当前手机微信 openId（不修改账号绑定关系） */
+  async resolveOpenIdByCode(code: string): Promise<string | null> {
+    const session = await this.exchangeCode(code);
+    return session.openid ?? null;
+  }
+
   private async exchangeCode(code: string): Promise<Code2SessionResult> {
     const credentials = await this.platformConfig.getLoginCredentials();
     const appId = credentials.appId;
