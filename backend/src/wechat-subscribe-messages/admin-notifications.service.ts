@@ -5,17 +5,45 @@ import { PrismaService } from '../common/prisma/prisma.service';
 const RETRY_CODES = ['-1', '40001', '40014', '42001', '45009', '500', '502', '503', '504'];
 const STATES = ['pending', 'sending', 'delivered', 'failed', 'obsolete', 'invalid_snapshot'];
 
+const FAILURE_GROUPS = ['system_failed', 'no_authorization', 'misconfigured', 'unknown', 'backlog'];
+
 @Injectable()
 export class AdminNotificationsService {
   private readonly logger = new Logger(AdminNotificationsService.name);
   constructor(private readonly prisma: PrismaService) {}
 
-  async list(orderId?: string, page?: string, status?: string) {
+  async list(orderId?: string, page?: string, status?: string, failureGroup?: string) {
     const currentPage = page ? Number(page) : 1;
     if (!Number.isSafeInteger(currentPage) || currentPage < 1) throw new BadRequestException('页码无效');
     if (orderId && (!Number.isSafeInteger(Number(orderId)) || Number(orderId) < 1)) throw new BadRequestException('预约ID无效');
     if (status && !STATES.includes(status)) throw new BadRequestException('状态无效');
-    const where = { eventType: { startsWith: 'booking.' }, ...(orderId ? { orderId: Number(orderId) } : {}), ...(status ? { status } : {}) };
+    if (failureGroup && !FAILURE_GROUPS.includes(failureGroup)) throw new BadRequestException('异常分类无效');
+
+    const groupFilter: Record<string, unknown> = {};
+    if (failureGroup === 'misconfigured') {
+      groupFilter.deliveries = { some: { providerCode: 'template_not_configured' } };
+    } else if (failureGroup === 'no_authorization') {
+      groupFilter.deliveries = { some: { providerCode: { in: ['authorization_unavailable', '43101'] } } };
+    } else if (failureGroup === 'unknown') {
+      groupFilter.deliveries = { some: { status: 'unknown' } };
+    } else if (failureGroup === 'backlog') {
+      groupFilter.status = { in: ['pending', 'sending'] };
+      groupFilter.createdAt = { lt: new Date(Date.now() - 600000) };
+    } else if (failureGroup === 'system_failed') {
+      groupFilter.status = 'failed';
+      groupFilter.deliveries = {
+        some: {
+          NOT: { providerCode: { in: ['authorization_unavailable', '43101'] } },
+        },
+      };
+    }
+
+    const where: Record<string, unknown> = {
+      eventType: { startsWith: 'booking.' },
+      ...(orderId ? { orderId: Number(orderId) } : {}),
+      ...(status ? { status } : {}),
+      ...groupFilter,
+    };
     const [events, total] = await this.prisma.$transaction([
       this.prisma.notificationEvent.findMany({ where, orderBy: { id: 'desc' }, skip: (currentPage - 1) * 20, take: 20,
         select: { id: true, eventType: true, orderId: true, recipientRole: true, recipientId: true, status: true,

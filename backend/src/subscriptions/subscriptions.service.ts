@@ -1,5 +1,6 @@
 import {
   Injectable,
+  BadRequestException,
   NotFoundException,
   ConflictException,
   ForbiddenException,
@@ -9,6 +10,7 @@ import {
 import { PrismaService } from '../common/prisma/prisma.service';
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsBoolean, IsInt, IsOptional, IsString } from 'class-validator';
 
 export class CreateSubscriptionPlanDto {
   @ApiProperty({ description: '套餐名称', example: '基础版' })
@@ -65,10 +67,23 @@ export class CreateSubscriptionPlanDto {
 
 export class UpdateTechnicianSubscriptionDto {
   @ApiProperty({ description: '套餐ID', example: 1 })
+  @IsInt()
   planId: number;
 
   @ApiPropertyOptional({ description: '降级是否在当前周期结束后生效' })
+  @IsOptional()
+  @IsBoolean()
   applyAtPeriodEnd?: boolean;
+
+  @ApiPropertyOptional({ description: '自定义到期时间（ISO 日期字符串，传 null 表示永久有效）', nullable: true })
+  @IsOptional()
+  @IsString()
+  expiredAt?: string | null;
+
+  @ApiPropertyOptional({ description: '超管调整备注/原因' })
+  @IsOptional()
+  @IsString()
+  note?: string;
 }
 
 type MeteredResource = 'marketingExports' | 'monthlySms';
@@ -838,12 +853,30 @@ export class SubscriptionsService implements OnModuleInit {
     });
 
     const now = new Date();
+    let resolvedExpiredAt: Date | null;
+    if (dto.expiredAt === null) {
+      resolvedExpiredAt = null;
+    } else if (typeof dto.expiredAt === 'string' && dto.expiredAt.trim()) {
+      const parsed = new Date(dto.expiredAt.trim());
+      if (Number.isNaN(parsed.getTime())) {
+        throw new BadRequestException('到期时间格式无效');
+      }
+      resolvedExpiredAt = parsed;
+    } else {
+      resolvedExpiredAt =
+        plan.billingCycle !== 'free'
+          ? new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+          : null;
+    }
+
+    const hasExplicitOverride =
+      dto.expiredAt !== undefined || dto.applyAtPeriodEnd === false;
     const shouldSchedule = Boolean(
+      !hasExplicitOverride &&
       existing &&
       existing.expiredAt &&
       existing.expiredAt > now &&
-      this.planLevel(plan.code) < this.planLevel(existing.plan.code) &&
-      dto.applyAtPeriodEnd !== false,
+      this.planLevel(plan.code) < this.planLevel(existing.plan.code),
     );
     if (shouldSchedule) {
       const effectiveAt = existing!.expiredAt!;
@@ -853,6 +886,7 @@ export class SubscriptionsService implements OnModuleInit {
           pendingPlanCode: plan.code,
           changeEffectiveAt: effectiveAt,
         },
+        include: { plan: true },
       });
       await this.prisma.subscriptionChange.create({
         data: {
@@ -861,6 +895,9 @@ export class SubscriptionsService implements OnModuleInit {
           toPlanCode: plan.code,
           reason: 'downgrade_scheduled',
           effectiveAt,
+          metadata: dto.note?.trim()
+            ? JSON.stringify({ note: dto.note.trim() })
+            : null,
         },
       });
       return scheduled;
@@ -871,11 +908,8 @@ export class SubscriptionsService implements OnModuleInit {
       update: {
         planId: dto.planId,
         status: 'active',
-        startedAt: new Date(),
-        expiredAt:
-          plan.billingCycle !== 'free'
-            ? new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-            : null,
+        startedAt: now,
+        expiredAt: resolvedExpiredAt,
         pendingPlanCode: null,
         changeEffectiveAt: null,
       },
@@ -883,12 +917,10 @@ export class SubscriptionsService implements OnModuleInit {
         technicianId,
         planId: dto.planId,
         status: 'active',
-        startedAt: new Date(),
-        expiredAt:
-          plan.billingCycle !== 'free'
-            ? new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-            : null,
+        startedAt: now,
+        expiredAt: resolvedExpiredAt,
       },
+      include: { plan: true },
     });
     await this.prisma.subscriptionChange.create({
       data: {
@@ -901,6 +933,10 @@ export class SubscriptionsService implements OnModuleInit {
             ? 'upgrade'
             : 'admin_change',
         effectiveAt: now,
+        metadata: JSON.stringify({
+          expiredAt: resolvedExpiredAt ? resolvedExpiredAt.toISOString() : null,
+          ...(dto.note?.trim() ? { note: dto.note.trim() } : {}),
+        }),
       },
     });
     return updated;

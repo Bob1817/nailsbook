@@ -11,6 +11,11 @@ export interface WechatConfig {
   merchantSerialNo: string;
   hasMerchantPrivateKey: boolean;
   hasApiV3Key: boolean;
+  paymentVerifierMode: 'platform_public_key' | 'platform_certificate';
+  platformKeyId: string;
+  hasPlatformPublicKey: boolean;
+  boundAppId: string;
+  bindingConfirmed: boolean;
   paymentNotifyUrl: string;
   paymentValidatedAt: string | null;
   paymentValidationError: string | null;
@@ -64,6 +69,18 @@ export type UpdateLaunchConfig = Pick<
   | 'consultationReplyTemplateId'
 > & { launchTechnicianId: number };
 
+export interface SubscribeTemplateConfig {
+  bookingReminderTemplateId: string;
+  bookingDayBeforeTemplateId: string;
+  bookingHourBeforeTemplateId: string;
+  bookingClientSuccessTemplateId: string;
+  bookingTechnicianNewTemplateId: string;
+  bookingClientStatusTemplateId: string;
+  bookingTechnicianStatusTemplateId: string;
+  consultationReplyTemplateId: string;
+  updatedAt?: string;
+}
+
 export const wechatConfigService = {
   get: () => api.get<WechatConfig>('/wechat-config').then((r) => r.data),
   updateLogin: (data: {
@@ -78,10 +95,18 @@ export const wechatConfigService = {
     merchantSerialNo: string;
     merchantPrivateKey?: string;
     apiV3Key?: string;
+    paymentVerifierMode: 'platform_public_key' | 'platform_certificate';
+    platformKeyId: string;
+    platformPublicKey?: string;
+    boundAppId: string;
+    bindingConfirmed: boolean;
     paymentNotifyUrl: string;
   }) => api.patch<WechatConfig>('/wechat-config/payment', data).then((r) => r.data),
   validatePayment: () => api.post<WechatConfig>('/wechat-config/payment/validate').then((r) => r.data),
   getLaunch: () => api.get<LaunchConfig>('/wechat-config/launch').then((r) => r.data),
   updateLaunch: (data: UpdateLaunchConfig) =>
     api.patch<LaunchConfig>('/wechat-config/launch', data).then((r) => r.data),
+  getTemplates: () => api.get<SubscribeTemplateConfig>('/wechat-config/templates').then((r) => r.data),
+  updateTemplates: (data: Partial<SubscribeTemplateConfig>) =>
+    api.patch<SubscribeTemplateConfig>('/wechat-config/templates', data).then((r) => r.data),
 };

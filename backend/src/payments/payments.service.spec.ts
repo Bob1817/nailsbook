@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
@@ -349,5 +350,87 @@ describe('PaymentsService', () => {
     await expect(service.createSubscriptionPayment(5, 'free')).rejects.toThrow(
       '免费套餐无需在线支付',
     );
+  });
+
+  it('生产环境或微信支付未配置时禁止订阅支付静默降级为 mock', async () => {
+    prisma.subscriptionPlan.findFirst.mockResolvedValue({
+      id: 2,
+      code: 'starter',
+      name: '入门版',
+      price: 29,
+      billingCycle: 'monthly',
+      status: 'active',
+    });
+    config.get.mockImplementation((key: string) =>
+      key === 'NODE_ENV' ? 'production' : undefined,
+    );
+    await expect(
+      service.createSubscriptionPayment(5, 'starter', 'prod-no-wx'),
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
+    expect(prisma.paymentOrder.create).not.toHaveBeenCalled();
+
+    config.get.mockImplementation((key: string) =>
+      key === 'NODE_ENV' ? 'production' : key === 'PAYMENT_PROVIDER' ? 'mock' : undefined,
+    );
+    await expect(
+      service.createSubscriptionPayment(5, 'starter', 'prod-mock'),
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
+  });
+
+  it('生产环境或非 mock 模式禁止调用 confirmMockSubscriptionPayment', async () => {
+    config.get.mockImplementation((key: string) =>
+      key === 'NODE_ENV' ? 'production' : 'mock',
+    );
+    await expect(
+      service.confirmMockSubscriptionPayment(5, 'SUB101'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+
+    config.get.mockImplementation((key: string) =>
+      key === 'NODE_ENV' ? 'development' : undefined,
+    );
+    await expect(
+      service.confirmMockSubscriptionPayment(5, 'SUB101'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('getSubscriptionPaymentStatus 主动向微信支付查单并在金额匹配时确认生效', async () => {
+    const platformConfig = {
+      isPaymentAvailable: jest.fn().mockResolvedValue(true),
+      getPaymentCredentials: jest.fn().mockResolvedValue({ appId: 'wx-app' }),
+    };
+    const wechatPay = {
+      queryTransactionByOutTradeNo: jest.fn().mockResolvedValue({
+        trade_state: 'SUCCESS',
+        transaction_id: 'WX_TX_999',
+        out_trade_no: 'SUB999',
+        amount: { total: 2900 },
+      }),
+    };
+    service = new PaymentsService(
+      prisma,
+      config as any,
+      undefined,
+      platformConfig as any,
+      wechatPay as any,
+    );
+    prisma.paymentOrder.findUnique.mockResolvedValue({
+      id: 999,
+      paymentNo: 'SUB999',
+      technicianId: 5,
+      paymentType: 'subscription',
+      amountCents: 2900,
+      status: 'pending',
+      providerPayload: JSON.stringify({ targetPlanCode: 'starter', targetPlanId: 2 }),
+    });
+    const confirmSpy = jest.spyOn(service, 'confirmPaid').mockResolvedValue({
+      id: 999,
+      paymentNo: 'SUB999',
+      status: 'paid',
+    } as any);
+
+    const res = await service.getSubscriptionPaymentStatus(5, 'SUB999');
+    expect(wechatPay.queryTransactionByOutTradeNo).toHaveBeenCalledWith('SUB999');
+    expect(confirmSpy).toHaveBeenCalledWith('SUB999', 'WX_TX_999');
+    expect(res.paid).toBe(true);
   });
 });

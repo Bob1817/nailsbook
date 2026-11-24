@@ -59,6 +59,10 @@ export class UpdateBrandProfileDto {
   @IsString()
   @MaxLength(64)
   wechat?: string;
+
+  @IsOptional()
+  socialMedia?: Record<string, string>;
+
   @IsOptional()
   @IsString()
   @MaxLength(50)

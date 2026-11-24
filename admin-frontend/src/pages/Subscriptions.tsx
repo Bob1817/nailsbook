@@ -27,6 +27,7 @@ import {
   CrownOutlined,
   ClockCircleOutlined,
   CheckCircleOutlined,
+  EditOutlined,
 } from '@ant-design/icons';
 import { subscriptionService } from '../services/subscription';
 import type {
@@ -37,7 +38,11 @@ import type {
   SubscriptionPlanInput,
   TechnicianSubscription,
 } from '../services/subscription';
+import { useAuth } from '../contexts/AuthContext';
 import AdminPageHeader from '../components/AdminPageHeader';
+import ManageSubscriptionModal, {
+  type ManageSubscriptionTarget,
+} from '../components/ManageSubscriptionModal';
 
 const { Text } = Typography;
 
@@ -50,6 +55,8 @@ const PAYMENT_STATUS_MAP: Record<string, { label: string; color: string }> = {
 };
 
 const Subscriptions: React.FC = () => {
+  const { hasPermission } = useAuth();
+  const canUpdateSub = hasPermission('subscription:update');
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.md;
 
@@ -65,6 +72,7 @@ const Subscriptions: React.FC = () => {
     subscriptionChanges: [],
   });
   const [modalVisible, setModalVisible] = useState(false);
+  const [manageTarget, setManageTarget] = useState<ManageSubscriptionTarget | null>(null);
   const [form] = Form.useForm();
 
   const fetchPlans = async () => {
@@ -266,6 +274,35 @@ const Subscriptions: React.FC = () => {
       key: 'expiredAt',
       render: (text?: string) => (text ? new Date(text).toLocaleDateString('zh-CN') : '永久'),
     },
+    ...(canUpdateSub
+      ? [
+          {
+            title: '操作',
+            key: 'action',
+            width: 120,
+            render: (_: unknown, record: TechnicianSubscription) => (
+              <Button
+                type="link"
+                size="small"
+                icon={<EditOutlined />}
+                style={{ padding: 0 }}
+                onClick={() =>
+                  setManageTarget({
+                    technicianId: record.technicianId,
+                    technicianName: record.technician?.name || `美甲师 #${record.technicianId}`,
+                    technicianPhone: record.technician?.phone,
+                    currentPlanId: record.planId,
+                    currentPlanName: record.plan?.name,
+                    currentExpiredAt: record.expiredAt || null,
+                  })
+                }
+              >
+                调整订阅
+              </Button>
+            ),
+          },
+        ]
+      : []),
   ];
 
   const tabItems = [
@@ -407,6 +444,26 @@ const Subscriptions: React.FC = () => {
                     </span>
                   </div>
                 </div>
+                {canUpdateSub && (
+                  <div className="admin-app-card-actions">
+                    <Button
+                      type="primary"
+                      icon={<EditOutlined />}
+                      onClick={() =>
+                        setManageTarget({
+                          technicianId: sub.technicianId,
+                          technicianName: sub.technician?.name || `美甲师 #${sub.technicianId}`,
+                          technicianPhone: sub.technician?.phone,
+                          currentPlanId: sub.planId,
+                          currentPlanName: sub.plan?.name,
+                          currentExpiredAt: sub.expiredAt || null,
+                        })
+                      }
+                    >
+                      调整套餐与到期时间
+                    </Button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -615,6 +672,17 @@ const Subscriptions: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
+
+      <ManageSubscriptionModal
+        open={Boolean(manageTarget)}
+        target={manageTarget}
+        plans={plans}
+        onClose={() => setManageTarget(null)}
+        onSuccess={() => {
+          fetchTechnicianSubscriptions();
+          fetchPayments();
+        }}
+      />
     </div>
   );
 };

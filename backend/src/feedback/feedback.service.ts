@@ -1,9 +1,13 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { DingtalkAlertService } from '../notifications/dingtalk-alert.service';
+import { WechatOfficialAlertService } from '../wechat-official/wechat-official-alert.service';
 
 interface CreateFeedbackInput {
   sourceType: 'client' | 'technician';
@@ -12,23 +16,38 @@ interface CreateFeedbackInput {
   type: string;
   content: string;
   attachmentUrls?: string[];
+  contactPhone?: string;
 }
 
 const FEEDBACK_STATUSES = ['pending', 'processing', 'resolved'] as const;
 
 @Injectable()
 export class FeedbackService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(FeedbackService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly dingtalkAlert?: DingtalkAlertService,
+    @Optional() private readonly wechatAlert?: WechatOfficialAlertService,
+  ) {}
 
   async create(input: CreateFeedbackInput) {
     const title = (input.title ?? '').trim();
     const content = (input.content ?? '').trim();
     if (!title || !content)
       throw new BadRequestException('请填写反馈标题和内容');
-    if (title.length > 30 || content.length > 500)
+    if (title.length > 50 || content.length > 500)
       throw new BadRequestException('反馈内容超出长度限制');
     if (input.type?.trim() === '账号注销申请')
       throw new BadRequestException('请使用账号注销入口提交申请');
+
+    const attachmentUrls = Array.isArray(input.attachmentUrls)
+      ? input.attachmentUrls
+          .filter((url): url is string => typeof url === 'string' && !!url.trim())
+          .map((url) => url.trim())
+          .slice(0, 6)
+      : [];
+
     let sourceName: string | null = null;
     let sourcePhone: string | null = null;
 
@@ -38,28 +57,88 @@ export class FeedbackService {
         select: { nickname: true, phone: true },
       });
       sourceName = user?.nickname ?? null;
-      sourcePhone = user?.phone ?? null;
+      sourcePhone = (input.contactPhone ?? '').trim() || user?.phone || null;
     } else {
       const tech = await this.prisma.technician.findUnique({
         where: { id: input.sourceId },
         select: { name: true, phone: true },
       });
       sourceName = tech?.name ?? null;
-      sourcePhone = tech?.phone ?? null;
+      sourcePhone = (input.contactPhone ?? '').trim() || tech?.phone || null;
     }
 
-    return this.prisma.feedback.create({
+    const type = (input.type ?? '其他').trim() || '其他';
+    const created = await this.prisma.feedback.create({
       data: {
         sourceType: input.sourceType,
         sourceId: input.sourceId,
         sourceName,
         sourcePhone,
         title,
-        type: (input.type ?? '其他').trim(),
+        type,
         content,
-        attachmentUrls: JSON.stringify(input.attachmentUrls ?? []),
+        attachmentUrls: JSON.stringify(attachmentUrls),
       },
     });
+
+    const alertPayload = {
+      id: created.id,
+      sourceType: input.sourceType,
+      sourceName,
+      sourcePhone,
+      type,
+      title,
+      content,
+      attachmentCount: attachmentUrls.length,
+    };
+
+    // 异步触发钉钉机器人通知
+    if (this.dingtalkAlert) {
+      const roleLabel = input.sourceType === 'technician' ? '美甲师' : '客户';
+      const isCs = type === '客服咨询';
+      const timeStr = new Date().toLocaleString('zh-CN', {
+        timeZone: 'Asia/Shanghai',
+      });
+      const dingtalkMarkdown = [
+        isCs
+          ? '### 💬 OnlyNail 客服新问询提醒'
+          : '### 🛠️ OnlyNail 收到新问题反馈',
+        `• **反馈编号**：#${created.id}`,
+        `• **提交身份**：${roleLabel}${sourceName ? ` (${sourceName})` : ''}`,
+        `• **联系方式**：${sourcePhone || '未填写'}`,
+        `• **问题类型**：${type}`,
+        `• **标题**：${title}`,
+        attachmentUrls.length
+          ? `• **问题截图**：${attachmentUrls.length} 张（可在超管后台查看原图）`
+          : '',
+        `• **提交时间**：${timeStr}`,
+        '• **详细内容**：',
+        `> ${content.replace(/\n/g, '\n> ')}`,
+        '',
+        '*已同步保存至超管后台「客服与反馈」，请及时回复处理。*',
+      ]
+        .filter(Boolean)
+        .join('\n');
+      this.dingtalkAlert
+        .sendMarkdown(
+          isCs ? 'OnlyNail 收到客服新问询' : 'OnlyNail 收到新问题反馈',
+          dingtalkMarkdown,
+        )
+        .catch((err) => {
+          this.logger.error(`推送问题反馈到钉钉失败: ${String(err)}`);
+        });
+    }
+
+    // 异步触发微信公众号通知管理员
+    if (this.wechatAlert) {
+      this.wechatAlert
+        .notifyFeedbackSubmission(alertPayload)
+        .catch((err) => {
+          this.logger.error(`推送问题反馈到微信公众号失败: ${String(err)}`);
+        });
+    }
+
+    return this.serialize(created);
   }
 
   async findAll(params: {
@@ -67,14 +146,32 @@ export class FeedbackService {
     pageSize?: number;
     status?: string;
     sourceType?: string;
+    type?: string;
+    keyword?: string;
   }) {
     const page = params.page && params.page > 0 ? params.page : 1;
     const pageSize =
       params.pageSize && params.pageSize > 0 ? params.pageSize : 20;
 
-    const where: { status?: string; sourceType?: string } = {};
+    const where: Record<string, unknown> = {};
     if (params.status) where.status = params.status;
     if (params.sourceType) where.sourceType = params.sourceType;
+    if (params.type) {
+      if (params.type === '__feedback_only__') {
+        where.type = { not: '客服咨询' };
+      } else {
+        where.type = params.type;
+      }
+    }
+    const keyword = (params.keyword ?? '').trim();
+    if (keyword) {
+      where.OR = [
+        { title: { contains: keyword } },
+        { content: { contains: keyword } },
+        { sourceName: { contains: keyword } },
+        { sourcePhone: { contains: keyword } },
+      ];
+    }
 
     const [total, list] = await this.prisma.$transaction([
       this.prisma.feedback.count({ where }),
@@ -87,10 +184,7 @@ export class FeedbackService {
     ]);
 
     return {
-      list: list.map((item) => ({
-        ...item,
-        attachmentUrls: this.parseAttachmentUrls(item.attachmentUrls),
-      })),
+      list: list.map((item) => this.serialize(item)),
       total,
       page,
       pageSize,

@@ -6,6 +6,7 @@ import {
   UpdateMiniProgramLaunchConfigDto,
   UpdateWechatLoginConfigDto,
   UpdateWechatPaymentConfigDto,
+  UpdateWechatSubscribeTemplatesDto,
 } from './dto/update-wechat-config.dto';
 import { WechatPlatformConfigService } from './wechat-platform-config.service';
 
@@ -59,6 +60,19 @@ export class AdminWechatPlatformConfigController {
   @OperationLog({ module: 'wechat_config', action: 'update_launch_config' })
   updateLaunchConfig(@Body() dto: UpdateMiniProgramLaunchConfigDto) {
     return this.service.updateLaunchConfig(dto);
+  }
+
+  @Get('templates')
+  @Permissions('feature_flag:view')
+  getSubscribeTemplates() {
+    return this.service.getSubscribeTemplates();
+  }
+
+  @Patch('templates')
+  @Permissions('feature_flag:update')
+  @OperationLog({ module: 'wechat_config', action: 'update_subscribe_templates' })
+  updateSubscribeTemplates(@Body() dto: UpdateWechatSubscribeTemplatesDto) {
+    return this.service.updateSubscribeTemplates(dto);
   }
 }
 

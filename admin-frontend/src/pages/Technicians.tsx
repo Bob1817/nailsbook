@@ -48,6 +48,9 @@ import type { Revenue, RevenueStatistics } from '../services/revenue';
 import { useAuth } from '../contexts/AuthContext';
 import AdminPageHeader from '../components/AdminPageHeader';
 import TableActions, { type TableActionItem } from '../components/TableActions';
+import ManageSubscriptionModal, {
+  type ManageSubscriptionTarget,
+} from '../components/ManageSubscriptionModal';
 
 const { Text } = Typography;
 
@@ -114,8 +117,7 @@ const Technicians: React.FC = () => {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [subDetail, setSubDetail] = useState<TechnicianSubscriptionDetail | null>(null);
   const [subLoading, setSubLoading] = useState(false);
-  const [selectedPlanId, setSelectedPlanId] = useState<number | undefined>(undefined);
-  const [updatingPlan, setUpdatingPlan] = useState(false);
+  const [manageSubTarget, setManageSubTarget] = useState<ManageSubscriptionTarget | null>(null);
 
   const [techCustomers, setTechCustomers] = useState<PaginatedResponse<Customer> | null>(null);
   const [custPage, setCustPage] = useState(1);
@@ -205,7 +207,6 @@ const Technicians: React.FC = () => {
         .getTechnicianDetail(techId)
         .then((res) => {
           setSubDetail(res);
-          setSelectedPlanId(res.plan?.id);
         })
         .catch(() => setSubDetail(null))
         .finally(() => setSubLoading(false));
@@ -251,21 +252,16 @@ const Technicians: React.FC = () => {
     }
   }, [detailVisible, selectedTechnician, detailTab, custPage, orderPage, revPage, workPage]);
 
-  const handleUpdateTechPlan = async () => {
-    if (!selectedTechnician || !selectedPlanId) return;
-    setUpdatingPlan(true);
-    try {
-      await subscriptionService.updateTechnicianSubscription(selectedTechnician.id, selectedPlanId);
-      message.success('美甲师订阅套餐已更新');
-      const updated = await subscriptionService.getTechnicianDetail(selectedTechnician.id);
-      setSubDetail(updated);
-      fetchData();
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      message.error(err.response?.data?.message || '套餐更新失败');
-    } finally {
-      setUpdatingPlan(false);
-    }
+  const openManageSubModal = () => {
+    if (!selectedTechnician) return;
+    setManageSubTarget({
+      technicianId: selectedTechnician.id,
+      technicianName: selectedTechnician.name,
+      technicianPhone: selectedTechnician.phone,
+      currentPlanId: subDetail?.plan?.id ?? selectedTechnician.subscription?.planId,
+      currentPlanName: subDetail?.plan?.name ?? selectedTechnician.subscription?.plan?.name,
+      currentExpiredAt: subDetail?.expiredAt ?? selectedTechnician.subscription?.expiredAt ?? null,
+    });
   };
 
   const handleCreate = async (values: {
@@ -862,25 +858,14 @@ const Technicians: React.FC = () => {
                             </Space>
 
                             {canUpdateSub && plans.length > 0 && (
-                              <Space wrap>
-                                <Select
-                                  value={selectedPlanId}
-                                  onChange={setSelectedPlanId}
-                                  style={{ width: 160 }}
-                                  options={plans.map((p) => ({
-                                    value: p.id,
-                                    label: `${p.name} (¥${p.price})`,
-                                  }))}
-                                />
-                                <Button
-                                  type="primary"
-                                  loading={updatingPlan}
-                                  disabled={selectedPlanId === subDetail.plan.id}
-                                  onClick={handleUpdateTechPlan}
-                                >
-                                  调整套餐
-                                </Button>
-                              </Space>
+                              <Button
+                                type="primary"
+                                icon={<EditOutlined />}
+                                style={{ minHeight: 40 }}
+                                onClick={openManageSubModal}
+                              >
+                                调整套餐与到期时间
+                              </Button>
                             )}
                           </div>
 
@@ -1282,6 +1267,22 @@ const Technicians: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      <ManageSubscriptionModal
+        open={Boolean(manageSubTarget)}
+        target={manageSubTarget}
+        plans={plans}
+        onClose={() => setManageSubTarget(null)}
+        onSuccess={() => {
+          if (selectedTechnician) {
+            subscriptionService
+              .getTechnicianDetail(selectedTechnician.id)
+              .then(setSubDetail)
+              .catch(() => {});
+          }
+          fetchData();
+        }}
+      />
     </div>
   );
 };

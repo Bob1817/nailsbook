@@ -17,7 +17,7 @@ export interface AdminFeedback {
 }
 
 export const SOURCE_MAP: Record<string, string> = {
-  client: '用户',
+  client: '客户',
   technician: '美甲师',
 };
 
@@ -27,6 +27,8 @@ export const adminFeedbackService = {
     pageSize?: number;
     status?: string;
     sourceType?: string;
+    type?: string;
+    keyword?: string;
   }) => {
     const response = await api.get('/feedback', { params });
     return response.data as {

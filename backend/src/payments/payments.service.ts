@@ -2,6 +2,7 @@ import { ChatGateway } from '../chat/chat.gateway';
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   ServiceUnavailableException,
@@ -224,14 +225,32 @@ export class PaymentsService {
     }
 
     const amountCents = this.toCents(plan.price);
-    const mockEnabled =
-      this.config.get('PAYMENT_PROVIDER') === 'mock' ||
-      !this.wechatPay ||
-      !(await this.platformConfig?.isPaymentAvailable().catch(() => false));
+    const isProd = this.config.get('NODE_ENV') === 'production';
+    const mockEnabled = this.config.get('PAYMENT_PROVIDER') === 'mock';
+    if (mockEnabled && isProd) {
+      throw new ServiceUnavailableException('生产环境禁止使用模拟支付通道');
+    }
+    if (!mockEnabled) {
+      if (
+        !this.platformConfig ||
+        !(await this.platformConfig.isPaymentAvailable({
+          allowInLaunchMode: true,
+        }))
+      ) {
+        throw new ServiceUnavailableException(
+          '微信支付尚未完成配置或未通过校验，请先在超管后台完成微信支付配置并校验生效',
+        );
+      }
+      if (!this.wechatPay) {
+        throw new ServiceUnavailableException('微信支付服务不可用');
+      }
+    }
 
     let openId: string | null = null;
     if (!mockEnabled) {
-      const credentials = await this.platformConfig!.getPaymentCredentials();
+      const credentials = await this.platformConfig!.getPaymentCredentials({
+        allowInLaunchMode: true,
+      });
       let identity = await this.prisma.wechatIdentity.findFirst({
         where: { technicianId, appId: credentials.appId },
         select: { openId: true },
@@ -331,13 +350,99 @@ export class PaymentsService {
     technicianId: number,
     paymentNo: string,
   ) {
+    if (
+      this.config.get('NODE_ENV') === 'production' ||
+      this.config.get('PAYMENT_PROVIDER') !== 'mock'
+    ) {
+      throw new ForbiddenException('当前环境禁止调用模拟支付确认接口');
+    }
     const payment = await this.prisma.paymentOrder.findUnique({
       where: { paymentNo },
     });
-    if (!payment || payment.technicianId !== technicianId) {
+    if (
+      !payment ||
+      payment.technicianId !== technicianId ||
+      payment.paymentType !== 'subscription'
+    ) {
       throw new NotFoundException('支付单不存在');
     }
+    let payload: { mock?: boolean } | null = null;
+    try {
+      payload = payment.providerPayload
+        ? JSON.parse(payment.providerPayload)
+        : null;
+    } catch {}
+    if (!payload?.mock) {
+      throw new ForbiddenException('真实支付订单不允许通过模拟接口确认');
+    }
     return this.confirmPaid(paymentNo, `MOCK_TR_${Date.now()}`);
+  }
+
+  async getSubscriptionPaymentStatus(technicianId: number, paymentNo: string) {
+    const payment = await this.prisma.paymentOrder.findUnique({
+      where: { paymentNo },
+    });
+    if (
+      !payment ||
+      payment.technicianId !== technicianId ||
+      payment.paymentType !== 'subscription'
+    ) {
+      throw new NotFoundException('支付单不存在');
+    }
+    if (payment.status === 'paid') {
+      return { payment: this.mapPayment(payment), paid: true };
+    }
+
+    let payload: { mock?: boolean } | null = null;
+    try {
+      payload = payment.providerPayload
+        ? JSON.parse(payment.providerPayload)
+        : null;
+    } catch {}
+
+    if (
+      payment.status === 'pending' &&
+      !payload?.mock &&
+      this.wechatPay &&
+      this.platformConfig
+    ) {
+      try {
+        const transaction = await this.wechatPay.queryTransactionByOutTradeNo(
+          payment.paymentNo,
+        );
+        if (
+          transaction.trade_state === 'SUCCESS' &&
+          transaction.transaction_id &&
+          transaction.amount?.total === payment.amountCents
+        ) {
+          const confirmed = await this.confirmPaid(
+            payment.paymentNo,
+            transaction.transaction_id,
+          );
+          return { payment: confirmed, paid: true };
+        }
+        if (
+          transaction.trade_state &&
+          ['CLOSED', 'REVOKED', 'PAYERROR'].includes(transaction.trade_state)
+        ) {
+          await this.markFailed(
+            payment.id,
+            transaction.trade_state_desc || `微信支付状态：${transaction.trade_state}`,
+          );
+          const failed = await this.prisma.paymentOrder.findUniqueOrThrow({
+            where: { id: payment.id },
+          });
+          return { payment: this.mapPayment(failed), paid: false };
+        }
+      } catch {
+        // 查单网络抖动时返回当前本地状态，交由客户端继续轮询或等待微信异步回调
+      }
+    }
+
+    return {
+      payment: this.mapPayment(payment),
+      paid: payment.status === 'paid',
+    };
   }
 
   async listForOrder(clientUserId: number, orderId: number) {

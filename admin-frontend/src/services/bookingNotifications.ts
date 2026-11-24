@@ -9,7 +9,7 @@ export interface BookingNotification {
 }
 export interface NotificationHealth { backlog: number; unknown: number; exhausted: number; misconfigured: number; noAuthorization: number; checkedAt: string }
 export const bookingNotifications = {
-  list: async (params: { page: number; orderId?: string; status?: string }) =>
+  list: async (params: { page: number; orderId?: string; status?: string; failureGroup?: string }) =>
     (await api.get<{ data: BookingNotification[]; total: number }>('/booking-notifications', { params })).data,
   health: async () => (await api.get<NotificationHealth>('/booking-notifications/health')).data,
   retry: async (id: number) => (await api.post(`/booking-notifications/${id}/retry`)).data,

@@ -11,8 +11,13 @@ export class AdminNotificationsController {
 
   @Get()
   @Permissions('booking:view')
-  list(@Query('orderId') orderId?: string, @Query('page') page?: string, @Query('status') status?: string) {
-    return this.service.list(orderId, page, status);
+  list(
+    @Query('orderId') orderId?: string,
+    @Query('page') page?: string,
+    @Query('status') status?: string,
+    @Query('failureGroup') failureGroup?: string,
+  ) {
+    return this.service.list(orderId, page, status, failureGroup);
   }
 
   @Get('health')

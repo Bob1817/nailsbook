@@ -20,13 +20,13 @@ export class ClientFeedbackController {
   constructor(private readonly service: FeedbackService) {}
 
   @Get()
-  @ApiOperation({ summary: '我的问题反馈列表' })
+  @ApiOperation({ summary: '我的客服问询与问题反馈列表' })
   findMine(@Req() req: { user: { clientUserId: number } }) {
     return this.service.findMine('client', req.user.clientUserId);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: '我的问题反馈详情' })
+  @ApiOperation({ summary: '我的客服问询与问题反馈详情' })
   findMineById(
     @Req() req: { user: { clientUserId: number } },
     @Param('id', ParseIntPipe) id: number,
@@ -35,7 +35,7 @@ export class ClientFeedbackController {
   }
 
   @Post()
-  @ApiOperation({ summary: '提交问题反馈' })
+  @ApiOperation({ summary: '提交客服问询或问题反馈' })
   create(
     @Req() req: { user: { clientUserId: number } },
     @Body()
@@ -44,6 +44,7 @@ export class ClientFeedbackController {
       type: string;
       content: string;
       attachmentUrls?: string[];
+      contactPhone?: string;
     },
   ) {
     return this.service.create({
@@ -53,6 +54,7 @@ export class ClientFeedbackController {
       type: body.type,
       content: body.content,
       attachmentUrls: body.attachmentUrls,
+      contactPhone: body.contactPhone,
     });
   }
 }

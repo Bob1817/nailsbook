@@ -45,6 +45,7 @@ export class BrandProfilesService {
       ? {
           ...profile,
           wechat: this.socialMedia(technician.socialMedia).wechat || '',
+          socialMedia: this.socialMedia(technician.socialMedia),
           specialties: this.parseArray(profile.specialties),
           featuredReviewIds: this.parseArray(profile.featuredReviewIds),
           featuredServiceIds:
@@ -99,14 +100,21 @@ export class BrandProfilesService {
     if (!technician) throw new NotFoundException('美甲师不存在');
 
     const social = this.socialMedia(technician.socialMedia);
-    const wechat = dto.wechat === undefined ? social.wechat : dto.wechat.trim();
+    const wechat = dto.wechat === undefined
+      ? (dto.socialMedia?.wechat !== undefined ? dto.socialMedia.wechat.trim() : social.wechat)
+      : dto.wechat.trim();
     if (dto.publicationStatus === 'published' && !wechat) {
       throw new BadRequestException('请先填写客户沟通微信号，再开启美甲师主页');
     }
+    const updatedSocial = {
+      ...social,
+      ...(dto.socialMedia ? Object.fromEntries(Object.entries(dto.socialMedia).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : ''])) : {}),
+      ...(wechat !== undefined ? { wechat } : {}),
+    };
     await this.prisma.$transaction(async (tx) => {
-      if (dto.wechat !== undefined) {
+      if (dto.wechat !== undefined || dto.socialMedia !== undefined) {
         await tx.technician.update({ where: { id: technicianId }, data: {
-          socialMedia: JSON.stringify({ ...social, wechat }),
+          socialMedia: JSON.stringify(updatedSocial),
         } });
       }
       const data = {

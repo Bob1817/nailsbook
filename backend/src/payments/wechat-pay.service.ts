@@ -32,7 +32,9 @@ export class WechatPayService {
     description: string;
     openId: string;
   }) {
-    const credentials = await this.platformConfig.getPaymentCredentials();
+    const credentials = await this.platformConfig.getPaymentCredentials({
+      allowInLaunchMode: true,
+    });
     const path = '/v3/pay/transactions/jsapi';
     const body = JSON.stringify({
       appid: credentials.appId,
@@ -81,11 +83,56 @@ export class WechatPayService {
     };
   }
 
+  async queryTransactionByOutTradeNo(paymentNo: string) {
+    const credentials = await this.platformConfig.getPaymentCredentials({
+      allowInLaunchMode: true,
+    });
+    const path =
+      `/v3/pay/transactions/out-trade-no/${encodeURIComponent(paymentNo)}` +
+      `?mchid=${encodeURIComponent(credentials.merchantId)}`;
+    const response = await fetch(`https://api.mch.weixin.qq.com${path}`, {
+      method: 'GET',
+      headers: {
+        Authorization: this.authorization('GET', path, '', credentials),
+        Accept: 'application/json',
+        'User-Agent': 'Luanails-Backend/1.0',
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+    const result = (await response.json()) as {
+      trade_state?: string;
+      trade_state_desc?: string;
+      transaction_id?: string;
+      out_trade_no?: string;
+      appid?: string;
+      mchid?: string;
+      amount?: { total?: number; payer_total?: number };
+      code?: string;
+      message?: string;
+    };
+    if (!response.ok) {
+      throw new ServiceUnavailableException(
+        `微信支付查单失败：${result.message || result.code || response.status}`,
+      );
+    }
+    if (
+      result.appid &&
+      result.mchid &&
+      (result.appid !== credentials.appId ||
+        result.mchid !== credentials.merchantId)
+    ) {
+      throw new UnauthorizedException('微信支付查单商户身份不匹配');
+    }
+    return result;
+  }
+
   async parsePaymentNotification(
     headers: Record<string, unknown>,
     rawBody: Buffer,
   ) {
-    const credentials = await this.platformConfig.getPaymentCredentials();
+    const credentials = await this.platformConfig.getPaymentCredentials({
+      allowInLaunchMode: true,
+    });
     const timestamp = this.header(headers, 'wechatpay-timestamp');
     const nonce = this.header(headers, 'wechatpay-nonce');
     const signature = this.header(headers, 'wechatpay-signature');

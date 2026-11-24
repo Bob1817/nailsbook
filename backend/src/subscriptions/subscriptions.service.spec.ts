@@ -233,10 +233,12 @@ describe('SubscriptionsService current entitlement', () => {
 
     await service.updateTechnicianSubscription(7, { planId: 1 });
 
-    expect(prisma.technicianSubscription.update).toHaveBeenCalledWith({
-      where: { technicianId: 7 },
-      data: { pendingPlanCode: 'free', changeEffectiveAt: expiredAt },
-    });
+    expect(prisma.technicianSubscription.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { technicianId: 7 },
+        data: { pendingPlanCode: 'free', changeEffectiveAt: expiredAt },
+      }),
+    );
     expect(prisma.subscriptionChange.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ reason: 'downgrade_scheduled' }),
     });

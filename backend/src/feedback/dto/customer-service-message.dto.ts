@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class CustomerServiceMessageDto {
   @IsNotEmpty({ message: '请填写咨询内容' })
@@ -18,9 +24,14 @@ export class CustomerServiceMessageDto {
 
   @IsNotEmpty({ message: '咨询来源不能为空' })
   @IsString()
-  source: string; // 'about_page' | 'client_profile' | 'technician_profile'
+  source: string; // 'about_page' | 'client_profile' | 'technician_profile' | 'technician_help' | 'client_help'
 
   @IsOptional()
   @IsString()
   role?: string; // 'guest' | 'client' | 'technician'
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  attachmentUrls?: string[];
 }

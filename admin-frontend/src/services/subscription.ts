@@ -143,8 +143,19 @@ export const subscriptionService = {
     return response.data;
   },
 
-  updateTechnicianSubscription: async (technicianId: number, planId: number): Promise<TechnicianSubscription> => {
-    const response = await api.patch(`/technician-subscriptions/technicians/${technicianId}`, { planId });
+  updateTechnicianSubscription: async (
+    technicianId: number,
+    payload: {
+      planId: number;
+      expiredAt?: string | null;
+      applyAtPeriodEnd?: boolean;
+      note?: string;
+    },
+  ): Promise<TechnicianSubscription> => {
+    const response = await api.patch(
+      `/technician-subscriptions/technicians/${technicianId}`,
+      payload,
+    );
     return response.data;
   },
 

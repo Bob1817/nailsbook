@@ -64,7 +64,7 @@ const navigationGroups: NavigationGroup[] = [
       { key: '/works', icon: <PictureOutlined />, label: '作品管理', permission: 'work:view' },
       { key: '/comments', icon: <MessageOutlined />, label: '评论管理', permission: 'comment:view' },
       { key: '/reports', icon: <WarningOutlined />, label: '举报队列', permission: 'report:view' },
-      { key: '/feedback', icon: <NotificationOutlined />, label: '问题反馈', permission: 'feedback:view' },
+      { key: '/feedback', icon: <NotificationOutlined />, label: '客服与反馈', permission: 'feedback:view' },
       { key: '/account-deletions', icon: <SafetyOutlined />, label: '账号注销', permission: 'account-deletion:view' },
     ],
   },

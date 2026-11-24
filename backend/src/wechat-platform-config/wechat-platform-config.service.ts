@@ -19,6 +19,7 @@ import {
   UpdateMiniProgramLaunchConfigDto,
   UpdateWechatLoginConfigDto,
   UpdateWechatPaymentConfigDto,
+  UpdateWechatSubscribeTemplatesDto,
 } from './dto/update-wechat-config.dto';
 import {
   configureLaunchTechnicianId,
@@ -192,8 +193,6 @@ export class WechatPlatformConfigService implements OnModuleInit {
             dto.bookingTechnicianStatusTemplateId?.trim() || null,
           consultationReplyTemplateId:
             dto.consultationReplyTemplateId?.trim() || null,
-          paymentEnabled: false,
-          paymentValidatedAt: null,
         },
       });
     });
@@ -228,6 +227,56 @@ export class WechatPlatformConfigService implements OnModuleInit {
     };
   }
 
+  async getSubscribeTemplates() {
+    const item = await this.getRecord();
+    return {
+      bookingReminderTemplateId: item.bookingReminderTemplateId ?? '',
+      bookingDayBeforeTemplateId: item.bookingDayBeforeTemplateId ?? '',
+      bookingHourBeforeTemplateId: item.bookingHourBeforeTemplateId ?? '',
+      bookingClientSuccessTemplateId: item.bookingClientSuccessTemplateId ?? '',
+      bookingTechnicianNewTemplateId: item.bookingTechnicianNewTemplateId ?? '',
+      bookingClientStatusTemplateId: item.bookingClientStatusTemplateId ?? '',
+      bookingTechnicianStatusTemplateId: item.bookingTechnicianStatusTemplateId ?? '',
+      consultationReplyTemplateId: item.consultationReplyTemplateId ?? '',
+      updatedAt: item.updatedAt,
+    };
+  }
+
+  async updateSubscribeTemplates(dto: UpdateWechatSubscribeTemplatesDto) {
+    await this.getRecord();
+    const clean = (v?: string) => (v !== undefined ? v.trim() || null : undefined);
+    await this.prisma.wechatPlatformConfig.update({
+      where: { id: 1 },
+      data: {
+        ...(dto.bookingReminderTemplateId !== undefined
+          ? { bookingReminderTemplateId: clean(dto.bookingReminderTemplateId) }
+          : {}),
+        ...(dto.bookingDayBeforeTemplateId !== undefined
+          ? { bookingDayBeforeTemplateId: clean(dto.bookingDayBeforeTemplateId) }
+          : {}),
+        ...(dto.bookingHourBeforeTemplateId !== undefined
+          ? { bookingHourBeforeTemplateId: clean(dto.bookingHourBeforeTemplateId) }
+          : {}),
+        ...(dto.bookingClientSuccessTemplateId !== undefined
+          ? { bookingClientSuccessTemplateId: clean(dto.bookingClientSuccessTemplateId) }
+          : {}),
+        ...(dto.bookingTechnicianNewTemplateId !== undefined
+          ? { bookingTechnicianNewTemplateId: clean(dto.bookingTechnicianNewTemplateId) }
+          : {}),
+        ...(dto.bookingClientStatusTemplateId !== undefined
+          ? { bookingClientStatusTemplateId: clean(dto.bookingClientStatusTemplateId) }
+          : {}),
+        ...(dto.bookingTechnicianStatusTemplateId !== undefined
+          ? { bookingTechnicianStatusTemplateId: clean(dto.bookingTechnicianStatusTemplateId) }
+          : {}),
+        ...(dto.consultationReplyTemplateId !== undefined
+          ? { consultationReplyTemplateId: clean(dto.consultationReplyTemplateId) }
+          : {}),
+      },
+    });
+    return this.getSubscribeTemplates();
+  }
+
   async updateLogin(dto: UpdateWechatLoginConfigDto) {
     const current = await this.getRecord();
     const secret = dto.miniProgramSecret?.trim();
@@ -248,9 +297,6 @@ export class WechatPlatformConfigService implements OnModuleInit {
   }
 
   async updatePayment(dto: UpdateWechatPaymentConfigDto) {
-    if (isMiniProgramLaunchMode() && dto.paymentEnabled) {
-      throw new BadRequestException('小程序首期版本禁止启用微信支付');
-    }
     const current = await this.getRecord();
     const privateKey = dto.merchantPrivateKey?.trim();
     const apiV3Key = dto.apiV3Key?.trim();
@@ -480,14 +526,14 @@ export class WechatPlatformConfigService implements OnModuleInit {
     };
   }
 
-  async isPaymentAvailable() {
-    if (isMiniProgramLaunchMode()) return false;
+  async isPaymentAvailable(options?: { allowInLaunchMode?: boolean }) {
+    if (!options?.allowInLaunchMode && isMiniProgramLaunchMode()) return false;
     const item = await this.getRecord();
     return this.paymentEffective(item) && this.loginEffective(item);
   }
 
-  async getPaymentCredentials() {
-    if (isMiniProgramLaunchMode()) {
+  async getPaymentCredentials(options?: { allowInLaunchMode?: boolean }) {
+    if (!options?.allowInLaunchMode && isMiniProgramLaunchMode()) {
       throw new ServiceUnavailableException('小程序首期版本禁止启用微信支付');
     }
     const item = await this.getRecord();

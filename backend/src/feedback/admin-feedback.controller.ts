@@ -23,18 +23,22 @@ export class AdminFeedbackController {
 
   @Get()
   @Permissions('feedback:view')
-  @ApiOperation({ summary: '问题反馈列表' })
+  @ApiOperation({ summary: '客服问询与问题反馈列表' })
   findAll(
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
     @Query('status') status?: string,
     @Query('sourceType') sourceType?: string,
+    @Query('type') type?: string,
+    @Query('keyword') keyword?: string,
   ) {
     return this.service.findAll({
       page: page ? Number(page) : undefined,
       pageSize: pageSize ? Number(pageSize) : undefined,
       status,
       sourceType,
+      type,
+      keyword,
     });
   }
 

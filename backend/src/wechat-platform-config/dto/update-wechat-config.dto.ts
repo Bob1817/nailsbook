@@ -67,3 +67,14 @@ export class UpdateMiniProgramLaunchConfigDto {
   @IsOptional() @IsString() @MaxLength(120) bookingTechnicianStatusTemplateId?: string;
   @IsOptional() @IsString() @MaxLength(120) consultationReplyTemplateId?: string;
 }
+
+export class UpdateWechatSubscribeTemplatesDto {
+  @IsOptional() @IsString() @MaxLength(120) bookingReminderTemplateId?: string;
+  @IsOptional() @IsString() @MaxLength(120) bookingDayBeforeTemplateId?: string;
+  @IsOptional() @IsString() @MaxLength(120) bookingHourBeforeTemplateId?: string;
+  @IsOptional() @IsString() @MaxLength(120) bookingClientSuccessTemplateId?: string;
+  @IsOptional() @IsString() @MaxLength(120) bookingTechnicianNewTemplateId?: string;
+  @IsOptional() @IsString() @MaxLength(120) bookingClientStatusTemplateId?: string;
+  @IsOptional() @IsString() @MaxLength(120) bookingTechnicianStatusTemplateId?: string;
+  @IsOptional() @IsString() @MaxLength(120) consultationReplyTemplateId?: string;
+}

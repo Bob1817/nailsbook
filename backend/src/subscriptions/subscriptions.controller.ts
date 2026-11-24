@@ -100,7 +100,7 @@ export class TechnicianSubscriptionsPublicController {
   }
 
   @Post('confirm-mock')
-  @ApiOperation({ summary: '确认模拟订阅支付' })
+  @ApiOperation({ summary: '确认模拟订阅支付（仅限非生产 mock 模式）' })
   @ApiBody({ type: ConfirmMockSubscriptionPaymentDto })
   confirmMock(
     @Req() request: { user: { technicianId: number } },
@@ -109,6 +109,18 @@ export class TechnicianSubscriptionsPublicController {
     return this.paymentsService.confirmMockSubscriptionPayment(
       request.user.technicianId,
       dto.paymentNo,
+    );
+  }
+
+  @Get('payments/:paymentNo/status')
+  @ApiOperation({ summary: '查询订阅支付单结果（待确认时主动向微信支付查单核验）' })
+  paymentStatus(
+    @Req() request: { user: { technicianId: number } },
+    @Param('paymentNo') paymentNo: string,
+  ) {
+    return this.paymentsService.getSubscriptionPaymentStatus(
+      request.user.technicianId,
+      paymentNo,
     );
   }
 

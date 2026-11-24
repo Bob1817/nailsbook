@@ -7,7 +7,9 @@ import { CustomerServiceMessageDto } from './dto/customer-service-message.dto';
 const SOURCE_LABELS: Record<string, string> = {
   about_page: '关于我们（未登录/展示页）',
   client_profile: '客户端「我的」页面',
+  client_help: '客户端「帮助与反馈」页面',
   technician_profile: '美甲师端「我的」页面',
+  technician_help: '美甲师端「帮助与反馈」页面',
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -34,6 +36,12 @@ export class PublicCustomerServiceController {
     const name = (dto.name || '').trim();
     const source = dto.source || 'about_page';
     const role = dto.role || 'guest';
+    const attachmentUrls = Array.isArray(dto.attachmentUrls)
+      ? dto.attachmentUrls
+          .filter((url): url is string => typeof url === 'string' && !!url.trim())
+          .map((url) => url.trim())
+          .slice(0, 6)
+      : [];
 
     const sourceLabel = SOURCE_LABELS[source] || source;
     const roleLabel = ROLE_LABELS[role] || role;
@@ -49,6 +57,7 @@ export class PublicCustomerServiceController {
           title: `[客服咨询] 来自 ${sourceLabel}`,
           type: '客服咨询',
           content,
+          attachmentUrls: JSON.stringify(attachmentUrls),
           status: 'pending',
         },
       });
@@ -57,14 +66,26 @@ export class PublicCustomerServiceController {
     }
 
     // 2. 异步触发钉钉机器人实时推送通知
+    const timeStr = new Date().toLocaleString('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+    });
+    const dingtalkMarkdown = [
+      '### 💬 OnlyNail 客服新咨询提醒',
+      '**收到来自小程序用户的在线留言**',
+      `• **咨询来源**：${sourceLabel}`,
+      `• **用户身份**：${roleLabel}${name ? ` (${name})` : ''}`,
+      `• **联系电话**：${phone || '未填写'}`,
+      attachmentUrls.length ? `• **附带截图**：${attachmentUrls.length} 张` : '',
+      `• **提交时间**：${timeStr}`,
+      '• **留言内容**：',
+      `> ${content.replace(/\n/g, '\n> ')}`,
+      '',
+      '*已同步保存至超管后台「客服与反馈」，请及时回复处理。*',
+    ]
+      .filter(Boolean)
+      .join('\n');
     this.dingtalkAlert
-      .notifyCustomerServiceMessage({
-        source: sourceLabel,
-        role: roleLabel,
-        name,
-        phone,
-        content,
-      })
+      .sendMarkdown('OnlyNail 收到客服新留言', dingtalkMarkdown)
       .catch((pushErr) => {
         this.logger.error(`推送客服留言到钉钉异常: ${String(pushErr)}`);
       });
@@ -77,6 +98,7 @@ export class PublicCustomerServiceController {
         name,
         phone,
         content,
+        attachmentCount: attachmentUrls.length,
       })
       .catch((wechatErr) => {
         this.logger.error(`推送客服留言到微信公众号异常: ${String(wechatErr)}`);
