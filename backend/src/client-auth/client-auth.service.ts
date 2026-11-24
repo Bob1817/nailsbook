@@ -356,10 +356,13 @@ export class ClientAuthService {
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const registrationSource = dto.source || 'invite';
 
-    const technician = await this.findActiveTechnicianByInviteCode(
-      dto.inviteCode,
-      '该邀请码无效，请跟您的美甲师确认后再注册',
-    );
+    let technician: any = null;
+    if (dto.inviteCode && dto.inviteCode.trim()) {
+      technician = await this.findActiveTechnicianByInviteCode(
+        dto.inviteCode.trim(),
+        '该邀请码无效，请跟您的美甲师确认后再注册',
+      );
+    }
 
     const client = await this.prisma.$transaction(async (tx) => {
       await assertPhoneAvailable(tx, dto.phone);
@@ -371,26 +374,28 @@ export class ClientAuthService {
         },
       });
 
-      await tx.clientTechBinding.create({
-        data: {
-          clientId: created.id,
-          techId: technician.id,
-          inviteCode: dto.inviteCode,
-          bindSource: registrationSource,
-          isDefault: true,
-        },
-      });
+      if (technician) {
+        await tx.clientTechBinding.create({
+          data: {
+            clientId: created.id,
+            techId: technician.id,
+            inviteCode: dto.inviteCode!.trim(),
+            bindSource: registrationSource,
+            isDefault: true,
+          },
+        });
 
-      await tx.customer.create({
-        data: {
-          technicianId: technician.id,
-          clientUserId: created.id,
-          name: dto.nickname || dto.phone,
-          phone: dto.phone,
-          sourceType: registrationSource,
-          sourceRef: dto.inviteCode,
-        },
-      });
+        await tx.customer.create({
+          data: {
+            technicianId: technician.id,
+            clientUserId: created.id,
+            name: dto.nickname || dto.phone,
+            phone: dto.phone,
+            sourceType: registrationSource,
+            sourceRef: dto.inviteCode!.trim(),
+          },
+        });
+      }
 
       if (wechatIdentity) {
         await tx.wechatIdentity.create({
@@ -423,7 +428,8 @@ export class ClientAuthService {
       roles: ['client'],
     };
 
-    const technicianPayload = {
+    if (technician) {
+      const technicianPayload = {
         id: technician.id,
         name: technician.name,
         phone: technician.phone,
@@ -441,8 +447,9 @@ export class ClientAuthService {
         isDefault: true,
         bindSource: registrationSource,
       };
-    result.technician = technicianPayload;
-    result.technicians = [technicianPayload];
+      result.technician = technicianPayload;
+      result.technicians = [technicianPayload];
+    }
 
     return result;
   }

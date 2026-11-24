@@ -50,6 +50,7 @@ export class WechatPayService {
       headers: {
         Authorization: this.authorization('POST', path, body, credentials),
         Accept: 'application/json',
+        'Accept-Language': 'zh-CN',
         'Content-Type': 'application/json',
         'User-Agent': 'Luanails-Backend/1.0',
       },
@@ -95,6 +96,7 @@ export class WechatPayService {
       headers: {
         Authorization: this.authorization('GET', path, '', credentials),
         Accept: 'application/json',
+        'Accept-Language': 'zh-CN',
         'User-Agent': 'Luanails-Backend/1.0',
       },
       signal: AbortSignal.timeout(8000),

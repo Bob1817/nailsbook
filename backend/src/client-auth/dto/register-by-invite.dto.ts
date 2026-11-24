@@ -14,10 +14,10 @@ export class RegisterByInviteDto extends WorkShareRegistrationDto {
   @IsStrongPassword()
   password: string;
 
-  @ApiProperty({ description: '美甲师邀请码（必填）', example: 'A3F9K2M7' })
-  @IsNotEmpty({ message: '请输入美甲师邀请码' })
+  @ApiPropertyOptional({ description: '美甲师邀请码（选填）', example: 'A3F9K2M7' })
+  @IsOptional()
   @IsString()
-  inviteCode: string;
+  inviteCode?: string;
 
   @ApiPropertyOptional({ description: '用户昵称', example: '小美' })
   @IsOptional()

@@ -416,15 +416,23 @@ export class WechatPlatformConfigService implements OnModuleInit {
         headers: {
           Authorization: authorization,
           Accept: 'application/json',
+          'Accept-Language': 'zh-CN',
           'User-Agent': 'Luanails-Backend/1.0',
         },
         signal: AbortSignal.timeout(this.timeoutMs()),
       });
       if (!response.ok) {
         const text = await response.text();
-        throw new Error(
-          `微信支付返回 HTTP ${response.status}: ${text.slice(0, 120)}`,
-        );
+        // 纯微信支付公钥模式的新商户没有平台证书，调用 /v3/certificates 会通过商户签名鉴权后返回 404 RESOURCE_NOT_EXISTS
+        const isPublicKeyOnlyNoCert =
+          item.paymentVerifierMode === 'platform_public_key' &&
+          response.status === 404 &&
+          text.includes('RESOURCE_NOT_EXISTS');
+        if (!isPublicKeyOnlyNoCert) {
+          throw new Error(
+            `微信支付返回 HTTP ${response.status}: ${text.slice(0, 120)}`,
+          );
+        }
       }
       await this.prisma.wechatPlatformConfig.update({
         where: { id: 1 },
