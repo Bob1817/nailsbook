@@ -424,6 +424,13 @@ exports[`Admin authorization HTTP contract covers every admin business route wit
   },
   {
     "method": "GET",
+    "path": "/api/admin/subscription-plans/templates",
+    "permissions": [
+      "subscription:view",
+    ],
+  },
+  {
+    "method": "GET",
     "path": "/api/admin/system-errors",
     "permissions": [
       "log:view",
@@ -516,6 +523,13 @@ exports[`Admin authorization HTTP contract covers every admin business route wit
   {
     "method": "GET",
     "path": "/api/admin/technician-subscriptions/technicians/:technicianId/detail",
+    "permissions": [
+      "subscription:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/technician-subscriptions/templates",
     "permissions": [
       "subscription:view",
     ],
@@ -656,6 +670,20 @@ exports[`Admin authorization HTTP contract covers every admin business route wit
   {
     "method": "POST",
     "path": "/api/admin/wechat-config/payment/validate",
+    "permissions": [
+      "feature_flag:update",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/wechat-config/templates",
+    "permissions": [
+      "feature_flag:view",
+    ],
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/wechat-config/templates",
     "permissions": [
       "feature_flag:update",
     ],

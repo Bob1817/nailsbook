@@ -20,6 +20,12 @@ import {
   assertMiniProgramFeatureDisabled,
   isMiniProgramLaunchMode,
 } from '../common/miniprogram-launch-mode';
+import {
+  calculateSubscriptionExpiry,
+  calculateUpgradeProration,
+  isPlanCurrentlyEffective,
+  resolvePlanPricing,
+} from '../subscriptions/subscription-pricing.util';
 
 export type OrderPaymentType = 'deposit' | 'final';
 
@@ -210,7 +216,12 @@ export class PaymentsService {
       where: { code: normalizedPlanCode, status: 'active' },
     });
     if (!plan) throw new NotFoundException('套餐不存在');
-    if (plan.price <= 0) {
+    const now = new Date();
+    if (!isPlanCurrentlyEffective({ ...plan, status: plan.status || 'active' }, now)) {
+      throw new BadRequestException('该套餐暂未生效或已过期');
+    }
+    const pricing = resolvePlanPricing(plan, now);
+    if (pricing.effectivePrice <= 0) {
       throw new BadRequestException('免费套餐无需在线支付');
     }
 
@@ -224,7 +235,78 @@ export class PaymentsService {
       return this.mapPayment(existing);
     }
 
-    const amountCents = this.toCents(plan.price);
+    const currentSub = await this.prisma.technicianSubscription.findUnique({
+      where: { technicianId },
+      include: { plan: true },
+    });
+    const proration = calculateUpgradeProration(currentSub, plan, now);
+    const amountCents = proration.payableCents;
+
+    if (amountCents === 0) {
+      const zeroPaymentNo = `SUB${Date.now()}${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+      const zeroExpiredAt = calculateSubscriptionExpiry(plan.billingCycle, now);
+      const paidOrder = await this.prisma.$transaction(async (tx) => {
+        const order = await tx.paymentOrder.create({
+          data: {
+            paymentNo: zeroPaymentNo,
+            subscriptionId: currentSub?.id ?? null,
+            technicianId,
+            paymentType: 'subscription',
+            amountCents: 0,
+            channel: 'wechat',
+            status: 'paid',
+            paidAt: now,
+            providerTradeNo: `PRORATION_${zeroPaymentNo}`,
+            idempotencyKey: normalizedKey,
+            failureReason: null,
+            providerPayload: JSON.stringify({
+              targetPlanCode: plan.code,
+              targetPlanId: plan.id,
+              deductionCents: proration.deductionCents,
+              effectivePriceCents: pricing.effectivePriceCents,
+              zeroPayUpgraded: true,
+            }),
+          },
+        });
+        await tx.technicianSubscription.upsert({
+          where: { technicianId },
+          create: {
+            technicianId,
+            planId: plan.id,
+            status: 'active',
+            startedAt: now,
+            expiredAt: zeroExpiredAt,
+            lastPaidAmountCents: proration.deductionCents,
+          },
+          update: {
+            planId: plan.id,
+            status: 'active',
+            startedAt: now,
+            expiredAt: zeroExpiredAt,
+            lastPaidAmountCents: proration.deductionCents,
+            pendingPlanCode: null,
+            changeEffectiveAt: null,
+            cancelledAt: null,
+          },
+        });
+        await tx.subscriptionChange.create({
+          data: {
+            technicianId,
+            fromPlanCode: currentSub?.plan?.code ?? null,
+            toPlanCode: plan.code,
+            reason: 'proration_upgrade',
+            effectiveAt: now,
+          },
+        });
+        return order;
+      });
+      return {
+        ...this.mapPayment(paidOrder),
+        zeroPayUpgraded: true,
+        paid: true,
+        deductionAmount: proration.deductionAmount,
+      };
+    }
     const isProd = this.config.get('NODE_ENV') === 'production';
     const mockEnabled = this.config.get('PAYMENT_PROVIDER') === 'mock';
     if (mockEnabled && isProd) {
@@ -283,11 +365,6 @@ export class PaymentsService {
       }
     }
 
-    const currentSub = await this.prisma.technicianSubscription.findUnique({
-      where: { technicianId },
-      select: { id: true },
-    });
-
     const payment = await this.prisma.paymentOrder.create({
       data: {
         paymentNo: `SUB${Date.now()}${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
@@ -301,14 +378,28 @@ export class PaymentsService {
         failureReason: null,
         providerPayload: JSON.stringify(
           mockEnabled
-            ? { mock: true, targetPlanCode: plan.code, targetPlanId: plan.id }
-            : { targetPlanCode: plan.code, targetPlanId: plan.id },
+            ? {
+                mock: true,
+                targetPlanCode: plan.code,
+                targetPlanId: plan.id,
+                deductionCents: proration.deductionCents,
+                effectivePriceCents: pricing.effectivePriceCents,
+              }
+            : {
+                targetPlanCode: plan.code,
+                targetPlanId: plan.id,
+                deductionCents: proration.deductionCents,
+                effectivePriceCents: pricing.effectivePriceCents,
+              },
         ),
       },
     });
 
     if (mockEnabled) {
-      return this.mapPayment(payment);
+      return {
+        ...this.mapPayment(payment),
+        deductionAmount: proration.deductionAmount,
+      };
     }
 
     try {
@@ -322,12 +413,17 @@ export class PaymentsService {
         ...jsapiPayload,
         targetPlanCode: plan.code,
         targetPlanId: plan.id,
+        deductionCents: proration.deductionCents,
+        effectivePriceCents: pricing.effectivePriceCents,
       };
       const ready = await this.prisma.paymentOrder.update({
         where: { id: payment.id },
         data: { providerPayload: JSON.stringify(providerPayload) },
       });
-      return this.mapPayment(ready);
+      return {
+        ...this.mapPayment(ready),
+        deductionAmount: proration.deductionAmount,
+      };
     } catch (error) {
       const message =
         error instanceof Error ? error.message : '微信支付下单失败';
@@ -682,14 +778,19 @@ export class PaymentsService {
             include: { plan: true },
           });
           const now = new Date();
-          const baseDate =
-            currentSub?.expiredAt && currentSub.expiredAt > now
-              ? currentSub.expiredAt
-              : now;
-          const durationDays = plan.billingCycle === 'yearly' ? 365 : 30;
-          const newExpiredAt = new Date(
-            baseDate.getTime() + durationDays * 24 * 60 * 60 * 1000,
+          const isRenewal = Boolean(
+            currentSub &&
+              currentSub.planId === plan.id &&
+              currentSub.expiredAt &&
+              currentSub.expiredAt > now,
           );
+          const baseDate = isRenewal ? currentSub!.expiredAt! : now;
+          const newExpiredAt = calculateSubscriptionExpiry(
+            plan.billingCycle,
+            baseDate,
+          );
+          const totalValueCents =
+            resolvedPaidCents + (Number(payload?.deductionCents) || 0);
 
           await tx.technicianSubscription.upsert({
             where: { technicianId: payment.technicianId },
@@ -699,13 +800,19 @@ export class PaymentsService {
               status: 'active',
               startedAt: now,
               expiredAt: newExpiredAt,
+              lastPaidAmountCents: totalValueCents,
             },
             update: {
               planId: plan.id,
               status: 'active',
               startedAt:
-                currentSub?.status === 'active' ? currentSub.startedAt : now,
+                isRenewal && currentSub?.status === 'active'
+                  ? currentSub.startedAt
+                  : now,
               expiredAt: newExpiredAt,
+              lastPaidAmountCents: isRenewal
+                ? (currentSub?.lastPaidAmountCents || 0) + totalValueCents
+                : totalValueCents,
               pendingPlanCode: null,
               changeEffectiveAt: null,
               cancelledAt: null,

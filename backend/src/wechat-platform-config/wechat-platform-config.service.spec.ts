@@ -188,7 +188,6 @@ describe('WechatPlatformConfigService capabilities', () => {
           launchTechnicianId: 7,
           bookingDayBeforeTemplateId: 'day-template',
           bookingHourBeforeTemplateId: 'hour-template',
-          paymentEnabled: false,
         }),
       }),
     );

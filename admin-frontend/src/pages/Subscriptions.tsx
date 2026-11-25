@@ -20,7 +20,10 @@ import {
   Spin,
   Pagination,
   Typography,
+  DatePicker,
+  Divider,
 } from 'antd';
+import dayjs, { type Dayjs } from 'dayjs';
 import {
   PlusOutlined,
   DollarOutlined,
@@ -31,6 +34,7 @@ import {
 } from '@ant-design/icons';
 import { subscriptionService } from '../services/subscription';
 import type {
+  PlanTemplate,
   SubscriptionMetrics,
   SubscriptionPayment,
   SubscriptionPaymentResponse,
@@ -45,6 +49,15 @@ import ManageSubscriptionModal, {
 } from '../components/ManageSubscriptionModal';
 
 const { Text } = Typography;
+const { RangePicker } = DatePicker;
+
+const BILLING_CYCLE_LABELS: Record<string, string> = {
+  free: '免费',
+  monthly: '按月（30天）',
+  quarterly: '按季度（90天）',
+  yearly: '按年（365天）',
+  permanent: '永久有效',
+};
 
 const PAYMENT_STATUS_MAP: Record<string, { label: string; color: string }> = {
   paid: { label: '已支付', color: 'success' },
@@ -63,6 +76,8 @@ const Subscriptions: React.FC = () => {
   const isMobile = !screens.md;
 
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [planTemplates, setPlanTemplates] = useState<PlanTemplate[]>([]);
+  const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
   const [technicianSubscriptions, setTechnicianSubscriptions] = useState<TechnicianSubscription[]>([]);
   const [paymentsRes, setPaymentsRes] = useState<SubscriptionPaymentResponse | null>(null);
   const [paymentPage, setPaymentPage] = useState(1);
@@ -116,6 +131,10 @@ const Subscriptions: React.FC = () => {
 
   useEffect(() => {
     fetchPlans();
+    subscriptionService
+      .getPlanTemplates()
+      .then(setPlanTemplates)
+      .catch(() => {});
     fetchTechnicianSubscriptions();
     subscriptionService
       .getMetrics()
@@ -127,22 +146,116 @@ const Subscriptions: React.FC = () => {
     fetchPayments();
   }, [fetchPayments]);
 
-  const handleCreatePlan = async (values: SubscriptionPlanInput & { featuresText?: string }) => {
+  const applyTemplate = (templateCode: string) => {
+    const tpl = planTemplates.find((t) => t.templateCode === templateCode);
+    if (!tpl) return;
+    form.setFieldsValue({
+      templateCode: tpl.templateCode,
+      name: tpl.name,
+      price: tpl.price,
+      billingCycle: tpl.billingCycle,
+      maxCustomers: tpl.maxCustomers ?? undefined,
+      maxMonthlyBookings: tpl.maxMonthlyBookings ?? undefined,
+      maxWorks: tpl.maxWorks ?? undefined,
+      maxStorageBytes: tpl.maxStorageBytes ?? undefined,
+      maxMarketingExports: tpl.maxMarketingExports ?? undefined,
+      maxMonthlySms: tpl.maxMonthlySms ?? undefined,
+      maxEmployees: tpl.maxEmployees ?? undefined,
+      maxBookingPages: tpl.maxBookingPages ?? undefined,
+      targetStage: tpl.targetStage,
+      description: tpl.description,
+      featuresText: (tpl.features || []).join(', '),
+    });
+  };
+
+  const openCreateModal = () => {
+    setEditingPlan(null);
+    form.resetFields();
+    form.setFieldsValue({ status: 'active', sortOrder: 0, billingCycle: 'monthly' });
+    setModalVisible(true);
+  };
+
+  const openEditModal = (plan: SubscriptionPlan) => {
+    setEditingPlan(plan);
+    const featuresArr = Array.isArray(plan.features)
+      ? plan.features
+      : typeof plan.features === 'string'
+        ? (() => {
+            try {
+              const p = JSON.parse(plan.features);
+              return Array.isArray(p) ? p : [];
+            } catch {
+              return [];
+            }
+          })()
+        : [];
+    form.setFieldsValue({
+      ...plan,
+      discountPrice: plan.discountPrice ?? undefined,
+      effectiveRange:
+        plan.effectiveStartAt || plan.effectiveEndAt
+          ? [
+              plan.effectiveStartAt ? dayjs(plan.effectiveStartAt) : null,
+              plan.effectiveEndAt ? dayjs(plan.effectiveEndAt) : null,
+            ]
+          : undefined,
+      discountRange:
+        plan.discountStartAt || plan.discountEndAt
+          ? [
+              plan.discountStartAt ? dayjs(plan.discountStartAt) : null,
+              plan.discountEndAt ? dayjs(plan.discountEndAt) : null,
+            ]
+          : undefined,
+      featuresText: featuresArr.join(', '),
+    });
+    setModalVisible(true);
+  };
+
+  const handleSavePlan = async (
+    values: SubscriptionPlanInput & {
+      featuresText?: string;
+      effectiveRange?: [Dayjs | null, Dayjs | null];
+      discountRange?: [Dayjs | null, Dayjs | null];
+    },
+  ) => {
     try {
-      const { featuresText, ...plan } = values;
-      await subscriptionService.createPlan({
+      const { featuresText, effectiveRange, discountRange, ...plan } = values;
+      const payload: SubscriptionPlanInput = {
         ...plan,
+        discountPrice: plan.discountPrice ?? null,
+        effectiveStartAt: effectiveRange?.[0] ? effectiveRange[0].toISOString() : null,
+        effectiveEndAt: effectiveRange?.[1] ? effectiveRange[1].toISOString() : null,
+        discountStartAt: discountRange?.[0] ? discountRange[0].toISOString() : null,
+        discountEndAt: discountRange?.[1] ? discountRange[1].toISOString() : null,
         features: featuresText
           ? featuresText.split(',').map((item) => item.trim()).filter(Boolean)
           : [],
-      });
-      message.success('创建成功');
+      };
+      if (editingPlan) {
+        await subscriptionService.updatePlan(editingPlan.id, payload);
+        message.success('套餐已更新');
+      } else {
+        await subscriptionService.createPlan(payload);
+        message.success('创建成功');
+      }
       setModalVisible(false);
+      setEditingPlan(null);
       form.resetFields();
       fetchPlans();
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      message.error(err.response?.data?.message || '创建失败');
+      message.error(err.response?.data?.message || (editingPlan ? '更新失败' : '创建失败'));
+    }
+  };
+
+  const handleTogglePlanStatus = async (plan: SubscriptionPlan) => {
+    const nextStatus = plan.status === 'active' ? 'inactive' : 'active';
+    try {
+      await subscriptionService.updatePlan(plan.id, { status: nextStatus });
+      message.success(nextStatus === 'active' ? '已启用套餐' : '已停用套餐');
+      fetchPlans();
+    } catch {
+      message.error('操作失败');
     }
   };
 
@@ -222,20 +335,78 @@ const Subscriptions: React.FC = () => {
   ];
 
   const planColumns = [
-    { title: '套餐名称', dataIndex: 'name', key: 'name' },
-    { title: '代码', dataIndex: 'code', key: 'code' },
     {
-      title: '价格',
-      dataIndex: 'price',
-      key: 'price',
-      render: (price: number) => `¥${price.toFixed(2)}`,
+      title: '套餐名称',
+      dataIndex: 'name',
+      key: 'name',
+      render: (name: string, plan: SubscriptionPlan) => (
+        <div>
+          <div style={{ fontWeight: 600 }}>{name}</div>
+          <div style={{ fontSize: 12, color: 'var(--nb-muted)' }}>
+            {plan.code}
+            {plan.templateCode ? ` · 模板:${plan.templateCode}` : ''}
+          </div>
+        </div>
+      ),
     },
-    { title: '计费周期', dataIndex: 'billingCycle', key: 'billingCycle' },
+    {
+      title: '价格（原价/折扣）',
+      key: 'price',
+      render: (_: unknown, plan: SubscriptionPlan) => (
+        <div>
+          {plan.discountPrice != null && plan.discountPrice < plan.price ? (
+            <div>
+              <Text strong style={{ color: 'var(--nb-money)' }}>
+                ¥{Number(plan.discountPrice).toFixed(2)}
+              </Text>{' '}
+              <Text delete type="secondary" style={{ fontSize: 12 }}>
+                ¥{Number(plan.price).toFixed(2)}
+              </Text>
+              <div>
+                <Tag color={plan.discountActive ? 'green' : 'default'} style={{ marginTop: 2 }}>
+                  {plan.discountActive ? '折扣生效中' : '折扣未生效'}
+                </Tag>
+              </div>
+            </div>
+          ) : (
+            <Text strong>¥{Number(plan.price).toFixed(2)}</Text>
+          )}
+        </div>
+      ),
+    },
+    {
+      title: '计费周期',
+      dataIndex: 'billingCycle',
+      key: 'billingCycle',
+      render: (cycle: string) => BILLING_CYCLE_LABELS[cycle] || cycle,
+    },
+    {
+      title: '生效时间',
+      key: 'effectiveWindow',
+      render: (_: unknown, plan: SubscriptionPlan) => (
+        <div style={{ fontSize: 12 }}>
+          <div>
+            套餐：
+            {plan.effectiveStartAt || plan.effectiveEndAt
+              ? `${plan.effectiveStartAt ? dayjs(plan.effectiveStartAt).format('MM-DD HH:mm') : '即日'} ~ ${plan.effectiveEndAt ? dayjs(plan.effectiveEndAt).format('MM-DD HH:mm') : '长期'}`
+              : '长期有效'}
+          </div>
+          {plan.discountPrice != null && (
+            <div style={{ color: 'var(--nb-muted)' }}>
+              折扣：
+              {plan.discountStartAt || plan.discountEndAt
+                ? `${plan.discountStartAt ? dayjs(plan.discountStartAt).format('MM-DD HH:mm') : '即日'} ~ ${plan.discountEndAt ? dayjs(plan.discountEndAt).format('MM-DD HH:mm') : '长期'}`
+                : '随套餐生效'}
+            </div>
+          )}
+        </div>
+      ),
+    },
     {
       title: '核心额度',
       key: 'limits',
       render: (_: unknown, plan: SubscriptionPlan) => (
-        <div>
+        <div style={{ fontSize: 12 }}>
           <div>客户 {plan.maxCustomers ?? '不限'} · 预约 {plan.maxMonthlyBookings ?? '不限'}/月</div>
           <div>作品 {plan.maxWorks ?? '不限'} · 宣传 {plan.maxMarketingExports ?? '不限'}/月 · 短信 {plan.maxMonthlySms ?? '不限'}/月</div>
         </div>
@@ -245,8 +416,49 @@ const Subscriptions: React.FC = () => {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => <Tag>{status === 'active' ? '启用' : '禁用'}</Tag>,
+      render: (status: string, plan: SubscriptionPlan) => {
+        if (status !== 'active') return <Tag color="default">已停用</Tag>;
+        if (plan.isCurrentlyEffective === false) {
+          const now = Date.now();
+          if (plan.effectiveStartAt && new Date(plan.effectiveStartAt).getTime() > now) {
+            return <Tag color="processing">未到生效时间</Tag>;
+          }
+          return <Tag color="warning">已过期失效</Tag>;
+        }
+        return <Tag color="success">生效中</Tag>;
+      },
     },
+    ...(canUpdateSub
+      ? [
+          {
+            title: '操作',
+            key: 'action',
+            width: 140,
+            render: (_: unknown, plan: SubscriptionPlan) => (
+              <Space size={4}>
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<EditOutlined />}
+                  style={{ padding: 0 }}
+                  onClick={() => openEditModal(plan)}
+                >
+                  编辑
+                </Button>
+                <Button
+                  type="link"
+                  size="small"
+                  danger={plan.status === 'active'}
+                  style={{ padding: 0 }}
+                  onClick={() => handleTogglePlanStatus(plan)}
+                >
+                  {plan.status === 'active' ? '停用' : '启用'}
+                </Button>
+              </Space>
+            ),
+          },
+        ]
+      : []),
   ];
 
   const subscriptionColumns = [
@@ -526,7 +738,7 @@ const Subscriptions: React.FC = () => {
               type="primary"
               icon={<PlusOutlined />}
               style={{ minHeight: 44 }}
-              onClick={() => setModalVisible(true)}
+              onClick={openCreateModal}
             >
               新增套餐
             </Button>
@@ -642,58 +854,143 @@ const Subscriptions: React.FC = () => {
       </Card>
 
       <Modal
-        title="新增套餐"
+        title={editingPlan ? `编辑套餐 · ${editingPlan.name}` : '新增套餐（基于管理模板）'}
         open={modalVisible}
         onCancel={() => {
           setModalVisible(false);
+          setEditingPlan(null);
           form.resetFields();
         }}
         onOk={() => form.submit()}
-        width={isMobile ? '94vw' : 560}
+        width={isMobile ? '94vw' : 640}
       >
-        <Form form={form} layout="vertical" onFinish={handleCreatePlan}>
-          <Form.Item name="name" label="套餐名称" rules={[{ required: true, message: '请输入套餐名称' }]}>
-            <Input placeholder="请输入套餐名称" />
+        <Form form={form} layout="vertical" onFinish={handleSavePlan}>
+          {!editingPlan && planTemplates.length > 0 && (
+            <Form.Item label="选择套餐管理模板（快速填充配额与功能）" name="templateCode">
+              <Select
+                allowClear
+                placeholder="请选择标准模板或留空自定义"
+                onChange={(val) => val && applyTemplate(val)}
+                options={[
+                  ...planTemplates.map((t) => ({
+                    value: t.templateCode,
+                    label: `${t.name}模板（¥${t.price}/${BILLING_CYCLE_LABELS[t.billingCycle] || t.billingCycle}）`,
+                  })),
+                ]}
+              />
+            </Form.Item>
+          )}
+          <Row gutter={12}>
+            <Col span={12}>
+              <Form.Item name="name" label="套餐名称" rules={[{ required: true, message: '请输入套餐名称' }]}>
+                <Input placeholder="例如：高阶季度版" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="code" label="套餐代码" rules={[{ required: true, message: '请输入套餐代码' }]}>
+                <Input disabled={Boolean(editingPlan)} placeholder="例如：advanced_q" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={12}>
+            <Col span={12}>
+              <Form.Item name="billingCycle" label="计费周期" rules={[{ required: true, message: '请选择计费周期' }]}>
+                <Select
+                  options={[
+                    { value: 'free', label: '免费' },
+                    { value: 'monthly', label: '按月（30天）' },
+                    { value: 'quarterly', label: '按季度（90天）' },
+                    { value: 'yearly', label: '按年（365天）' },
+                    { value: 'permanent', label: '永久有效' },
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item name="status" label="状态" initialValue="active">
+                <Select
+                  options={[
+                    { value: 'active', label: '启用' },
+                    { value: 'inactive', label: '停用' },
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item name="sortOrder" label="排序权重" initialValue={0}>
+                <InputNumber min={0} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Divider style={{ margin: '8px 0 16px' }}>价格与生效时间配置</Divider>
+
+          <Row gutter={12}>
+            <Col span={12}>
+              <Form.Item name="price" label="套餐原价（元）" rules={[{ required: true, message: '请输入原价' }]}>
+                <InputNumber min={0} precision={2} style={{ width: '100%' }} placeholder="原价" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="discountPrice" label="折扣价（元，选填）">
+                <InputNumber min={0} precision={2} style={{ width: '100%' }} placeholder="不打折留空；生效时原价划线" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item name="effectiveRange" label="套餐生效时间段（留空表示长期生效；未到/过期小程序自动隐藏）">
+            <RangePicker showTime format="YYYY-MM-DD HH:mm" style={{ width: '100%' }} />
           </Form.Item>
-          <Form.Item name="code" label="套餐代码" rules={[{ required: true, message: '请输入套餐代码' }]}>
-            <Input placeholder="请输入套餐代码" />
+
+          <Form.Item name="discountRange" label="价格折扣生效时间段（留空表示随套餐时间同步生效）">
+            <RangePicker showTime format="YYYY-MM-DD HH:mm" style={{ width: '100%' }} />
           </Form.Item>
-          <Form.Item name="price" label="价格" rules={[{ required: true, message: '请输入价格' }]}>
-            <InputNumber min={0} precision={2} style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="billingCycle" label="计费周期" rules={[{ required: true, message: '请选择计费周期' }]}>
-            <Select
-              options={[
-                { value: 'free', label: '免费' },
-                { value: 'monthly', label: '月付' },
-                { value: 'yearly', label: '年付' },
-              ]}
-            />
-          </Form.Item>
-          <Form.Item name="maxCustomers" label="最大客户数">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="留空表示无限制" />
-          </Form.Item>
-          <Form.Item name="maxMonthlyBookings" label="最大月预约数">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="留空表示无限制" />
-          </Form.Item>
-          <Form.Item name="maxWorks" label="最大作品数">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="留空表示无限制" />
-          </Form.Item>
-          <Form.Item name="maxStorageBytes" label="最大存储字节数">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="例如 5368709120（5GB）" />
-          </Form.Item>
-          <Form.Item name="maxMarketingExports" label="每月宣传导出次数">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="留空表示无限制" />
-          </Form.Item>
-          <Form.Item name="maxMonthlySms" label="每月短信额度">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="留空表示无限制" />
-          </Form.Item>
-          <Form.Item name="maxEmployees" label="员工账号数">
-            <InputNumber min={1} style={{ width: '100%' }} placeholder="仅本人填写 1" />
-          </Form.Item>
-          <Form.Item name="maxBookingPages" label="预约页面数">
-            <InputNumber min={1} style={{ width: '100%' }} placeholder="留空表示无限制" />
-          </Form.Item>
+
+          <Divider style={{ margin: '8px 0 16px' }}>配额与权益模板</Divider>
+
+          <Row gutter={12}>
+            <Col span={12}>
+              <Form.Item name="maxCustomers" label="最大客户数">
+                <InputNumber min={0} style={{ width: '100%' }} placeholder="留空表示无限制" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="maxMonthlyBookings" label="最大月预约数">
+                <InputNumber min={0} style={{ width: '100%' }} placeholder="留空表示无限制" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="maxWorks" label="最大作品数">
+                <InputNumber min={0} style={{ width: '100%' }} placeholder="留空表示无限制" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="maxStorageBytes" label="最大存储字节数">
+                <InputNumber min={0} style={{ width: '100%' }} placeholder="例如 5368709120（5GB）" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="maxMarketingExports" label="每月宣传导出次数">
+                <InputNumber min={0} style={{ width: '100%' }} placeholder="留空表示无限制" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="maxMonthlySms" label="每月短信额度">
+                <InputNumber min={0} style={{ width: '100%' }} placeholder="留空表示无限制" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="maxEmployees" label="员工账号数">
+                <InputNumber min={1} style={{ width: '100%' }} placeholder="仅本人填写 1" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="maxBookingPages" label="预约页面数">
+                <InputNumber min={1} style={{ width: '100%' }} placeholder="留空表示无限制" />
+              </Form.Item>
+            </Col>
+          </Row>
           <Form.Item name="targetStage" label="适用经营阶段">
             <Input placeholder="例如：稳定经营的个人美甲师" />
           </Form.Item>

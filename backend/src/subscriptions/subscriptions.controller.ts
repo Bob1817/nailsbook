@@ -72,8 +72,8 @@ export class TechnicianSubscriptionsPublicController {
   @Get('plans')
   @ApiOperation({ summary: '获取订阅套餐列表' })
   @ApiResponse({ status: 200, description: '返回套餐列表' })
-  findPlans() {
-    return this.subscriptionsService.findPlans(true);
+  findPlans(@Req() request: { user: { technicianId: number } }) {
+    return this.subscriptionsService.findPlans(true, request.user.technicianId);
   }
 
   @Get('current')
@@ -164,6 +164,13 @@ export class TechnicianSubscriptionsPublicController {
 export class SubscriptionPlansController {
   constructor(private readonly subscriptionsService: SubscriptionsService) {}
 
+  @Get('templates')
+  @Permissions('subscription:view')
+  @ApiOperation({ summary: '获取订阅套餐管理模板列表' })
+  getTemplates() {
+    return this.subscriptionsService.getPlanTemplates();
+  }
+
   @Get()
   @Permissions('subscription:view')
   @ApiOperation({ summary: '获取所有订阅套餐' })
@@ -223,6 +230,13 @@ export class SubscriptionPlansController {
 @UseGuards(JwtAuthGuard)
 export class TechnicianSubscriptionsController {
   constructor(private readonly subscriptionsService: SubscriptionsService) {}
+
+  @Get('templates')
+  @Permissions('subscription:view')
+  @ApiOperation({ summary: '获取订阅套餐管理模板列表' })
+  getTemplates() {
+    return this.subscriptionsService.getPlanTemplates();
+  }
 
   @Get()
   @Permissions('subscription:view')

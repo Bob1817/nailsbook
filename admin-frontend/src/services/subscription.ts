@@ -4,8 +4,19 @@ export interface SubscriptionPlan {
   id: number;
   name: string;
   code: string;
+  templateCode?: string | null;
   price: number;
+  discountPrice?: number | null;
+  originalPrice?: number;
+  effectivePrice?: number;
+  discountActive?: boolean;
+  isCurrentlyEffective?: boolean;
   billingCycle: string;
+  effectiveStartAt?: string | null;
+  effectiveEndAt?: string | null;
+  discountStartAt?: string | null;
+  discountEndAt?: string | null;
+  sortOrder?: number;
   maxCustomers?: number;
   maxMonthlyBookings?: number;
   maxWorks?: number;
@@ -16,10 +27,28 @@ export interface SubscriptionPlan {
   maxBookingPages?: number;
   targetStage?: string;
   description?: string;
-  features?: string;
+  features?: string | string[];
   status: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface PlanTemplate {
+  templateCode: string;
+  name: string;
+  description: string;
+  targetStage: string;
+  billingCycle: string;
+  price: number;
+  maxCustomers: number | null;
+  maxMonthlyBookings: number | null;
+  maxWorks: number | null;
+  maxStorageBytes: number | null;
+  maxMarketingExports: number | null;
+  maxMonthlySms: number | null;
+  maxEmployees: number | null;
+  maxBookingPages: number | null;
+  features: string[];
 }
 
 export type SubscriptionPlanInput = Omit<
@@ -118,6 +147,11 @@ export interface TechnicianSubscriptionDetail {
 }
 
 export const subscriptionService = {
+  getPlanTemplates: async (): Promise<PlanTemplate[]> => {
+    const response = await api.get('/subscription-plans/templates');
+    return response.data;
+  },
+
   getPlans: async (): Promise<SubscriptionPlan[]> => {
     const response = await api.get('/subscription-plans');
     return response.data;

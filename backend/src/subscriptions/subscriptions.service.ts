@@ -11,6 +11,13 @@ import { PrismaService } from '../common/prisma/prisma.service';
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsBoolean, IsInt, IsOptional, IsString } from 'class-validator';
+import {
+  PLAN_TEMPLATES,
+  calculateSubscriptionExpiry,
+  calculateUpgradeProration,
+  isPlanCurrentlyEffective,
+  resolvePlanPricing,
+} from './subscription-pricing.util';
 
 export class CreateSubscriptionPlanDto {
   @ApiProperty({ description: '套餐名称', example: '基础版' })
@@ -19,11 +26,32 @@ export class CreateSubscriptionPlanDto {
   @ApiProperty({ description: '套餐代码', example: 'basic' })
   code: string;
 
-  @ApiProperty({ description: '价格', example: 99 })
+  @ApiPropertyOptional({ description: '套餐模板代码', example: 'starter' })
+  templateCode?: string;
+
+  @ApiProperty({ description: '原价（元）', example: 99 })
   price: number;
 
-  @ApiProperty({ description: '计费周期', example: 'monthly' })
+  @ApiPropertyOptional({ description: '折扣价（元）', example: 69, nullable: true })
+  discountPrice?: number | null;
+
+  @ApiProperty({ description: '计费周期（free/monthly/quarterly/yearly/permanent）', example: 'monthly' })
   billingCycle: string;
+
+  @ApiPropertyOptional({ description: '套餐生效开始时间' })
+  effectiveStartAt?: string | null;
+
+  @ApiPropertyOptional({ description: '套餐生效结束时间' })
+  effectiveEndAt?: string | null;
+
+  @ApiPropertyOptional({ description: '折扣生效开始时间' })
+  discountStartAt?: string | null;
+
+  @ApiPropertyOptional({ description: '折扣生效结束时间' })
+  discountEndAt?: string | null;
+
+  @ApiPropertyOptional({ description: '排序权重' })
+  sortOrder?: number;
 
   @ApiPropertyOptional({ description: '最大客户数', example: 50 })
   maxCustomers?: number;
@@ -142,12 +170,31 @@ export class SubscriptionsService implements OnModuleInit {
     }
   }
 
-  async findPlans(activeOnly = false) {
+  getPlanTemplates() {
+    return PLAN_TEMPLATES;
+  }
+
+  async findPlans(activeOnly = false, technicianId?: number) {
     await this.ensureDefaultPlans();
-    return this.prisma.subscriptionPlan.findMany({
+    const now = new Date();
+    const plans = await this.prisma.subscriptionPlan.findMany({
       where: activeOnly ? { status: 'active' } : undefined,
-      orderBy: { price: 'asc' },
+      orderBy: [{ sortOrder: 'asc' }, { price: 'asc' }],
     });
+
+    let currentSub: any = null;
+    if (technicianId && this.prisma.technicianSubscription?.findUnique) {
+      currentSub = await this.prisma.technicianSubscription.findUnique({
+        where: { technicianId },
+        include: { plan: true },
+      });
+    }
+
+    const filtered = activeOnly
+      ? plans.filter((plan: any) => isPlanCurrentlyEffective(plan, now))
+      : plans;
+
+    return filtered.map((plan: any) => this.mapPlan(plan, now, currentSub));
   }
 
   async getCurrentForTechnician(technicianId: number) {
@@ -622,6 +669,7 @@ export class SubscriptionsService implements OnModuleInit {
       this.getCurrentForTechnician(technicianId),
       this.findPlanById(planId),
     ]);
+    const now = new Date();
     const direction =
       this.planLevel(target.code) >= this.planLevel(current.plan.code)
         ? 'upgrade'
@@ -629,7 +677,16 @@ export class SubscriptionsService implements OnModuleInit {
     const effectiveAt =
       direction === 'downgrade' && current.expiredAt
         ? current.expiredAt
-        : new Date();
+        : now;
+    const proration = calculateUpgradeProration(
+      {
+        ...current,
+        planId: current.plan?.id,
+        plan: current.plan,
+      },
+      target,
+      now,
+    );
     const affected = Object.entries(current.entitlements)
       .filter(([key]) => key in this.planLimits(target))
       .map(([key, entitlement]) => {
@@ -646,7 +703,8 @@ export class SubscriptionsService implements OnModuleInit {
       direction,
       effectiveAt,
       currentPlan: current.plan,
-      targetPlan: this.mapPlan(target),
+      targetPlan: this.mapPlan(target, now),
+      proration,
       affected,
       dataRetention: '历史客户、预约、作品和经营数据不会删除',
     };
@@ -671,7 +729,29 @@ export class SubscriptionsService implements OnModuleInit {
     return plan;
   }
 
+  private parseOptionalDate(val?: string | Date | null): Date | null {
+    if (val === null || val === undefined || val === '') return null;
+    const d = val instanceof Date ? val : new Date(val);
+    if (Number.isNaN(d.getTime())) {
+      throw new BadRequestException('日期时间格式无效');
+    }
+    return d;
+  }
+
+  private validatePlanPayload(dto: Partial<CreateSubscriptionPlanDto>) {
+    if (dto.billingCycle) {
+      const validCycles = ['free', 'monthly', 'quarterly', 'yearly', 'permanent'];
+      if (!validCycles.includes(dto.billingCycle)) {
+        throw new BadRequestException('计费周期仅支持 free、monthly、quarterly、yearly、permanent');
+      }
+    }
+    if (dto.discountPrice != null && dto.price != null && Number(dto.discountPrice) >= Number(dto.price)) {
+      throw new BadRequestException('折扣价必须低于原价');
+    }
+  }
+
   async createPlan(dto: CreateSubscriptionPlanDto) {
+    this.validatePlanPayload(dto);
     const existing = await this.prisma.subscriptionPlan.findUnique({
       where: { code: dto.code },
     });
@@ -680,12 +760,19 @@ export class SubscriptionsService implements OnModuleInit {
       throw new ConflictException('Plan with this code already exists');
     }
 
-    return this.prisma.subscriptionPlan.create({
+    const created = await this.prisma.subscriptionPlan.create({
       data: {
         name: dto.name,
         code: dto.code,
+        templateCode: dto.templateCode || null,
         price: dto.price,
+        discountPrice: dto.discountPrice ?? null,
         billingCycle: dto.billingCycle,
+        effectiveStartAt: this.parseOptionalDate(dto.effectiveStartAt),
+        effectiveEndAt: this.parseOptionalDate(dto.effectiveEndAt),
+        discountStartAt: this.parseOptionalDate(dto.discountStartAt),
+        discountEndAt: this.parseOptionalDate(dto.discountEndAt),
+        sortOrder: dto.sortOrder ?? 0,
         maxCustomers: dto.maxCustomers,
         maxMonthlyBookings: dto.maxMonthlyBookings,
         maxWorks: dto.maxWorks,
@@ -700,18 +787,31 @@ export class SubscriptionsService implements OnModuleInit {
         status: dto.status || 'active',
       },
     });
+    return this.mapPlan(created);
   }
 
   async updatePlan(id: number, dto: Partial<CreateSubscriptionPlanDto>) {
-    await this.findPlanById(id);
-
-    return this.prisma.subscriptionPlan.update({
-      where: { id },
-      data: {
-        ...dto,
-        features: dto.features ? JSON.stringify(dto.features) : undefined,
-      },
+    const existing = await this.findPlanById(id);
+    this.validatePlanPayload({
+      price: dto.price ?? existing.price,
+      discountPrice: dto.discountPrice !== undefined ? dto.discountPrice : existing.discountPrice,
+      billingCycle: dto.billingCycle ?? existing.billingCycle,
     });
+
+    const data: any = { ...dto };
+    if (dto.features !== undefined) {
+      data.features = Array.isArray(dto.features) ? JSON.stringify(dto.features) : dto.features;
+    }
+    if (dto.effectiveStartAt !== undefined) data.effectiveStartAt = this.parseOptionalDate(dto.effectiveStartAt);
+    if (dto.effectiveEndAt !== undefined) data.effectiveEndAt = this.parseOptionalDate(dto.effectiveEndAt);
+    if (dto.discountStartAt !== undefined) data.discountStartAt = this.parseOptionalDate(dto.discountStartAt);
+    if (dto.discountEndAt !== undefined) data.discountEndAt = this.parseOptionalDate(dto.discountEndAt);
+
+    const updated = await this.prisma.subscriptionPlan.update({
+      where: { id },
+      data,
+    });
+    return this.mapPlan(updated);
   }
 
   async findTechnicianSubscriptions(technicianId?: number, status?: string) {
@@ -1223,10 +1323,22 @@ export class SubscriptionsService implements OnModuleInit {
     };
   }
 
-  private mapPlan(plan: any) {
+  private mapPlan(plan: any, now = new Date(), currentSub?: any) {
+    const pricing = resolvePlanPricing(plan, now);
+    const effective = isPlanCurrentlyEffective(plan, now);
+    const upgradePreview =
+      currentSub !== undefined
+        ? calculateUpgradeProration(currentSub, plan, now)
+        : undefined;
     return {
       ...plan,
       features: this.parseFeatures(plan.features),
+      originalPrice: pricing.originalPrice,
+      discountPrice: pricing.discountPrice,
+      discountActive: pricing.discountActive,
+      effectivePrice: pricing.effectivePrice,
+      isCurrentlyEffective: effective,
+      ...(upgradePreview ? { upgradePreview } : {}),
     };
   }
 

@@ -1210,8 +1210,15 @@ model SubscriptionPlan {
   id                  Int                      @id @default(autoincrement())
   name                String
   code                String                   @unique
+  templateCode        String?
   price               Float
+  discountPrice       Float?
   billingCycle        String
+  effectiveStartAt    DateTime?
+  effectiveEndAt      DateTime?
+  discountStartAt     DateTime?
+  discountEndAt       DateTime?
+  sortOrder           Int                      @default(0)
   maxCustomers        Int?
   maxMonthlyBookings  Int?
   maxWorks            Int?
@@ -1285,20 +1292,21 @@ model BookingTradeOrder {
 }
 
 model TechnicianSubscription {
-  id                Int              @id @default(autoincrement())
-  technicianId      Int              @unique
-  planId            Int
-  status            String           @default("active")
-  startedAt         DateTime
-  expiredAt         DateTime?
-  cancelledAt       DateTime?
-  pendingPlanCode   String?
-  changeEffectiveAt DateTime?
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @default(now()) @updatedAt
-  technician        Technician       @relation(fields: [technicianId], references: [id])
-  plan              SubscriptionPlan @relation(fields: [planId], references: [id])
-  paymentOrders     PaymentOrder[]
+  id                  Int              @id @default(autoincrement())
+  technicianId        Int              @unique
+  planId              Int
+  status              String           @default("active")
+  startedAt           DateTime
+  expiredAt           DateTime?
+  cancelledAt         DateTime?
+  lastPaidAmountCents Int              @default(0)
+  pendingPlanCode     String?
+  changeEffectiveAt   DateTime?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @default(now()) @updatedAt
+  technician          Technician       @relation(fields: [technicianId], references: [id])
+  plan                SubscriptionPlan @relation(fields: [planId], references: [id])
+  paymentOrders       PaymentOrder[]
 
   @@index([status])
   @@index([expiredAt])
