@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { ChatGateway } from '../chat/chat.gateway';
+import { eraseAccountData, findAccountBlockers } from './account-erasure.util';
 
 type AccountType = 'client' | 'technician';
 @Injectable()
@@ -13,12 +14,7 @@ export class AccountDeletionService {
   }
 
   async blockers(tx: Prisma.TransactionClient, type: AccountType, id: number) {
-    const owner = type === 'client' ? { clientUserId: id } : { technicianId: id };
-    const orders = await tx.order.count({ where: { ...owner, status: { notIn: ['completed', 'cancelled', 'expired'] } } });
-    const payments = await tx.paymentOrder.count({ where: { ...owner, status: { notIn: ['paid', 'closed', 'failed', 'refunded', 'cancelled'] } } });
-    const accounts = await tx.rewardAccount.findMany({ where: owner, include: { ledger: true } });
-    const funds = accounts.filter(a => Math.abs(a.ledger.filter(entry => ['available', 'used'].includes(entry.status)).reduce((sum, entry) => sum + entry.amount, 0)) > 0.001 || a.ledger.some(entry => entry.status === 'pending')).length;
-    return [orders ? `还有 ${orders} 个未结束预约` : '', payments ? `还有 ${payments} 笔支付或退款待处理` : '', funds ? `还有 ${funds} 个基金账户余额待处理` : ''].filter(Boolean);
+    return findAccountBlockers(tx, type, id);
   }
 
   async own(type: AccountType, id: number) {
@@ -95,20 +91,6 @@ export class AccountDeletionService {
   }
 
   private async erase(tx: Prisma.TransactionClient, type: AccountType, id: number) {
-    const owner = type === 'client' ? { clientUserId: id } : { technicianId: id };
-    const common = { status: 'deleted', phone: `deleted_${type}_${id}`, passwordHash: '', managedPasswordCiphertext: null, avatarUrl: null, city: null, bio: null, tokenVersion: { increment: 1 } };
-    if (type === 'client') {
-      await tx.clientUser.update({ where: { id }, data: { ...common, nickname: '已注销用户' } });
-      await tx.clientAddress.deleteMany({ where: { clientId: id } });
-      await tx.customer.updateMany({ where: { clientUserId: id }, data: { name: '已注销用户', phone: null, avatarUrl: null, gender: null, birthday: null, address: null, tags: null, notes: null } });
-      await tx.nailWorkShareGrant.updateMany({ where: { clientUserId: id }, data: { revokedAt: new Date() } });
-    } else {
-      await tx.technician.update({ where: { id }, data: { ...common, name: '已注销美甲师', invitationCode: null, homeService: false, shopService: false, shopAddresses: null, socialMedia: null, coverImageUrl: null, province: null, serviceArea: null } });
-      await tx.nailWork.updateMany({ where: { techId: id }, data: { isVisible: false } });
-    }
-    await tx.clientTechBinding.updateMany({ where: type === 'client' ? { clientId: id } : { techId: id }, data: { status: 'inactive', isDefault: false, note: null } });
-    await tx.deviceToken.deleteMany({ where: { ...owner, role: type } });
-    await tx.wechatSubscriptionAuthorization.deleteMany({ where: { ownerKey: `${type}:${id}`, role: type } });
-    await tx.wechatIdentity.updateMany({ where: owner, data: type === 'client' ? { clientUserId: null } : { technicianId: null } });
+    return eraseAccountData(tx, type, id);
   }
 }

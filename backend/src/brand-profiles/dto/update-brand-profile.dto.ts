@@ -61,7 +61,7 @@ export class UpdateBrandProfileDto {
   wechat?: string;
 
   @IsOptional()
-  socialMedia?: Record<string, string>;
+  socialMedia?: Record<string, any>;
 
   @IsOptional()
   @IsString()

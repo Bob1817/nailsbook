@@ -4,9 +4,11 @@ import {
   assertClientBinding,
   resolvePhoneRole,
   phoneAccounts,
+  REGISTERED_PHONE,
   ROLE_SWITCH_DISABLED,
   INVALID_ARTIST_INVITE,
 } from '../common/account-role-policy';
+import { eraseAccountData, findAccountBlockers } from '../account-deletion/account-erasure.util';
 import { recordWorkShareRegistration } from '../common/work-share-registration';
 import { BindSharedWorkDto } from './dto/bind-shared-work.dto';
 import {
@@ -353,7 +355,17 @@ export class ClientAuthService {
     dto: RegisterByInviteDto,
     wechatIdentity?: { appId: string; openId: string; unionId?: string },
   ) {
-    await assertPhoneAvailable(this.prisma, dto.phone);
+    const existing = await phoneAccounts(this.prisma, dto.phone);
+    if (existing.client) {
+      throw new ConflictException(REGISTERED_PHONE);
+    }
+    if (existing.technician && !dto.confirmTechnicianConversion) {
+      throw new ConflictException({
+        code: 'TECHNICIAN_ACCOUNT_EXISTS',
+        needsTechnicianConversion: true,
+        message: '该手机号码已经注册了美甲师账号，是否将美甲师账号转换成客户账号？',
+      });
+    }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const registrationSource = dto.source || 'invite';
@@ -367,6 +379,13 @@ export class ClientAuthService {
     }
 
     const client = await this.prisma.$transaction(async (tx) => {
+      if (existing.technician && dto.confirmTechnicianConversion) {
+        const blockers = await findAccountBlockers(tx, 'technician', existing.technician.id);
+        if (blockers.length) {
+          throw new ConflictException(`美甲师账号尚有未完结事项，暂无法注销转换：${blockers.join('；')}`);
+        }
+        await eraseAccountData(tx, 'technician', existing.technician.id);
+      }
       await assertPhoneAvailable(tx, dto.phone);
       const created = await tx.clientUser.create({
         data: {

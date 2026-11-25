@@ -1,5 +1,5 @@
 import { WorkShareRegistrationDto } from '../../common/work-share-registration';
-import { IsIn, IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
+import { IsBoolean, IsIn, IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsStrongPassword } from '../../common/validators/password.validator';
 
@@ -28,4 +28,9 @@ export class RegisterByInviteDto extends WorkShareRegistrationDto {
   @IsOptional()
   @IsIn(['invite', 'card'])
   source?: 'invite' | 'card';
+
+  @ApiPropertyOptional({ description: '确认将同手机号美甲师账号注销并转换为客户账号' })
+  @IsOptional()
+  @IsBoolean()
+  confirmTechnicianConversion?: boolean;
 }

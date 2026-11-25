@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { UpdateBrandProfileDto } from './dto/update-brand-profile.dto';
+import { normalizeSocialMediaUpdate } from '../common/social-media.util';
 
 const clean = (value?: string) => value?.trim() || null;
 
@@ -106,11 +107,14 @@ export class BrandProfilesService {
     if (dto.publicationStatus === 'published' && !wechat) {
       throw new BadRequestException('请先填写客户沟通微信号，再开启美甲师主页');
     }
-    const updatedSocial = {
-      ...social,
-      ...(dto.socialMedia ? Object.fromEntries(Object.entries(dto.socialMedia).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : ''])) : {}),
-      ...(wechat !== undefined ? { wechat } : {}),
-    };
+    const updatedSocial = normalizeSocialMediaUpdate(
+      dto.socialMedia
+        ? { ...dto.socialMedia, ...(wechat !== undefined ? { wechat } : {}) }
+        : wechat !== undefined
+          ? { wechat }
+          : undefined,
+      social,
+    );
     await this.prisma.$transaction(async (tx) => {
       if (dto.wechat !== undefined || dto.socialMedia !== undefined) {
         await tx.technician.update({ where: { id: technicianId }, data: {

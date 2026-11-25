@@ -13,6 +13,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { bookingReadiness } from '../technicians/booking-readiness';
+import { normalizeSocialMediaUpdate } from '../common/social-media.util';
 import { parseHomeSettings, serviceFormIssues } from '../technicians/service-forms';
 import { VerificationCodeService } from '../common/verification-code/verification-code.service';
 import { SmsService } from '../common/sms/sms.service';
@@ -771,13 +772,9 @@ export class TechnicianAuthService {
         await this.prisma.brandProfile.findFirst({ where: { technicianId, publicationStatus: 'published' }, select: { id: true } })) {
         throw new BadRequestException('主页已开启，客户沟通微信号不能为空');
       }
-      const normalizedSocialMedia = Object.fromEntries(
-        Object.entries(dto.socialMedia).filter(
-          ([key, value]) =>
-            key &&
-            ((typeof value === 'string' && value.trim()) ||
-              typeof value === 'boolean'),
-        ),
+      const normalizedSocialMedia = normalizeSocialMediaUpdate(
+        dto.socialMedia,
+        {},
       );
       updateData.socialMedia = Object.keys(normalizedSocialMedia).length
         ? JSON.stringify(normalizedSocialMedia)

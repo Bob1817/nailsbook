@@ -1,5 +1,5 @@
 import { WorkShareRegistrationDto } from '../../common/work-share-registration';
-import { IsOptional, IsString, MinLength, IsInt, Min } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Min, MinLength, ValidateIf } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsStrongPassword } from '../../common/validators/password.validator';
 
@@ -9,10 +9,11 @@ class WechatPhoneBaseDto extends WorkShareRegistrationDto {
   @MinLength(1)
   wechatSessionToken: string;
 
-  @ApiProperty({ description: 'getPhoneNumber 回调返回的一次性 code' })
+  @ApiPropertyOptional({ description: 'getPhoneNumber 回调返回的一次性 code' })
+  @ValidateIf((o) => !o.conversionToken)
   @IsString()
   @MinLength(1)
-  phoneCode: string;
+  phoneCode?: string;
 }
 
 export class WechatClientCompleteDto extends WechatPhoneBaseDto {
@@ -31,6 +32,21 @@ export class WechatClientCompleteDto extends WechatPhoneBaseDto {
   @IsOptional()
   @IsString()
   source?: string;
+
+  @ApiPropertyOptional({ enum: ['client', 'technician'] })
+  @IsOptional()
+  @IsIn(['client', 'technician'])
+  targetRole?: 'client' | 'technician';
+
+  @ApiPropertyOptional({ description: '确认将美甲师账号注销并转换为客户账号' })
+  @IsOptional()
+  @IsBoolean()
+  confirmTechnicianConversion?: boolean;
+
+  @ApiPropertyOptional({ description: '首次返回需确认角色转换时签发的短期凭证' })
+  @IsOptional()
+  @IsString()
+  conversionToken?: string;
 }
 
 export class WechatTechnicianCompleteDto extends WechatPhoneBaseDto {

@@ -1,5 +1,6 @@
 import { resolvePhoneRole } from '../common/account-role-policy';
 import { recordWorkShareRegistration } from '../common/work-share-registration';
+import { eraseAccountData, findAccountBlockers } from '../account-deletion/account-erasure.util';
 import {
   BadRequestException,
   BadGatewayException,
@@ -111,12 +112,63 @@ export class WechatAuthService {
 
   async completeClient(dto: WechatClientCompleteDto) {
     const session = await this.verifySessionToken(dto.wechatSessionToken);
-    const phone = await this.exchangePhoneCode(dto.phoneCode);
+    let phone: string;
+    if (dto.conversionToken) {
+      let payload: any;
+      try {
+        payload = this.jwt.verify(dto.conversionToken);
+      } catch {
+        throw new UnauthorizedException('角色转换确认已过期，请重新授权');
+      }
+      if (
+        payload?.tokenType !== 'tech-to-client-conversion' ||
+        payload.openId !== session.openId ||
+        !payload.phone
+      ) {
+        throw new UnauthorizedException('角色转换凭证无效，请重试');
+      }
+      phone = payload.phone;
+    } else {
+      phone = await this.exchangePhoneCode(dto.phoneCode || '');
+    }
     const account = await resolvePhoneRole(this.prisma, phone);
     if (account.technician) {
-      const result = await this.technicianAuth.loginByWechat(account.technician.id);
-      await this.linkIdentity(session, 'technician', account.technician.id);
-      return { authenticated: true, role: 'technician' as const, roles: ['technician'], ...result };
+      const isClientFlow = Boolean(
+        dto.inviteCode ||
+        dto.quickBookingTechId ||
+        dto.targetRole === 'client' ||
+        dto.confirmTechnicianConversion,
+      );
+      if (!isClientFlow) {
+        const result = await this.technicianAuth.loginByWechat(account.technician.id);
+        await this.linkIdentity(session, 'technician', account.technician.id);
+        return { authenticated: true, role: 'technician' as const, roles: ['technician'], ...result };
+      }
+      if (!dto.confirmTechnicianConversion) {
+        const conversionToken = this.jwt.sign(
+          {
+            tokenType: 'tech-to-client-conversion',
+            phone,
+            technicianId: account.technician.id,
+            openId: session.openId,
+          },
+          { expiresIn: '5m' },
+        );
+        return {
+          authenticated: false,
+          needsTechnicianConversion: true,
+          conversionToken,
+          phone,
+          message: '该手机号码已经注册了美甲师账号，是否将美甲师账号转换成客户账号？',
+        };
+      }
+      await this.prisma.$transaction(async (tx) => {
+        const blockers = await findAccountBlockers(tx, 'technician', account.technician!.id);
+        if (blockers.length) {
+          throw new ConflictException(`美甲师账号尚有未完结事项，暂无法注销转换：${blockers.join('；')}`);
+        }
+        await eraseAccountData(tx, 'technician', account.technician!.id);
+      });
     }
     let client = account.client;
     const isNewClient = !client;
@@ -133,7 +185,7 @@ export class WechatAuthService {
     }
 
     if (!client) {
-      if (!resolvedInviteCode) {
+      if (!resolvedInviteCode && !dto.confirmTechnicianConversion) {
         // 手机号已由微信侧验证，但账号未注册：返回可识别状态，由前端提示并跳转注册
         return {
           authenticated: false,
@@ -142,23 +194,34 @@ export class WechatAuthService {
           message: '该手机号尚未注册，请先完成注册',
         };
       }
-      if (dto.quickBookingTechId) {
-        await this.clientAuth.validateQuickBookingInvite(
-          dto.quickBookingTechId,
-          resolvedInviteCode,
+      if (!resolvedInviteCode && dto.confirmTechnicianConversion) {
+        client = await this.prisma.clientUser.create({
+          data: {
+            phone,
+            passwordHash: '',
+            managedPasswordCiphertext: null,
+            status: 'active',
+          },
+        });
+      } else {
+        if (dto.quickBookingTechId) {
+          await this.clientAuth.validateQuickBookingInvite(
+            dto.quickBookingTechId,
+            resolvedInviteCode!,
+          );
+        }
+        const registered = await this.clientAuth.registerClientByWechatInvite(
+          {
+            phone,
+            inviteCode: resolvedInviteCode!,
+            source: dto.source === 'card' ? 'card' : 'invite',
+          },
+          session,
         );
+        client = await this.prisma.clientUser.findUnique({
+          where: { id: registered.client.id },
+        });
       }
-      const registered = await this.clientAuth.registerClientByWechatInvite(
-        {
-          phone,
-          inviteCode: resolvedInviteCode,
-          source: dto.source === 'card' ? 'card' : 'invite',
-        },
-        session,
-      );
-      client = await this.prisma.clientUser.findUnique({
-        where: { id: registered.client.id },
-      });
     }
 
     if (!client) throw new BadRequestException('客户账号创建失败');
@@ -187,7 +250,7 @@ export class WechatAuthService {
 
   async completeTechnician(dto: WechatTechnicianCompleteDto) {
     const session = await this.verifySessionToken(dto.wechatSessionToken);
-    const phone = await this.exchangePhoneCode(dto.phoneCode);
+    const phone = await this.exchangePhoneCode(dto.phoneCode || '');
     const account = await resolvePhoneRole(this.prisma, phone);
     if (account.client) {
       const result = await this.clientAuth.loginByWechat(account.client.id);
@@ -230,7 +293,7 @@ export class WechatAuthService {
 
   /** 忘记密码（客户）：微信手机号授权验证号码归属后直接重置，无需短信验证码 */
   async resetClientPasswordByPhoneCode(dto: WechatPhoneResetDto) {
-    const phone = await this.exchangePhoneCode(dto.phoneCode);
+    const phone = await this.exchangePhoneCode(dto.phoneCode || '');
     if (phone !== dto.phone) {
       throw new BadRequestException('微信授权手机号与填写手机号不一致，请重新授权');
     }
@@ -239,7 +302,7 @@ export class WechatAuthService {
 
   /** 忘记密码（美甲师）：微信手机号授权验证号码归属后直接重置，无需短信验证码 */
   async resetTechnicianPasswordByPhoneCode(dto: WechatPhoneResetDto) {
-    const phone = await this.exchangePhoneCode(dto.phoneCode);
+    const phone = await this.exchangePhoneCode(dto.phoneCode || '');
     if (phone !== dto.phone) {
       throw new BadRequestException('微信授权手机号与填写手机号不一致，请重新授权');
     }
@@ -248,7 +311,7 @@ export class WechatAuthService {
 
   /** 首次设密（美甲师）：微信手机号授权验证号码归属后设置登录密码并自动登录 */
   async setTechnicianInitialPasswordByPhoneCode(dto: WechatPhoneResetDto) {
-    const phone = await this.exchangePhoneCode(dto.phoneCode);
+    const phone = await this.exchangePhoneCode(dto.phoneCode || '');
     if (phone !== dto.phone) {
       throw new BadRequestException('微信授权手机号与填写手机号不一致，请重新授权');
     }

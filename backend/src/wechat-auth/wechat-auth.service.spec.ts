@@ -106,14 +106,18 @@ describe('WechatAuthService', () => {
       expect(clientAuth.loginAsClientForTechnician).not.toHaveBeenCalled();
     });
 
-    it('ignores client invitation context when the phone belongs to a technician', async () => {
+    it('prompts technician-to-client conversion when client invitation context is present on a technician phone', async () => {
       clientAuth.validateQuickBookingInvite = jest.fn().mockRejectedValue(new Error('预约邀请已失效'));
       await expect(service.completeClient({
         wechatSessionToken: 'session',
         phoneCode: 'phone-code',
         inviteCode: 'EXPIRED1',
         quickBookingTechId: 7,
-      })).resolves.toMatchObject({ role: 'technician', accessToken: 'technician-jwt' });
+      })).resolves.toMatchObject({
+        authenticated: false,
+        needsTechnicianConversion: true,
+        phone: '15267003169',
+      });
       expect(clientAuth.validateQuickBookingInvite).not.toHaveBeenCalled();
     });
 
