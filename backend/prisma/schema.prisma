@@ -532,6 +532,7 @@ model ClientUser {
   id                        Int                    @id @default(autoincrement())
   nickname                  String?
   phone                     String                 @unique
+  wechat                    String?
   passwordHash              String                 @default("")
   managedPasswordCiphertext String?
   tokenVersion              Int                    @default(0)

@@ -408,6 +408,7 @@ export class PaymentsService {
           const confirmed = await this.confirmPaid(
             payment.paymentNo,
             transaction.transaction_id,
+            transaction.amount?.payer_total ?? transaction.amount?.total,
           );
           return { payment: confirmed, paid: true };
         }
@@ -435,6 +436,43 @@ export class PaymentsService {
     };
   }
 
+  async cancelSubscriptionPayment(
+    technicianId: number,
+    paymentNo: string,
+    reason?: string,
+  ) {
+    const payment = await this.prisma.paymentOrder.findUnique({
+      where: { paymentNo },
+    });
+    if (
+      !payment ||
+      payment.technicianId !== technicianId ||
+      payment.paymentType !== 'subscription'
+    ) {
+      throw new NotFoundException('支付单不存在');
+    }
+    if (payment.status !== 'pending') {
+      return {
+        payment: this.mapPayment(payment),
+        cancelled: payment.status === 'cancelled',
+      };
+    }
+    await this.prisma.paymentOrder.updateMany({
+      where: { id: payment.id, status: 'pending' },
+      data: {
+        status: 'cancelled',
+        failureReason: (reason || '用户取消支付').slice(0, 240),
+      },
+    });
+    const latest = await this.prisma.paymentOrder.findUniqueOrThrow({
+      where: { id: payment.id },
+    });
+    return {
+      payment: this.mapPayment(latest),
+      cancelled: latest.status === 'cancelled',
+    };
+  }
+
   async listForOrder(clientUserId: number, orderId: number) {
     const owned = await this.prisma.order.findFirst({
       where: { id: orderId, clientUserId },
@@ -448,7 +486,11 @@ export class PaymentsService {
     return payments.map((item) => this.mapPayment(item));
   }
 
-  async confirmPaid(paymentNo: string, providerTradeNo: string) {
+  async confirmPaid(
+    paymentNo: string,
+    providerTradeNo: string,
+    paidAmountCents?: number,
+  ) {
     const payment = await this.prisma.paymentOrder.findUnique({
       where: { paymentNo },
     });
@@ -458,12 +500,37 @@ export class PaymentsService {
       throw new BadRequestException('当前支付单不能确认成功');
     }
 
+    const resolvedPaidCents =
+      typeof paidAmountCents === 'number' &&
+      Number.isFinite(paidAmountCents) &&
+      paidAmountCents >= 0
+        ? Math.round(paidAmountCents)
+        : payment.amountCents;
+    let nextProviderPayload = payment.providerPayload;
+    try {
+      const parsed = payment.providerPayload
+        ? JSON.parse(payment.providerPayload)
+        : {};
+      if (parsed && typeof parsed === 'object') {
+        parsed.paidAmountCents = resolvedPaidCents;
+        nextProviderPayload = JSON.stringify(parsed);
+      }
+    } catch {}
+
     let changedBooking: { id: number; technicianId: number } | undefined;
     const updated = await this.prisma.$transaction(async (tx) => {
       const paidAt = new Date();
       const claimed = await tx.paymentOrder.updateMany({
         where: { id: payment.id, status: 'pending' },
-        data: { status: 'paid', providerTradeNo, paidAt, failureReason: null },
+        data: {
+          status: 'paid',
+          providerTradeNo,
+          paidAt,
+          failureReason: null,
+          ...(nextProviderPayload !== payment.providerPayload
+            ? { providerPayload: nextProviderPayload }
+            : {}),
+        },
       });
       if (claimed.count !== 1) {
         return tx.paymentOrder.findUniqueOrThrow({ where: { id: payment.id } });
@@ -683,7 +750,11 @@ export class PaymentsService {
     if (!transaction.transaction_id) {
       throw new BadRequestException('微信支付交易号缺失');
     }
-    await this.confirmPaid(payment.paymentNo, transaction.transaction_id);
+    await this.confirmPaid(
+      payment.paymentNo,
+      transaction.transaction_id,
+      transaction.amount?.payer_total ?? transaction.amount?.total,
+    );
     return { code: 'SUCCESS', message: '成功' };
   }
 

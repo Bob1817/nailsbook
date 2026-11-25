@@ -747,72 +747,135 @@ export class SubscriptionsService implements OnModuleInit {
   }) {
     const page = Math.max(1, params.page || 1);
     const limit = Math.min(100, Math.max(1, params.limit || 20));
+
+    const now = new Date();
+    // 超过 15 分钟仍停留在 pending 的订阅单自动标记为超时关闭，避免长期挂在“支付中”
+    const expireBefore = new Date(now.getTime() - 15 * 60 * 1000);
+    await this.prisma.paymentOrder.updateMany({
+      where: {
+        paymentType: 'subscription',
+        status: 'pending',
+        createdAt: { lt: expireBefore },
+      },
+      data: {
+        status: 'cancelled',
+        failureReason: '支付超时未完成，已自动关闭',
+      },
+    });
+
     const where: any = { paymentType: 'subscription' };
     if (params.status) where.status = params.status;
     if (params.technicianId) where.technicianId = params.technicianId;
 
-    const now = new Date();
     const thirtyDaysAgo = new Date(now);
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const sevenDaysLater = new Date(now);
     sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
 
-    const [records, total, totalPaidAgg, last30DaysAgg, expiringIn7Days] =
-      await Promise.all([
-        this.prisma.paymentOrder.findMany({
-          where,
-          skip: (page - 1) * limit,
-          take: limit,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            technician: { select: { id: true, name: true, phone: true } },
-            subscription: {
-              include: {
-                plan: {
-                  select: { id: true, name: true, code: true, price: true },
-                },
+    const [
+      records,
+      total,
+      totalPaidAgg,
+      last30DaysAgg,
+      expiringIn7Days,
+      allPlans,
+    ] = await Promise.all([
+      this.prisma.paymentOrder.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          technician: { select: { id: true, name: true, phone: true } },
+          subscription: {
+            include: {
+              plan: {
+                select: { id: true, name: true, code: true, price: true },
               },
             },
           },
-        }),
-        this.prisma.paymentOrder.count({ where }),
-        this.prisma.paymentOrder.aggregate({
-          where: { paymentType: 'subscription', status: 'paid' },
-          _sum: { amountCents: true },
-          _count: { id: true },
-        }),
-        this.prisma.paymentOrder.aggregate({
-          where: {
-            paymentType: 'subscription',
-            status: 'paid',
-            paidAt: { gte: thirtyDaysAgo },
-          },
-          _sum: { amountCents: true },
-          _count: { id: true },
-        }),
-        this.prisma.technicianSubscription.count({
-          where: {
-            status: 'active',
-            expiredAt: { gte: now, lte: sevenDaysLater },
-            plan: { price: { gt: 0 } },
-          },
-        }),
-      ]);
+        },
+      }),
+      this.prisma.paymentOrder.count({ where }),
+      this.prisma.paymentOrder.aggregate({
+        where: { paymentType: 'subscription', status: 'paid' },
+        _sum: { amountCents: true },
+        _count: { id: true },
+      }),
+      this.prisma.paymentOrder.aggregate({
+        where: {
+          paymentType: 'subscription',
+          status: 'paid',
+          paidAt: { gte: thirtyDaysAgo },
+        },
+        _sum: { amountCents: true },
+        _count: { id: true },
+      }),
+      this.prisma.technicianSubscription.count({
+        where: {
+          status: 'active',
+          expiredAt: { gte: now, lte: sevenDaysLater },
+          plan: { price: { gt: 0 } },
+        },
+      }),
+      this.prisma.subscriptionPlan.findMany({
+        select: { id: true, name: true, code: true, price: true },
+      }),
+    ]);
+
+    const planByCode = new Map(allPlans.map((p) => [p.code, p]));
+    const planById = new Map(allPlans.map((p) => [p.id, p]));
 
     return {
-      data: records.map((item) => ({
-        id: item.id,
-        paymentNo: item.paymentNo,
-        providerTradeNo: item.providerTradeNo,
-        amount: Number((item.amountCents / 100).toFixed(2)),
-        channel: item.channel,
-        status: item.status,
-        paidAt: item.paidAt,
-        createdAt: item.createdAt,
-        technicianId: item.technicianId,
-        technician: item.technician,
-        plan: item.subscription?.plan || null,
-      })),
+      data: records.map((item) => {
+        let payload: {
+          targetPlanCode?: string;
+          targetPlanId?: number;
+          paidAmountCents?: number;
+        } | null = null;
+        try {
+          payload = item.providerPayload
+            ? JSON.parse(item.providerPayload)
+            : null;
+        } catch {}
+
+        const resolvedPlan =
+          (payload?.targetPlanCode
+            ? planByCode.get(payload.targetPlanCode)
+            : null) ||
+          (payload?.targetPlanId ? planById.get(payload.targetPlanId) : null) ||
+          item.subscription?.plan ||
+          null;
+
+        const payableAmount = Number((item.amountCents / 100).toFixed(2));
+        const paidAmount =
+          item.status === 'paid'
+            ? Number(
+                (
+                  ((typeof payload?.paidAmountCents === 'number'
+                    ? payload.paidAmountCents
+                    : item.amountCents) || 0) / 100
+                ).toFixed(2),
+              )
+            : null;
+
+        return {
+          id: item.id,
+          paymentNo: item.paymentNo,
+          providerTradeNo: item.providerTradeNo,
+          amount: payableAmount,
+          payableAmount,
+          paidAmount,
+          channel: item.channel,
+          status: item.status,
+          failureReason: item.failureReason || null,
+          paidAt: item.paidAt,
+          createdAt: item.createdAt,
+          technicianId: item.technicianId,
+          technician: item.technician,
+          plan: resolvedPlan,
+        };
+      }),
       meta: {
         total,
         page,

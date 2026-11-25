@@ -124,6 +124,18 @@ export class TechnicianSubscriptionsPublicController {
     );
   }
 
+  @Post('payments/:paymentNo/cancel')
+  @ApiOperation({ summary: '用户取消微信支付收银台后同步关闭待支付单' })
+  cancelPayment(
+    @Req() request: { user: { technicianId: number } },
+    @Param('paymentNo') paymentNo: string,
+  ) {
+    return this.paymentsService.cancelSubscriptionPayment(
+      request.user.technicianId,
+      paymentNo,
+    );
+  }
+
   @Get('change-preview/:planId')
   @ApiOperation({ summary: '预览套餐变更后的额度和只读影响' })
   previewChange(

@@ -430,7 +430,7 @@ describe('PaymentsService', () => {
 
     const res = await service.getSubscriptionPaymentStatus(5, 'SUB999');
     expect(wechatPay.queryTransactionByOutTradeNo).toHaveBeenCalledWith('SUB999');
-    expect(confirmSpy).toHaveBeenCalledWith('SUB999', 'WX_TX_999');
+    expect(confirmSpy).toHaveBeenCalledWith('SUB999', 'WX_TX_999', 2900);
     expect(res.paid).toBe(true);
   });
 

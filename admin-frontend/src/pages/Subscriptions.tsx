@@ -48,7 +48,9 @@ const { Text } = Typography;
 
 const PAYMENT_STATUS_MAP: Record<string, { label: string; color: string }> = {
   paid: { label: '已支付', color: 'success' },
+  pending: { label: '支付中', color: 'processing' },
   created: { label: '待支付', color: 'processing' },
+  cancelled: { label: '已取消', color: 'default' },
   closed: { label: '已关闭', color: 'default' },
   failed: { label: '支付失败', color: 'error' },
   refunded: { label: '已退款', color: 'warning' },
@@ -171,23 +173,43 @@ const Subscriptions: React.FC = () => {
       ),
     },
     {
-      title: '订阅套餐',
+      title: '目标套餐',
       key: 'plan',
-      render: (_: unknown, record: SubscriptionPayment) => record.plan?.name || '-',
+      render: (_: unknown, record: SubscriptionPayment) => record.plan?.name || '—',
+    },
+    {
+      title: '应付金额',
+      key: 'payableAmount',
+      render: (_: unknown, record: SubscriptionPayment) => (
+        <Text>¥{Number(record.payableAmount ?? record.amount ?? 0).toFixed(2)}</Text>
+      ),
     },
     {
       title: '实付金额',
-      dataIndex: 'amount',
-      key: 'amount',
-      render: (amount: number) => <Text strong>¥{Number(amount).toFixed(2)}</Text>,
+      key: 'paidAmount',
+      render: (_: unknown, record: SubscriptionPayment) =>
+        record.status === 'paid' && record.paidAmount != null ? (
+          <Text strong>¥{Number(record.paidAmount).toFixed(2)}</Text>
+        ) : (
+          <Text type="secondary">—</Text>
+        ),
     },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => {
+      render: (status: string, record: SubscriptionPayment) => {
         const cfg = PAYMENT_STATUS_MAP[status] || { label: status, color: 'default' };
-        return <Tag color={cfg.color}>{cfg.label}</Tag>;
+        return (
+          <div>
+            <Tag color={cfg.color}>{cfg.label}</Tag>
+            {record.failureReason && status !== 'paid' && (
+              <div style={{ fontSize: 12, color: 'var(--nb-muted)', marginTop: 2 }}>
+                {record.failureReason}
+              </div>
+            )}
+          </div>
+        );
       },
     },
     {
@@ -323,8 +345,9 @@ const Subscriptions: React.FC = () => {
               }}
               options={[
                 { value: 'paid', label: '已支付' },
-                { value: 'created', label: '待支付' },
-                { value: 'closed', label: '已关闭' },
+                { value: 'pending', label: '支付中' },
+                { value: 'cancelled', label: '已取消' },
+                { value: 'failed', label: '支付失败' },
                 { value: 'refunded', label: '已退款' },
               ]}
             />
@@ -354,13 +377,23 @@ const Subscriptions: React.FC = () => {
                       </div>
                       <div className="admin-app-card-body">
                         <div className="admin-app-card-row">
-                          <span className="admin-app-card-label">实付金额</span>
+                          <span className="admin-app-card-label">应付金额</span>
                           <span className="admin-app-card-value">
-                            <Text strong>¥{Number(item.amount).toFixed(2)}</Text>
+                            ¥{Number(item.payableAmount ?? item.amount ?? 0).toFixed(2)}
                           </span>
                         </div>
                         <div className="admin-app-card-row">
-                          <span className="admin-app-card-label">套餐</span>
+                          <span className="admin-app-card-label">实付金额</span>
+                          <span className="admin-app-card-value">
+                            {item.status === 'paid' && item.paidAmount != null ? (
+                              <Text strong>¥{Number(item.paidAmount).toFixed(2)}</Text>
+                            ) : (
+                              <Text type="secondary">—</Text>
+                            )}
+                          </span>
+                        </div>
+                        <div className="admin-app-card-row">
+                          <span className="admin-app-card-label">目标套餐</span>
                           <span className="admin-app-card-value">{item.plan?.name || '—'}</span>
                         </div>
                         <div className="admin-app-card-row">

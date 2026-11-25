@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { WechatPlatformConfigService } from '../wechat-platform-config/wechat-platform-config.service';
 import { getBusinessDateTimeParts } from '../orders/business-time';
@@ -214,7 +214,7 @@ export class WechatSubscribeMessagesService {
     });
   }
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron('5 * * * * *')
   async processBookingOutbox() {
     const events = await this.prisma.notificationEvent.findMany({
       where: {
@@ -442,7 +442,7 @@ export class WechatSubscribeMessagesService {
     return { sent: delivered ? 1 : 0 };
   }
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron('20 * * * * *')
   async sendUnreadConversationNotifications() {
     const cutoff = new Date(Date.now() - 5 * 60 * 1000);
     const messages = await this.prisma.message.findMany({
@@ -549,7 +549,7 @@ export class WechatSubscribeMessagesService {
 
   // Only retry definite provider rejections. Network timeouts can mean the
   // provider accepted the message: leave those for inspection to avoid duplicates.
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron('35 * * * * *')
   async retryBookingNotifications() {
     const deliveries = await this.prisma.notificationDelivery.findMany({
       where: {

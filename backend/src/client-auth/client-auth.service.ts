@@ -186,6 +186,7 @@ export class ClientAuthService {
         id: client.id,
         nickname: client.nickname,
         phone: client.phone,
+        wechat: client.wechat,
         avatarUrl: client.avatarUrl,
         city: client.city,
         bio: client.bio,
@@ -337,6 +338,7 @@ export class ClientAuthService {
         id: client.id,
         nickname: client.nickname,
         phone: client.phone,
+        wechat: client.wechat,
         avatarUrl: client.avatarUrl,
         city: client.city,
         bio: client.bio,
@@ -420,6 +422,7 @@ export class ClientAuthService {
         id: client.id,
         nickname: client.nickname,
         phone: client.phone,
+        wechat: client.wechat,
         avatarUrl: client.avatarUrl,
         city: client.city,
         bio: client.bio,
@@ -522,6 +525,7 @@ export class ClientAuthService {
         id: client.id,
         nickname: client.nickname,
         phone: client.phone,
+        wechat: client.wechat,
         avatarUrl: client.avatarUrl,
         city: client.city,
         bio: client.bio,
@@ -625,7 +629,7 @@ export class ClientAuthService {
         : {
             accessToken: this.signToken(client.id, client.phone, client.tokenVersion),
             refreshToken: this.signRefreshToken(client.id, client.phone, client.tokenVersion),
-            client: { id: client.id, nickname: client.nickname, phone: client.phone, avatarUrl: client.avatarUrl, city: client.city, bio: client.bio, status: client.status },
+            client: { id: client.id, nickname: client.nickname, phone: client.phone, wechat: client.wechat, avatarUrl: client.avatarUrl, city: client.city, bio: client.bio, status: client.status },
             technician: null,
             technicians: [],
           };
@@ -789,6 +793,7 @@ export class ClientAuthService {
         id: client.id,
         nickname: client.nickname,
         phone: client.phone,
+        wechat: client.wechat,
         avatarUrl: client.avatarUrl,
         city: client.city,
         bio: client.bio,
@@ -829,6 +834,7 @@ export class ClientAuthService {
         id: client.id,
         nickname: client.nickname,
         phone: client.phone,
+        wechat: client.wechat,
         avatarUrl: client.avatarUrl,
         city: client.city,
         bio: client.bio,
@@ -871,6 +877,7 @@ export class ClientAuthService {
         id: client.id,
         nickname: client.nickname,
         phone: client.phone,
+        wechat: client.wechat,
         avatarUrl: client.avatarUrl,
         city: client.city,
         bio: client.bio,
@@ -983,6 +990,7 @@ export class ClientAuthService {
       id: client.id,
       nickname: client.nickname,
       phone: client.phone,
+      wechat: client.wechat,
       avatarUrl: client.avatarUrl,
       city: client.city,
       bio: client.bio,
@@ -1693,6 +1701,7 @@ export class ClientAuthService {
           data: {
             status: 'deleted',
             phone: `deleted_client_${clientUserId}`,
+            wechat: null,
             passwordHash: '',
             managedPasswordCiphertext: null,
             nickname: '已注销用户',
@@ -1777,15 +1786,26 @@ export class ClientAuthService {
     data: {
       nickname?: string;
       avatarUrl?: string;
+      wechat?: string | null;
       city?: string | null;
       bio?: string | null;
     },
   ) {
+    let normalizedWechat: string | null | undefined = undefined;
+    if (data.wechat !== undefined) {
+      const trimmed = data.wechat === null ? '' : String(data.wechat).trim();
+      if (trimmed.length > 64) {
+        throw new BadRequestException('微信号最多 64 个字符');
+      }
+      normalizedWechat = trimmed || null;
+    }
+
     const client = await this.prisma.clientUser.update({
       where: { id: clientUserId },
       data: {
         ...(data.nickname !== undefined && { nickname: data.nickname }),
         ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }),
+        ...(normalizedWechat !== undefined && { wechat: normalizedWechat }),
         ...(data.city !== undefined && { city: data.city }),
         ...(data.bio !== undefined && { bio: data.bio }),
       },
@@ -1809,6 +1829,7 @@ export class ClientAuthService {
     id: number;
     nickname: string | null;
     phone: string;
+    wechat?: string | null;
     avatarUrl: string | null;
     city: string | null;
     bio: string | null;
@@ -1818,6 +1839,7 @@ export class ClientAuthService {
       id: client.id,
       nickname: client.nickname,
       phone: client.phone,
+      wechat: client.wechat ?? null,
       avatarUrl: client.avatarUrl,
       city: client.city,
       bio: client.bio,

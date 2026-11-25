@@ -406,6 +406,7 @@ export class ClientAuthController {
       properties: {
         nickname: { type: 'string', description: '昵称' },
         avatarUrl: { type: 'string', description: '头像URL' },
+        wechat: { type: 'string', nullable: true, description: '微信号（选填）' },
       },
     },
   })
@@ -415,6 +416,7 @@ export class ClientAuthController {
     body: {
       nickname?: string;
       avatarUrl?: string;
+      wechat?: string | null;
       city?: string | null;
       bio?: string | null;
     },

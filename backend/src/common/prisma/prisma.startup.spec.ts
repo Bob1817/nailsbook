@@ -16,6 +16,8 @@ describe('PrismaService SQLite startup', () => {
       ]);
       const rows = await service.$queryRawUnsafe<Array<{ timeout: bigint }>>('PRAGMA busy_timeout');
       expect(Number(rows[0].timeout)).toBe(5000);
+      const syncRows = await service.$queryRawUnsafe<Array<{ synchronous: bigint }>>('PRAGMA synchronous');
+      expect(Number(syncRows[0].synchronous)).toBe(1);
       await service.onModuleInit();
     } finally {
       await service.onModuleDestroy();

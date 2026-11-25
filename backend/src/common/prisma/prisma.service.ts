@@ -1,13 +1,28 @@
 import { BadRequestException, Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
+function buildSqliteSafeDatabaseUrl(rawUrl?: string): string | undefined {
+  if (!rawUrl) return undefined;
+  if (!rawUrl.startsWith('file:')) return rawUrl;
+  if (/[?&]connection_limit=/.test(rawUrl)) return rawUrl;
+  const sep = rawUrl.includes('?') ? '&' : '?';
+  return `${rawUrl}${sep}connection_limit=1`;
+}
+
 @Injectable()
 export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
   constructor() {
-    super();
+    const databaseUrl = buildSqliteSafeDatabaseUrl(process.env.DATABASE_URL);
+    super({
+      ...(databaseUrl ? { datasources: { db: { url: databaseUrl } } } : {}),
+      transactionOptions: {
+        maxWait: 10000,
+        timeout: 15000,
+      },
+    });
     this.$use(async (params, next) => {
       try {
         return await next(params);
@@ -44,9 +59,10 @@ export class PrismaService
 
   async onModuleInit() {
     await this.$connect();
-    // SQLite 并发写保护：busy_timeout 防止 SQLITE_BUSY 立即失败，WAL 允许读写并发
+    // SQLite 并发写保护：单连接排队 + busy_timeout 防 SQLITE_BUSY + WAL/NORMAL 降低写锁与落盘开销
     await this.$queryRawUnsafe('PRAGMA busy_timeout = 5000');
     await this.$queryRawUnsafe('PRAGMA journal_mode = WAL');
+    await this.$queryRawUnsafe('PRAGMA synchronous = NORMAL');
   }
 
   async onModuleDestroy() {

@@ -520,6 +520,7 @@ export class OrdersService {
           designRequest: { select: { title: true } },
           serviceLines: { select: { nameSnapshot: true }, orderBy: { sortOrder: 'asc' } },
           technician: { select: { id: true, name: true, phone: true } },
+          clientUser: { select: { id: true, phone: true, wechat: true } },
           customer: {
             select: { id: true, name: true, phone: true, avatarUrl: true },
           },
@@ -566,6 +567,7 @@ export class OrdersService {
           designRequest: { select: { title: true } },
           serviceLines: { select: { nameSnapshot: true }, orderBy: { sortOrder: 'asc' } },
           technician: { select: { id: true, name: true, phone: true } },
+        clientUser: { select: { id: true, phone: true, wechat: true } },
         customer: {
           select: {
             id: true,
@@ -635,6 +637,7 @@ export class OrdersService {
       where: { id },
       include: {
         technician: { select: { id: true, name: true, phone: true } },
+        clientUser: { select: { id: true, phone: true, wechat: true } },
         customer: {
           select: {
             id: true,

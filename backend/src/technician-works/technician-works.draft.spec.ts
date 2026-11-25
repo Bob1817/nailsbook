@@ -96,7 +96,7 @@ describe('TechnicianWorksService draft publication flow', () => {
 
     expect(result).toEqual(expect.objectContaining({ technicianName: '听栖' }));
     expect(prisma.nailWork.findFirst).toHaveBeenCalledWith(expect.objectContaining({
-      include: expect.objectContaining({ technician: { select: { name: true } } }),
+      include: expect.objectContaining({ technician: { select: expect.objectContaining({ name: true }) } }),
     }));
   });
 

@@ -187,7 +187,7 @@ export class WechatPayService {
       out_trade_no?: string;
       appid?: string;
       mchid?: string;
-      amount?: { total?: number };
+      amount?: { total?: number; payer_total?: number };
     };
     if (
       notification.event_type !== 'TRANSACTION.SUCCESS' ||

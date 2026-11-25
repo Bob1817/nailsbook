@@ -59,6 +59,7 @@ export class CustomersService {
           clientUser: {
             select: {
               nickname: true,
+              wechat: true,
               avatarUrl: true,
               passwordHash: true,
               managedPasswordCiphertext: true,
@@ -107,6 +108,7 @@ export class CustomersService {
           ...safeCustomer,
           bindingStatus: clientUser?.bindings?.find(binding => binding.techId === customer.technicianId)?.status ?? null,
           accountName: clientUser?.nickname || null,
+          wechat: clientUser?.wechat || null,
           avatarUrl: this.absoluteUrl(
             clientUser?.avatarUrl || safeCustomer.avatarUrl,
           ),
@@ -207,6 +209,7 @@ export class CustomersService {
         clientUser: {
           select: {
             nickname: true,
+            wechat: true,
             avatarUrl: true,
           },
         },
@@ -386,6 +389,7 @@ export class CustomersService {
       ...safeCustomer,
       followUps,
       accountName: clientUser?.nickname || null,
+      wechat: clientUser?.wechat || null,
       avatarUrl: this.absoluteUrl(
         clientUser?.avatarUrl || safeCustomer.avatarUrl,
       ),

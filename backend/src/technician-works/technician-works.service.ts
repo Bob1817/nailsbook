@@ -55,7 +55,7 @@ export class TechnicianWorksService {
         favorites: true,
         comments: true,
         technician: {
-          select: { name: true },
+          select: { id: true, name: true, avatarUrl: true, phone: true },
         },
         clientAccesses: {
           include: {
@@ -94,7 +94,7 @@ export class TechnicianWorksService {
         likes: true,
         favorites: true,
         technician: {
-          select: { name: true },
+          select: { id: true, name: true, avatarUrl: true, phone: true },
         },
         comments: {
           orderBy: { createdAt: 'desc' },
@@ -1401,7 +1401,8 @@ export class TechnicianWorksService {
         isRead?: boolean;
       }[];
       comments?: { id: number; isRead?: boolean }[];
-      technician?: { name: string | null };
+      technician?: { id?: number; name: string | null; avatarUrl?: string | null; phone?: string | null };
+      techId?: number;
       visibilityScope?: string;
       publicationStatus?: string;
       assetStatus?: string;
@@ -1514,7 +1515,15 @@ export class TechnicianWorksService {
       completedBookingsCount,
       doneCount: completedBookingsCount,
       doneCountText: completedBookingsCount > 0 ? `${completedBookingsCount}人做过` : '',
+      techId: work.techId ?? work.technician?.id ?? currentTechnicianId ?? null,
+      technicianId: work.techId ?? work.technician?.id ?? currentTechnicianId ?? null,
       technicianName: work.technician?.name ?? '美甲师',
+      technician: {
+        id: work.techId ?? work.technician?.id ?? currentTechnicianId ?? null,
+        name: work.technician?.name ?? '美甲师',
+        avatarUrl: work.technician?.avatarUrl ?? null,
+        phone: work.technician?.phone ?? null,
+      },
       createdAt: work.createdAt,
       updatedAt: work.updatedAt,
     };

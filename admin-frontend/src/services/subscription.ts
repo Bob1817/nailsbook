@@ -56,8 +56,11 @@ export interface SubscriptionPayment {
   paymentNo: string;
   providerTradeNo?: string | null;
   amount: number;
+  payableAmount: number;
+  paidAmount: number | null;
   channel: string;
   status: string;
+  failureReason?: string | null;
   paidAt?: string | null;
   createdAt: string;
   technicianId?: number | null;

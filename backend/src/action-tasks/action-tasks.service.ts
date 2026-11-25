@@ -31,8 +31,23 @@ export const DYNAMIC_ACTION_TASK_TYPES = [
 ];
 @Injectable()
 export class ActionTasksService {
+  private readonly inflightToday = new Map<number, Promise<any>>();
+
   constructor(private readonly prisma: PrismaService) {}
+
   async today(technicianId: number) {
+    const inflight = this.inflightToday.get(technicianId);
+    if (inflight) return inflight;
+    const promise = this.computeToday(technicianId).finally(() => {
+      if (this.inflightToday.get(technicianId) === promise) {
+        this.inflightToday.delete(technicianId);
+      }
+    });
+    this.inflightToday.set(technicianId, promise);
+    return promise;
+  }
+
+  private async computeToday(technicianId: number) {
     const now = new Date(),
       start = new Date(now);
     start.setHours(0, 0, 0, 0);
@@ -241,30 +256,86 @@ export class ActionTasksService {
               `/pages/technician/order-detail/index?id=${confirmed[i].id}`,
             ),
           );
-    const activeKeys = candidates.map((x) => x.taskKey);
-    await this.prisma.$transaction(async (tx) => {
-      for (const c of candidates)
-        await tx.actionTask.upsert({
-          where: { taskKey: c.taskKey },
-          create: { technicianId, ...c },
-          update: {
-            title: c.title,
-            description: c.description,
-            priority: c.priority,
-            dueAt: c.dueAt,
-            actionPath: c.actionPath,
+    const uniqueByKey = new Map<string, Candidate>();
+    for (const c of candidates) {
+      if (!uniqueByKey.has(c.taskKey)) uniqueByKey.set(c.taskKey, c);
+    }
+    const uniqueCandidates = Array.from(uniqueByKey.values());
+    const activeKeys = uniqueCandidates.map((x) => x.taskKey);
+    const activeKeySet = new Set(activeKeys);
+
+    const existingTasks = await this.prisma.actionTask.findMany({
+      where: {
+        technicianId,
+        OR: [
+          ...(activeKeys.length ? [{ taskKey: { in: activeKeys } }] : []),
+          {
+            status: 'pending',
+            type: { in: DYNAMIC_ACTION_TASK_TYPES },
           },
-        });
-      await tx.actionTask.updateMany({
-        where: {
-          technicianId,
-          status: 'pending',
-          type: { in: DYNAMIC_ACTION_TASK_TYPES },
-          taskKey: { notIn: activeKeys },
-        },
-        data: { status: 'completed', resolvedAt: now },
-      });
+        ],
+      },
+      select: {
+        taskKey: true,
+        type: true,
+        status: true,
+        title: true,
+        description: true,
+        priority: true,
+        dueAt: true,
+        actionPath: true,
+      },
     });
+
+    const existingByKey = new Map(existingTasks.map((t) => [t.taskKey, t]));
+    const toUpsert = uniqueCandidates.filter((c) => {
+      const prev = existingByKey.get(c.taskKey);
+      if (!prev) return true;
+      const prevDue = prev.dueAt ? prev.dueAt.getTime() : null;
+      const nextDue = c.dueAt ? c.dueAt.getTime() : null;
+      return (
+        prev.title !== c.title ||
+        (prev.description ?? null) !== (c.description ?? null) ||
+        prev.priority !== c.priority ||
+        prevDue !== nextDue ||
+        prev.actionPath !== c.actionPath
+      );
+    });
+    const hasStaleDynamic = existingTasks.some(
+      (t) =>
+        t.status === 'pending' &&
+        DYNAMIC_ACTION_TASK_TYPES.includes(t.type) &&
+        !activeKeySet.has(t.taskKey),
+    );
+
+    if (toUpsert.length > 0 || hasStaleDynamic) {
+      await this.prisma.$transaction(async (tx) => {
+        for (const c of toUpsert) {
+          await tx.actionTask.upsert({
+            where: { taskKey: c.taskKey },
+            create: { technicianId, ...c },
+            update: {
+              title: c.title,
+              description: c.description,
+              priority: c.priority,
+              dueAt: c.dueAt,
+              actionPath: c.actionPath,
+            },
+          });
+        }
+        if (hasStaleDynamic) {
+          await tx.actionTask.updateMany({
+            where: {
+              technicianId,
+              status: 'pending',
+              type: { in: DYNAMIC_ACTION_TASK_TYPES },
+              taskKey: { notIn: activeKeys },
+            },
+            data: { status: 'completed', resolvedAt: now },
+          });
+        }
+      }, { timeout: 15000 });
+    }
     return this.prisma.actionTask.findMany({
       where: {
         technicianId,
