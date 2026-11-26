@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { colors } from './colors.generated';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, theme } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -34,23 +34,49 @@ import Releases from './pages/Releases';
 import Campaigns from './pages/Campaigns';
 import SystemErrors from './pages/SystemErrors';
 
+function useSystemDarkMode() {
+  const [isDark, setIsDark] = useState(() =>
+    typeof window !== 'undefined'
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches
+      : false,
+  );
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const update = (matches: boolean) => {
+      setIsDark(matches);
+      document.documentElement.dataset.theme = matches ? 'dark' : 'light';
+      document.documentElement.style.colorScheme = matches ? 'dark' : 'light';
+    };
+    update(media.matches);
+    const listener = (e: MediaQueryListEvent) => update(e.matches);
+    media.addEventListener('change', listener);
+    return () => media.removeEventListener('change', listener);
+  }, []);
+
+  return isDark;
+}
+
 const App: React.FC = () => {
+  const isDark = useSystemDarkMode();
+
   return (
     <ConfigProvider
       locale={zhCN}
       theme={{
+        algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
         token: {
-          colorPrimary: colors.action,
+          colorPrimary: isDark ? '#F2F2F2' : colors.action,
           colorInfo: '#245EA8',
           colorSuccess: '#287A4B',
           colorWarning: '#D4A017',
           colorError: '#B42332',
-          colorText: colors.ink,
-          colorTextSecondary: colors.secondary,
-          colorBgLayout: colors.page,
-          colorBgContainer: colors.surface,
-          colorBorder: colors.line,
-          colorBorderSecondary: '#ECECEF',
+          colorText: isDark ? '#F2F2F2' : colors.ink,
+          colorTextSecondary: isDark ? '#B3B3B3' : colors.secondary,
+          colorBgLayout: isDark ? '#141414' : colors.page,
+          colorBgContainer: isDark ? '#1F1F1F' : colors.surface,
+          colorBorder: isDark ? '#303030' : colors.line,
+          colorBorderSecondary: isDark ? '#262626' : '#ECECEF',
           borderRadius: 8,
           borderRadiusLG: 12,
           borderRadiusSM: 6,
@@ -62,16 +88,16 @@ const App: React.FC = () => {
         },
         components: {
           Layout: {
-            siderBg: colors.action,
-            headerBg: colors.surface,
-            bodyBg: colors.page,
+            siderBg: isDark ? '#181818' : colors.action,
+            headerBg: isDark ? '#1F1F1F' : colors.surface,
+            bodyBg: isDark ? '#141414' : colors.page,
           },
           Menu: {
             darkItemBg: 'transparent',
             darkSubMenuItemBg: 'transparent',
             darkItemSelectedBg: 'rgba(255, 255, 255, 0.12)',
             darkItemHoverBg: 'rgba(255, 255, 255, 0.06)',
-            darkItemSelectedColor: colors.surface,
+            darkItemSelectedColor: '#FFFFFF',
             itemBorderRadius: 8,
             itemMarginInline: 10,
             itemHeight: 40,
@@ -81,15 +107,16 @@ const App: React.FC = () => {
             headerHeight: 52,
           },
           Table: {
-            headerBg: colors.page,
-            headerColor: colors.ink,
+            headerBg: isDark ? '#262626' : colors.page,
+            headerColor: isDark ? '#F2F2F2' : colors.ink,
             headerSplitColor: 'transparent',
-            rowHoverBg: colors.pressed,
+            rowHoverBg: isDark ? '#2A2A2A' : colors.pressed,
             borderRadius: 8,
           },
           Button: {
             borderRadius: 8,
             fontWeight: 500,
+            primaryColor: isDark ? '#141414' : '#FFFFFF',
           },
           Input: {
             borderRadius: 8,

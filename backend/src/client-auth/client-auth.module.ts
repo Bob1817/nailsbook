@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { PrismaModule } from '../common/prisma/prisma.module';
 import { ChatModule } from '../chat/chat.module';
+import { WechatOfficialModule } from '../wechat-official/wechat-official.module';
 import { getClientJwtSecret } from './client-auth.config';
 import { ClientAuthController } from './client-auth.controller';
 import { ClientAuthService } from './client-auth.service';
@@ -24,6 +25,7 @@ import { ClientJwtStrategy } from './client-jwt.strategy';
     }),
     PrismaModule,
     ChatModule,
+    WechatOfficialModule,
   ],
   controllers: [ClientAuthController],
   providers: [ClientAuthService, ClientJwtStrategy],

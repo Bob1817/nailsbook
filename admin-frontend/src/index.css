@@ -1,4 +1,36 @@
 @import "./colors.generated.css";
+
+html {
+  color-scheme: light dark;
+}
+
+html[data-theme="dark"] {
+  --nb-page: #141414;
+  --nb-page-rgb: 20, 20, 20;
+  --nb-surface: #1F1F1F;
+  --nb-surface-rgb: 31, 31, 31;
+  --nb-pressed: #2A2A2A;
+  --nb-pressed-rgb: 42, 42, 42;
+  --nb-ink: #F2F2F2;
+  --nb-ink-rgb: 242, 242, 242;
+  --nb-secondary: #B3B3B3;
+  --nb-secondary-rgb: 179, 179, 179;
+  --nb-muted: #8C8C8C;
+  --nb-muted-rgb: 140, 140, 140;
+  --nb-line: #303030;
+  --nb-line-rgb: 48, 48, 48;
+  --nb-control: #737373;
+  --nb-control-rgb: 115, 115, 115;
+  --nb-active-surface: #262626;
+  --nb-active-surface-rgb: 38, 38, 38;
+  --nb-action: #F2F2F2;
+  --nb-action-rgb: 242, 242, 242;
+  --nb-action-pressed: #D9D9D9;
+  --nb-action-pressed-rgb: 217, 217, 217;
+  --nb-inverse: #141414;
+  --nb-inverse-rgb: 20, 20, 20;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -18,7 +50,12 @@ body {
 }
 
 .ant-layout-sider {
-  background: var(--nb-action) !important;
+  background: #1D1D1F !important;
+}
+
+html[data-theme="dark"] .ant-layout-sider,
+html[data-theme="dark"] .admin-sidebar {
+  background: #181818 !important;
 }
 
 .ant-menu-dark {
@@ -39,7 +76,7 @@ body {
   flex-direction: column;
   overflow: auto;
   padding-bottom: env(safe-area-inset-bottom);
-  background: var(--nb-action) !important;
+  background: #1D1D1F !important;
   border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -49,7 +86,7 @@ body {
   align-items: center;
   gap: 12px;
   padding: 0 16px;
-  color: var(--nb-inverse);
+  color: #FFFFFF;
   cursor: pointer;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   flex-shrink: 0;

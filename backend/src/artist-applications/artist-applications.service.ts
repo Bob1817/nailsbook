@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException, Optional } from '@n
 import * as crypto from 'crypto';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { DingtalkAlertService } from '../notifications/dingtalk-alert.service';
+import { WechatOfficialAlertService } from '../wechat-official/wechat-official-alert.service';
 import { CreateArtistApplicationDto } from './dto/create-artist-application.dto';
 import { phoneVariants, phoneAccounts } from '../common/account-role-policy';
 import { ensureDefaultFreeSubscription } from '../subscriptions/subscription-defaults';
@@ -11,6 +12,7 @@ export class ArtistApplicationsService {
   constructor(
     private readonly prisma: PrismaService,
     @Optional() private readonly dingtalkAlert?: DingtalkAlertService,
+    @Optional() private readonly wechatAlert?: WechatOfficialAlertService,
   ) {}
 
   async create(dto: CreateArtistApplicationDto, currentTechnicianId?: number) {
@@ -99,17 +101,19 @@ export class ArtistApplicationsService {
       throw new BadRequestException('该手机号码已有申请在审核中，请勿重复提交');
     }
 
-    // 触发钉钉实时通知超管
+    // 触发钉钉与微信公众号实时通知超管
+    const alertPayload = {
+      name: dto.name,
+      phone: dto.phone,
+      city: dto.city,
+      serviceMode: dto.serviceMode,
+      note: dto.note,
+    };
     if (this.dingtalkAlert) {
-      this.dingtalkAlert
-        .notifyArtistApplication({
-          name: dto.name,
-          phone: dto.phone,
-          city: dto.city,
-          serviceMode: dto.serviceMode,
-          note: dto.note,
-        })
-        .catch(() => {});
+      this.dingtalkAlert.notifyArtistApplication(alertPayload).catch(() => {});
+    }
+    if (this.wechatAlert) {
+      this.wechatAlert.notifyArtistApplication(alertPayload).catch(() => {});
     }
 
     return { received: true };

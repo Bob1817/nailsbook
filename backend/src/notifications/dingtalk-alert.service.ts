@@ -72,7 +72,7 @@ export class DingtalkAlertService {
     return this.sendMarkdown('OnlyNail 收到客服新留言', text);
   }
 
-  /** 发送美甲师试用入驻申请通知 */
+  /** 发送美甲师试用入驻 / 官方活动申请通知 */
   async notifyArtistApplication(params: {
     name: string;
     phone: string;
@@ -83,13 +83,14 @@ export class DingtalkAlertService {
     const timeStr = new Date().toLocaleString('zh-CN', {
       timeZone: 'Asia/Shanghai',
     });
+    const isCampaign = params.serviceMode === 'model_artist';
     const text = [
-      `### 📋 OnlyNail 新美甲师试用申请！`,
-      `**收到新的美甲师入驻试用申请**`,
+      isCampaign ? `### ✨ OnlyNail 官方活动新申请！` : `### 📋 OnlyNail 新美甲师试用申请！`,
+      isCampaign ? `**收到新的模特美甲师官方活动申请**` : `**收到新的美甲师入驻试用申请**`,
       `• **申请人姓名**：${params.name}`,
       `• **联系电话**：${params.phone}`,
       `• **所在城市**：${params.city || '未填写'}`,
-      `• **服务模式**：${params.serviceMode || '未指定'}`,
+      `• **申请类型**：${isCampaign ? '模特美甲师官方活动' : params.serviceMode || '未指定'}`,
       params.note ? `• **申请备注**：${params.note}` : '',
       `• **提交时间**：${timeStr}`,
       ``,
@@ -98,7 +99,35 @@ export class DingtalkAlertService {
       .filter(Boolean)
       .join('\n');
 
-    return this.sendMarkdown('OnlyNail 美甲师试用申请', text);
+    return this.sendMarkdown(
+      isCampaign ? 'OnlyNail 官方活动新申请' : 'OnlyNail 美甲师试用申请',
+      text,
+    );
+  }
+
+  /** 发送新用户注册通知 */
+  async notifyUserRegistration(params: {
+    role: 'client' | 'technician';
+    name?: string | null;
+    phone: string;
+    source?: string;
+  }) {
+    const timeStr = new Date().toLocaleString('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+    });
+    const roleLabel = params.role === 'technician' ? '美甲师' : '客户';
+    const text = [
+      `### 🎉 OnlyNail 新${roleLabel}注册通知`,
+      `• **用户身份**：${roleLabel}`,
+      `• **昵称/姓名**：${params.name || '未填写'}`,
+      `• **手机号码**：${params.phone}`,
+      `• **注册来源**：${params.source || '直接注册'}`,
+      `• **注册时间**：${timeStr}`,
+      ``,
+      `👉 [登录超管后台查看](https://admin.lunails.cn)`,
+    ].join('\n');
+
+    return this.sendMarkdown(`OnlyNail 新${roleLabel}注册`, text);
   }
 
   /** 发送新作品发布待审核通知 */

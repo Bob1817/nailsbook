@@ -136,4 +136,58 @@ export class WechatOfficialAlertService {
 
     return this.sendAdminTextMessage(text, isCs ? '客服问询' : '问题反馈');
   }
+
+  async notifyArtistApplication(params: {
+    name: string;
+    phone: string;
+    city?: string;
+    serviceMode?: string;
+    note?: string;
+  }): Promise<boolean> {
+    const timeStr = new Date().toLocaleString('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+    });
+    const isCampaign = params.serviceMode === 'model_artist';
+    const text = [
+      isCampaign ? '【OnlyNail 官方活动新申请】' : '【OnlyNail 美甲师试用新申请】',
+      '━━━━━━━━━━━━━━',
+      `👤 申请人：${params.name}`,
+      `📱 手机号：${params.phone}`,
+      `📍 城市：${params.city || '未填写'}`,
+      `🏷️ 类型：${isCampaign ? '模特美甲师官方活动' : params.serviceMode || '未指定'}`,
+      params.note ? `📝 备注：${params.note}` : '',
+      `🕒 提交时间：${timeStr}`,
+      '━━━━━━━━━━━━━━',
+      '💡 请及时登录超管后台「入驻/活动审批」处理。',
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    return this.sendAdminTextMessage(text, isCampaign ? '活动申请' : '入驻申请');
+  }
+
+  async notifyUserRegistration(params: {
+    role: 'client' | 'technician';
+    name?: string | null;
+    phone: string;
+    source?: string;
+  }): Promise<boolean> {
+    const timeStr = new Date().toLocaleString('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+    });
+    const roleLabel = params.role === 'technician' ? '美甲师' : '客户';
+    const text = [
+      `【OnlyNail 新${roleLabel}注册】`,
+      '━━━━━━━━━━━━━━',
+      `👤 身份：${roleLabel}`,
+      `📛 姓名/昵称：${params.name || '未填写'}`,
+      `📱 手机号：${params.phone}`,
+      `📍 注册来源：${params.source || '直接注册'}`,
+      `🕒 注册时间：${timeStr}`,
+      '━━━━━━━━━━━━━━',
+      '💡 可登录超管后台查看用户详情。',
+    ].join('\n');
+
+    return this.sendAdminTextMessage(text, `新${roleLabel}注册`);
+  }
 }

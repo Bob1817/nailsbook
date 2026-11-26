@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PrismaModule } from '../common/prisma/prisma.module';
 import { ClientAuthModule } from '../client-auth/client-auth.module';
 import { TechnicianAuthModule } from '../technician-auth/technician-auth.module';
+import { WechatOfficialModule } from '../wechat-official/wechat-official.module';
 import { WechatAuthController } from './wechat-auth.controller';
 import { WechatAuthService } from './wechat-auth.service';
 
@@ -13,6 +14,7 @@ import { WechatAuthService } from './wechat-auth.service';
     PrismaModule,
     ClientAuthModule,
     TechnicianAuthModule,
+    WechatOfficialModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {

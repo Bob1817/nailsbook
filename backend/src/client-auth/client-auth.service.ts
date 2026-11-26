@@ -13,6 +13,7 @@ import { recordWorkShareRegistration } from '../common/work-share-registration';
 import { BindSharedWorkDto } from './dto/bind-shared-work.dto';
 import {
   Injectable,
+  Optional,
   UnauthorizedException,
   NotFoundException,
   ConflictException,
@@ -32,6 +33,8 @@ import { VerificationCodeService } from '../common/verification-code/verificatio
 import { SmsService } from '../common/sms/sms.service';
 import { buildDefaultServiceItems } from '../common/default-service-items';
 import { ChatGateway } from '../chat/chat.gateway';
+import { DingtalkAlertService } from '../notifications/dingtalk-alert.service';
+import { WechatOfficialAlertService } from '../wechat-official/wechat-official-alert.service';
 import type { Prisma } from '@prisma/client';
 import {
   isLaunchTechnician,
@@ -53,7 +56,15 @@ export class ClientAuthService {
     private readonly verificationCode: VerificationCodeService,
     private readonly sms: SmsService,
     private readonly chatGateway: ChatGateway,
+    @Optional() private readonly dingtalkAlert?: DingtalkAlertService,
+    @Optional() private readonly wechatAlert?: WechatOfficialAlertService,
   ) {}
+
+  private notifyClientRegistered(name: string | null | undefined, phone: string, source: string) {
+    const payload = { role: 'client' as const, name, phone, source };
+    this.dingtalkAlert?.notifyUserRegistration(payload).catch(() => {});
+    this.wechatAlert?.notifyUserRegistration(payload).catch(() => {});
+  }
 
   // 忘记密码：发送验证码（防枚举，统一返回；仅已注册账号真正发送）
   async sendResetCode(phone: string) {
@@ -316,8 +327,9 @@ export class ClientAuthService {
       return created;
     });
 
+    this.notifyClientRegistered(client.nickname, client.phone, '微信邀请注册');
+
     const technicianPayload = {
-      id: technician.id,
       name: technician.name,
       phone: technician.phone,
       avatarUrl: technician.avatarUrl,
@@ -427,6 +439,7 @@ export class ClientAuthService {
       return created;
     });
 
+    this.notifyClientRegistered(client.nickname, client.phone, '邀请码注册');
     await recordWorkShareRegistration(this.prisma, client.id, dto);
 
     // 构建返回数据

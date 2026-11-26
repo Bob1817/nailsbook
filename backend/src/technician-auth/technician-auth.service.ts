@@ -25,6 +25,8 @@ import {
 } from '../common/miniprogram-launch-mode';
 import { ensureDefaultFreeSubscription } from '../subscriptions/subscription-defaults';
 import { OfficialAccessTokenService } from '../wechat-official/official-access-token.service';
+import { WechatOfficialAlertService } from '../wechat-official/wechat-official-alert.service';
+import { DingtalkAlertService } from '../notifications/dingtalk-alert.service';
 import { qrLoginSessionStore } from '../common/qr-login-session.store';
 
 @Injectable()
@@ -42,6 +44,10 @@ export class TechnicianAuthService {
     private readonly sms: SmsService,
     @Optional()
     private readonly officialAccessToken?: OfficialAccessTokenService,
+    @Optional()
+    private readonly dingtalkAlert?: DingtalkAlertService,
+    @Optional()
+    private readonly wechatAlert?: WechatOfficialAlertService,
   ) {}
 
   // 忘记密码：发送验证码（防枚举，统一返回；仅已激活账号真正发送）
@@ -224,7 +230,15 @@ export class TechnicianAuthService {
       return created;
     });
 
+    this.notifyTechnicianRegistered(technician.name, technician.phone, '邀请密钥注册');
+
     return this.issueTokens(technician.id, technician.phone);
+  }
+
+  private notifyTechnicianRegistered(name: string, phone: string, source: string) {
+    const payload = { role: 'technician' as const, name, phone, source };
+    this.dingtalkAlert?.notifyUserRegistration(payload).catch(() => {});
+    this.wechatAlert?.notifyUserRegistration(payload).catch(() => {});
   }
 
   /**
@@ -261,6 +275,8 @@ export class TechnicianAuthService {
 
       return created;
     });
+
+    this.notifyTechnicianRegistered(technician.name, technician.phone, '直接注册');
 
     return this.issueTokens(technician.id, technician.phone);
   }

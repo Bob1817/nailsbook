@@ -6,6 +6,7 @@ import {
   BadGatewayException,
   ConflictException,
   Injectable,
+  Optional,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -14,6 +15,8 @@ import { PrismaService } from '../common/prisma/prisma.service';
 import { ClientAuthService } from '../client-auth/client-auth.service';
 import { TechnicianAuthService } from '../technician-auth/technician-auth.service';
 import { WechatPlatformConfigService } from '../wechat-platform-config/wechat-platform-config.service';
+import { DingtalkAlertService } from '../notifications/dingtalk-alert.service';
+import { WechatOfficialAlertService } from '../wechat-official/wechat-official-alert.service';
 import {
   WechatClientCompleteDto,
   WechatTechnicianCompleteDto,
@@ -43,6 +46,8 @@ export class WechatAuthService {
     private readonly clientAuth: ClientAuthService,
     private readonly technicianAuth: TechnicianAuthService,
     private readonly platformConfig: WechatPlatformConfigService,
+    @Optional() private readonly dingtalkAlert?: DingtalkAlertService,
+    @Optional() private readonly wechatAlert?: WechatOfficialAlertService,
   ) {}
 
   async login(code: string, requestedRole?: 'client' | 'technician') {
@@ -203,6 +208,9 @@ export class WechatAuthService {
             status: 'active',
           },
         });
+        const regPayload = { role: 'client' as const, name: null, phone: client.phone, source: '微信小程序注册' };
+        this.dingtalkAlert?.notifyUserRegistration(regPayload).catch(() => {});
+        this.wechatAlert?.notifyUserRegistration(regPayload).catch(() => {});
       } else {
         if (dto.quickBookingTechId) {
           await this.clientAuth.validateQuickBookingInvite(
