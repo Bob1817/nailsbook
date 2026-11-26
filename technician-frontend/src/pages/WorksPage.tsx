@@ -294,25 +294,25 @@ export const WorksPage: React.FC = () => {
           </button>
         </div>
       ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="columns-1 gap-4 space-y-4 sm:columns-2 lg:columns-3 xl:columns-4">
           {filteredWorks.map((work, idx) => {
             const checked = selectedIds.includes(work.id);
             return (
               <div
                 key={work.id}
-                className={`group flex flex-col overflow-hidden rounded-2xl border bg-[var(--nb-surface)] transition ${
+                className={`group break-inside-avoid overflow-hidden rounded-2xl border bg-[var(--nb-surface)] transition ${
                   checked ? 'border-[var(--nb-ink)] ring-1 ring-[var(--nb-ink)]' : 'border-[var(--nb-line)]'
                 }`}
               >
-                <div className="relative aspect-[4/5] bg-[var(--nb-page)]">
+                <div className="relative bg-[var(--nb-page)]">
                   {work.coverUrl ? (
                     <img
                       src={work.coverUrl}
                       alt={work.title || '作品封面'}
-                      className="h-full w-full object-cover"
+                      className="block h-auto w-full object-cover"
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center text-xs text-[var(--nb-muted)]">
+                    <div className="flex aspect-[4/3] items-center justify-center text-xs text-[var(--nb-muted)]">
                       暂无封面图
                     </div>
                   )}
@@ -344,7 +344,7 @@ export const WorksPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex flex-1 flex-col justify-between p-4">
+                <div className="p-4">
                   <div>
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="line-clamp-1 text-sm font-semibold text-[var(--nb-ink)]">
