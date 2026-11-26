@@ -1,363 +1,414 @@
-import { neutralTagColors } from '../styles/tagColors';
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card } from '../components/base/Card';
 import { useToast } from '../components/feedback/ToastProvider';
 import { useAuth } from '../hooks/useAuth';
 import { customersService } from '../services/customers';
 import {
   formatDateLabel,
   formatMoney,
+  type TechnicianCustomerDetail,
   type TechnicianCustomerSummary,
 } from '../services/technicianData';
 import { ListItemSkeleton } from '../components/Skeleton';
-import type { CustomTag } from '../contexts/authTypes';
 
-const customerTabs = ['全部', '常客', '新客', '高频'];
-
-const TAG_FALLBACK_COLORS: Record<string, { bg: string; text: string }> = {
-  '常客': { bg: 'var(--nb-page)', text: 'var(--nb-action)' },
-  '新客': { bg: 'var(--nb-page)', text: 'var(--nb-action)' },
-  '高频': { bg: 'var(--nb-page)', text: 'var(--nb-action)' },
-  '简约': { bg: 'var(--nb-page)', text: 'var(--nb-action)' },
-  '裸色系': { bg: 'var(--nb-page)', text: 'var(--nb-action)' },
-};
-
-function getTagColor(tag: string, customTags: CustomTag[]): { bg: string; text: string } {
-  const custom = customTags.find((t) => t.name === tag);
-  if (custom) {
-    return neutralTagColors(custom.color);
-  }
-  return TAG_FALLBACK_COLORS[tag] ?? { bg: 'var(--nb-page)', text: 'var(--nb-muted)' };
-}
-
-function getCustomerAvatar(name: string) {
-  return name.slice(0, 1).toUpperCase();
-}
-
-/** 判断 name 是否只是手机号（说明客户未设置昵称） */
-function isPhoneNumberAsName(name: string): boolean {
-  return /^1\d{10}$/.test(name);
-}
+const DEFAULT_TABS = ['全部', '常客', '新客', '高频'];
 
 export const CustomersPage: React.FC = () => {
   const { technician } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
+
   const [customers, setCustomers] = useState<TechnicianCustomerSummary[]>([]);
+  const [distinctTags, setDistinctTags] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('全部');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [avatarTagCustomerId, setAvatarTagCustomerId] = useState<number | null>(null);
-  const [editingCustomerId, setEditingCustomerId] = useState<number | null>(null);
-  const [editingName, setEditingName] = useState('');
 
-  const customTags = useMemo(() => technician?.customTags ?? [], [technician?.customTags]);
+  // 右侧详情抽屉
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [detail, setDetail] = useState<TechnicianCustomerDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [newTagInput, setNewTagInput] = useState('');
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadCustomers() {
-      setIsLoading(true);
-      try {
-        const nextCustomers = await customersService.list({
+  const loadCustomers = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [listData, tagsData] = await Promise.all([
+        customersService.list({
           technicianId: technician?.id,
           search: searchQuery.trim() || undefined,
-        });
-
-        if (!cancelled) {
-          setCustomers(nextCustomers);
-          setIsLoading(false);
-        }
-      } catch {
-        if (!cancelled) {
-          setCustomers([]);
-          setIsLoading(false);
-          toast.error('客户数据加载失败，请稍后重试。');
-        }
-      }
+        }),
+        customersService.getDistinctTags(),
+      ]);
+      setCustomers(listData);
+      setDistinctTags(tagsData);
+    } catch {
+      setCustomers([]);
+      toast.error('客户数据加载失败，请稍后重试');
+    } finally {
+      setIsLoading(false);
     }
+  }, [searchQuery, technician?.id, toast]);
 
+  useEffect(() => {
     void loadCustomers();
+  }, [loadCustomers]);
+
+  useEffect(() => {
+    if (!selectedId) {
+      setDetail(null);
+      return;
+    }
+    let cancelled = false;
+    setDetailLoading(true);
+    customersService
+      .getById(selectedId)
+      .then((res) => {
+        if (!cancelled) {
+          setDetail(res);
+          setNameDraft(res?.name || '');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setDetailLoading(false);
+      });
     return () => {
       cancelled = true;
     };
-  }, [searchQuery, technician?.id, toast]);
+  }, [selectedId]);
 
-  const visibleCustomers = customers.filter((customer) => {
-    if (activeTab === '全部') {
-      return true;
+  const filterTabs = useMemo(() => {
+    const merged = [...DEFAULT_TABS];
+    for (const tag of distinctTags) {
+      if (tag && !merged.includes(tag)) merged.push(tag);
     }
-    return customer.tags.includes(activeTab);
-  });
+    return merged.slice(0, 10);
+  }, [distinctTags]);
+
+  const visibleCustomers = useMemo(() => {
+    return customers.filter((customer) => {
+      if (activeTab === '全部') return true;
+      return customer.tags.includes(activeTab);
+    });
+  }, [customers, activeTab]);
 
   const handleInvite = async () => {
-    // 接单就绪：至少开启一种服务类型；未就绪则锁定邀请码/邀请链接
     if (!(technician?.homeService || technician?.shopService)) {
-      toast.warning('请先开启上门或到店服务，才能邀请客户。');
+      toast.warning('请先开启上门或到店服务，才能邀请客户');
       return;
     }
     const invitationCode = technician?.invitationCode;
     if (!invitationCode) {
-      toast.warning('暂未生成邀请码，请稍后重试。');
+      toast.warning('暂未生成邀请码，请稍后重试');
       return;
     }
     const clientBaseUrl = import.meta.env.VITE_CLIENT_BASE_URL || 'https://m.lunails.cn';
     const inviteLink = `${clientBaseUrl}/invite?invite_code=${encodeURIComponent(invitationCode)}`;
-    const shareText = `${technician?.name || '美甲师'}邀请你预约美甲服务，点击链接完成绑定：`;
     try {
-      if (navigator.share) {
-        await navigator.share({ title: '邀请你预约美甲', text: shareText, url: inviteLink });
-      } else {
-        await navigator.clipboard.writeText(inviteLink);
-        toast.success('当前环境不支持分享，邀请链接已复制');
-      }
-    } catch (error) {
-      // 用户主动取消分享不算错误
-      if ((error as { name?: string })?.name === 'AbortError') return;
-      try {
-        await navigator.clipboard.writeText(inviteLink);
-        toast.success('邀请链接已复制');
-      } catch {
-        toast.error('分享失败，请重试');
-      }
+      await navigator.clipboard.writeText(inviteLink);
+      toast.success('客户绑定邀请链接已复制到剪贴板');
+    } catch {
+      toast.error('复制失败，请稍后重试');
     }
   };
 
-  const handleUpdateName = async (customerId: number) => {
-    if (!editingName.trim()) {
+  const handleSaveName = async () => {
+    if (!detail || !nameDraft.trim()) {
       toast.warning('客户名称不能为空');
       return;
     }
     try {
-      await customersService.updateName(customerId, editingName.trim());
+      await customersService.updateName(detail.id, nameDraft.trim());
+      setDetail({ ...detail, name: nameDraft.trim() });
       setCustomers((prev) =>
-        prev.map((c) => (c.id === customerId ? { ...c, name: editingName.trim() } : c)),
+        prev.map((c) => (c.id === detail.id ? { ...c, name: nameDraft.trim() } : c)),
       );
+      setEditingName(false);
       toast.success('客户名称已更新');
-      setEditingCustomerId(null);
-      setEditingName('');
     } catch {
-      toast.error('更新失败，请重试');
+      toast.error('更新名称失败');
+    }
+  };
+
+  const handleUpdateTags = async (nextTags: string[]) => {
+    if (!detail) return;
+    try {
+      await customersService.updateTags(detail.id, nextTags.join(','));
+      setDetail({ ...detail, tags: nextTags });
+      setCustomers((prev) =>
+        prev.map((c) => (c.id === detail.id ? { ...c, tags: nextTags } : c)),
+      );
+      toast.success('标签已更新');
+    } catch {
+      toast.error('标签更新失败');
     }
   };
 
   return (
-    <div className="flex h-full flex-col bg-[var(--nb-page)]">
-      {/* 固定头部：标题 + 搜索框 + 分类标签 */}
-      <div className="shrink-0 px-5 pt-5 pb-3 space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-[var(--nb-ink)]">客户</h1>
-            <p className="mt-1 text-sm text-[var(--nb-muted)]">管理客户档案、标签与服务记录</p>
-          </div>
-          <button
-            type="button"
-            onClick={handleInvite}
-            className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full bg-[var(--nb-page)] px-4 py-2 text-sm font-medium text-[var(--nb-secondary)] transition-colors active:bg-[var(--nb-page)]"
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.25 8.25h7.5a1.5 1.5 0 011.5 1.5v7.5a1.5 1.5 0 01-1.5 1.5h-7.5a1.5 1.5 0 01-1.5-1.5v-7.5a1.5 1.5 0 011.5-1.5zm2.25-3h7.5m-3.75 0V3m0 2.25v3" />
-            </svg>
-            邀请客户
-          </button>
-        </div>
-
-        <div className="relative">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--nb-muted)]">
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-          <input
-            type="text"
-            placeholder="搜索客户姓名或联系方式"
-            className="h-11 w-full rounded-[16px] border border-[var(--nb-line)] bg-[var(--nb-page)] pl-10 pr-4 text-[var(--nb-ink)] placeholder-[var(--nb-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-ink)]"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-          />
-        </div>
-
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-          {customerTabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`min-h-[44px] flex-shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === tab
-                  ? 'bg-[var(--nb-action)] text-white'
-                  : 'border border-[var(--nb-line)] bg-white text-[var(--nb-secondary)] active:bg-[var(--nb-page)]'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 可滚动内容：客户卡片列表（底部留出 TabBar 高度 + 安全区，避免最后一条被遮挡） */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-[calc(3.5rem+env(safe-area-inset-bottom)+1.5rem)]">
-        {isLoading ? (
-          <div className="space-y-1">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <ListItemSkeleton key={i} />
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+      {/* 左侧客户宽屏列表 */}
+      <div className={`space-y-4 ${selectedId ? 'xl:col-span-7' : 'xl:col-span-12'}`}>
+        <div className="flex flex-col justify-between gap-4 rounded-2xl border border-[var(--nb-line)] bg-[var(--nb-surface)] p-4 lg:flex-row lg:items-center">
+          <div className="flex flex-wrap items-center gap-2">
+            {filterTabs.map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={`min-h-[36px] rounded-xl px-3.5 text-xs font-medium transition ${
+                  activeTab === tab
+                    ? 'bg-[var(--nb-action)] text-[var(--nb-inverse)]'
+                    : 'bg-[var(--nb-page)] text-[var(--nb-secondary)] hover:text-[var(--nb-ink)]'
+                }`}
+              >
+                {tab}
+              </button>
             ))}
           </div>
-        ) : visibleCustomers.length > 0 ? (
-          <div className="space-y-3">
-            {visibleCustomers.map((customer) => (
-              <div
-                key={customer.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => navigate(`/customers/${customer.id}`)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    navigate(`/customers/${customer.id}`);
-                  }
-                }}
-                className="w-full text-left cursor-pointer"
-              >
-                <Card className="px-lg py-lg transition-colors active:bg-[var(--nb-page)]">
-                  <div className="flex items-start gap-4">
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setAvatarTagCustomerId(avatarTagCustomerId === customer.id ? null : customer.id);
-                        }}
-                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--nb-page)] text-sm font-semibold text-[var(--nb-ink)] active:opacity-80"
-                      >
-                        {isPhoneNumberAsName(customer.name) ? (
-                          <svg className="h-6 w-6 text-[var(--nb-ink)]/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
-                          </svg>
-                        ) : (
-                          <span className="text-sm font-semibold text-[var(--nb-ink)]">{getCustomerAvatar(customer.name)}</span>
-                        )}
-                      </button>
-                      {avatarTagCustomerId === customer.id && customer.tags.length > 0 && (
-                        <div
-                          className="absolute left-1/2 top-full z-20 mt-1.5 -translate-x-1/2 rounded-[14px] bg-white px-3 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.12)] ring-1 ring-black/[0.04]"
-                          style={{ minWidth: 100 }}
-                        >
-                          <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 h-3 w-3 rotate-45 bg-white ring-1 ring-black/[0.04]" />
-                          <div className="flex flex-wrap gap-1.5">
-                            {customer.tags.map((tag) => {
-                              const tc = getTagColor(tag, customTags);
-                              return (
-                                <span key={tag} className="rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: tc.bg, color: tc.text }}>
-                                  {tag}
-                                </span>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-col gap-3 min-[391px]:flex-row min-[391px]:items-start min-[391px]:justify-between">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            {editingCustomerId === customer.id ? (
-                              <div className="flex items-center gap-1.5">
-                                <input
-                                  type="text"
-                                  value={editingName}
-                                  onChange={(e) => setEditingName(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleUpdateName(customer.id);
-                                    if (e.key === 'Escape') { setEditingCustomerId(null); setEditingName(''); }
-                                  }}
-                                  className="w-28 rounded-lg border border-[var(--nb-control)] px-2 py-1 text-sm focus:border-[var(--nb-ink)] focus:outline-none"
-                                  autoFocus
-                                />
-                                <button
-                                  onClick={() => handleUpdateName(customer.id)}
-                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--nb-action)] text-white active:bg-[var(--nb-action-pressed)]"
-                                >
-                                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                </button>
-                                <button
-                                  onClick={() => { setEditingCustomerId(null); setEditingName(''); }}
-                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--nb-pressed)] text-[var(--nb-secondary)] active:bg-[var(--nb-pressed)]"
-                                >
-                                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                </button>
-                              </div>
-                            ) : (
-                              <>
-                                <p className="truncate text-sm font-semibold text-[var(--nb-ink)]">
-                                  {isPhoneNumberAsName(customer.name) ? '未设置名称' : customer.name}
-                                </p>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingCustomerId(customer.id);
-                                    setEditingName(isPhoneNumberAsName(customer.name) ? '' : customer.name);
-                                  }}
-                                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[var(--nb-muted)] hover:text-[var(--nb-secondary)] active:text-[var(--nb-secondary)]"
-                                >
-                                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                  </svg>
-                                </button>
-                                <svg className="h-4 w-4 shrink-0 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                              </>
-                            )}
-                          </div>
-                          {customer.address ? (
-                            <p className="mt-1 truncate text-xs text-[var(--nb-secondary)]">{customer.address}</p>
-                          ) : (
-                            <p className="mt-1 text-xs text-[var(--nb-muted)]">暂无地址</p>
-                          )}
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {customer.tags.map((tag) => {
-                            const tc = getTagColor(tag, customTags);
-                            return (
-                              <span key={tag} className="rounded-full px-2.5 py-1 text-[11px] font-medium" style={{ backgroundColor: tc.bg, color: tc.text }}>
+
+          <div className="flex items-center gap-2.5">
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="搜索客户昵称或手机号..."
+              className="min-h-[40px] w-56 rounded-xl border border-[var(--nb-line)] bg-[var(--nb-page)] px-3 text-sm text-[var(--nb-ink)] placeholder:text-[var(--nb-muted)] focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => void handleInvite()}
+              className="min-h-[40px] shrink-0 rounded-xl bg-[var(--nb-action)] px-4 text-sm font-medium text-[var(--nb-inverse)]"
+            >
+              复制邀请链接
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto rounded-2xl border border-[var(--nb-line)] bg-[var(--nb-surface)]">
+          {isLoading ? (
+            <div className="space-y-3 p-4">
+              <ListItemSkeleton />
+              <ListItemSkeleton />
+              <ListItemSkeleton />
+            </div>
+          ) : visibleCustomers.length === 0 ? (
+            <div className="py-16 text-center text-sm text-[var(--nb-muted)]">
+              暂无符合条件的客户档案
+            </div>
+          ) : (
+            <table className="w-full min-w-[640px] text-left text-sm">
+              <thead className="border-b border-[var(--nb-line)] bg-[var(--nb-page)] text-xs text-[var(--nb-muted)]">
+                <tr>
+                  <th className="px-4 py-3">客户</th>
+                  <th className="px-4 py-3">标签</th>
+                  <th className="px-4 py-3">累计服务</th>
+                  <th className="px-4 py-3">备注摘要</th>
+                  <th className="px-4 py-3 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--nb-line)]">
+                {visibleCustomers.map((customer) => {
+                  const active = selectedId === customer.id;
+                  return (
+                    <tr
+                      key={customer.id}
+                      onClick={() => setSelectedId(customer.id)}
+                      className={`cursor-pointer transition ${
+                        active ? 'bg-[var(--nb-active-surface)]' : 'hover:bg-[var(--nb-page)]/60'
+                      }`}
+                    >
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-[var(--nb-ink)]">{customer.name}</div>
+                        <div className="text-xs text-[var(--nb-muted)]">{customer.phone}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {customer.tags.length > 0 ? (
+                            customer.tags.slice(0, 3).map((tag) => (
+                              <span
+                                key={tag}
+                                className="rounded-md bg-[var(--nb-page)] px-2 py-0.5 text-[11px] text-[var(--nb-secondary)]"
+                              >
                                 {tag}
                               </span>
-                            );
-                          })}
+                            ))
+                          ) : (
+                            <span className="text-xs text-[var(--nb-muted)]">--</span>
+                          )}
                         </div>
-                      </div>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-[var(--nb-secondary)]">
+                        {customer.totalOrders} 次
+                      </td>
+                      <td className="max-w-[220px] truncate px-4 py-3 text-xs text-[var(--nb-muted)]">
+                        {customer.note}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/customers/${customer.id}`);
+                          }}
+                          className="text-xs font-medium text-[var(--nb-link)] hover:underline"
+                        >
+                          完整档案
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
 
-                      <div className="mt-3 grid grid-cols-2 gap-2 rounded-[18px] bg-[var(--nb-page)] p-3 min-[391px]:grid-cols-3">
-                        <div className="min-w-0">
-                          <p className="text-[11px] text-[var(--nb-muted)]">最近服务</p>
-                          <p className="mt-1 text-xs font-medium text-[var(--nb-ink)]">
-                            {customer.recentServiceAt ? formatDateLabel(customer.recentServiceAt) : '暂无记录'}
-                          </p>
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-[11px] text-[var(--nb-muted)]">累计消费</p>
-                          <p className="mt-1 text-xs font-semibold text-[var(--nb-secondary)]">{formatMoney(customer.totalSpent)}</p>
-                        </div>
-                        <div className="col-span-2 min-w-0 min-[391px]:col-span-1">
-                          <p className="text-[11px] text-[var(--nb-muted)]">服务次数</p>
-                          <p className="mt-1 text-xs font-medium text-[var(--nb-ink)]">{customer.totalOrders} 次</p>
-                        </div>
+      {/* 右侧全景详情分栏 */}
+      {selectedId && (
+        <div className="xl:col-span-5">
+          <div className="sticky top-20 space-y-5 rounded-2xl border border-[var(--nb-line)] bg-[var(--nb-surface)] p-5">
+            {detailLoading || !detail ? (
+              <div className="py-12 text-center text-sm text-[var(--nb-muted)]">
+                正在加载客户档案...
+              </div>
+            ) : (
+              <>
+                <div className="flex items-start justify-between gap-3 border-b border-[var(--nb-line)] pb-4">
+                  <div>
+                    {editingName ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={nameDraft}
+                          onChange={(e) => setNameDraft(e.target.value)}
+                          className="min-h-[34px] rounded-lg border border-[var(--nb-line)] px-2.5 text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void handleSaveName()}
+                          className="min-h-[34px] rounded-lg bg-[var(--nb-action)] px-3 text-xs text-[var(--nb-inverse)]"
+                        >
+                          保存
+                        </button>
                       </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-semibold text-[var(--nb-ink)]">{detail.name}</h3>
+                        <button
+                          type="button"
+                          onClick={() => setEditingName(true)}
+                          className="text-xs text-[var(--nb-link)] hover:underline"
+                        >
+                          改备注名
+                        </button>
+                      </div>
+                    )}
+                    <div className="mt-1 text-xs text-[var(--nb-muted)]">
+                      {detail.phone} · 累计 {detail.totalOrders} 单 · 消费 {formatMoney(detail.totalSpent)}
                     </div>
                   </div>
-                </Card>
-              </div>
-            ))}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(null)}
+                    className="rounded-lg border border-[var(--nb-line)] px-2.5 py-1 text-xs text-[var(--nb-muted)] hover:text-[var(--nb-ink)]"
+                  >
+                    关闭
+                  </button>
+                </div>
+
+                {/* 甲型偏好与避坑提醒 */}
+                <div className="space-y-2 rounded-xl border border-[var(--nb-line)] bg-[var(--nb-page)] p-3.5 text-xs">
+                  <div className="font-semibold text-[var(--nb-ink)]">甲型偏好与禁忌提醒</div>
+                  <div className="text-[var(--nb-secondary)]">
+                    偏好风格：{detail.preferenceStyle} · 色系：{detail.preferenceColor}
+                  </div>
+                  <div className="text-[var(--nb-secondary)]">过敏/禁忌：{detail.allergyNote}</div>
+                  <div className="text-[var(--nb-muted)]">备注：{detail.note}</div>
+                </div>
+
+                {/* 快捷标签维护 */}
+                <div>
+                  <div className="mb-2 text-xs font-semibold text-[var(--nb-ink)]">客户标签</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {detail.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 rounded-full bg-[var(--nb-page)] px-2.5 py-1 text-xs text-[var(--nb-ink)]"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => void handleUpdateTags(detail.tags.filter((t) => t !== tag))}
+                          className="text-[var(--nb-muted)] hover:text-[var(--nb-ink)]"
+                          aria-label={`移除标签 ${tag}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="mt-2.5 flex gap-2">
+                    <input
+                      type="text"
+                      value={newTagInput}
+                      onChange={(e) => setNewTagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const val = newTagInput.trim();
+                          if (val && !detail.tags.includes(val)) {
+                            void handleUpdateTags([...detail.tags, val]);
+                          }
+                          setNewTagInput('');
+                        }
+                      }}
+                      placeholder="输入新标签后回车"
+                      className="min-h-[36px] flex-1 rounded-xl border border-[var(--nb-line)] px-3 text-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* 历史服务时间轴 */}
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-[var(--nb-ink)]">历史服务记录</span>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/customers/${detail.id}`)}
+                      className="text-xs text-[var(--nb-link)] hover:underline"
+                    >
+                      进入完整详情页 →
+                    </button>
+                  </div>
+                  {detail.history.length === 0 ? (
+                    <p className="text-xs text-[var(--nb-muted)]">暂无历史服务记录</p>
+                  ) : (
+                    <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
+                      {detail.history.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between rounded-xl border border-[var(--nb-line)] px-3 py-2 text-xs"
+                        >
+                          <div>
+                            <div className="font-medium text-[var(--nb-ink)]">{item.label}</div>
+                            <div className="text-[var(--nb-muted)]">{formatDateLabel(item.date)}</div>
+                          </div>
+                          <div className="text-right font-medium text-[var(--nb-ink)]">
+                            {formatMoney(item.price)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
-        ) : (
-          <Card className="px-lg py-xl text-center text-sm text-[var(--nb-muted)]">没有找到匹配的客户</Card>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

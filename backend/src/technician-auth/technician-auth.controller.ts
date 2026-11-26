@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -31,6 +32,7 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { SetPasswordDto } from './dto/set-password.dto';
 import { SetInitialPasswordDto } from './dto/set-initial-password.dto';
 import { ForgotSendCodeDto, ForgotResetDto } from './dto/forgot-password.dto';
+import { ConfirmQrLoginDto } from './dto/qr-login.dto';
 import { RefreshTokenDto } from '../common/dto/refresh-token.dto';
 import { RegisterDeviceTokenDto } from '../notifications/dto/register-device-token.dto';
 import { PushService } from '../notifications/push.service';
@@ -54,6 +56,38 @@ export class TechnicianAuthController {
   @ApiResponse({ status: 400, description: '参数校验失败' })
   async login(@Body() body: TechnicianLoginDto) {
     return this.technicianAuthService.login(body.phone, body.password);
+  }
+
+  @Post('qr/create')
+  @Throttle({ default: { ttl: 60000, limit: 20 } })
+  @ApiOperation({ summary: '创建 PC 端扫码登录会话' })
+  @ApiResponse({ status: 201, description: '返回二维码会话令牌与内容' })
+  createQrSession() {
+    return this.technicianAuthService.createQrSession();
+  }
+
+  @Get('qr/status')
+  @Throttle({ default: { ttl: 60000, limit: 60 } })
+  @ApiOperation({ summary: '轮询 PC 端扫码登录状态' })
+  @ApiResponse({ status: 200, description: '返回扫码状态或登录令牌' })
+  getQrSessionStatus(@Query('sceneToken') sceneToken: string) {
+    return this.technicianAuthService.getQrSessionStatus(sceneToken);
+  }
+
+  @Post('qr/confirm')
+  @UseGuards(TechnicianJwtAuthGuard, TouristGuard)
+  @ApiOperation({ summary: '小程序端扫码/确认/取消 PC 端登录' })
+  @ApiBody({ type: ConfirmQrLoginDto })
+  @ApiResponse({ status: 201, description: '处理成功' })
+  confirmQrSession(
+    @Req() request: { user: { technicianId: number } },
+    @Body() body: ConfirmQrLoginDto,
+  ) {
+    return this.technicianAuthService.confirmQrSession(
+      request.user.technicianId,
+      body.sceneToken,
+      body.action,
+    );
   }
 
   @Post('forgot-password/send-code')

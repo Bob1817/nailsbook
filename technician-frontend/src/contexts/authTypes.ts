@@ -165,6 +165,7 @@ export interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (phone: string, passwordOrCode: string) => Promise<{ mustChangePassword: boolean }>;
+  loginWithToken: (accessToken: string, technicianData: Technician) => void;
   register: (params: { inviteKey: string; name: string; phone: string; password: string }) => Promise<void>;
   setPassword: (newPassword: string) => Promise<void>;
   setInitialPassword: (phone: string, newPassword: string) => Promise<void>;

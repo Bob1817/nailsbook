@@ -26,6 +26,7 @@ import { CreateWorkDto, UpdateWorkDto } from './dto/create-work.dto';
 import { UpdateWorkAccessDto } from './dto/work-access.dto';
 import { SaveHeroRecommendationsDto } from './dto/hero-recommendations.dto';
 import { SaveWorkPromotionDto } from './dto/work-promotion.dto';
+import { BatchWorksDto, ReorderWorksDto } from './dto/batch-works.dto';
 
 @ApiTags('美甲师-作品')
 @ApiBearerAuth()
@@ -61,6 +62,26 @@ export class TechnicianWorksController {
     @Body() dto: SaveHeroRecommendationsDto,
   ) {
     return this.technicianWorksService.saveHeroRecommendations(request.user.technicianId, dto);
+  }
+
+  @Post('batch')
+  @ApiOperation({ summary: '批量操作作品（上下架/删除/标签/改价）' })
+  @ApiBody({ type: BatchWorksDto })
+  batchAction(
+    @Req() request: { user: { technicianId: number } },
+    @Body() dto: BatchWorksDto,
+  ) {
+    return this.technicianWorksService.batchAction(request.user.technicianId, dto);
+  }
+
+  @Put('reorder')
+  @ApiOperation({ summary: '批量更新作品排序' })
+  @ApiBody({ type: ReorderWorksDto })
+  reorder(
+    @Req() request: { user: { technicianId: number } },
+    @Body() dto: ReorderWorksDto,
+  ) {
+    return this.technicianWorksService.reorder(request.user.technicianId, dto.orderedWorkIds);
   }
 
   @Get(':id')

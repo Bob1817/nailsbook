@@ -26,15 +26,15 @@ const ProfileCompletionPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-[var(--nb-page)] px-6">
-      <div className="w-full max-w-sm space-y-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--nb-page)] px-6">
+      <div className="w-full max-w-md space-y-5 rounded-2xl border border-[var(--nb-line)] bg-[var(--nb-surface)] p-7 shadow-sm">
         <h1 className="text-lg font-semibold text-[var(--nb-ink)]">完善服务城市</h1>
         <p className="text-sm text-[var(--nb-secondary)]">请先完善你的服务省/市，用于同城上门预约与将来的定位推荐。</p>
         <RegionSelect province={province} city={city} onChange={(v) => { setProvince(v.province); setCity(v.city); }} />
         <button
           onClick={submit}
           disabled={saving}
-          className="w-full min-h-[48px] rounded-xl bg-[var(--nb-action)] text-sm font-medium text-white disabled:opacity-60"
+          className="min-h-[48px] w-full rounded-xl bg-[var(--nb-action)] text-sm font-medium text-white disabled:opacity-60"
         >
           {saving ? '保存中…' : '保存并继续'}
         </button>

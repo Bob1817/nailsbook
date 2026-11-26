@@ -12,7 +12,8 @@ ENV VITE_API_URL=$VITE_API_URL
 # 邀请链接指向客户端域名
 ARG VITE_CLIENT_BASE_URL=https://m.lunails.cn
 ENV VITE_CLIENT_BASE_URL=$VITE_CLIENT_BASE_URL
-RUN npm run build
+# Docker 构建上下文为 ./technician-frontend，跳过依赖仓库根 scripts/ 的 prebuild 颜色检查
+RUN npx tsc -b && npx vite build
 
 # ---- production stage ----
 FROM nginx:alpine AS runner

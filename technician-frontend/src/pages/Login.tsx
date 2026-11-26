@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -7,8 +7,13 @@ import { ServiceTypeSetupModal } from '../components/ServiceTypeSetupModal';
 import type { ServiceTypeSettings } from '../contexts/authTypes';
 
 type Step = 'phone' | 'login' | 'register';
+type LoginMode = 'qr' | 'password';
 
 export const Login: React.FC = () => {
+  const [loginMode, setLoginMode] = useState<LoginMode>('password');
+  const [qrSceneToken, setQrSceneToken] = useState('');
+  const [qrImageUrl, setQrImageUrl] = useState<string | null>(null);
+  const [qrStatus, setQrStatus] = useState<'loading' | 'pending' | 'scanned' | 'expired' | 'unavailable' | 'error'>('loading');
   const [step, setStep] = useState<Step>('phone');
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
@@ -21,8 +26,55 @@ export const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showServiceTypeModal, setShowServiceTypeModal] = useState(false);
   const [showWorkTimePrompt, setShowWorkTimePrompt] = useState(false);
-  const { login, register, updateServiceType } = useAuth();
+  const { login, loginWithToken, register, updateServiceType } = useAuth();
   const navigate = useNavigate();
+
+  const refreshQrCode = useCallback(async () => {
+    setQrStatus('loading');
+    try {
+      const session = await authService.createQrSession();
+      if (!session.available || !session.qrImageUrl) {
+        setQrSceneToken('');
+        setQrImageUrl(null);
+        setQrStatus('unavailable');
+        return;
+      }
+      setQrSceneToken(session.sceneToken);
+      setQrImageUrl(session.qrImageUrl);
+      setQrStatus('pending');
+    } catch {
+      setQrStatus('error');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (loginMode !== 'qr') return;
+    void refreshQrCode();
+  }, [loginMode, refreshQrCode]);
+
+  useEffect(() => {
+    if (loginMode !== 'qr' || !qrSceneToken) return;
+    if (qrStatus !== 'pending' && qrStatus !== 'scanned') return;
+
+    const timer = window.setInterval(async () => {
+      try {
+        const res = await authService.getQrSessionStatus(qrSceneToken);
+        if (res.status === 'scanned') {
+          setQrStatus('scanned');
+        } else if (res.status === 'expired') {
+          setQrStatus('expired');
+        } else if (res.status === 'confirmed' && res.accessToken && res.technician) {
+          window.clearInterval(timer);
+          loginWithToken(res.accessToken, res.technician);
+          navigate('/');
+        }
+      } catch {
+        // 轮询偶发网络抖动不中断，等待下次轮询
+      }
+    }, 2000);
+
+    return () => window.clearInterval(timer);
+  }, [loginMode, qrSceneToken, qrStatus, loginWithToken, navigate]);
 
   const getErrorMessage = (unknownError: unknown, fallback: string) => {
     if (axios.isAxiosError(unknownError)) {
@@ -160,12 +212,106 @@ export const Login: React.FC = () => {
               {step === 'register' && '完成注册'}
             </h2>
             <p className="mt-2 text-sm text-[var(--nb-secondary)]">
-              {step === 'phone' && '输入手机号开始'}
-              {step === 'login' && '该手机号已注册，请输入密码登录'}
-              {step === 'register' && '使用邀请密钥完成账号创建'}
+              {loginMode === 'qr'
+                ? '使用微信「扫一扫」授权登录创作者中心'
+                : step === 'phone'
+                  ? '输入手机号以登录或注册美甲师账号'
+                  : step === 'login'
+                    ? '该手机号已注册，请输入密码登录'
+                    : '使用邀请密钥完成账号创建'}
             </p>
           </div>
 
+          <div className="mt-6 grid grid-cols-2 rounded-xl border border-[var(--nb-line)] bg-[var(--nb-page)] p-1">
+            <button
+              type="button"
+              onClick={() => setLoginMode('password')}
+              className={`min-h-[40px] rounded-lg text-sm font-medium transition ${
+                loginMode === 'password'
+                  ? 'bg-[var(--nb-surface)] text-[var(--nb-ink)] shadow-sm'
+                  : 'text-[var(--nb-muted)] hover:text-[var(--nb-ink)]'
+              }`}
+            >
+              账号密码登录
+            </button>
+            <button
+              type="button"
+              onClick={() => setLoginMode('qr')}
+              className={`min-h-[40px] rounded-lg text-sm font-medium transition ${
+                loginMode === 'qr'
+                  ? 'bg-[var(--nb-surface)] text-[var(--nb-ink)] shadow-sm'
+                  : 'text-[var(--nb-muted)] hover:text-[var(--nb-ink)]'
+              }`}
+            >
+              微信扫码登录
+            </button>
+          </div>
+
+          {loginMode === 'qr' && (
+            <div className="mt-6 flex flex-col items-center rounded-2xl border border-[var(--nb-line)] bg-[var(--nb-surface)] p-6">
+              {qrStatus === 'unavailable' ? (
+                <div className="space-y-3 py-6 text-center">
+                  <p className="text-sm font-medium text-[var(--nb-ink)]">微信扫码登录暂未启用</p>
+                  <p className="text-xs text-[var(--nb-muted)]">请直接使用手机号和密码登录创作者中心</p>
+                  <button
+                    type="button"
+                    onClick={() => setLoginMode('password')}
+                    className="min-h-[40px] rounded-xl bg-[var(--nb-action)] px-5 text-xs font-medium text-[var(--nb-inverse)]"
+                  >
+                    切回账号密码登录
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="relative flex h-[204px] w-[204px] items-center justify-center rounded-xl border border-[var(--nb-line)] bg-white p-2.5">
+                    {qrStatus === 'loading' && (
+                      <span className="text-sm text-[var(--nb-muted)]">正在生成二维码...</span>
+                    )}
+                    {qrStatus === 'error' && (
+                      <button
+                        type="button"
+                        onClick={() => void refreshQrCode()}
+                        className="rounded-lg bg-[var(--nb-action)] px-4 py-2 text-xs font-medium text-[var(--nb-inverse)]"
+                      >
+                        加载失败，点击重试
+                      </button>
+                    )}
+                    {(qrStatus === 'pending' || qrStatus === 'scanned' || qrStatus === 'expired') && qrImageUrl && (
+                      <img src={qrImageUrl} alt="微信扫码登录" className="h-[180px] w-[180px] object-contain" />
+                    )}
+                    {qrStatus === 'expired' && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-xl bg-white/95">
+                        <span className="text-sm font-medium text-[var(--nb-ink)]">二维码已过期</span>
+                        <button
+                          type="button"
+                          onClick={() => void refreshQrCode()}
+                          className="min-h-[36px] rounded-lg bg-[var(--nb-action)] px-4 text-xs font-medium text-[var(--nb-inverse)]"
+                        >
+                          点击刷新
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="mt-4 text-center text-sm font-medium text-[var(--nb-ink)]">
+                    {qrStatus === 'scanned'
+                      ? '已扫码，正在完成授权登录...'
+                      : '打开微信右上角「扫一扫」直接扫码登录'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void refreshQrCode()}
+                    className="mt-2 text-xs text-[var(--nb-link)] underline-offset-2 hover:underline"
+                  >
+                    刷新二维码
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {loginMode === 'password' && (
+            <>
           {/* Error banner */}
           {error && (
             <div id="login-error" role="alert" className="mt-6 rounded-xl border border-[var(--nb-line)] bg-[var(--nb-page)] px-4 py-3 text-sm text-[var(--nb-secondary)]">
@@ -304,6 +450,8 @@ export const Login: React.FC = () => {
               </button>
             </form>
           )}
+            </>
+          )}
 
           <p className="mt-8 text-center text-xs text-[var(--nb-muted)]">
             登录遇到问题？<span className="text-[var(--nb-ink)]">联系客服</span>
@@ -355,24 +503,17 @@ const AgreementCheckbox: React.FC<{
   agreed: boolean;
   setAgreed: (v: boolean) => void;
 }> = ({ agreed, setAgreed }) => (
-  <div className="flex items-start gap-2 pt-1">
-    <button
-      type="button"
-      onClick={() => setAgreed(!agreed)}
-      className={`mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border-[1.5px] transition-colors ${
-        agreed ? 'border-[var(--nb-control)] bg-[var(--nb-action)]' : 'border-[var(--nb-line)] bg-white'
-      }`}
-    >
-      {agreed && (
-        <svg className="h-2.5 w-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-        </svg>
-      )}
-    </button>
-    <span className="text-xs text-[var(--nb-muted)]">
+  <label className="flex cursor-pointer items-center gap-2 pt-1">
+    <input
+      type="checkbox"
+      checked={agreed}
+      onChange={(e) => setAgreed(e.target.checked)}
+      className="h-4 w-4 shrink-0 rounded accent-[var(--nb-action)]"
+    />
+    <span className="text-xs leading-relaxed text-[var(--nb-muted)]">
       我已阅读并同意
       <span className="text-[var(--nb-ink)]">《用户协议》</span>和
       <span className="text-[var(--nb-ink)]">《隐私政策》</span>
     </span>
-  </div>
+  </label>
 );

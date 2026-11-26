@@ -4,6 +4,7 @@ import { Card } from '../components/base/Card';
 import { Button } from '../components/base/Button';
 import { useToast } from '../components/feedback/ToastProvider';
 import { authService, type BindingApplication } from '../services/auth';
+import { getErrorMessage } from '../utils/errorMessage';
 
 function formatTime(iso: string): string {
   const d = new Date(iso);
@@ -39,8 +40,8 @@ export const BindingApplicationsPage: React.FC = () => {
       await authService.approveBindingApplication(app.id);
       toast.success(`已通过「${app.name}」的绑定申请`);
       setApps((prev) => prev.filter((a) => a.id !== app.id));
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message || '操作失败，请重试');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, '操作失败，请重试'));
     } finally {
       setBusyId(null);
     }
@@ -53,8 +54,8 @@ export const BindingApplicationsPage: React.FC = () => {
       await authService.rejectBindingApplication(app.id);
       toast.success('已拒绝该绑定申请');
       setApps((prev) => prev.filter((a) => a.id !== app.id));
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message || '操作失败，请重试');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, '操作失败，请重试'));
     } finally {
       setBusyId(null);
     }

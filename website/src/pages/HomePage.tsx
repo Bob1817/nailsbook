@@ -16,6 +16,7 @@ import SiteFooter from '../components/SiteFooter'
 import AppPreview from '../components/AppPreview'
 import ScanQrModal from '../components/ScanQrModal'
 import FlagshipShowcaseSection from '../components/FlagshipShowcaseSection'
+import InteractiveDemoSection from '../components/demo/InteractiveDemoSection'
 import { Meta } from '../components/Meta'
 import { useLang } from '../i18n/LanguageContext'
 import { recruitment } from '../content/recruitment'
@@ -105,6 +106,15 @@ export default function HomePage() {
               {isZh ? 'REAL PRODUCT SCREENS · 真实工作台界面' : 'REAL PRODUCT SCREENS'}
             </p>
             <AppPreview />
+            <div className="mt-3 flex justify-center">
+              <a
+                href="#interactive-demo"
+                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-line bg-surface px-4 py-1.5 text-xs font-semibold text-ink shadow-xs transition hover:bg-neutral-100"
+              >
+                <Sparkles size={13} />
+                {isZh ? '亲手体验 30 秒双端交互演示 ↓' : 'Try 30s interactive demo ↓'}
+              </a>
+            </div>
           </div>
         </section>
 
@@ -134,6 +144,14 @@ export default function HomePage() {
             })}
           </div>
         </section>
+
+        {/* 在线双端联动演示（30秒亲手体验核心闭环） */}
+        <InteractiveDemoSection
+          onOpenScan={(type, meta) => {
+            setScanMeta(meta || null)
+            setScan(type)
+          }}
+        />
 
         {/* 02 / 主页配置效果预览（作为工具落地效果证明） */}
         <FlagshipShowcaseSection

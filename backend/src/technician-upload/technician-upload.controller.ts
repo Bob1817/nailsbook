@@ -27,7 +27,7 @@ import { TechnicianUploadService } from './technician-upload.service';
 @ApiBearerAuth()
 @Controller('technician/uploads')
 @UseGuards(TechnicianJwtAuthGuard, TouristGuard)
-@Throttle({ default: { ttl: 60000, limit: 30 } })
+@Throttle({ default: { ttl: 60000, limit: 120 } })
 export class TechnicianUploadController {
   constructor(
     private readonly technicianUploadService: TechnicianUploadService,

@@ -61,6 +61,8 @@ export const DEFAULT_SERVICES: Omit<ServiceItem, 'id' | 'createdAt' | 'updatedAt
     category: 'basic_care',
     isActive: true,
     sortOrder: 1,
+    depositMode: 'none',
+    depositValue: 0,
   },
   {
     name: '纯色美甲',
@@ -68,6 +70,8 @@ export const DEFAULT_SERVICES: Omit<ServiceItem, 'id' | 'createdAt' | 'updatedAt
     category: 'color_style',
     isActive: true,
     sortOrder: 2,
+    depositMode: 'none',
+    depositValue: 0,
   },
   {
     name: '款式美甲',
@@ -75,6 +79,8 @@ export const DEFAULT_SERVICES: Omit<ServiceItem, 'id' | 'createdAt' | 'updatedAt
     category: 'color_style',
     isActive: true,
     sortOrder: 3,
+    depositMode: 'none',
+    depositValue: 0,
   },
   {
     name: '甲片延长',
@@ -82,6 +88,8 @@ export const DEFAULT_SERVICES: Omit<ServiceItem, 'id' | 'createdAt' | 'updatedAt
     category: 'extension_reinforcement',
     isActive: true,
     sortOrder: 4,
+    depositMode: 'none',
+    depositValue: 0,
   },
   {
     name: '光疗延长',
@@ -89,6 +97,8 @@ export const DEFAULT_SERVICES: Omit<ServiceItem, 'id' | 'createdAt' | 'updatedAt
     category: 'extension_reinforcement',
     isActive: true,
     sortOrder: 5,
+    depositMode: 'none',
+    depositValue: 0,
   },
   {
     name: '卸甲服务',
@@ -96,5 +106,7 @@ export const DEFAULT_SERVICES: Omit<ServiceItem, 'id' | 'createdAt' | 'updatedAt
     category: 'removal',
     isActive: true,
     sortOrder: 6,
+    depositMode: 'none',
+    depositValue: 0,
   },
 ];

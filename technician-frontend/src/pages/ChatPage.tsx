@@ -71,7 +71,7 @@ const ChatPage: React.FC = () => {
   useEffect(() => {
     if (!socket || !convId) return;
 
-    const onNewMessage = (data: { message: any; conversation: any }) => {
+    const onNewMessage = (data: { message: Message }) => {
       if (data.message.conversationId === convId) {
         setMessages((prev) => {
           if (prev.some((m) => m.id === data.message.id)) return prev;
@@ -640,7 +640,7 @@ const ChatPage: React.FC = () => {
               </button>
             </div>
             <div className="space-y-3">
-              {technician?.socialMedia && Object.entries(technician.socialMedia).some(([_, value]) => value) ? (
+              {technician?.socialMedia && Object.entries(technician.socialMedia).some(([, value]) => value) ? (
                 <>
                   <p className="text-sm text-[var(--nb-secondary)] mb-3">选择要分享的社交媒体账号：</p>
                   {technician.socialMedia.weibo && (

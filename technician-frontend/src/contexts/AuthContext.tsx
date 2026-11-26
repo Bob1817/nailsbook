@@ -83,6 +83,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return { mustChangePassword: response.mustChangePassword };
   };
 
+  const loginWithToken = (accessToken: string, technicianData: Technician) => {
+    localStorage.setItem('technician_token', accessToken);
+    localStorage.setItem('technician_info', JSON.stringify(technicianData));
+    setToken(accessToken);
+    setTechnician(technicianData);
+  };
+
   const register = async (params: {
     inviteKey: string;
     name: string;
@@ -160,7 +167,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ technician, token, loading, login, register, setPassword, setInitialPassword, updateTechnicianStatus, updateServiceType, updateTechnicianProfile, logout }}>
+    <AuthContext.Provider value={{ technician, token, loading, login, loginWithToken, register, setPassword, setInitialPassword, updateTechnicianStatus, updateServiceType, updateTechnicianProfile, logout }}>
       {children}
     </AuthContext.Provider>
   );

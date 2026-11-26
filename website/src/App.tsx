@@ -9,6 +9,7 @@ import ContactPage from './pages/ContactPage'
 import AboutPage from './pages/AboutPage'
 import ApplicationInfoPage from './pages/ApplicationInfoPage'
 import ModelArtistCampaignPage from './pages/ModelArtistCampaignPage'
+import DemoPage from './pages/DemoPage'
 import { QuoteCalculatorPage } from './pages/quote/QuoteCalculatorPage'
 import { QuoteDetailPage } from './pages/quote/QuoteDetailPage'
 
@@ -36,6 +37,7 @@ function AppRouter() {
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/demo" element={<DemoPage />} />
         <Route path="/apply" element={<ModelArtistCampaignPage />} />
         <Route path="/model-artists" element={<ModelArtistCampaignPage />} />
         <Route path="/campaign" element={<ModelArtistCampaignPage />} />

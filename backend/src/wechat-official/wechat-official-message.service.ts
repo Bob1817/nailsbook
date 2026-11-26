@@ -6,6 +6,7 @@ import {
 } from './wechat-official-config.service';
 import { OfficialAccessTokenService } from './official-access-token.service';
 import { OfficialInboxService } from './official-inbox.service';
+import { qrLoginSessionStore } from '../common/qr-login-session.store';
 import {
   DEFAULT_FALLBACK_REPLY,
   DEFAULT_WELCOME_REPLY,
@@ -108,9 +109,9 @@ export class WechatOfficialMessageService {
     const event = (message.Event ?? '').toLowerCase();
 
     if (event === 'subscribe') {
-      await this.recordIdentity(fromUserName, message.EventKey);
+      const loginReply = await this.recordIdentity(fromUserName, message.EventKey);
       await this.inbox.recordIncoming(message, 'note');
-      return this.text(fromUserName, toUserName, input.welcomeReply);
+      return this.text(fromUserName, toUserName, loginReply || input.welcomeReply);
     }
 
     if (event === 'unsubscribe') {
@@ -120,10 +121,10 @@ export class WechatOfficialMessageService {
     }
 
     if (event === 'scan') {
-      // 已关注用户扫描带参二维码：记录来源，不重复发欢迎语。
-      await this.recordIdentity(fromUserName, message.EventKey);
+      // 已关注用户扫描带参二维码：记录来源，不重复发欢迎语（创作者中心登录码除外）。
+      const loginReply = await this.recordIdentity(fromUserName, message.EventKey);
       await this.inbox.recordIncoming(message, 'note');
-      return '';
+      return loginReply ? this.text(fromUserName, toUserName, loginReply) : '';
     }
 
     if (event === 'click') {
@@ -154,7 +155,7 @@ export class WechatOfficialMessageService {
    * 关注/扫码时登记身份，便于后续通过 unionId 与小程序账号打通。
    * 获取 unionId 失败不影响回复流程。
    */
-  private async recordIdentity(openId: string, eventKey?: string) {
+  private async recordIdentity(openId: string, eventKey?: string): Promise<string | null> {
     const channel = this.parseChannel(eventKey);
     if (channel) {
       this.logger.log(`扫码关注来源：${channel}（${openId}）`);
@@ -169,9 +170,25 @@ export class WechatOfficialMessageService {
         create: { appId: config.appId, openId, unionId },
         update: unionId ? { unionId } : {},
       });
+
+      if (channel && channel.startsWith('creator_login:')) {
+        const sceneToken = channel.slice('creator_login:'.length);
+        const linked = await this.prisma.wechatIdentity.findFirst({
+          where: {
+            technicianId: { not: null },
+            OR: unionId ? [{ unionId }, { openId }] : [{ openId }],
+          },
+          select: { technicianId: true },
+        });
+        if (linked?.technicianId && qrLoginSessionStore.confirm(sceneToken, linked.technicianId)) {
+          return '已确认登录 OnlyNail 创作者中心，请在电脑浏览器继续操作。';
+        }
+        return '当前微信暂未绑定美甲师账号，请先在网页端使用手机号和密码登录。';
+      }
     } catch (error) {
       this.logger.warn(`登记公众号用户身份失败：${String(error)}`);
     }
+    return null;
   }
 
   private parseChannel(eventKey?: string) {

@@ -11,6 +11,7 @@ import { CreateWorkDto, UpdateWorkDto } from './dto/create-work.dto';
 import { UpdateWorkAccessDto } from './dto/work-access.dto';
 import { SaveHeroRecommendationsDto } from './dto/hero-recommendations.dto';
 import { SaveWorkPromotionDto } from './dto/work-promotion.dto';
+import { BatchWorksDto } from './dto/batch-works.dto';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { StorageService } from '../common/storage/storage.service';
 import { DingtalkAlertService } from '../notifications/dingtalk-alert.service';
@@ -1597,5 +1598,87 @@ export class TechnicianWorksService {
           .filter(Boolean),
       ),
     ];
+  }
+
+  /** 批量操作作品（上下架/删除/标签/改价） */
+  async batchAction(technicianId: number, dto: BatchWorksDto) {
+    const ids = [...new Set(dto.workIds)];
+    const owned = await this.prisma.nailWork.findMany({
+      where: { id: { in: ids }, techId: technicianId },
+      select: { id: true, tags: true },
+    });
+    if (owned.length !== ids.length) {
+      throw new NotFoundException('部分作品不存在或无权操作');
+    }
+
+    if (dto.action === 'show' || dto.action === 'hide') {
+      await this.prisma.nailWork.updateMany({
+        where: { id: { in: ids }, techId: technicianId },
+        data: { isVisible: dto.action === 'show' },
+      });
+      return { affected: ids.length };
+    }
+
+    if (dto.action === 'delete') {
+      for (const id of ids) {
+        await this.remove(technicianId, id);
+      }
+      return { affected: ids.length };
+    }
+
+    if (dto.action === 'update_price') {
+      if (typeof dto.price !== 'number' || !Number.isFinite(dto.price) || dto.price <= 0) {
+        throw new BadRequestException('请填写大于 0 的有效价格');
+      }
+      await this.prisma.nailWork.updateMany({
+        where: { id: { in: ids }, techId: technicianId },
+        data: { price: dto.price },
+      });
+      return { affected: ids.length };
+    }
+
+    const incomingTags = [...new Set((dto.tags || []).map((t) => t.trim()).filter(Boolean))];
+    if (!incomingTags.length) {
+      throw new BadRequestException('请至少选择一个标签');
+    }
+
+    await this.prisma.$transaction(
+      owned.map((work) => {
+        const current = this.parseTags(work.tags);
+        const next =
+          dto.action === 'add_tags'
+            ? [...new Set([...current, ...incomingTags])]
+            : current.filter((tag) => !incomingTags.includes(tag));
+        return this.prisma.nailWork.update({
+          where: { id: work.id },
+          data: { tags: next.join(',') },
+        });
+      }),
+    );
+
+    return { affected: ids.length };
+  }
+
+  /** 批量更新作品排序权重 */
+  async reorder(technicianId: number, orderedWorkIds: number[]) {
+    const ids = [...new Set(orderedWorkIds)];
+    const owned = await this.prisma.nailWork.findMany({
+      where: { id: { in: ids }, techId: technicianId },
+      select: { id: true },
+    });
+    if (owned.length !== ids.length) {
+      throw new NotFoundException('部分作品不存在或无权操作');
+    }
+
+    await this.prisma.$transaction(
+      ids.map((id, index) =>
+        this.prisma.nailWork.update({
+          where: { id },
+          data: { sortOrder: index },
+        }),
+      ),
+    );
+
+    return { updated: ids.length };
   }
 }

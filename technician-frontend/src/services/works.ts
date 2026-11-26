@@ -11,6 +11,8 @@ export interface Work {
   description: string | null;
   tags: string[];
   price: number | null;
+  standardPrice?: number | null;
+  standardPriceFen?: number | null;
   isVisible: boolean;
   isPinned: boolean;
   isFeatured: boolean;
@@ -34,17 +36,34 @@ export interface Work {
 }
 
 export interface CreateWorkDto {
+  createRequestId?: string;
   title: string;
   coverUrl?: string;
+  coverWidth?: number;
+  coverHeight?: number;
   images?: string[];
   description?: string;
+  designIdea?: string;
+  suitableScene?: string;
+  outfitSuggestion?: string;
+  recommendationScore?: number;
   tags?: string[];
   price?: number;
+  selectedServiceIds?: string[];
+  serviceCustomPrices?: Record<string, number>;
+  standardPrice?: number;
   isVisible?: boolean;
   sortOrder?: number;
 }
 
-export interface UpdateWorkDto extends Partial<CreateWorkDto> {}
+export type UpdateWorkDto = Partial<CreateWorkDto>;
+
+export interface BatchWorksPayload {
+  workIds: number[];
+  action: 'show' | 'hide' | 'delete' | 'add_tags' | 'remove_tags' | 'update_price';
+  tags?: string[];
+  price?: number;
+}
 
 export interface CommentUser {
   id: number;
@@ -84,8 +103,14 @@ function processWork(work: Work): Work {
       ? `${BASE_URL}${work.coverUrl}`
       : null;
 
+  const resolvedPrice =
+    work.price ??
+    work.standardPrice ??
+    (work.standardPriceFen != null ? Math.round(work.standardPriceFen / 100) : null);
+
   return {
     ...work,
+    price: resolvedPrice,
     coverUrl,
     imageUrls: processedImageUrls,
   };
@@ -194,6 +219,41 @@ export const worksService = {
 
   async markFavoritesAsRead(workId: number): Promise<{ success: boolean }> {
     const response = await api.post(`/works/${workId}/mark-favorites-read`);
+    return response.data;
+  },
+
+  async createDraft(data: UpdateWorkDto): Promise<Work> {
+    const response = await api.post('/works/drafts', {
+      ...data,
+      coverUrl: data.coverUrl ?? data.images?.[0],
+      images: data.images ? JSON.stringify(data.images) : undefined,
+      tags: data.tags ? data.tags.join(',') : undefined,
+    });
+    return processWork(response.data);
+  },
+
+  async saveDraft(id: number, data: UpdateWorkDto): Promise<Work> {
+    const response = await api.patch(`/works/${id}/draft`, {
+      ...data,
+      coverUrl: data.coverUrl ?? data.images?.[0],
+      images: data.images ? JSON.stringify(data.images) : undefined,
+      tags: data.tags ? data.tags.join(',') : undefined,
+    });
+    return processWork(response.data);
+  },
+
+  async publish(id: number): Promise<Work> {
+    const response = await api.post(`/works/${id}/publish`);
+    return processWork(response.data);
+  },
+
+  async batchAction(payload: BatchWorksPayload): Promise<{ affected: number }> {
+    const response = await api.post('/works/batch', payload);
+    return response.data;
+  },
+
+  async reorder(orderedWorkIds: number[]): Promise<{ updated: number }> {
+    const response = await api.put('/works/reorder', { orderedWorkIds });
     return response.data;
   },
 };

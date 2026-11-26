@@ -44,6 +44,11 @@ const MePage = lazy(async () => {
 });
 const HeroRecommendationsPage = lazy(() => import('./pages/HeroRecommendationsPage'));
 const WorksPage = lazy(() => import('./pages/WorksPage'));
+const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
+const WorkEditorPage = lazy(async () => {
+  const module = await import('./pages/WorkEditorPage');
+  return { default: module.WorkEditorPage };
+});
 const ShopManagement = lazy(() => import('./pages/ShopManagement'));
 const ShopEdit = lazy(() => import('./pages/ShopEdit'));
 const ServicesPage = lazy(() => import('./pages/ServicesPage'));
@@ -109,6 +114,9 @@ function App() {
                   <Route path="/chat" element={<ChatPage />} />
                   <Route path="/me" element={<MePage />} />
                   <Route path="/works" element={<WorksPage />} />
+                  <Route path="/works/new" element={<WorkEditorPage />} />
+                  <Route path="/works/:id/edit" element={<WorkEditorPage />} />
+                  <Route path="/analytics" element={<AnalyticsPage />} />
                   <Route path="/hero-recommendations" element={<HeroRecommendationsPage />} />
                   <Route path="/shops" element={<ShopManagement />} />
                   <Route path="/shops/edit" element={<ShopEdit />} />

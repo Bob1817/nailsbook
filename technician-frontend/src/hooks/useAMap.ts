@@ -8,6 +8,24 @@ interface UseAMapOptions {
   onError?: (error: Error) => void;
 }
 
+export interface AMapMap {
+  setFitView(): void;
+}
+
+export interface AMapOverlay {
+  setMap(map: AMapMap | null): void;
+}
+
+export interface AMapMarker extends AMapOverlay {
+  on(event: string, handler: () => void): void;
+}
+
+export interface AMapApi {
+  Map: new (container: HTMLElement, options: Record<string, unknown>) => AMapMap;
+  Marker: new (options: Record<string, unknown>) => AMapMarker;
+  Polyline: new (options: Record<string, unknown>) => AMapOverlay;
+}
+
 export function useAMap(options: UseAMapOptions = {}) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -22,7 +40,7 @@ export function useAMap(options: UseAMapOptions = {}) {
     }
 
     // Set security config
-    (window as any)._AMapSecurityConfig = {
+    window._AMapSecurityConfig = {
       securityJsCode: AMAP_SECURITY_CONFIG,
     };
 
@@ -60,7 +78,7 @@ export function useAMap(options: UseAMapOptions = {}) {
 // Extend Window interface for AMap
 declare global {
   interface Window {
-    AMap: any;
+    AMap?: AMapApi;
     _AMapSecurityConfig?: {
       securityJsCode: string;
     };

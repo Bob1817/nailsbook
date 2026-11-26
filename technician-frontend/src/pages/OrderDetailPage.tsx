@@ -17,6 +17,7 @@ import {
   type TechnicianOrder,
 } from '../services/technicianData';
 import type { TechnicianCustomerSummary } from '../services/technicianData';
+import { getErrorMessage } from '../utils/errorMessage';
 
 const serviceTypeLabels: Record<string, string> = {
   home: '上门美甲',
@@ -196,8 +197,8 @@ const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ orderIdProp, onClose,
       setReinitDate('');
       setReinitTime('');
       toast.success('已重新发起预约');
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || '重新发起失败');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, '重新发起失败'));
     } finally {
       setIsReinitiating(false);
     }
@@ -753,7 +754,7 @@ const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ orderIdProp, onClose,
                     const result = await messageService.sendOrderCard(order.id);
                     toast.success('已发送给客户');
                     if (result.conversationId) { if (onClose) onClose(); navigate(`/chat?conversation_id=${result.conversationId}`); }
-                  } catch (err: any) { toast.error(err?.response?.data?.message || '发送失败，请重试'); }
+                  } catch (error: unknown) { toast.error(getErrorMessage(error, '发送失败，请重试')); }
                 }}
                 className="flex-1 min-w-0 h-12 rounded-[18px] bg-[var(--nb-action)] text-[15px] font-semibold text-white shadow-none active:opacity-80">
                 发给 {order.customerName}

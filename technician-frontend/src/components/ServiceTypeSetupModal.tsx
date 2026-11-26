@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import type { ShopAddress, ServiceTypeSettings } from '../contexts/authTypes';
+import { getErrorMessage } from '../utils/errorMessage';
 
 interface ServiceTypeSetupModalProps {
   isOpen: boolean;
@@ -62,8 +63,8 @@ export const ServiceTypeSetupModal: React.FC<ServiceTypeSetupModalProps> = ({
         shopService,
         shopAddresses: shopService ? existingShops : [],
       });
-    } catch (err: any) {
-      setError(err.message || '保存失败，请重试');
+    } catch (error: unknown) {
+      setError(getErrorMessage(error, '保存失败，请重试'));
     } finally {
       setLoading(false);
     }

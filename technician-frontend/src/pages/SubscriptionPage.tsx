@@ -294,15 +294,15 @@ export const SubscriptionPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-[14px] font-semibold text-[var(--nb-ink)]">官方微信</p>
-                  <p className="text-[12px] text-[var(--nb-secondary)]">NailBook 管理员</p>
+                  <p className="text-[12px] text-[var(--nb-secondary)]">OnlyNail 管理员</p>
                 </div>
               </div>
               <div className="flex items-center justify-between rounded-[14px] bg-white px-4 py-3 ring-1 ring-[var(--nb-line)]">
-                <span className="text-[15px] font-mono font-semibold text-[var(--nb-ink)] tracking-wide">NailBook_Admin</span>
+                <span className="text-[15px] font-mono font-semibold text-[var(--nb-ink)] tracking-wide">OnlyNail_Admin</span>
                 <button
                   type="button"
                   onClick={() => {
-                    navigator.clipboard.writeText('NailBook_Admin');
+                    navigator.clipboard.writeText('OnlyNail_Admin');
                   }}
                   className="min-h-[36px] rounded-[10px] bg-[var(--nb-page)] px-3 text-[12px] font-semibold text-[var(--nb-ink)] active:bg-[var(--nb-page)]"
                 >

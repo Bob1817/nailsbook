@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/feedback/ToastProvider';
 import { servicesService } from '../services/services';
@@ -14,7 +13,6 @@ const categoryColors: Record<ServiceCategory, { bg: string; text: string; border
 };
 
 const ServicesPage: React.FC = () => {
-  const navigate = useNavigate();
   const { technician } = useAuth();
   const toast = useToast();
   const [services, setServices] = useState<ServiceItem[]>([]);
@@ -38,7 +36,7 @@ const ServicesPage: React.FC = () => {
     try {
       const data = await servicesService.list();
       setServices(data);
-    } catch (error) {
+    } catch {
       toast.error('加载服务列表失败');
     } finally {
       setLoading(false);
@@ -136,35 +134,26 @@ const ServicesPage: React.FC = () => {
   }
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-[var(--nb-page)]">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="shrink-0 flex items-center justify-between bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[var(--nb-line)]">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-page)] transition-colors active:bg-[var(--nb-page)]"
-          >
-            <svg className="h-5 w-5 text-[var(--nb-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <h1 className="text-[17px] font-semibold text-[var(--nb-ink)]">服务管理</h1>
+      <div className="flex flex-col justify-between gap-3 rounded-2xl border border-[var(--nb-line)] bg-[var(--nb-surface)] p-5 sm:flex-row sm:items-center">
+        <div>
+          <h2 className="text-base font-semibold text-[var(--nb-ink)]">服务项目与定价规则</h2>
+          <p className="mt-1 text-xs text-[var(--nb-muted)]">
+            管理基础服务项目、分类及定金收取规则，供发布作品与客户预约时关联使用
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleAddNew}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--nb-action)] text-white shadow-md"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={handleAddNew}
+          className="min-h-[44px] shrink-0 rounded-xl bg-[var(--nb-action)] px-5 text-sm font-medium text-[var(--nb-inverse)] transition active:bg-[var(--nb-action-pressed)]"
+        >
+          + 新增服务项目
+        </button>
       </div>
 
       {/* Service List */}
-      <div className="flex-1 overflow-y-auto px-5 py-6 space-y-6 pb-24">
+      <div className="space-y-6">
         {services.length === 0 ? (
           <div className="rounded-2xl bg-white px-6 py-12 text-center shadow-sm border border-[var(--nb-line)]">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--nb-page)]">
@@ -188,7 +177,7 @@ const ServicesPage: React.FC = () => {
                   </span>
                   <span className="text-xs text-[var(--nb-muted)]">({categoryServices.length})</span>
                 </div>
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   {categoryServices.map((service) => (
                     <div
                       key={service.id}

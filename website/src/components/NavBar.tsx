@@ -4,8 +4,9 @@ import { Link, useLocation } from 'react-router-dom'
 import { useLang } from '../i18n/LanguageContext'
 import { recruitment } from '../content/recruitment'
 
-const SECTION_IDS = ['features', 'flagship', 'pricing']
+const SECTION_IDS = ['features', 'interactive-demo', 'flagship', 'pricing']
 const HEADER_OFFSET = 120
+const CREATOR_CENTER_URL = import.meta.env.VITE_CREATOR_URL || 'https://tech.lunails.cn'
 
 interface NavLinkItem {
   href: string
@@ -22,6 +23,7 @@ export default function NavBar() {
 
   const links: NavLinkItem[] = [
     { href: '/#features', label: isZh ? '核心能力' : 'Features', sectionId: 'features' },
+    { href: '/demo', label: isZh ? '交互演示' : 'Live Demo' },
     { href: '/#flagship', label: isZh ? '主页效果' : 'Preview', sectionId: 'flagship' },
     { href: '/#pricing', label: isZh ? '版本方案' : 'Pricing', sectionId: 'pricing' },
     { href: '/faq', label: isZh ? '常见问题' : 'FAQ' },
@@ -137,6 +139,14 @@ export default function NavBar() {
           })}
         </div>
         <div className="nav-actions">
+          <a
+            href={CREATOR_CENTER_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="site-button small secondary nav-apply"
+          >
+            {isZh ? '创作者中心' : 'Creator Studio'}
+          </a>
           <Link to="/apply" className="site-button small nav-apply">
             {c.apply}
           </Link>
@@ -192,6 +202,15 @@ export default function NavBar() {
               </Link>
             )
           })}
+          <a
+            href={CREATOR_CENTER_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="site-button secondary"
+            onClick={() => setOpen(false)}
+          >
+            {isZh ? '创作者中心' : 'Creator Studio'}
+          </a>
           <Link to="/apply" className="site-button" onClick={() => setOpen(false)}>
             {c.apply}
           </Link>

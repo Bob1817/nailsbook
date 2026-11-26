@@ -408,4 +408,24 @@ export const authService = {
   isAuthenticated: (): boolean => {
     return !!localStorage.getItem('technician_token');
   },
+
+  createQrSession: async (): Promise<{
+    available: boolean;
+    sceneToken: string;
+    qrImageUrl: string | null;
+    expiresAt: string;
+  }> => {
+    const response = await api.post('/auth/qr/create');
+    return response.data;
+  },
+
+  getQrSessionStatus: async (sceneToken: string): Promise<{
+    status: 'pending' | 'scanned' | 'confirmed' | 'expired';
+    accessToken?: string;
+    refreshToken?: string;
+    technician?: Technician;
+  }> => {
+    const response = await api.get('/auth/qr/status', { params: { sceneToken } });
+    return response.data;
+  },
 };

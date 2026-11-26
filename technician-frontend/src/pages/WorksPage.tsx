@@ -1,1450 +1,594 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { worksService, type Work } from '../services/works';
 import { useToast } from '../components/feedback/ToastProvider';
-import { worksService, type Work, type Comment } from '../services/works';
-import { uploadService } from '../services/upload';
 import { GridSkeleton } from '../components/Skeleton';
-import { ShareModal } from '../components/ShareModal';
 
-// ─── CommentItem ─────────────────────────────────────────────────────────────
+type StatusTab = 'all' | 'visible' | 'hidden' | 'draft';
+type ViewMode = 'grid' | 'table';
 
-interface CommentItemProps {
-  comment: Comment;
-  onReply: (comment: Comment) => void;
-  onPin: (commentId: number) => void;
-  onHide: (commentId: number) => void;
-  onDelete: (commentId: number) => void;
-  actionMenuId: number | null;
-  setActionMenuId: (id: number | null) => void;
-}
-
-const CommentItem: React.FC<CommentItemProps> = ({
-  comment, onReply, onPin, onHide, onDelete, actionMenuId, setActionMenuId,
-}) => {
-  const isDeleted = comment.user.role === 'unknown';
-
-  return (
-    <div className={`flex gap-3 ${comment.isHidden ? 'opacity-60' : ''}`}>
-      {comment.user.avatarUrl ? (
-        <img src={comment.user.avatarUrl} alt={comment.user.name} className="h-8 w-8 shrink-0 rounded-full object-cover" />
-      ) : (
-        <div
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white ${
-            comment.user.role === 'technician' ? 'bg-[var(--nb-action)]' : 'bg-[var(--nb-action)]'
-          }`}
-        >
-          {comment.user.name.slice(0, 1)}
-        </div>
-      )}
-
-      <div className="min-w-0 flex-1">
-        <div className="rounded-2xl bg-[var(--nb-page)] px-3 py-2">
-          {/* Name row */}
-          <div className="flex items-center gap-1.5 text-[11px] text-[var(--nb-muted)]">
-            <span className="font-medium text-[var(--nb-ink)]">{comment.user.name}</span>
-            {comment.user.role === 'technician' && (
-              <span className="rounded-full bg-[var(--nb-page)] px-1.5 py-px text-[10px] font-medium text-[var(--nb-secondary)]">美甲师</span>
-            )}
-            {comment.isPinned && (
-              <span className="rounded-full bg-[var(--nb-page)] px-1.5 py-px text-[10px] font-medium text-[var(--nb-secondary)]">置顶</span>
-            )}
-            {comment.isHidden && (
-              <span className="rounded-full bg-[var(--nb-pressed)] px-1.5 py-px text-[10px] font-medium text-[var(--nb-secondary)]">已隐藏</span>
-            )}
-            <span className="ml-auto whitespace-nowrap">{new Date(comment.createdAt).toLocaleDateString()}</span>
-            {/* More button — always available for technician (owns the work) */}
-            {!isDeleted && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActionMenuId(comment.id);
-                }}
-                className="-mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[var(--nb-muted)] active:bg-[var(--nb-pressed)]"
-              >
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M6 12a2 2 0 11-4 0 2 2 0 014 0zm8 0a2 2 0 11-4 0 2 2 0 014 0zm6 2a2 2 0 100-4 2 2 0 000 4z" />
-                </svg>
-              </button>
-            )}
-          </div>
-
-          {/* Content — click to reply */}
-          <p
-            className={`mt-1 text-sm leading-5 ${isDeleted ? 'italic text-[var(--nb-muted)]' : 'cursor-pointer text-[var(--nb-ink)] active:opacity-70'}`}
-            onClick={() => !isDeleted && onReply(comment)}
-          >
-            {comment.content}
-          </p>
-        </div>
-
-        {/* Action sheet — slides up from bottom, never clipped */}
-        {actionMenuId === comment.id && (
-          <div
-            className="fixed inset-0 z-[200] flex flex-col justify-end bg-black/40"
-            onClick={() => setActionMenuId(null)}
-          >
-            <div
-              className="rounded-t-2xl bg-white p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => onPin(comment.id)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-[var(--nb-ink)] active:bg-[var(--nb-page)]"
-              >
-                <svg className="h-4 w-4 text-[var(--nb-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                </svg>
-                {comment.isPinned ? '取消置顶' : '置顶'}
-              </button>
-              <div className="my-1 h-px bg-[var(--nb-page)]" />
-              <button
-                onClick={() => onHide(comment.id)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-[var(--nb-ink)] active:bg-[var(--nb-page)]"
-              >
-                <svg className="h-4 w-4 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={comment.isHidden
-                    ? 'M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
-                    : 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21'
-                  } />
-                </svg>
-                {comment.isHidden ? '取消隐藏' : '隐藏'}
-              </button>
-              <div className="my-1 h-px bg-[var(--nb-page)]" />
-              <button
-                onClick={() => onDelete(comment.id)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-medium text-[var(--nb-secondary)] active:bg-[var(--nb-page)]"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                删除
-              </button>
-              <div className="my-1 h-px bg-[var(--nb-page)]" />
-              <button
-                onClick={() => setActionMenuId(null)}
-                className="w-full rounded-xl py-3.5 text-sm font-medium text-[var(--nb-secondary)] active:bg-[var(--nb-page)]"
-              >
-                取消
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Replies */}
-        {comment.replies && comment.replies.length > 0 && (
-          <div className="mt-2 space-y-2 border-l-2 border-[var(--nb-line)] pl-2">
-            {comment.replies.map((reply) => (
-              <CommentItem
-                key={reply.id}
-                comment={reply}
-                onReply={onReply}
-                onPin={onPin}
-                onHide={onHide}
-                onDelete={onDelete}
-                actionMenuId={actionMenuId}
-                setActionMenuId={setActionMenuId}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// ─── HiddenCommentsSection ────────────────────────────────────────────────────
-
-interface HiddenCommentsSectionProps {
-  comments: Comment[];
-  onReply: (c: Comment) => void;
-  onPin: (id: number) => void;
-  onHide: (id: number) => void;
-  onDelete: (id: number) => void;
-  actionMenuId: number | null;
-  setActionMenuId: (id: number | null) => void;
-}
-
-const HiddenCommentsSection: React.FC<HiddenCommentsSectionProps> = (props) => {
-  const [expanded, setExpanded] = useState(false);
-  if (props.comments.length === 0) return null;
-
-  return (
-    <div className="mt-4 border-t border-dashed border-[var(--nb-line)] pt-3">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-1.5 text-xs text-[var(--nb-muted)]"
-      >
-        <svg
-          className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`}
-          fill="none" stroke="currentColor" viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-        {expanded ? '收起隐藏评论' : `查看 ${props.comments.length} 条隐藏评论`}
-      </button>
-      {expanded && (
-        <div className="mt-3 space-y-3">
-          {props.comments.map((c) => (
-            <CommentItem
-              key={c.id}
-              comment={c}
-              onReply={props.onReply}
-              onPin={props.onPin}
-              onHide={props.onHide}
-              onDelete={props.onDelete}
-              actionMenuId={props.actionMenuId}
-              setActionMenuId={props.setActionMenuId}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ─── FullscreenImageViewer ────────────────────────────────────────────────────
-
-interface FullscreenImageViewerProps {
-  images: string[];
-  initialIndex: number;
-  onClose: () => void;
-}
-
-const FullscreenImageViewer: React.FC<FullscreenImageViewerProps> = ({
-  images,
-  initialIndex,
-  onClose,
-}) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [index, setIndex] = useState(initialIndex);
-
-  // Jump to the tapped image on open
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (el) el.scrollLeft = initialIndex * el.clientWidth;
-  }, [initialIndex]);
-
-  // Lock background scroll while open
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
-
-  const handleScroll = () => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const i = Math.round(el.scrollLeft / el.clientWidth);
-    setIndex((prev) => (i !== prev ? i : prev));
-  };
-
-  return (
-    <div className="fixed inset-0 z-[300] bg-black">
-      {/* Close button */}
-      <button
-        onClick={onClose}
-        className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur"
-      >
-        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-
-      {/* Counter */}
-      {images.length > 1 && (
-        <div className="absolute left-1/2 top-[max(1rem,env(safe-area-inset-top))] z-10 -translate-x-1/2 rounded-full bg-white/15 px-3 py-1 text-sm text-white backdrop-blur">
-          {index + 1} / {images.length}
-        </div>
-      )}
-
-      {/* Swipeable images */}
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className="flex h-full w-full snap-x snap-mandatory overflow-x-auto scrollbar-hide"
-      >
-        {images.map((url, i) => (
-          <div
-            key={i}
-            onClick={onClose}
-            className="flex h-full w-full flex-shrink-0 snap-center items-center justify-center"
-          >
-            <img
-              src={url}
-              alt={`图片 ${i + 1}`}
-              onClick={(e) => e.stopPropagation()}
-              className="max-h-full max-w-full object-contain"
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* Page dots */}
-      {images.length > 1 && (
-        <div className="absolute bottom-[max(1.5rem,env(safe-area-inset-bottom))] left-0 right-0 flex justify-center gap-2">
-          {images.map((_, i) => (
-            <div
-              key={i}
-              className={`h-1.5 w-1.5 rounded-full ${i === index ? 'bg-white' : 'bg-white/40'}`}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ─── WorksPage ────────────────────────────────────────────────────────────────
-
-const WorksPage: React.FC = () => {
+export const WorksPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const toast = useToast();
+  const { showToast } = useToast();
+
+  const initialTab = (searchParams.get('tab') as StatusTab) || 'all';
+  const [tab, setTab] = useState<StatusTab>(initialTab);
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [keyword, setKeyword] = useState('');
   const [works, setWorks] = useState<Work[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedWork, setSelectedWork] = useState<Work | null>(null);
-  const [editingWork, setEditingWork] = useState<Work | null>(null);
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    tags: '',
-    price: '',
-    images: [] as string[],
-    isVisible: true,
-  });
-  const [uploading, setUploading] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [commentText, setCommentText] = useState('');
-  const [comments, setComments] = useState<any[]>([]);
-  const [replyingTo, setReplyingTo] = useState<{ id: number; name: string } | null>(null);
-  const [commentActionMenuId, setCommentActionMenuId] = useState<number | null>(null);
-  const [confirmDeleteCommentId, setConfirmDeleteCommentId] = useState<number | null>(null);
-  const [confirmHideCommentId, setConfirmHideCommentId] = useState<number | null>(null);
-  const [showActionMenu, setShowActionMenu] = useState(false);
-  const [cardActionWork, setCardActionWork] = useState<Work | null>(null);
-  const [viewerOpen, setViewerOpen] = useState(false);
-  const [inputFocused, setInputFocused] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [sharingWork, setSharingWork] = useState<Work | null>(null);
-  // 默认图高调低，首屏即露出评论；用户仍可拖拽手柄放大至 55vh 或缩到 22vh
-  const [imageHeightVh, setImageHeightVh] = useState(38);
-  const dragRef = useRef<{ startY: number; startVh: number } | null>(null);
-  const imageSliderRef = useRef<HTMLDivElement>(null);
-  const commentInputRef = useRef<HTMLInputElement>(null);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [batchLoading, setBatchLoading] = useState(false);
 
-  useEffect(() => {
-    loadWorks();
-  }, []);
+  // 批量操作弹窗状态
+  const [batchModal, setBatchModal] = useState<'tags' | 'price' | null>(null);
+  const [batchTagsInput, setBatchTagsInput] = useState('');
+  const [batchPriceInput, setBatchPriceInput] = useState('');
 
-  const loadWorks = async () => {
+  const loadWorks = useCallback(async () => {
     setLoading(true);
     try {
       const data = await worksService.list();
       setWorks(data);
-    } catch (error) {
-      console.error('Failed to load works:', error);
-      toast.error('加载作品失败');
+    } catch {
+      showToast('error', '加载作品列表失败');
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast]);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    e.target.value = ''; // 允许再次选择相同文件
-    if (files.length === 0) return;
+  useEffect(() => {
+    void loadWorks();
+  }, [loadWorks]);
 
-    const remaining = 5 - formData.images.length;
-    if (remaining <= 0) {
-      toast.warning('最多只能上传5张图片');
-      return;
-    }
-    const picked = files.slice(0, remaining);
-    if (files.length > remaining) {
-      toast.warning(`最多只能上传5张图片，已选取前 ${remaining} 张`);
-    }
+  const counts = useMemo(() => {
+    return {
+      all: works.length,
+      visible: works.filter((w) => w.publicationStatus !== 'draft' && w.isVisible).length,
+      hidden: works.filter((w) => w.publicationStatus !== 'draft' && !w.isVisible).length,
+      draft: works.filter((w) => w.publicationStatus === 'draft').length,
+    };
+  }, [works]);
 
-    setUploading(true);
-    try {
-      const results = await Promise.all(picked.map((f) => uploadService.uploadImage(f)));
-      setFormData((prev) => ({
-        ...prev,
-        images: [...prev.images, ...results.map((r) => r.url)].slice(0, 5),
-      }));
-    } catch (error) {
-      console.error('Failed to upload image:', error);
-      toast.error('图片上传失败');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleRemoveImage = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
-  };
-
-  const handleSubmit = async () => {
-    if (!formData.title.trim()) {
-      toast.warning('请输入作品标题');
-      return;
-    }
-
-    if (formData.images.length === 0) {
-      toast.warning('请至少上传一张图片');
-      return;
-    }
-
-    try {
-      const priceValue = formData.price.trim() ? Number(formData.price) : undefined;
-      if (editingWork) {
-        await worksService.update(editingWork.id, {
-          title: formData.title,
-          description: formData.description,
-          tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean),
-          coverUrl: formData.images[0],
-          images: formData.images,
-          price: priceValue,
-          isVisible: formData.isVisible,
-        });
-        toast.success('作品更新成功');
-      } else {
-        await worksService.create({
-          title: formData.title,
-          description: formData.description,
-          tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean),
-          coverUrl: formData.images[0],
-          images: formData.images,
-          price: priceValue,
-          isVisible: formData.isVisible,
-        });
-        toast.success('作品创建成功');
-      }
-      setShowCreateModal(false);
-      setEditingWork(null);
-      setFormData({ title: '', description: '', tags: '', price: '', images: [], isVisible: true });
-      loadWorks();
-    } catch (error) {
-      console.error('Failed to save work:', error);
-      toast.error('保存失败');
-    }
-  };
-
-  const handleEdit = (work: Work) => {
-    setEditingWork(work);
-    setFormData({
-      title: work.title || '',
-      description: work.description || '',
-      tags: work.tags.join(','),
-      price: work.price != null ? String(work.price) : '',
-      images: work.imageUrls,
-      isVisible: work.isVisible,
+  const filteredWorks = useMemo(() => {
+    const q = keyword.trim().toLowerCase();
+    return works.filter((w) => {
+      if (tab === 'visible' && (w.publicationStatus === 'draft' || !w.isVisible)) return false;
+      if (tab === 'hidden' && (w.publicationStatus === 'draft' || w.isVisible)) return false;
+      if (tab === 'draft' && w.publicationStatus !== 'draft') return false;
+      if (!q) return true;
+      const inTitle = (w.title || '').toLowerCase().includes(q);
+      const inTags = (w.tags || []).some((t) => t.toLowerCase().includes(q));
+      return inTitle || inTags;
     });
-    setShowCreateModal(true);
-    setShowActionMenu(false);
+  }, [works, tab, keyword]);
+
+  const handleTabChange = (nextTab: StatusTab) => {
+    setTab(nextTab);
+    setSelectedIds([]);
+    if (nextTab === 'all') {
+      searchParams.delete('tab');
+    } else {
+      searchParams.set('tab', nextTab);
+    }
+    setSearchParams(searchParams, { replace: true });
   };
 
-  const handleDelete = async (work: Work) => {
-    if (!confirm('确定要删除这个作品吗？')) return;
-    try {
-      await worksService.delete(work.id);
-      toast.success('作品删除成功');
-      setShowDetailModal(false);
-      setShowActionMenu(false);
-      loadWorks();
-    } catch (error) {
-      console.error('Failed to delete work:', error);
-      toast.error('删除失败');
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredWorks.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredWorks.map((w) => w.id));
     }
   };
 
-  const handleToggleVisible = async (work: Work) => {
+  const runBatchAction = async (
+    action: 'show' | 'hide' | 'delete' | 'add_tags' | 'update_price',
+    extra?: { tags?: string[]; price?: number },
+  ) => {
+    if (selectedIds.length === 0) return;
+    if (action === 'delete' && !window.confirm(`确认删除选中的 ${selectedIds.length} 组作品吗？删除后无法恢复。`)) {
+      return;
+    }
+    setBatchLoading(true);
     try {
-      await worksService.toggleVisible(work.id);
-      toast.success(work.isVisible ? '作品已隐藏' : '作品已显示');
-      setShowActionMenu(false);
-      loadWorks();
-    } catch (error) {
-      console.error('Failed to toggle visibility:', error);
-      toast.error('操作失败');
+      await worksService.batchAction({
+        workIds: selectedIds,
+        action,
+        ...extra,
+      });
+      showToast('success', '批量操作已完成');
+      setSelectedIds([]);
+      setBatchModal(null);
+      setBatchTagsInput('');
+      setBatchPriceInput('');
+      await loadWorks();
+    } catch {
+      showToast('error', '批量操作失败，请重试');
+    } finally {
+      setBatchLoading(false);
     }
   };
 
-  const handleTogglePinned = async (work: Work) => {
+  const handleSingleAction = async (work: Work, action: 'visible' | 'pinned' | 'featured' | 'delete') => {
     try {
-      await worksService.togglePinned(work.id);
-      toast.success(work.isPinned ? '已取消置顶' : '已置顶');
-      setShowActionMenu(false);
-      loadWorks();
-    } catch (error) {
-      console.error('Failed to toggle pinned:', error);
-      toast.error('操作失败');
-    }
-  };
-
-  const handleToggleFeatured = async (work: Work) => {
-    try {
-      await worksService.toggleFeatured(work.id);
-      toast.success(work.isFeatured ? '已取消精品' : '已设为精品');
-      setShowActionMenu(false);
-      loadWorks();
-    } catch (error) {
-      console.error('Failed to toggle featured:', error);
-      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || '操作失败');
-    }
-  };
-
-  const onGrabberDown = (e: React.PointerEvent) => {
-    dragRef.current = { startY: e.clientY, startVh: imageHeightVh };
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-  };
-  const onGrabberMove = (e: React.PointerEvent) => {
-    if (!dragRef.current) return;
-    const vhPx = window.innerHeight / 100;
-    const deltaVh = (e.clientY - dragRef.current.startY) / vhPx; // 上滑为负
-    const next = Math.min(55, Math.max(22, dragRef.current.startVh + deltaVh));
-    setImageHeightVh(next);
-  };
-  const onGrabberUp = () => { dragRef.current = null; };
-
-  const handleShare = async (work: Work) => {
-    setSharingWork(work);
-    setShowShareModal(true);
-  };
-
-  const openWorkDetail = async (work: Work) => {
-    setSelectedWork(work);
-    setCurrentImageIndex(0);
-    setViewerOpen(false);
-    setShowDetailModal(true);
-    setShowActionMenu(false);
-    await loadComments(work.id);
-    // 标记评论为已读
-    if (work.unreadComments > 0) {
-      try {
-        await worksService.markCommentsAsRead(work.id);
-        // 更新本地状态
-        setWorks(prev => prev.map(w => w.id === work.id ? { ...w, unreadComments: 0 } : w));
-      } catch (error) {
-        console.error('Failed to mark comments as read:', error);
+      if (action === 'delete') {
+        if (!window.confirm(`确认删除作品「${work.title || '未命名草稿'}」吗？`)) return;
+        await worksService.delete(work.id);
+        showToast('success', '已删除作品');
+      } else if (action === 'visible') {
+        await worksService.toggleVisible(work.id);
+      } else if (action === 'pinned') {
+        await worksService.togglePinned(work.id);
+      } else if (action === 'featured') {
+        await worksService.toggleFeatured(work.id);
       }
+      await loadWorks();
+    } catch {
+      showToast('error', '操作失败');
     }
   };
 
-  useEffect(() => {
-    const wid = searchParams.get('workId');
-    if (!wid || works.length === 0) return;
-    const target = works.find((w) => w.id === Number(wid));
-    if (target) {
-      openWorkDetail(target);
-      searchParams.delete('workId');
-      setSearchParams(searchParams, { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, works]);
-
-  const loadComments = async (workId: number) => {
+  const moveWorkOrder = async (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= filteredWorks.length) return;
+    const reordered = [...filteredWorks];
+    const [moved] = reordered.splice(index, 1);
+    reordered.splice(target, 0, moved);
     try {
-      const data = await worksService.getComments(workId);
-      setComments(data);
-    } catch (error) {
-      console.error('Failed to load comments:', error);
+      await worksService.reorder(reordered.map((w) => w.id));
+      await loadWorks();
+    } catch {
+      showToast('error', '排序保存失败');
     }
-  };
-
-  const handleLike = async (work: Work, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    try {
-      const result = await worksService.likeWork(work.id);
-      toast.success(result.liked ? '已点赞' : '已取消点赞');
-      // 刷新作品列表
-      const updatedWorks = await worksService.list();
-      setWorks(updatedWorks);
-      // 同步更新当前选中的作品状态
-      if (selectedWork && selectedWork.id === work.id) {
-        const updatedWork = updatedWorks.find(w => w.id === work.id);
-        if (updatedWork) {
-          setSelectedWork(updatedWork);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to like work:', error);
-      toast.error('操作失败');
-    }
-  };
-
-  const handleFavorite = async (work: Work, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    try {
-      const result = await worksService.favoriteWork(work.id);
-      toast.success(result.favorited ? '已收藏' : '已取消收藏');
-      // 刷新作品列表
-      const updatedWorks = await worksService.list();
-      setWorks(updatedWorks);
-      // 同步更新当前选中的作品状态
-      if (selectedWork && selectedWork.id === work.id) {
-        const updatedWork = updatedWorks.find(w => w.id === work.id);
-        if (updatedWork) {
-          setSelectedWork(updatedWork);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to favorite work:', error);
-      toast.error('操作失败');
-    }
-  };
-
-  const handleAddComment = async () => {
-    if (!commentText.trim() || !selectedWork) return;
-    try {
-      await worksService.addComment(selectedWork.id, commentText, replyingTo?.id);
-      setCommentText('');
-      setReplyingTo(null);
-      toast.success(replyingTo ? '回复已发布' : '评论已发布');
-      await loadComments(selectedWork.id);
-      const updatedWorks = await worksService.list();
-      setWorks(updatedWorks);
-      const updatedWork = updatedWorks.find(w => w.id === selectedWork.id);
-      if (updatedWork) {
-        setSelectedWork(updatedWork);
-      }
-    } catch (error) {
-      console.error('Failed to add comment:', error);
-      toast.error('评论失败');
-    }
-  };
-
-  const handleReplyToComment = (comment: Comment) => {
-    setReplyingTo({ id: comment.id, name: comment.user?.name || '用户' });
-    setCommentActionMenuId(null);
-    setTimeout(() => commentInputRef.current?.focus(), 50);
-  };
-
-  const handlePinComment = async (commentId: number) => {
-    if (!selectedWork) return;
-    try {
-      const result = await worksService.pinComment(selectedWork.id, commentId);
-      toast.success(result.pinned ? '评论已置顶' : '已取消置顶');
-      setCommentActionMenuId(null);
-      await loadComments(selectedWork.id);
-    } catch (error) {
-      console.error('Failed to pin comment:', error);
-      toast.error('操作失败');
-    }
-  };
-
-  const handleHideComment = (commentId: number) => {
-    setCommentActionMenuId(null);
-    setConfirmHideCommentId(commentId);
-  };
-
-  const confirmHideComment = async () => {
-    if (!selectedWork || confirmHideCommentId === null) return;
-    const commentId = confirmHideCommentId;
-    setConfirmHideCommentId(null);
-    try {
-      const result = await worksService.hideComment(selectedWork.id, commentId);
-      toast.success(result.hidden ? '评论已隐藏' : '评论已取消隐藏');
-      await loadComments(selectedWork.id);
-    } catch (error) {
-      console.error('Failed to hide comment:', error);
-      toast.error('操作失败');
-    }
-  };
-
-  const handleDeleteComment = (commentId: number) => {
-    setCommentActionMenuId(null);
-    setConfirmDeleteCommentId(commentId);
-  };
-
-  const confirmDeleteComment = async () => {
-    if (!selectedWork || confirmDeleteCommentId === null) return;
-    const commentId = confirmDeleteCommentId;
-    setConfirmDeleteCommentId(null);
-    try {
-      await worksService.deleteComment(selectedWork.id, commentId);
-      toast.success('评论已删除');
-      await loadComments(selectedWork.id);
-      loadWorks();
-    } catch (error) {
-      console.error('Failed to delete comment:', error);
-      toast.error('删除评论失败');
-    }
-  };
-
-  // 多图自动轮播（4s 循环；全屏预览时暂停）
-  useEffect(() => {
-    const el = imageSliderRef.current;
-    if (!el || !selectedWork || selectedWork.imageUrls.length <= 1 || viewerOpen) return;
-    const timer = setInterval(() => {
-      const w = el.clientWidth;
-      if (!w) return;
-      const cur = Math.round(el.scrollLeft / w);
-      const next = (cur + 1) % selectedWork.imageUrls.length;
-      el.scrollTo({ left: next * w, behavior: 'smooth' });
-    }, 4000);
-    return () => clearInterval(timer);
-  }, [selectedWork, viewerOpen]);
-
-  // 真正滚动图片容器（snap 横滑）——此前只改 index 不滚动，导致箭头无反应
-  const scrollToImage = (index: number) => {
-    const el = imageSliderRef.current;
-    if (!el) return;
-    el.scrollTo({ left: index * el.clientWidth, behavior: 'smooth' });
-  };
-
-  const handleImageSwipe = (direction: 'left' | 'right') => {
-    if (!selectedWork) return;
-    const maxIndex = selectedWork.imageUrls.length - 1;
-    const target =
-      direction === 'left'
-        ? Math.min(currentImageIndex + 1, maxIndex)
-        : Math.max(currentImageIndex - 1, 0);
-    scrollToImage(target);
   };
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-[var(--nb-page)]">
-      {/* Header */}
-      <div className="shrink-0 flex items-center gap-3 bg-white/95 px-5 py-3.5 backdrop-blur border-b border-[var(--nb-line)]">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-page)] transition-colors active:bg-[var(--nb-page)]"
-        >
-          <svg className="h-5 w-5 text-[var(--nb-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <h1 className="text-[17px] font-semibold text-[var(--nb-ink)]">作品管理</h1>
-        <button
-          type="button"
-          onClick={() => setShowCreateModal(true)}
-          className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-[var(--nb-action)] text-white active:bg-[var(--nb-action-pressed)]"
-        >
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-        </button>
+    <div className="space-y-5">
+      {/* 顶部工具栏 */}
+      <div className="flex flex-col justify-between gap-4 rounded-2xl border border-[var(--nb-line)] bg-[var(--nb-surface)] p-4 lg:flex-row lg:items-center">
+        <div className="flex flex-wrap items-center gap-2">
+          {(
+            [
+              { key: 'all', label: `全部 (${counts.all})` },
+              { key: 'visible', label: `已上架 (${counts.visible})` },
+              { key: 'hidden', label: `已隐藏 (${counts.hidden})` },
+              { key: 'draft', label: `草稿箱 (${counts.draft})` },
+            ] as Array<{ key: StatusTab; label: string }>
+          ).map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => handleTabChange(item.key)}
+              className={`min-h-[38px] rounded-xl px-3.5 text-sm font-medium transition ${
+                tab === item.key
+                  ? 'bg-[var(--nb-action)] text-[var(--nb-inverse)]'
+                  : 'bg-[var(--nb-page)] text-[var(--nb-secondary)] hover:text-[var(--nb-ink)]'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2.5">
+          <input
+            type="search"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="搜索作品标题或标签..."
+            className="min-h-[40px] w-56 rounded-xl border border-[var(--nb-line)] bg-[var(--nb-page)] px-3 text-sm text-[var(--nb-ink)] placeholder:text-[var(--nb-muted)] focus:outline-none"
+          />
+
+          <div className="flex rounded-xl border border-[var(--nb-line)] bg-[var(--nb-page)] p-0.5">
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={`min-h-[36px] rounded-lg px-3 text-xs font-medium ${
+                viewMode === 'grid'
+                  ? 'bg-[var(--nb-surface)] text-[var(--nb-ink)] shadow-sm'
+                  : 'text-[var(--nb-muted)]'
+              }`}
+            >
+              网格视图
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('table')}
+              className={`min-h-[36px] rounded-lg px-3 text-xs font-medium ${
+                viewMode === 'table'
+                  ? 'bg-[var(--nb-surface)] text-[var(--nb-ink)] shadow-sm'
+                  : 'text-[var(--nb-muted)]'
+              }`}
+            >
+              表格视图
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigate('/works/new')}
+            className="min-h-[40px] rounded-xl bg-[var(--nb-action)] px-4 text-sm font-medium text-[var(--nb-inverse)]"
+          >
+            + 发布作品
+          </button>
+        </div>
       </div>
 
-      {/* Masonry Photo Wall - 小红书风格 */}
-      <div className="flex-1 overflow-y-auto pb-8">
-      <div className="px-2.5 py-3">
-        {loading ? (
-          <div className="p-1"><GridSkeleton /></div>
-        ) : works.length === 0 ? (
-          <div className="rounded-[24px] bg-white p-8 text-center shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
-            <div className="mb-4 text-4xl">🎨</div>
-            <p className="text-[var(--nb-secondary)]">还没有作品</p>
-            <p className="mt-1 text-sm text-[var(--nb-muted)]">点击右上角添加您的第一个作品</p>
+      {/* 批量操作条 */}
+      {selectedIds.length > 0 && (
+        <div className="sticky top-16 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--nb-ink)] bg-[var(--nb-surface)] px-4 py-3 shadow-sm">
+          <div className="flex items-center gap-3 text-sm">
+            <span className="font-medium text-[var(--nb-ink)]">已选择 {selectedIds.length} 组作品</span>
+            <button
+              type="button"
+              onClick={toggleSelectAll}
+              className="text-xs text-[var(--nb-link)] hover:underline"
+            >
+              {selectedIds.length === filteredWorks.length ? '取消全选' : '全选当前列表'}
+            </button>
           </div>
-        ) : (
-          <div className="columns-2 gap-2 space-y-2">
-            {works.map((work) => (
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={batchLoading}
+              onClick={() => void runBatchAction('show')}
+              className="min-h-[36px] rounded-lg border border-[var(--nb-line)] px-3 text-xs font-medium text-[var(--nb-ink)] hover:bg-[var(--nb-page)]"
+            >
+              批量上架
+            </button>
+            <button
+              type="button"
+              disabled={batchLoading}
+              onClick={() => void runBatchAction('hide')}
+              className="min-h-[36px] rounded-lg border border-[var(--nb-line)] px-3 text-xs font-medium text-[var(--nb-ink)] hover:bg-[var(--nb-page)]"
+            >
+              批量隐藏
+            </button>
+            <button
+              type="button"
+              disabled={batchLoading}
+              onClick={() => setBatchModal('tags')}
+              className="min-h-[36px] rounded-lg border border-[var(--nb-line)] px-3 text-xs font-medium text-[var(--nb-ink)] hover:bg-[var(--nb-page)]"
+            >
+              批量加标签
+            </button>
+            <button
+              type="button"
+              disabled={batchLoading}
+              onClick={() => setBatchModal('price')}
+              className="min-h-[36px] rounded-lg border border-[var(--nb-line)] px-3 text-xs font-medium text-[var(--nb-ink)] hover:bg-[var(--nb-page)]"
+            >
+              批量改价
+            </button>
+            <button
+              type="button"
+              disabled={batchLoading}
+              onClick={() => void runBatchAction('delete')}
+              className="min-h-[36px] rounded-lg border border-[var(--nb-line)] px-3 text-xs font-medium text-[var(--nb-secondary)] hover:bg-[var(--nb-pressed)]"
+            >
+              批量删除
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 内容区 */}
+      {loading ? (
+        <GridSkeleton />
+      ) : filteredWorks.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-[var(--nb-line)] bg-[var(--nb-surface)] py-16 text-center">
+          <p className="text-sm text-[var(--nb-muted)]">当前筛选下暂无作品</p>
+          <button
+            type="button"
+            onClick={() => navigate('/works/new')}
+            className="mt-4 min-h-[44px] rounded-xl bg-[var(--nb-action)] px-5 text-sm font-medium text-[var(--nb-inverse)]"
+          >
+            去发布第一组作品
+          </button>
+        </div>
+      ) : viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filteredWorks.map((work, idx) => {
+            const checked = selectedIds.includes(work.id);
+            return (
               <div
                 key={work.id}
-                onClick={() => openWorkDetail(work)}
-                className="relative break-inside-avoid overflow-hidden rounded-[12px] bg-[var(--nb-page)] cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.06)] active:scale-[0.97] transition-transform"
+                className={`group flex flex-col overflow-hidden rounded-2xl border bg-[var(--nb-surface)] transition ${
+                  checked ? 'border-[var(--nb-ink)] ring-1 ring-[var(--nb-ink)]' : 'border-[var(--nb-line)]'
+                }`}
               >
-                {/* Image */}
-                {work.coverUrl || work.imageUrls?.[0] ? (
-                  <img
-                    src={work.coverUrl || work.imageUrls[0]}
-                    alt={work.title || '作品'}
-                    className="w-full h-auto object-cover"
-                    loading="lazy"
-                    onError={(event) => {
-                      event.currentTarget.style.display = 'none';
-                      const nextElement = event.currentTarget.nextElementSibling as HTMLElement | null;
-                      if (nextElement?.dataset.placeholder === 'true') {
-                        nextElement.style.display = 'flex';
-                      }
-                    }}
-                  />
-                ) : null}
-                <div
-                  data-placeholder="true"
-                  className={`min-h-[7rem] w-full items-center justify-center bg-gradient-to-br from-[var(--nb-page)] via-white to-[var(--nb-page)] text-sm text-[var(--nb-muted)] ${
-                    work.coverUrl || work.imageUrls?.[0] ? 'hidden' : 'flex'
-                  }`}
-                >
-                  暂无作品图片
-                </div>
-
-                {/* Info overlay at bottom */}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent px-2 pb-1.5 pt-5">
-                  <p className="truncate text-[11px] font-medium leading-4 text-white">{work.title || '未命名作品'}</p>
-                  <div className="mt-1 flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      {work.price != null && work.price > 0 && (
-                        <span className="text-[10px] font-semibold text-[var(--nb-ink)]">¥{work.price}</span>
-                      )}
-                      <span className="text-[10px] text-white/70">{work.technicianName}</span>
-                    </div>
-                    <span className="flex items-center gap-0.5 text-[10px] text-white/70">
-                      <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
-                      </svg>
-                      {work.likeCount || 0}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Left-top badges */}
-                <div className="absolute left-1.5 top-1.5 flex flex-col gap-1">
-                  {work.isPinned && (
-                    <span className="rounded-full bg-[var(--nb-action)] px-1.5 py-0.5 text-[9px] text-white">置顶</span>
-                  )}
-                  {work.isFeatured && (
-                    <span className="rounded-full bg-[var(--nb-action)] px-1.5 py-0.5 text-[9px] text-white">推荐</span>
-                  )}
-                  {!work.isVisible && (
-                    <span className="rounded-full bg-[var(--nb-action)]/80 px-1.5 py-0.5 text-[9px] text-white">隐藏</span>
-                  )}
-                </div>
-
-                {/* Right-top: action button + unread count */}
-                <div className="absolute right-1.5 top-1.5 flex flex-col items-end gap-1.5">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setCardActionWork(work); }}
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm active:bg-black/60"
-                  >
-                    <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                    </svg>
-                  </button>
-                  {(work.commentCount > 0 || work.unreadLikes > 0 || work.unreadFavorites > 0) && (
-                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--nb-action)] px-1 text-[9px] font-semibold text-white shadow-sm">
-                      {work.commentCount + work.unreadLikes + work.unreadFavorites}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Card Action Sheet - 移动端优化 */}
-      {cardActionWork && (
-        <div
-          className="fixed inset-0 z-[200] flex flex-col justify-end bg-black/40"
-          onClick={() => setCardActionWork(null)}
-        >
-          <div
-            className="rounded-t-[20px] bg-white pb-[max(0.75rem,env(safe-area-inset-bottom))]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* 拖拽指示条 */}
-            <div className="flex justify-center pt-2.5 pb-1">
-              <div className="h-1 w-9 rounded-full bg-[var(--nb-pressed)]" />
-            </div>
-            {/* 作品名称 */}
-            <div className="px-5 py-2 border-b border-[var(--nb-line)]">
-              <p className="text-sm font-medium text-[var(--nb-ink)] truncate">{cardActionWork.title || '未命名作品'}</p>
-            </div>
-            {/* 操作列表 */}
-            <div className="px-2 py-1.5">
-              <button
-                onClick={() => { handleEdit(cardActionWork); setCardActionWork(null); }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] text-[var(--nb-ink)] active:bg-[var(--nb-page)]"
-              >
-                <svg className="h-5 w-5 shrink-0 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                编辑作品
-              </button>
-              <button
-                onClick={() => { handleTogglePinned(cardActionWork); setCardActionWork(null); }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] text-[var(--nb-ink)] active:bg-[var(--nb-page)]"
-              >
-                <svg className="h-5 w-5 shrink-0 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                </svg>
-                {cardActionWork.isPinned ? '取消置顶' : '置顶作品'}
-              </button>
-              <button
-                onClick={() => { handleToggleFeatured(cardActionWork); setCardActionWork(null); }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] text-[var(--nb-ink)] active:bg-[var(--nb-page)]"
-              >
-                <svg className="h-5 w-5 shrink-0 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                </svg>
-                {cardActionWork.isFeatured ? '取消个人主页精选' : '设为个人主页精选'}
-              </button>
-              <button type="button" onClick={() => navigate('/hero-recommendations?workId=' + cardActionWork.id)} className="flex min-h-11 w-full items-center px-5 py-3 text-sm text-[var(--nb-ink)] active:bg-[var(--nb-page)] focus-visible:outline">推荐到客户首页</button>
-              <button
-                onClick={() => { handleToggleVisible(cardActionWork); setCardActionWork(null); }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] text-[var(--nb-ink)] active:bg-[var(--nb-page)]"
-              >
-                <svg className="h-5 w-5 shrink-0 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d={cardActionWork.isVisible
-                    ? 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21'
-                    : 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
-                  } />
-                </svg>
-                {cardActionWork.isVisible ? '隐藏作品' : '取消隐藏'}
-              </button>
-            </div>
-            {/* 分隔线 */}
-            <div className="mx-4 my-1 h-px bg-[var(--nb-page)]" />
-            {/* 危险操作 */}
-            <div className="px-2 py-1.5">
-              <button
-                onClick={() => { handleDelete(cardActionWork); setCardActionWork(null); }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] text-[var(--nb-secondary)] active:bg-[var(--nb-page)]"
-              >
-                <svg className="h-5 w-5 shrink-0 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                删除作品
-              </button>
-            </div>
-            {/* 取消按钮 */}
-            <div className="mx-2 mb-1">
-              <button
-                onClick={() => setCardActionWork(null)}
-                className="w-full rounded-xl bg-[var(--nb-page)] py-3 text-[15px] font-medium text-[var(--nb-secondary)] active:bg-[var(--nb-page)]"
-              >
-                取消
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Work Detail Modal */}
-      {showDetailModal && selectedWork && (
-        <div className="fixed inset-0 z-[100] flex flex-col bg-black">
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-20 bg-gradient-to-b from-black/24 via-black/8 to-transparent" />
-
-          {/* Header buttons */}
-          <div className="absolute top-0 left-0 right-0 z-20 flex justify-between px-4 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
-            <button
-              onClick={() => setShowDetailModal(false)}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white"
-            >
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            {/* Action menu button */}
-            <div className="relative">
-              <button
-                onClick={() => setShowActionMenu(!showActionMenu)}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white"
-              >
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                </svg>
-              </button>
-
-              {/* Dropdown menu */}
-              {showActionMenu && (
-                <div className="absolute right-0 top-12 w-40 bg-white rounded-xl shadow-lg py-2 z-30">
-                  <button
-                    onClick={() => handleEdit(selectedWork)}
-                    className="w-full px-4 py-3 text-left text-sm text-[var(--nb-ink)] hover:bg-[var(--nb-page)] flex items-center gap-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    编辑
-                  </button>
-                  <button
-                    onClick={() => handleTogglePinned(selectedWork)}
-                    className="w-full px-4 py-3 text-left text-sm text-[var(--nb-ink)] hover:bg-[var(--nb-page)] flex items-center gap-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                    </svg>
-                    {selectedWork.isPinned ? '取消置顶' : '置顶'}
-                  </button>
-                  <button
-                    onClick={() => handleToggleFeatured(selectedWork)}
-                    className="w-full px-4 py-3 text-left text-sm text-[var(--nb-ink)] hover:bg-[var(--nb-page)] flex items-center gap-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                    </svg>
-                    {selectedWork.isFeatured ? '取消个人主页精选' : '设为个人主页精选'}
-                  </button>
-                  <button onClick={() => navigate('/hero-recommendations?workId=' + selectedWork.id)} className="min-h-11 w-full px-5 py-3 text-left text-sm active:bg-[var(--nb-page)] focus-visible:outline">推荐到客户首页</button>
-                  <button
-                    onClick={() => handleToggleVisible(selectedWork)}
-                    className="w-full px-4 py-3 text-left text-sm text-[var(--nb-ink)] hover:bg-[var(--nb-page)] flex items-center gap-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={selectedWork.isVisible ? 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21' : 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'} />
-                    </svg>
-                    {selectedWork.isVisible ? '隐藏' : '显示'}
-                  </button>
-                  <div className="border-t border-[var(--nb-line)] my-1"></div>
-                  <button
-                    onClick={() => handleDelete(selectedWork)}
-                    className="w-full px-4 py-3 text-left text-sm text-[var(--nb-secondary)] hover:bg-[var(--nb-page)] flex items-center gap-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    删除
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Image Slider - 图片宽度充满屏幕 */}
-          <div className="relative flex-shrink-0 bg-black transition-[height] duration-150" style={{ height: `${imageHeightVh}vh` }}>
-            <div
-              ref={imageSliderRef}
-              onScroll={() => {
-                const el = imageSliderRef.current;
-                if (!el) return;
-                const i = Math.round(el.scrollLeft / el.clientWidth);
-                setCurrentImageIndex((prev) => (i !== prev ? i : prev));
-              }}
-              className="flex h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide"
-              style={{ scrollBehavior: 'smooth' }}
-            >
-              {selectedWork.imageUrls.map((url, index) => (
-                <div
-                  key={index}
-                  className="flex-shrink-0 w-full h-full snap-center flex items-center justify-center"
-                >
-                  <img
-                    src={url}
-                    alt={`作品图片 ${index + 1}`}
-                    onClick={() => setViewerOpen(true)}
-                    className="w-full h-full object-cover cursor-zoom-in"
-                  />
-                </div>
-              ))}
-            </div>
-            {/* Image indicators */}
-            {selectedWork.imageUrls.length > 1 && (
-              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
-                {selectedWork.imageUrls.map((_, index) => (
-                  <div
-                    key={index}
-                    className={`h-1.5 w-1.5 rounded-full ${
-                      index === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                    }`}
-                  />
-                ))}
-              </div>
-            )}
-            {/* Swipe hints */}
-            {selectedWork.imageUrls.length > 1 && (
-              <>
-                <button
-                  onClick={() => handleImageSwipe('right')}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 flex items-center justify-center rounded-full bg-black/30 text-white"
-                  style={{ opacity: currentImageIndex > 0 ? 1 : 0 }}
-                >
-                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => handleImageSwipe('left')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 flex items-center justify-center rounded-full bg-black/30 text-white"
-                  style={{ opacity: currentImageIndex < selectedWork.imageUrls.length - 1 ? 1 : 0 }}
-                >
-                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </>
-            )}
-          </div>
-
-          {/* Work Info */}
-          <div className="relative z-10 -mt-6 flex min-h-0 flex-1 flex-col rounded-t-[28px] bg-white shadow-[0_-12px_40px_rgba(0,0,0,0.06)]">
-            {/* Grabber handle — drag up to expand comments */}
-            <div
-              className="flex shrink-0 cursor-grab touch-none items-center justify-center pt-2 pb-1 active:cursor-grabbing"
-              onPointerDown={onGrabberDown}
-              onPointerMove={onGrabberMove}
-              onPointerUp={onGrabberUp}
-              onPointerCancel={onGrabberUp}
-            >
-              <div className="h-1.5 w-10 rounded-full bg-[var(--nb-pressed)]" />
-            </div>
-            {/* 标题 + 评论：统一滚动流，标题随评论一起滚动，评论获得完整高度 */}
-            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-            {/* Title block */}
-            <div className="px-5 pt-3 pb-4">
-              <div className="flex items-baseline gap-2">
-                <h2 className="text-[1.35rem] font-bold leading-tight tracking-[-0.02em] text-[var(--nb-ink)]">
-                  {selectedWork.title || '未命名作品'}
-                </h2>
-                {selectedWork.price != null && selectedWork.price > 0 && (
-                  <span className="shrink-0 text-[15px] font-semibold text-[var(--nb-secondary)]">¥{selectedWork.price}</span>
-                )}
-              </div>
-              {selectedWork.description && (
-                <p className="mt-2 text-sm leading-6 text-[var(--nb-secondary)]">{selectedWork.description}</p>
-              )}
-              {selectedWork.tags.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {selectedWork.tags.map((tag) => (
-                    <span key={tag} className="rounded-full bg-[var(--nb-page)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--nb-secondary)]">
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Comments */}
-            <div className="border-t border-[var(--nb-line)] px-5 py-4">
-              {(() => {
-                const visibleComments = comments.filter((c) => !c.isHidden);
-                const hiddenComments = comments.filter((c) => c.isHidden);
-                return (
-                  <>
-                    <div className="mb-3 flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-[var(--nb-ink)]">评论</h3>
-                      <span className="text-xs text-[var(--nb-muted)]">{visibleComments.length} 条</span>
-                    </div>
-
-                    {visibleComments.length > 0 ? (
-                      <div className="space-y-3">
-                        {visibleComments.map((comment) => (
-                          <CommentItem
-                            key={comment.id}
-                            comment={comment}
-                            onReply={handleReplyToComment}
-                            onPin={handlePinComment}
-                            onHide={handleHideComment}
-                            onDelete={handleDeleteComment}
-                            actionMenuId={commentActionMenuId}
-                            setActionMenuId={setCommentActionMenuId}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="rounded-2xl bg-[var(--nb-page)] px-4 py-6 text-center text-sm text-[var(--nb-muted)]">
-                        暂无评论
-                      </div>
-                    )}
-
-                    <HiddenCommentsSection
-                      comments={hiddenComments}
-                      onReply={handleReplyToComment}
-                      onPin={handlePinComment}
-                      onHide={handleHideComment}
-                      onDelete={handleDeleteComment}
-                      actionMenuId={commentActionMenuId}
-                      setActionMenuId={setCommentActionMenuId}
+                <div className="relative aspect-[4/5] bg-[var(--nb-page)]">
+                  {work.coverUrl ? (
+                    <img
+                      src={work.coverUrl}
+                      alt={work.title || '作品封面'}
+                      className="h-full w-full object-cover"
                     />
-                  </>
-                );
-              })()}
-            </div>
-            </div>
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-xs text-[var(--nb-muted)]">
+                      暂无封面图
+                    </div>
+                  )}
 
-            {/* Comment input bar */}
-            <div className="shrink-0 border-t border-[var(--nb-line)] bg-white px-5 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom)+0.5rem)]">
-              {replyingTo && (
-                <div className="mb-2 flex items-center gap-2 text-xs text-[var(--nb-secondary)]">
-                  <span>回复 <span className="font-medium text-[var(--nb-secondary)]">@{replyingTo.name}</span></span>
-                  <button
-                    onClick={() => setReplyingTo(null)}
-                    className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--nb-page)]"
-                  >
-                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <input
-                  ref={commentInputRef}
-                  type="text"
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  onFocus={() => setInputFocused(true)}
-                  onBlur={() => setInputFocused(false)}
-                  placeholder={replyingTo ? `回复 @${replyingTo.name}...` : '添加评论...'}
-                  className="h-11 flex-1 rounded-full border border-[var(--nb-line)] bg-[var(--nb-page)] px-4 text-sm focus:border-[var(--nb-ink)] focus:bg-white focus:outline-none"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      void handleAddComment();
-                    }
-                  }}
-                />
-                {inputFocused || commentText.trim() ? (
-                  <button
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={handleAddComment}
-                    disabled={!commentText.trim()}
-                    className="h-11 shrink-0 rounded-full bg-[var(--nb-action)] px-5 text-sm font-medium text-white disabled:opacity-40"
-                  >
-                    发送
-                  </button>
-                ) : (
-                  <div className="flex shrink-0 items-center gap-1">
-                    <button
-                      onClick={() => handleLike(selectedWork)}
-                      className="flex h-11 items-center gap-1 px-2 text-[var(--nb-secondary)]"
-                      aria-label="点赞"
-                    >
-                      {selectedWork.isLiked ? (
-                        <svg className="h-6 w-6 text-[var(--nb-secondary)]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
-                      ) : (
-                        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-                      )}
-                      {(selectedWork.likeCount || 0) > 0 && <span className="text-xs text-[var(--nb-secondary)]">{selectedWork.likeCount}</span>}
-                    </button>
-                    <button
-                      onClick={() => handleFavorite(selectedWork)}
-                      className="flex h-11 items-center gap-1 px-2 text-[var(--nb-secondary)]"
-                      aria-label="收藏"
-                    >
-                      {selectedWork.isFavorited ? (
-                        <svg className="h-6 w-6 text-[var(--nb-secondary)]" fill="currentColor" viewBox="0 0 24 24"><path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118L2.49 9.901c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
-                      ) : (
-                        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118L2.49 9.901c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
-                      )}
-                      {(selectedWork.favoriteCount || 0) > 0 && <span className="text-xs text-[var(--nb-secondary)]">{selectedWork.favoriteCount}</span>}
-                    </button>
-                    <button
-                      onClick={() => handleShare(selectedWork)}
-                      className="flex h-11 items-center px-2 text-[var(--nb-secondary)]"
-                      aria-label="分享"
-                    >
-                      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
-                    </button>
+                  <label className="absolute left-3 top-3 flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg bg-white/90 shadow-sm">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleSelect(work.id)}
+                      className="h-4 w-4 accent-[var(--nb-action)]"
+                    />
+                  </label>
+
+                  <div className="absolute right-3 top-3 flex gap-1.5">
+                    {work.isPinned && (
+                      <span className="rounded-md bg-[var(--nb-action)] px-2 py-0.5 text-[11px] text-[var(--nb-inverse)]">
+                        置顶
+                      </span>
+                    )}
+                    {work.publicationStatus === 'draft' ? (
+                      <span className="rounded-md bg-white/90 px-2 py-0.5 text-[11px] text-[var(--nb-secondary)]">
+                        草稿
+                      </span>
+                    ) : !work.isVisible ? (
+                      <span className="rounded-md bg-white/90 px-2 py-0.5 text-[11px] text-[var(--nb-muted)]">
+                        已隐藏
+                      </span>
+                    ) : null}
                   </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Fullscreen image viewer */}
-          {viewerOpen && selectedWork.imageUrls.length > 0 && (
-            <FullscreenImageViewer
-              images={selectedWork.imageUrls}
-              initialIndex={currentImageIndex}
-              onClose={() => setViewerOpen(false)}
-            />
-          )}
-        </div>
-      )}
-
-      {/* Create/Edit Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 sm:items-center">
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white p-6 sm:rounded-3xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-[var(--nb-ink)]">
-                {editingWork ? '编辑作品' : '新建作品'}
-              </h2>
-              <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setEditingWork(null);
-                  setFormData({ title: '', description: '', tags: '', price: '', images: [], isVisible: true });
-                }}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--nb-page)]"
-              >
-                <svg className="h-4 w-4 text-[var(--nb-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Form */}
-            <div className="space-y-4">
-              {/* Title */}
-              <div>
-                <label className="mb-1 block text-sm font-medium text-[var(--nb-ink)]">作品标题</label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-                  placeholder="例如：法式渐变美甲"
-                  className="w-full rounded-[16px] border border-[var(--nb-line)] px-4 py-3 text-sm focus:border-[var(--nb-ink)] focus:outline-none"
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="mb-1 block text-sm font-medium text-[var(--nb-ink)]">作品说明</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-                  placeholder="描述作品的特点、风格等"
-                  rows={3}
-                  className="w-full rounded-[16px] border border-[var(--nb-line)] px-4 py-3 text-sm focus:border-[var(--nb-ink)] focus:outline-none resize-none"
-                />
-              </div>
-
-              {/* Tags */}
-              <div>
-                <label className="mb-1 block text-sm font-medium text-[var(--nb-ink)]">标签（用逗号分隔）</label>
-                <input
-                  type="text"
-                  value={formData.tags}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, tags: e.target.value }))}
-                  placeholder="例如：法式,渐变,简约"
-                  className="w-full rounded-[16px] border border-[var(--nb-line)] px-4 py-3 text-sm focus:border-[var(--nb-ink)] focus:outline-none"
-                />
-              </div>
-
-              {/* Price */}
-              <div>
-                <label className="mb-1 block text-sm font-medium text-[var(--nb-ink)]">作品价格</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-[var(--nb-muted)]">¥</span>
-                  <input
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, price: e.target.value }))}
-                    placeholder="输入价格（可选）"
-                    min="0"
-                    step="0.01"
-                    className="w-full rounded-[16px] border border-[var(--nb-line)] py-3 pl-8 pr-4 text-sm focus:border-[var(--nb-ink)] focus:outline-none"
-                  />
                 </div>
-              </div>
 
-              {/* Images */}
-              <div>
-                <label className="mb-2 block text-sm font-medium text-[var(--nb-ink)]">
-                  作品图片 <span className="text-[var(--nb-muted)]">({formData.images.length}/5)</span>
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {formData.images.map((url, index) => (
-                    <div key={index} className="relative aspect-square overflow-hidden rounded-[12px]">
-                      <img src={url} alt={`作品图片${index + 1}`} className="h-full w-full object-cover" />
+                <div className="flex flex-1 flex-col justify-between p-4">
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="line-clamp-1 text-sm font-semibold text-[var(--nb-ink)]">
+                        {work.title || '未命名草稿'}
+                      </h3>
+                      <span className="shrink-0 text-sm font-semibold text-[var(--nb-ink)]">
+                        {work.price != null ? `¥${work.price}` : '--'}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {(work.tags || []).slice(0, 3).map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-md bg-[var(--nb-page)] px-2 py-0.5 text-[11px] text-[var(--nb-secondary)]"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="mt-2 text-xs text-[var(--nb-muted)]">
+                      浏览 {work.viewCount ?? 0} · 点赞 {work.likeCount ?? 0} · 收藏 {work.favoriteCount ?? 0}
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--nb-line)] pt-3 text-xs">
+                    <div className="flex items-center gap-2">
                       <button
-                        onClick={() => handleRemoveImage(index)}
-                        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--nb-action)] text-white"
+                        type="button"
+                        onClick={() => navigate(`/works/${work.id}/edit`)}
+                        className="font-medium text-[var(--nb-ink)] hover:underline"
                       >
-                        <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        编辑
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleSingleAction(work, 'visible')}
+                        className="text-[var(--nb-secondary)] hover:underline"
+                      >
+                        {work.isVisible ? '隐藏' : '上架'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleSingleAction(work, 'pinned')}
+                        className="text-[var(--nb-secondary)] hover:underline"
+                      >
+                        {work.isPinned ? '取消置顶' : '置顶'}
                       </button>
                     </div>
-                  ))}
-                  {formData.images.length < 5 && (
-                    <label className="flex aspect-square cursor-pointer items-center justify-center rounded-[12px] border-2 border-dashed border-[var(--nb-control)] bg-[var(--nb-page)]">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleImageUpload}
-                        disabled={uploading}
-                        className="hidden"
-                      />
-                      {uploading ? (
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--nb-ink)] border-t-transparent" />
-                      ) : (
-                        <svg className="h-8 w-8 text-[var(--nb-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                      )}
-                    </label>
-                  )}
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={idx === 0}
+                        onClick={() => void moveWorkOrder(idx, -1)}
+                        className="rounded border border-[var(--nb-line)] px-1.5 py-0.5 text-[var(--nb-muted)] disabled:opacity-30"
+                        title="上移"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        disabled={idx === filteredWorks.length - 1}
+                        onClick={() => void moveWorkOrder(idx, 1)}
+                        className="rounded border border-[var(--nb-line)] px-1.5 py-0.5 text-[var(--nb-muted)] disabled:opacity-30"
+                        title="下移"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleSingleAction(work, 'delete')}
+                        className="ml-1 text-[var(--nb-muted)] hover:text-[var(--nb-ink)]"
+                      >
+                        删除
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              {/* Visibility */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-[var(--nb-ink)]">立即显示</span>
-                <button
-                  onClick={() => setFormData((prev) => ({ ...prev, isVisible: !prev.isVisible }))}
-                  className={`relative h-7 w-12 rounded-full transition-colors ${formData.isVisible ? 'bg-[var(--nb-action)]' : 'bg-[var(--nb-pressed)]'}`}
-                >
-                  <span
-                    className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${formData.isVisible ? 'left-6' : 'left-1'}`}
+            );
+          })}
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-2xl border border-[var(--nb-line)] bg-[var(--nb-surface)]">
+          <table className="w-full min-w-[780px] text-left text-sm">
+            <thead className="border-b border-[var(--nb-line)] bg-[var(--nb-page)] text-xs text-[var(--nb-muted)]">
+              <tr>
+                <th className="w-10 px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.length === filteredWorks.length && filteredWorks.length > 0}
+                    onChange={toggleSelectAll}
+                    className="h-4 w-4 accent-[var(--nb-action)]"
                   />
-                </button>
+                </th>
+                <th className="px-4 py-3">作品</th>
+                <th className="px-4 py-3">标签</th>
+                <th className="px-4 py-3">价格</th>
+                <th className="px-4 py-3">状态</th>
+                <th className="px-4 py-3">数据（浏览/赞/藏）</th>
+                <th className="px-4 py-3 text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--nb-line)]">
+              {filteredWorks.map((work) => (
+                <tr key={work.id} className="hover:bg-[var(--nb-page)]/60">
+                  <td className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(work.id)}
+                      onChange={() => toggleSelect(work.id)}
+                      className="h-4 w-4 accent-[var(--nb-action)]"
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      {work.coverUrl ? (
+                        <img
+                          src={work.coverUrl}
+                          alt={work.title || ''}
+                          className="h-11 w-11 rounded-lg border border-[var(--nb-line)] object-cover"
+                        />
+                      ) : (
+                        <div className="h-11 w-11 rounded-lg bg-[var(--nb-page)]" />
+                      )}
+                      <div>
+                        <div className="font-medium text-[var(--nb-ink)]">
+                          {work.title || '未命名草稿'}
+                        </div>
+                        {work.isPinned && (
+                          <span className="text-[11px] text-[var(--nb-link)]">已置顶</span>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-[var(--nb-secondary)]">
+                    {(work.tags || []).join('、') || '--'}
+                  </td>
+                  <td className="px-4 py-3 font-medium text-[var(--nb-ink)]">
+                    {work.price != null ? `¥${work.price}` : '--'}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-[var(--nb-secondary)]">
+                    {work.publicationStatus === 'draft'
+                      ? '草稿'
+                      : work.isVisible
+                        ? '已上架'
+                        : '已隐藏'}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-[var(--nb-muted)]">
+                    {work.viewCount ?? 0} / {work.likeCount ?? 0} / {work.favoriteCount ?? 0}
+                  </td>
+                  <td className="px-4 py-3 text-right text-xs">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/works/${work.id}/edit`)}
+                      className="mr-3 font-medium text-[var(--nb-ink)] hover:underline"
+                    >
+                      编辑
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleSingleAction(work, 'visible')}
+                      className="mr-3 text-[var(--nb-secondary)] hover:underline"
+                    >
+                      {work.isVisible ? '隐藏' : '上架'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleSingleAction(work, 'delete')}
+                      className="text-[var(--nb-muted)] hover:text-[var(--nb-ink)]"
+                    >
+                      删除
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* 批量加标签 / 改价弹窗 */}
+      {batchModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-[var(--nb-line)] bg-[var(--nb-surface)] p-6 shadow-xl">
+            <h3 className="text-base font-semibold text-[var(--nb-ink)]">
+              {batchModal === 'tags' ? '批量添加标签' : '批量修改展示价格'}
+            </h3>
+            {batchModal === 'tags' ? (
+              <div className="mt-4">
+                <input
+                  type="text"
+                  value={batchTagsInput}
+                  onChange={(e) => setBatchTagsInput(e.target.value)}
+                  placeholder="多个标签用逗号分隔，如：法式,裸色,秋冬"
+                  className="min-h-[44px] w-full rounded-xl border border-[var(--nb-line)] px-3 text-sm"
+                />
               </div>
-            </div>
-
-            {/* Submit */}
-            <button
-              onClick={handleSubmit}
-              className="mt-6 w-full rounded-[20px] bg-[var(--nb-action)] py-3 font-medium text-white active:bg-[var(--nb-action-pressed)]"
-            >
-              {editingWork ? '保存修改' : '创建作品'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Delete comment confirm */}
-      {confirmDeleteCommentId !== null && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 px-6">
-          <div className="w-full max-w-xs rounded-2xl bg-white p-6 shadow-xl">
-            <p className="text-center text-sm leading-6 text-[var(--nb-ink)]">确定要删除这条评论吗？</p>
-            <div className="mt-5 flex gap-3">
+            ) : (
+              <div className="mt-4">
+                <input
+                  type="number"
+                  min={1}
+                  value={batchPriceInput}
+                  onChange={(e) => setBatchPriceInput(e.target.value)}
+                  placeholder="输入新的展示价格（元）"
+                  className="min-h-[44px] w-full rounded-xl border border-[var(--nb-line)] px-3 text-sm"
+                />
+              </div>
+            )}
+            <div className="mt-6 flex justify-end gap-2">
               <button
-                onClick={() => setConfirmDeleteCommentId(null)}
-                className="flex-1 rounded-full border border-[var(--nb-line)] py-2.5 text-sm font-medium text-[var(--nb-secondary)]"
+                type="button"
+                onClick={() => setBatchModal(null)}
+                className="min-h-[40px] rounded-xl border border-[var(--nb-line)] px-4 text-sm text-[var(--nb-secondary)]"
               >
                 取消
               </button>
               <button
-                onClick={confirmDeleteComment}
-                className="flex-1 rounded-full bg-[var(--nb-action)] py-2.5 text-sm font-medium text-white"
+                type="button"
+                disabled={batchLoading}
+                onClick={() => {
+                  if (batchModal === 'tags') {
+                    const tags = batchTagsInput
+                      .split(/[,，]/)
+                      .map((t) => t.trim())
+                      .filter(Boolean);
+                    void runBatchAction('add_tags', { tags });
+                  } else {
+                    const price = Number(batchPriceInput);
+                    if (!Number.isFinite(price) || price <= 0) {
+                      showToast('error', '请输入有效价格');
+                      return;
+                    }
+                    void runBatchAction('update_price', { price });
+                  }
+                }}
+                className="min-h-[40px] rounded-xl bg-[var(--nb-action)] px-4 text-sm font-medium text-[var(--nb-inverse)]"
               >
-                删除
+                确认应用
               </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Hide comment confirm */}
-      {confirmHideCommentId !== null && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 px-6">
-          <div className="w-full max-w-xs rounded-2xl bg-white p-6 shadow-xl">
-            <p className="text-center text-sm leading-6 text-[var(--nb-ink)]">确定要隐藏这条评论吗？隐藏后该评论将折叠在评论区底部。</p>
-            <div className="mt-5 flex gap-3">
-              <button
-                onClick={() => setConfirmHideCommentId(null)}
-                className="flex-1 rounded-full border border-[var(--nb-line)] py-2.5 text-sm font-medium text-[var(--nb-secondary)]"
-              >
-                取消
-              </button>
-              <button
-                onClick={confirmHideComment}
-                className="flex-1 rounded-full bg-[var(--nb-action)] py-2.5 text-sm font-medium text-white"
-              >
-                隐藏
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showShareModal && sharingWork && (
-        <ShareModal
-          isOpen={showShareModal}
-          onClose={() => {
-            setShowShareModal(false);
-            setSharingWork(null);
-          }}
-          work={sharingWork}
-          toast={toast}
-        />
-      )}
-      </div>
     </div>
   );
 };

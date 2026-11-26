@@ -7,6 +7,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Optional,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -23,6 +24,8 @@ import {
   isMiniProgramAuditMode,
 } from '../common/miniprogram-launch-mode';
 import { ensureDefaultFreeSubscription } from '../subscriptions/subscription-defaults';
+import { OfficialAccessTokenService } from '../wechat-official/official-access-token.service';
+import { qrLoginSessionStore } from '../common/qr-login-session.store';
 
 @Injectable()
 export class TechnicianAuthService {
@@ -37,6 +40,8 @@ export class TechnicianAuthService {
     private readonly jwtService: JwtService,
     private readonly verificationCode: VerificationCodeService,
     private readonly sms: SmsService,
+    @Optional()
+    private readonly officialAccessToken?: OfficialAccessTokenService,
   ) {}
 
   // 忘记密码：发送验证码（防枚举，统一返回；仅已激活账号真正发送）
@@ -1026,5 +1031,108 @@ export class TechnicianAuthService {
 
   private parseServiceItems(serviceItems: string | null) {
     return serviceItems ? JSON.parse(serviceItems) : buildDefaultServiceItems();
+  }
+
+  /** 创建 PC 端微信扫码登录会话（优先使用服务号带参二维码，无需改动小程序） */
+  async createQrSession() {
+    const { sceneToken, expiresAt } = qrLoginSessionStore.create();
+    const expiresAtIso = new Date(expiresAt).toISOString();
+
+    if (this.officialAccessToken) {
+      try {
+        const accessToken = await this.officialAccessToken.getAccessToken();
+        const response = await fetch(
+          `https://api.weixin.qq.com/cgi-bin/qrcode/create?access_token=${encodeURIComponent(accessToken)}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              expire_seconds: 180,
+              action_name: 'QR_STR_SCENE',
+              action_info: {
+                scene: { scene_str: `creator_login:${sceneToken}` },
+              },
+            }),
+            signal: AbortSignal.timeout(8000),
+          },
+        );
+        const result = (await response.json()) as { ticket?: string };
+        if (response.ok && result.ticket) {
+          return {
+            available: true,
+            sceneToken,
+            qrImageUrl: `https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=${encodeURIComponent(result.ticket)}`,
+            expiresAt: expiresAtIso,
+          };
+        }
+      } catch {
+        // 服务号未配置或网络异常时优雅降级，不阻断网页账号密码登录
+      }
+    }
+
+    return {
+      available: false,
+      sceneToken,
+      qrImageUrl: null,
+      expiresAt: expiresAtIso,
+    };
+  }
+
+  /** 轮询扫码会话状态；确认后一次性签发令牌并销毁会话 */
+  async getQrSessionStatus(sceneToken: string) {
+    const session = qrLoginSessionStore.get(sceneToken);
+    if (!session) {
+      return { status: 'expired' as const };
+    }
+    if (session.status === 'confirmed' && session.technicianId) {
+      const technicianId = session.technicianId;
+      qrLoginSessionStore.delete(sceneToken);
+      const technician = await this.prisma.technician.findUnique({
+        where: { id: technicianId },
+        select: { phone: true },
+      });
+      if (!technician) {
+        return { status: 'expired' as const };
+      }
+      const tokens = await this.issueTokens(technicianId, technician.phone);
+      return {
+        status: 'confirmed' as const,
+        ...tokens,
+      };
+    }
+    return { status: session.status };
+  }
+
+  /** 扫码/确认/取消登录（兼容内部调用或单测） */
+  async confirmQrSession(
+    technicianId: number,
+    sceneToken: string,
+    action: 'scan' | 'confirm' | 'cancel',
+  ) {
+    const session = qrLoginSessionStore.get(sceneToken);
+    if (!session) {
+      throw new BadRequestException('二维码已过期，请刷新后重试');
+    }
+
+    if (action === 'cancel') {
+      qrLoginSessionStore.delete(sceneToken);
+      return { status: 'expired' as const };
+    }
+
+    if (action === 'scan') {
+      qrLoginSessionStore.markScanned(sceneToken);
+      return { status: qrLoginSessionStore.get(sceneToken)?.status ?? 'scanned' };
+    }
+
+    const technician = await this.prisma.technician.findUnique({
+      where: { id: technicianId },
+      select: { id: true },
+    });
+    if (!technician) {
+      throw new UnauthorizedException('美甲师不存在');
+    }
+
+    qrLoginSessionStore.confirm(sceneToken, technician.id);
+    return { status: 'confirmed' as const };
   }
 }

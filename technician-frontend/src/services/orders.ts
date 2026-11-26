@@ -52,7 +52,7 @@ interface CreateOrderInput {
   note?: string;
 }
 
-let orderFallbackState = [...fallbackOrders];
+const orderFallbackState = [...fallbackOrders];
 
 function loadLocalDraftOrders(): TechnicianOrder[] {
   const stored = localStorage.getItem(localDraftKey);

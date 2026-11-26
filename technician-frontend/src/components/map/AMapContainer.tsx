@@ -1,5 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useAMap } from '../../hooks/useAMap';
+import {
+  useAMap,
+  type AMapMap,
+  type AMapMarker,
+  type AMapOverlay,
+} from '../../hooks/useAMap';
 
 interface MapMarker {
   id: string | number;
@@ -28,9 +33,9 @@ export const AMapContainer: React.FC<AMapContainerProps> = ({
   onMarkerClick,
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
-  const polylineRef = useRef<any>(null);
+  const mapInstanceRef = useRef<AMapMap | null>(null);
+  const markersRef = useRef<AMapMarker[]>([]);
+  const polylineRef = useRef<AMapOverlay | null>(null);
   const { isLoaded, AMap } = useAMap();
   const [error, setError] = useState<string | null>(null);
 

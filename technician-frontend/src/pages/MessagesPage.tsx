@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/feedback/ToastProvider';
 import { ordersService } from '../services/orders';
 import { customersService } from '../services/customers';
-import { messageService, type Conversation } from '../services/message';
+import { messageService, type Conversation, type Message } from '../services/message';
 import { usePresence } from '../hooks/usePresence';
 import { useSocket } from '../hooks/useSocket';
 import {
@@ -148,7 +148,7 @@ export const MessagesPage: React.FC = () => {
   useEffect(() => {
     if (!socket) return;
 
-    const onNewMessage = (data: { message: any; conversation: any }) => {
+    const onNewMessage = (data: { message: Message; conversation: Conversation }) => {
       setConversations((prev) =>
         prev.map((c) =>
           c.id === data.conversation.id
@@ -164,7 +164,7 @@ export const MessagesPage: React.FC = () => {
 
       if (document.visibilityState !== 'visible' && Notification.permission === 'granted') {
         new Notification('新消息', {
-          body: data.message.messageType === 'image' ? '[图片]' : data.message.content,
+          body: data.message.messageType === 'image' ? '[图片]' : (data.message.content ?? ''),
         });
       }
     };
