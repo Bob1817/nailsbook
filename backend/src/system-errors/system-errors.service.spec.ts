@@ -73,9 +73,63 @@ describe('SystemErrorsService', () => {
     expect(stats).toEqual({
       todayCount: 5,
       unresolvedCount: 8,
+      resolvedCount: 12,
       totalCount: 20,
       impactedUsersToday: 2,
     });
+  });
+
+  it('按同类型合并错误并标注归因分类、修复动作与优先级', async () => {
+    const now = new Date('2026-11-26T06:00:00.000Z');
+    prisma.systemErrorLog.findMany.mockResolvedValueOnce([
+      {
+        id: 21,
+        source: 'mini_program',
+        errorType: 'api_500',
+        message: 'HTTP 502',
+        route: '/api/platform-campaigns/active?location=top',
+        statusCode: 502,
+        userId: 8,
+        userRole: 'client',
+        resolved: false,
+        createdAt: now,
+      },
+      {
+        id: 19,
+        source: 'mini_program',
+        errorType: 'api_500',
+        message: 'HTTP 502',
+        route: '/api/platform-campaigns/active?location=chat',
+        statusCode: 502,
+        userId: 9,
+        userRole: 'client',
+        resolved: false,
+        createdAt: new Date('2026-11-26T05:00:00.000Z'),
+      },
+      {
+        id: 18,
+        source: 'mini_program',
+        errorType: 'js_error',
+        message: 'Component is not found in path "wx://not-found"',
+        route: 'wx05644a205a1844a0',
+        userId: null,
+        resolved: false,
+        createdAt: new Date('2026-11-26T04:00:00.000Z'),
+      },
+    ]);
+
+    const res = await service.findGroups({ resolved: false });
+    expect(res.total).toBe(2);
+    expect(res.summary.p0Count).toBe(1);
+    expect(res.summary.p3Count).toBe(1);
+    expect(res.items[0].category).toBe('server');
+    expect(res.items[0].categoryLabel).toBe('服务器/网关错误');
+    expect(res.items[0].fixAction).toContain('服务器重启');
+    expect(res.items[0].priority).toBe('P0');
+    expect(res.items[0].occurrenceCount).toBe(2);
+    expect(res.items[0].ids).toEqual([21, 19]);
+    expect(res.items[1].priority).toBe('P3');
+    expect(res.items[1].category).toBe('other');
   });
 
   it('标记异常为已排查', async () => {

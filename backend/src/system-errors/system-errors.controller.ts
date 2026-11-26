@@ -55,6 +55,13 @@ export class AdminSystemErrorsController {
     return this.service.findAll(query);
   }
 
+  @Get('groups')
+  @Permissions('log:view')
+  @ApiOperation({ summary: '按同类型合并聚合查询系统错误与优先级分类' })
+  findGroups(@Query() query: QuerySystemErrorsDto) {
+    return this.service.findGroups(query);
+  }
+
   @Get('stats')
   @Permissions('log:view')
   @ApiOperation({ summary: '获取系统异常统计指标' })

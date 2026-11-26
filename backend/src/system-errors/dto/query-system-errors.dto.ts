@@ -25,6 +25,16 @@ export class QuerySystemErrorsDto {
   @IsString()
   errorType?: string;
 
+  @ApiPropertyOptional({ description: '归因分类 (database/server/backend/frontend/other)' })
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @ApiPropertyOptional({ description: '优先级 (P0/P1/P2/P3)' })
+  @IsOptional()
+  @IsString()
+  priority?: string;
+
   @ApiPropertyOptional({ description: '关键词搜索' })
   @IsOptional()
   @IsString()

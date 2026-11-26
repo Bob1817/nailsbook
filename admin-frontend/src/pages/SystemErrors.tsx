@@ -14,11 +14,11 @@ import {
   Modal,
   Descriptions,
   message,
-  Popconfirm,
   Badge,
   Typography,
   Alert,
-  Checkbox,
+  Tabs,
+  Collapse,
   Grid,
   Spin,
   Empty,
@@ -32,18 +32,24 @@ import {
   SearchOutlined,
   CopyOutlined,
   DownloadOutlined,
-  MobileOutlined,
-  CloudServerOutlined,
   UserOutlined,
+  ToolOutlined,
+  WarningOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import AdminPageHeader from '../components/AdminPageHeader';
 import { colors } from '../colors.generated';
 import { systemErrorService } from '../services/systemError';
-import type { SystemErrorLog, SystemErrorStats } from '../services/systemError';
+import type {
+  ErrorCategory,
+  ErrorPriority,
+  SystemErrorGroup,
+  SystemErrorLog,
+  SystemErrorStats,
+} from '../services/systemError';
 
 const { RangePicker } = DatePicker;
-const { Paragraph, Text } = Typography;
+const { Text } = Typography;
 
 const SOURCE_CODEBASE_HINT: Record<string, string> = {
   mini_program: 'client-wxapp/ (微信小程序前端)',
@@ -81,9 +87,10 @@ const buildDiagnosticLogContent = (records: SystemErrorLog[]): string => {
     lines.push(`Error ID:        ${rec.id}`);
     lines.push(`Occurred At:     ${rec.createdAt} (${dayjs(rec.createdAt).format('YYYY-MM-DD HH:mm:ss')})`);
     lines.push(`Source:          ${rec.source} -> ${SOURCE_CODEBASE_HINT[rec.source] || 'unknown'}`);
+    lines.push(`Category / Prio: ${rec.categoryLabel || rec.category || 'N/A'} / ${rec.priorityLabel || rec.priority || 'N/A'}`);
+    lines.push(`Fix Action:      ${rec.fixAction || 'N/A'}`);
     lines.push(`Error Type:      ${rec.errorType}`);
     lines.push(`Route / Path:    ${rec.route || 'N/A'}`);
-    lines.push(`HTTP Method:     ${rec.method || 'N/A'}`);
     lines.push(`HTTP Status:     ${rec.statusCode ?? 'N/A'}`);
     lines.push(`User Role / ID:  ${rec.userRole || 'guest'} / ${rec.userId ?? 'N/A'}`);
     lines.push(`Network / IP:    ${rec.networkType || 'N/A'} / ${rec.ip || 'N/A'}`);
@@ -92,14 +99,9 @@ const buildDiagnosticLogContent = (records: SystemErrorLog[]): string => {
         rec.resolvedAt ? ` (at ${dayjs(rec.resolvedAt).format('YYYY-MM-DD HH:mm:ss')})` : ''
       }`,
     );
-    if (rec.resolvedNote) {
-      lines.push(`Resolved Note:   ${rec.resolvedNote}`);
-    }
-    if (deviceObj) {
-      lines.push(`Device Info:     ${JSON.stringify(deviceObj)}`);
-    } else if (rec.deviceInfo) {
-      lines.push(`Device Info:     ${rec.deviceInfo}`);
-    }
+    if (rec.resolvedNote) lines.push(`Resolved Note:   ${rec.resolvedNote}`);
+    if (deviceObj) lines.push(`Device Info:     ${JSON.stringify(deviceObj)}`);
+    else if (rec.deviceInfo) lines.push(`Device Info:     ${rec.deviceInfo}`);
     lines.push('');
     lines.push('[Error Message]');
     lines.push(rec.message || '(empty)');
@@ -109,64 +111,40 @@ const buildDiagnosticLogContent = (records: SystemErrorLog[]): string => {
     lines.push('');
   });
 
-  const structuredPayload = {
-    schemaVersion: '1.0',
-    project: 'OnlyNail (nailBook)',
-    exportedAt,
-    count: records.length,
-    errors: records.map((rec) => ({
-      id: rec.id,
-      createdAt: rec.createdAt,
-      source: rec.source,
-      codebaseHint: SOURCE_CODEBASE_HINT[rec.source] || null,
-      errorType: rec.errorType,
-      route: rec.route || null,
-      method: rec.method || null,
-      statusCode: rec.statusCode ?? null,
-      userRole: rec.userRole || null,
-      userId: rec.userId ?? null,
-      networkType: rec.networkType || null,
-      ip: rec.ip || null,
-      deviceInfo: parseDeviceJson(rec.deviceInfo) ?? rec.deviceInfo ?? null,
-      message: rec.message,
-      stack: rec.stack || null,
-      resolved: rec.resolved,
-      resolvedAt: rec.resolvedAt || null,
-      resolvedNote: rec.resolvedNote || null,
-    })),
-  };
-
-  lines.push('================================================================================');
-  lines.push('BEGIN_STRUCTURED_JSON');
-  lines.push(JSON.stringify(structuredPayload, null, 2));
-  lines.push('END_STRUCTURED_JSON');
-  lines.push('================================================================================');
-
   return lines.join('\n');
 };
 
-const triggerLogFileDownload = (records: SystemErrorLog[]) => {
+const triggerLogFileDownload = (records: SystemErrorLog[], label = 'diagnostic') => {
   if (!records.length) {
-    message.warning('请先选择需要导出的系统错误');
+    message.warning('当前没有可导出的错误日志');
     return;
   }
   const content = buildDiagnosticLogContent(records);
-  const stamp = dayjs().format('YYYYMMDD-HHmmss');
-  const filename =
-    records.length === 1
-      ? `onlynail-error-id${records[0].id}-${stamp}.log`
-      : `onlynail-errors-${records.length}items-${stamp}.log`;
-
   const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  document.body.removeChild(anchor);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `onlynail-error-${label}-${dayjs().format('YYYYMMDD-HHmmss')}.log`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  message.success(`已导出 ${records.length} 条错误诊断日志：${filename}`);
+  message.success(`已导出 ${records.length} 条诊断日志`);
+};
+
+const PRIORITY_STYLE: Record<ErrorPriority, { bg: string; color: string; border: string }> = {
+  P0: { bg: 'var(--nb-danger-surface)', color: 'var(--nb-danger)', border: 'var(--nb-danger)' },
+  P1: { bg: 'var(--nb-danger-surface)', color: 'var(--nb-money)', border: 'var(--nb-line)' },
+  P2: { bg: 'var(--nb-soft-surface)', color: 'var(--nb-text-link)', border: 'var(--nb-line)' },
+  P3: { bg: colors.page, color: colors.muted, border: colors.line },
+};
+
+const CATEGORY_STYLE: Record<ErrorCategory, { bg: string; color: string }> = {
+  database: { bg: 'var(--nb-danger-surface)', color: 'var(--nb-danger)' },
+  server: { bg: colors.action, color: colors.inverse },
+  backend: { bg: 'var(--nb-soft-surface)', color: 'var(--nb-text-link)' },
+  frontend: { bg: colors.page, color: colors.ink },
+  other: { bg: colors.page, color: colors.muted },
 };
 
 const SystemErrors: React.FC = () => {
@@ -174,288 +152,281 @@ const SystemErrors: React.FC = () => {
   const isMobile = !screens.md;
 
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<{ items: SystemErrorLog[]; total: number }>({
-    items: [],
-    total: 0,
-  });
-  const [stats, setStats] = useState<SystemErrorStats>({
-    todayCount: 0,
-    unresolvedCount: 0,
-    totalCount: 0,
-    impactedUsersToday: 0,
-  });
-
-  const [filters, setFilters] = useState({
-    page: 1,
-    pageSize: 15,
-    source: undefined as string | undefined,
-    errorType: undefined as string | undefined,
-    resolved: undefined as boolean | undefined,
-    keyword: '',
-    startDate: undefined as string | undefined,
-    endDate: undefined as string | undefined,
+  const [groups, setGroups] = useState<SystemErrorGroup[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
+  const [stats, setStats] = useState<SystemErrorStats | null>(null);
+  const [prioritySummary, setPrioritySummary] = useState({
+    p0Count: 0,
+    p1Count: 0,
+    p2Count: 0,
+    p3Count: 0,
   });
 
-  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  // Tab: false = 待修复（默认），true = 已完成
+  const [resolvedTab, setResolvedTab] = useState<'pending' | 'done'>('pending');
+  const [sourceFilter, setSourceFilter] = useState<string | undefined>(undefined);
+  const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined);
+  const [priorityFilter, setPriorityFilter] = useState<string | undefined>(undefined);
+  const [keyword, setKeyword] = useState('');
+  const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
+
+  // 合并组详情弹窗
   const [detailVisible, setDetailVisible] = useState(false);
-  const [currentRecord, setCurrentRecord] = useState<SystemErrorLog | null>(null);
-  const [resolveModalVisible, setResolveModalVisible] = useState(false);
-  const [resolveTargetId, setResolveTargetId] = useState<number | null>(null);
-  const [resolveNote, setResolveNote] = useState('');
+  const [currentGroup, setCurrentGroup] = useState<SystemErrorGroup | null>(null);
 
-  const fetchStats = async () => {
+  // 标记已修复弹窗
+  const [resolveModalVisible, setResolveModalVisible] = useState(false);
+  const [resolveTargetGroup, setResolveTargetGroup] = useState<SystemErrorGroup | null>(null);
+  const [resolveNote, setResolveNote] = useState('');
+  const [resolving, setResolving] = useState(false);
+
+  const fetchStats = useCallback(async () => {
     try {
-      const res = await systemErrorService.getStats();
-      setStats(res);
+      const data = await systemErrorService.getStats();
+      setStats(data);
     } catch {
       // ignore
     }
-  };
+  }, []);
 
-  const fetchData = useCallback(async () => {
+  const fetchGroups = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await systemErrorService.getAll({
-        page: filters.page,
-        pageSize: filters.pageSize,
-        source: filters.source || undefined,
-        errorType: filters.errorType || undefined,
-        resolved: filters.resolved,
-        keyword: filters.keyword ? filters.keyword.trim() : undefined,
-        startDate: filters.startDate,
-        endDate: filters.endDate,
+      const res = await systemErrorService.getGroups({
+        page,
+        pageSize,
+        resolved: resolvedTab === 'done',
+        source: sourceFilter,
+        category: categoryFilter,
+        priority: priorityFilter,
+        keyword: keyword.trim() || undefined,
+        startDate: dateRange?.[0]?.format('YYYY-MM-DD'),
+        endDate: dateRange?.[1]?.format('YYYY-MM-DD'),
       });
-      setData({ items: res.items, total: res.total });
-    } catch {
-      message.error('加载系统错误日志失败');
+      setGroups(res.items || []);
+      setTotal(res.total || 0);
+      if (res.summary) setPrioritySummary(res.summary);
+    } catch (err) {
+      message.error('加载系统错误监控失败');
+      console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [
+    page,
+    pageSize,
+    resolvedTab,
+    sourceFilter,
+    categoryFilter,
+    priorityFilter,
+    keyword,
+    dateRange,
+  ]);
 
   useEffect(() => {
     fetchStats();
-    fetchData();
-  }, [fetchData]);
+  }, [fetchStats]);
 
-  const handleResolve = async (id: number, note?: string) => {
-    try {
-      await systemErrorService.resolve(id, note);
-      message.success('已标记为已排查');
-      fetchData();
-      fetchStats();
-      if (currentRecord?.id === id) {
-        setDetailVisible(false);
-      }
-    } catch {
-      message.error('操作失败');
-    }
-  };
+  useEffect(() => {
+    fetchGroups();
+  }, [fetchGroups]);
 
-  const handleBatchResolve = async () => {
-    if (!selectedRowKeys.length) return;
+  const handleResolveGroup = async (group: SystemErrorGroup, note?: string) => {
+    setResolving(true);
     try {
-      await systemErrorService.batchResolve(selectedRowKeys as number[]);
-      message.success(`已批量标记 ${selectedRowKeys.length} 项为已排查`);
-      setSelectedRowKeys([]);
-      fetchData();
+      await systemErrorService.batchResolve(
+        group.ids,
+        note?.trim() || `已完成【${group.fixAction}】（合并 ${group.occurrenceCount} 次）`,
+      );
+      message.success(`已将同类型 ${group.occurrenceCount} 条错误标记为已完成`);
+      setResolveModalVisible(false);
+      setDetailVisible(false);
+      fetchGroups();
       fetchStats();
     } catch {
-      message.error('批量操作失败');
+      message.error('操作失败，请重试');
+    } finally {
+      setResolving(false);
     }
-  };
-
-  const handleExportSelected = () => {
-    const selectedSet = new Set(selectedRowKeys.map((k) => Number(k)));
-    const selectedRecords = data.items.filter((item) => selectedSet.has(item.id));
-    triggerLogFileDownload(selectedRecords);
-  };
-
-  const toggleMobileSelect = (id: number, checked: boolean) => {
-    setSelectedRowKeys((prev) =>
-      checked ? (prev.includes(id) ? prev : [...prev, id]) : prev.filter((key) => key !== id),
-    );
   };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    message.success('已复制到剪贴板');
-  };
-
-  const parseDevice = (infoStr?: string) => {
-    if (!infoStr) return '—';
-    const obj = parseDeviceJson(infoStr);
-    if (!obj) return infoStr;
-    const parts = [
-      obj.brand || obj.model,
-      obj.system,
-      obj.version ? `微信${obj.version}` : null,
-    ].filter(Boolean);
-    return parts.length ? parts.join(' / ') : infoStr;
-  };
-
-  const sourceTag = (source: string) => {
-    if (source === 'mini_program') {
-      return (
-        <Tag icon={<MobileOutlined />} color="blue">
-          小程序
-        </Tag>
-      );
-    }
-    if (source === 'backend') {
-      return (
-        <Tag icon={<CloudServerOutlined />} color="volcano">
-          服务端
-        </Tag>
-      );
-    }
-    return <Tag color="default">{source}</Tag>;
-  };
-
-  const errorTypeTag = (type: string) => {
-    const map: Record<string, { label: string; color: string }> = {
-      js_error: { label: 'JS运行时异常', color: 'error' },
-      unhandled_rejection: { label: '未捕获Promise', color: 'purple' },
-      api_error: { label: '接口500异常', color: 'volcano' },
-      http_500: { label: '后端500', color: 'red' },
-      network_error: { label: '网络断连/超时', color: 'warning' },
-    };
-    const conf = map[type] || { label: type, color: 'default' };
-    return <Tag color={conf.color}>{conf.label}</Tag>;
-  };
-
-  const userTag = (role?: string, id?: number) => {
-    if (!role && !id) return <Text type="secondary">访客</Text>;
-    const roleText =
-      role === 'technician' ? '美甲师' : role === 'client' ? '客户' : role || '用户';
-    return (
-      <Space orientation="horizontal" size={4}>
-        <UserOutlined />
-        <span>
-          {roleText}
-          {id ? ` #${id}` : ''}
-        </span>
-      </Space>
+    navigator.clipboard?.writeText(text).then(
+      () => message.success('已复制到剪贴板'),
+      () => message.error('复制失败，请手动选中复制'),
     );
+  };
+
+  const renderPriorityTag = (priority: ErrorPriority, label: string) => {
+    const st = PRIORITY_STYLE[priority] || PRIORITY_STYLE.P2;
+    return (
+      <Tag
+        style={{
+          margin: 0,
+          background: st.bg,
+          color: st.color,
+          borderColor: st.border,
+          fontWeight: 600,
+        }}
+      >
+        {label}
+      </Tag>
+    );
+  };
+
+  const renderCategoryTag = (category: ErrorCategory, label: string) => {
+    const st = CATEGORY_STYLE[category] || CATEGORY_STYLE.other;
+    return (
+      <Tag
+        bordered={false}
+        style={{
+          margin: 0,
+          background: st.bg,
+          color: st.color,
+          fontWeight: 600,
+        }}
+      >
+        {label}
+      </Tag>
+    );
+  };
+
+  const sourceLabel = (source: string) => {
+    if (source === 'mini_program') return '小程序';
+    if (source === 'backend') return '后端服务';
+    if (source === 'admin') return '超管后台';
+    return source;
   };
 
   const columns = [
     {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-      width: 70,
+      title: '优先级',
+      key: 'priority',
+      width: 155,
+      render: (_: unknown, g: SystemErrorGroup) => (
+        <Space direction="vertical" size={2}>
+          {renderPriorityTag(g.priority, g.priorityLabel)}
+          <Text type="secondary" style={{ fontSize: 11 }}>
+            {g.priority === 'P0'
+              ? '影响核心使用 · 立即修'
+              : g.priority === 'P1'
+                ? '影响主要功能 · 尽快修'
+                : g.priority === 'P2'
+                  ? '局部异常 · 排期修'
+                  : '兼容提示 · 可观察'}
+          </Text>
+        </Space>
+      ),
     },
     {
-      title: '发生时间',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      width: 160,
-      render: (t: string) => dayjs(t).format('YYYY-MM-DD HH:mm:ss'),
-    },
-    {
-      title: '来源',
-      dataIndex: 'source',
-      key: 'source',
-      width: 90,
-      render: (s: string) => sourceTag(s),
-    },
-    {
-      title: '类型',
-      dataIndex: 'errorType',
-      key: 'errorType',
-      width: 130,
-      render: (t: string) => errorTypeTag(t),
-    },
-    {
-      title: '发生页面 / 接口',
-      dataIndex: 'route',
-      key: 'route',
+      title: '归因分类与修复动作',
+      key: 'category',
       width: 220,
-      render: (r: string) => (
-        <Text style={{ wordBreak: 'break-all', fontSize: 13 }} code={!!r}>
-          {r || '—'}
-        </Text>
+      render: (_: unknown, g: SystemErrorGroup) => (
+        <Space direction="vertical" size={4}>
+          {renderCategoryTag(g.category, g.categoryLabel)}
+          <Text style={{ fontSize: 12, fontWeight: 500, color: colors.ink }}>
+            <ToolOutlined style={{ marginRight: 4, color: colors.muted }} />
+            {g.fixAction}
+          </Text>
+        </Space>
       ),
     },
     {
-      title: '报错信息摘要',
-      dataIndex: 'message',
+      title: '合并错误详情',
       key: 'message',
-      render: (msg: string) => (
-        <Paragraph
-          type="danger"
-          ellipsis={{ rows: 2, expandable: false }}
-          style={{ marginBottom: 0, fontSize: 13 }}
+      ellipsis: true,
+      render: (_: unknown, g: SystemErrorGroup) => (
+        <div
+          style={{ cursor: 'pointer' }}
+          onClick={() => {
+            setCurrentGroup(g);
+            setDetailVisible(true);
+          }}
         >
-          {msg}
-        </Paragraph>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <Tag color="default" style={{ margin: 0, fontSize: 11 }}>
+              {sourceLabel(g.latestError.source)}
+            </Tag>
+            {g.latestError.route && (
+              <Text code style={{ fontSize: 12 }} ellipsis>
+                {g.latestError.route}
+              </Text>
+            )}
+          </div>
+          <Text
+            style={{
+              fontSize: 13,
+              color: g.priority === 'P0' ? 'var(--nb-danger)' : colors.ink,
+              fontWeight: 500,
+            }}
+            ellipsis={{ tooltip: g.latestError.message }}
+          >
+            {g.latestError.message}
+          </Text>
+        </div>
       ),
     },
     {
-      title: '终端环境',
-      dataIndex: 'deviceInfo',
-      key: 'deviceInfo',
-      width: 170,
-      render: (info: string) => (
-        <Text style={{ fontSize: 12 }} type="secondary">
-          {parseDevice(info)}
+      title: '合并次数',
+      key: 'occurrenceCount',
+      width: 120,
+      render: (_: unknown, g: SystemErrorGroup) => (
+        <Button
+          type="link"
+          size="small"
+          style={{ padding: 0, fontWeight: 600 }}
+          onClick={() => {
+            setCurrentGroup(g);
+            setDetailVisible(true);
+          }}
+        >
+          共 {g.occurrenceCount} 次
+          {g.impactedUsersCount > 0 ? ` (${g.impactedUsersCount}人)` : ''}
+        </Button>
+      ),
+    },
+    {
+      title: '最近发生',
+      dataIndex: 'latestOccurredAt',
+      width: 160,
+      render: (val: string) => (
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          {dayjs(val).format('MM-DD HH:mm:ss')}
         </Text>
       ),
-    },
-    {
-      title: '用户身份',
-      key: 'user',
-      width: 120,
-      render: (_: unknown, r: SystemErrorLog) => userTag(r.userRole, r.userId),
-    },
-    {
-      title: '状态',
-      dataIndex: 'resolved',
-      key: 'resolved',
-      width: 90,
-      render: (resolved: boolean) =>
-        resolved ? (
-          <Badge status="success" text="已排查" />
-        ) : (
-          <Badge status="error" text="待排查" />
-        ),
     },
     {
       title: '操作',
       key: 'action',
-      width: 200,
+      width: 170,
       fixed: 'right' as const,
-      render: (_: unknown, record: SystemErrorLog) => (
+      render: (_: unknown, g: SystemErrorGroup) => (
         <Space size={4}>
           <Button
             type="link"
             size="small"
             onClick={() => {
-              setCurrentRecord(record);
+              setCurrentGroup(g);
               setDetailVisible(true);
             }}
           >
-            详情
+            明细
           </Button>
-          <Button
-            type="link"
-            size="small"
-            icon={<DownloadOutlined />}
-            onClick={() => triggerLogFileDownload([record])}
-          >
-            导出
-          </Button>
-          {!record.resolved && (
-            <Popconfirm
-              title="标记为已排查？"
-              description="确认已修复或知晓该异常问题"
-              onConfirm={() => handleResolve(record.id)}
+          {!g.resolved && (
+            <Button
+              type="link"
+              size="small"
+              onClick={() => {
+                setResolveTargetGroup(g);
+                setResolveNote('');
+                setResolveModalVisible(true);
+              }}
             >
-              <Button type="link" size="small">
-                已解决
-              </Button>
-            </Popconfirm>
+              标为已完成
+            </Button>
           )}
         </Space>
       ),
@@ -463,485 +434,487 @@ const SystemErrors: React.FC = () => {
   ];
 
   return (
-    <div style={{ padding: '0 0 24px' }}>
+    <div style={{ padding: isMobile ? '12px' : '24px' }}>
       <AdminPageHeader
-        title="系统错误监控与报告"
-        description="实时捕捉真机小程序与服务端异常报错，支持勾选导出结构化诊断日志文件供外部工具分析定位。"
+        title="系统错误监控"
+        description="按归因分类、影响优先级与同类型聚合展示，默认优先处理待修复异常"
+        extra={
+          <Space wrap>
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={() =>
+                triggerLogFileDownload(
+                  groups.flatMap((g) => g.occurrences),
+                  resolvedTab,
+                )
+              }
+            >
+              导出当前页日志
+            </Button>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => {
+                fetchGroups();
+                fetchStats();
+              }}
+            >
+              刷新
+            </Button>
+          </Space>
+        }
       />
 
-      {/* 顶部指标看板 */}
+      {/* 顶部指标卡 */}
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-        <Col xs={12} sm={8}>
-          <Card bordered={false} hoverable>
+        <Col xs={12} sm={6}>
+          <Card size="small">
             <Statistic
-              title="今日捕获异常总量"
-              value={stats.todayCount}
-              prefix={<BugOutlined />}
-              suffix="次"
-            />
-          </Card>
-        </Col>
-        <Col xs={12} sm={8}>
-          <Card bordered={false} hoverable>
-            <Statistic
-              title="待排查未解决故障"
-              value={stats.unresolvedCount}
+              title="待修复原记录"
+              value={stats?.unresolvedCount ?? 0}
               prefix={<ClockCircleOutlined />}
-              suffix="项"
+              valueStyle={{
+                color: (stats?.unresolvedCount ?? 0) > 0 ? 'var(--nb-danger)' : 'var(--nb-success)',
+              }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={8}>
-          <Card bordered={false} hoverable>
+        <Col xs={12} sm={6}>
+          <Card size="small">
             <Statistic
-              title="今日受影响用户数"
-              value={stats.impactedUsersToday}
+              title="P0 致命（立即修）"
+              value={prioritySummary.p0Count}
+              prefix={<WarningOutlined />}
+              valueStyle={{
+                color: prioritySummary.p0Count > 0 ? 'var(--nb-danger)' : colors.ink,
+              }}
+              suffix="类"
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card size="small">
+            <Statistic
+              title="今日新增异常"
+              value={stats?.todayCount ?? 0}
+              prefix={<BugOutlined />}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card size="small">
+            <Statistic
+              title="今日受影响用户"
+              value={stats?.impactedUsersToday ?? 0}
               prefix={<UserOutlined />}
-              suffix="人"
             />
           </Card>
         </Col>
       </Row>
 
-      {/* 筛选与操作区 */}
-      <Card bordered={false} style={{ marginBottom: 16 }}>
-        <Space wrap size={[12, 12]} style={{ width: '100%', marginBottom: 12 }}>
-          <Input
-            placeholder="搜索报错信息 / 路由 / 堆栈"
-            prefix={<SearchOutlined />}
-            value={filters.keyword}
-            onChange={(e) => setFilters((f) => ({ ...f, keyword: e.target.value }))}
-            onPressEnter={() => setFilters((f) => ({ ...f, page: 1 }))}
-            style={{ width: isMobile ? '100%' : 260 }}
-            allowClear
-          />
+      <Card>
+        {/* 待修复 / 已完成 Tab 切换 */}
+        <Tabs
+          activeKey={resolvedTab}
+          onChange={(key) => {
+            setResolvedTab(key as 'pending' | 'done');
+            setPage(1);
+          }}
+          items={[
+            {
+              key: 'pending',
+              label: (
+                <Space size={6}>
+                  <span>待修复</span>
+                  <Badge count={stats?.unresolvedCount ?? 0} showZero color="red" />
+                </Space>
+              ),
+            },
+            {
+              key: 'done',
+              label: (
+                <Space size={6}>
+                  <span>已完成</span>
+                  <Badge count={stats?.resolvedCount ?? 0} showZero color="green" />
+                </Space>
+              ),
+            },
+          ]}
+        />
 
-          <Select
-            placeholder="来源"
-            allowClear
-            value={filters.source}
-            onChange={(v) => setFilters((f) => ({ ...f, source: v, page: 1 }))}
-            style={{ width: isMobile ? '47%' : 130 }}
-            options={[
-              { label: '微信小程序', value: 'mini_program' },
-              { label: '服务端', value: 'backend' },
-              { label: '管理端', value: 'admin' },
-            ]}
-          />
-
-          <Select
-            placeholder="异常类型"
-            allowClear
-            value={filters.errorType}
-            onChange={(v) => setFilters((f) => ({ ...f, errorType: v, page: 1 }))}
-            style={{ width: isMobile ? '47%' : 150 }}
-            options={[
-              { label: 'JS运行时报错', value: 'js_error' },
-              { label: '未捕获Promise', value: 'unhandled_rejection' },
-              { label: '接口500报错', value: 'api_error' },
-              { label: '网络断连超时', value: 'network_error' },
-            ]}
-          />
-
-          <Select
-            placeholder="解决状态"
-            allowClear
-            value={filters.resolved}
-            onChange={(v) => setFilters((f) => ({ ...f, resolved: v, page: 1 }))}
-            style={{ width: isMobile ? '100%' : 120 }}
-            options={[
-              { label: '待排查', value: false },
-              { label: '已排查', value: true },
-            ]}
-          />
-
-          {!isMobile && (
+        {/* 筛选栏 */}
+        <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
+          <Col xs={24} sm={12} md={6}>
+            <Input
+              placeholder="搜索错误信息、接口路径或堆栈"
+              prefix={<SearchOutlined />}
+              value={keyword}
+              onChange={(e) => {
+                setKeyword(e.target.value);
+                setPage(1);
+              }}
+              allowClear
+            />
+          </Col>
+          <Col xs={12} sm={6} md={4}>
+            <Select
+              placeholder="归因分类"
+              allowClear
+              style={{ width: '100%' }}
+              value={categoryFilter}
+              onChange={(val) => {
+                setCategoryFilter(val);
+                setPage(1);
+              }}
+              options={[
+                { label: '数据库错误', value: 'database' },
+                { label: '服务器/网关错误', value: 'server' },
+                { label: '后台错误', value: 'backend' },
+                { label: '前端错误', value: 'frontend' },
+                { label: '系统环境提示', value: 'other' },
+              ]}
+            />
+          </Col>
+          <Col xs={12} sm={6} md={4}>
+            <Select
+              placeholder="优先级"
+              allowClear
+              style={{ width: '100%' }}
+              value={priorityFilter}
+              onChange={(val) => {
+                setPriorityFilter(val);
+                setPage(1);
+              }}
+              options={[
+                { label: 'P0 · 必须马上修复', value: 'P0' },
+                { label: 'P1 · 紧急修复', value: 'P1' },
+                { label: 'P2 · 排期修复', value: 'P2' },
+                { label: 'P3 · 低优先级观察', value: 'P3' },
+              ]}
+            />
+          </Col>
+          <Col xs={12} sm={6} md={4}>
+            <Select
+              placeholder="错误来源端"
+              allowClear
+              style={{ width: '100%' }}
+              value={sourceFilter}
+              onChange={(val) => {
+                setSourceFilter(val);
+                setPage(1);
+              }}
+              options={[
+                { label: '小程序前端', value: 'mini_program' },
+                { label: '后端服务', value: 'backend' },
+                { label: '超管后台', value: 'admin' },
+              ]}
+            />
+          </Col>
+          <Col xs={24} sm={12} md={6}>
             <RangePicker
-              onChange={(_dates, dateStrings) => {
-                setFilters((f) => ({
-                  ...f,
-                  startDate: dateStrings[0] || undefined,
-                  endDate: dateStrings[1] || undefined,
-                  page: 1,
-                }));
+              style={{ width: '100%' }}
+              value={dateRange}
+              onChange={(dates) => {
+                setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs] | null);
+                setPage(1);
               }}
             />
-          )}
+          </Col>
+        </Row>
 
-          <Button type="primary" style={{ minHeight: 36 }} onClick={() => fetchData()}>
-            查询
-          </Button>
-
-          <Button
-            icon={<ReloadOutlined />}
-            style={{ minHeight: 36 }}
-            onClick={() => {
-              setFilters({
-                page: 1,
-                pageSize: 15,
-                source: undefined,
-                errorType: undefined,
-                resolved: undefined,
-                keyword: '',
-                startDate: undefined,
-                endDate: undefined,
-              });
-              fetchStats();
-            }}
-          >
-            重置
-          </Button>
-        </Space>
-
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 10,
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <Space wrap>
-            <Button
-              type="primary"
-              icon={<DownloadOutlined />}
-              disabled={!selectedRowKeys.length}
-              style={{ minHeight: isMobile ? 44 : 36 }}
-              onClick={handleExportSelected}
-            >
-              导出诊断日志 ({selectedRowKeys.length})
-            </Button>
-            <Button
-              type="default"
-              disabled={!selectedRowKeys.length}
-              style={{ minHeight: isMobile ? 44 : 36 }}
-              onClick={handleBatchResolve}
-            >
-              批量标记已排查 ({selectedRowKeys.length})
-            </Button>
-          </Space>
-          <Text type="secondary">共 {data.total} 条异常记录</Text>
-        </div>
-      </Card>
-
-      {/* 数据展示：PC 表格 / 移动端卡片 */}
-      <Card bordered={false}>
         {isMobile ? (
-          loading ? (
-            <div style={{ textAlign: 'center', padding: 36 }}>
-              <Spin />
-            </div>
-          ) : !data.items.length ? (
-            <Empty description="暂无异常记录" />
-          ) : (
-            <div>
-              {data.items.map((record) => {
-                const checked = selectedRowKeys.includes(record.id);
-                return (
-                  <div key={record.id} className="admin-app-card">
-                    <div className="admin-app-card-head">
-                      <Checkbox
-                        checked={checked}
-                        onChange={(e) => toggleMobileSelect(record.id, e.target.checked)}
-                      >
-                        <Text strong>#{record.id}</Text>
-                      </Checkbox>
-                      <Space size={4}>
-                        {sourceTag(record.source)}
-                        {record.resolved ? (
-                          <Badge status="success" text="已排查" />
-                        ) : (
-                          <Badge status="error" text="待排查" />
-                        )}
-                      </Space>
+          <Spin spinning={loading}>
+            {groups.length === 0 ? (
+              <Empty description={resolvedTab === 'pending' ? '太棒了，当前没有待修复异常' : '暂无已完成记录'} />
+            ) : (
+              <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                {groups.map((g) => (
+                  <Card
+                    key={g.groupKey}
+                    size="small"
+                    style={{ borderColor: g.priority === 'P0' ? 'var(--nb-danger)' : undefined }}
+                    onClick={() => {
+                      setCurrentGroup(g);
+                      setDetailVisible(true);
+                    }}
+                  >
+                    <Space wrap size={6} style={{ marginBottom: 8 }}>
+                      {renderPriorityTag(g.priority, g.priorityLabel)}
+                      {renderCategoryTag(g.category, g.categoryLabel)}
+                      <Tag color="default">共 {g.occurrenceCount} 次</Tag>
+                    </Space>
+                    <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, wordBreak: 'break-all' }}>
+                      {g.latestError.message}
                     </div>
-                    <div className="admin-app-card-body">
-                      <div style={{ marginBottom: 4 }}>{errorTypeTag(record.errorType)}</div>
-                      <Paragraph
-                        type="danger"
-                        ellipsis={{ rows: 2 }}
-                        style={{ marginBottom: 4, fontSize: 13 }}
-                      >
-                        {record.message}
-                      </Paragraph>
-                      <div className="admin-app-card-row">
-                        <span className="admin-app-card-label">路由</span>
-                        <span className="admin-app-card-value" style={{ fontSize: 12 }}>
-                          {record.route || '—'}
-                        </span>
-                      </div>
-                      <div className="admin-app-card-row">
-                        <span className="admin-app-card-label">时间</span>
-                        <span className="admin-app-card-value" style={{ fontSize: 12 }}>
-                          {dayjs(record.createdAt).format('YYYY-MM-DD HH:mm:ss')}
-                        </span>
-                      </div>
+                    <div style={{ fontSize: 12, color: colors.secondary, marginBottom: 8 }}>
+                      <ToolOutlined style={{ marginRight: 4 }} />
+                      建议动作：{g.fixAction}
                     </div>
-                    <div className="admin-app-card-actions">
-                      <Button
-                        onClick={() => {
-                          setCurrentRecord(record);
-                          setDetailVisible(true);
-                        }}
-                      >
-                        详情
-                      </Button>
-                      <Button
-                        icon={<DownloadOutlined />}
-                        onClick={() => triggerLogFileDownload([record])}
-                      >
-                        导出日志
-                      </Button>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        最近 {dayjs(g.latestOccurredAt).format('MM-DD HH:mm')}
+                      </Text>
+                      {!g.resolved && (
+                        <Button
+                          size="small"
+                          type="primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setResolveTargetGroup(g);
+                            setResolveNote('');
+                            setResolveModalVisible(true);
+                          }}
+                        >
+                          标为已完成
+                        </Button>
+                      )}
                     </div>
-                  </div>
-                );
-              })}
-              <Pagination
-                size="small"
-                current={filters.page}
-                pageSize={filters.pageSize}
-                total={data.total}
-                onChange={(page, pageSize) => setFilters((f) => ({ ...f, page, pageSize }))}
-                style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}
-              />
-            </div>
-          )
+                  </Card>
+                ))}
+                <div style={{ textAlign: 'center', marginTop: 12 }}>
+                  <Pagination
+                    simple
+                    current={page}
+                    pageSize={pageSize}
+                    total={total}
+                    onChange={(p) => setPage(p)}
+                  />
+                </div>
+              </Space>
+            )}
+          </Spin>
         ) : (
           <Table
-            rowKey="id"
+            rowKey="groupKey"
             loading={loading}
             columns={columns}
-            dataSource={data.items}
-            rowSelection={{
-              selectedRowKeys,
-              onChange: setSelectedRowKeys,
-            }}
+            dataSource={groups}
+            scroll={{ x: 1000 }}
             pagination={{
-              current: filters.page,
-              pageSize: filters.pageSize,
-              total: data.total,
+              current: page,
+              pageSize,
+              total,
               showSizeChanger: true,
-              pageSizeOptions: ['15', '30', '50'],
-              onChange: (page, pageSize) => setFilters((f) => ({ ...f, page, pageSize })),
+              showTotal: (t) => `共 ${t} 类错误`,
+              onChange: (p, ps) => {
+                setPage(p);
+                setPageSize(ps);
+              },
             }}
-            scroll={{ x: 1340 }}
           />
         )}
       </Card>
 
-      {/* 错误详情与完整堆栈弹窗 */}
+      {/* 合并错误详情弹窗（展示每次发生明细） */}
       <Modal
         title={
-          <Space>
-            <BugOutlined />
-            <span>错误详情与排查堆栈 #{currentRecord?.id}</span>
-          </Space>
+          currentGroup ? (
+            <Space wrap>
+              <span>同类型错误聚合详情</span>
+              {renderPriorityTag(currentGroup.priority, currentGroup.priorityLabel)}
+              <Tag>共发生 {currentGroup.occurrenceCount} 次</Tag>
+            </Space>
+          ) : (
+            '错误详情'
+          )
         }
         open={detailVisible}
         onCancel={() => setDetailVisible(false)}
-        width={isMobile ? '94vw' : 800}
+        width={isMobile ? '96%' : 860}
         footer={[
           <Button key="close" onClick={() => setDetailVisible(false)}>
             关闭
           </Button>,
-          currentRecord && (
+          currentGroup && (
             <Button
               key="export"
               icon={<DownloadOutlined />}
-              onClick={() => triggerLogFileDownload([currentRecord])}
+              onClick={() =>
+                triggerLogFileDownload(
+                  currentGroup.occurrences,
+                  `${currentGroup.category}-${currentGroup.priority}`,
+                )
+              }
             >
-              导出诊断日志
+              导出本组 {currentGroup.occurrences.length} 条日志
             </Button>
           ),
-          currentRecord && !currentRecord.resolved && (
+          currentGroup && !currentGroup.resolved && (
             <Button
               key="resolve"
               type="primary"
               icon={<CheckCircleOutlined />}
               onClick={() => {
-                setResolveTargetId(currentRecord.id);
+                setResolveTargetGroup(currentGroup);
                 setResolveNote('');
                 setResolveModalVisible(true);
               }}
             >
-              标记为已排查
+              全部标为已完成 ({currentGroup.occurrenceCount} 次)
             </Button>
           ),
         ]}
       >
-        {currentRecord && (
+        {currentGroup && (
           <div>
             <Descriptions bordered size="small" column={isMobile ? 1 : 2} style={{ marginBottom: 16 }}>
-              <Descriptions.Item label="发生时间">
-                {dayjs(currentRecord.createdAt).format('YYYY-MM-DD HH:mm:ss')}
+              <Descriptions.Item label="归因分类">
+                {renderCategoryTag(currentGroup.category, currentGroup.categoryLabel)}
               </Descriptions.Item>
-              <Descriptions.Item label="来源与类型">
-                <Space>
-                  {sourceTag(currentRecord.source)}
-                  {errorTypeTag(currentRecord.errorType)}
+              <Descriptions.Item label="影响与优先级">
+                <Space direction="vertical" size={2}>
+                  {renderPriorityTag(currentGroup.priority, currentGroup.priorityLabel)}
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {currentGroup.urgencyNote}
+                  </Text>
                 </Space>
               </Descriptions.Item>
-              <Descriptions.Item label="发生页面/接口" span={isMobile ? 1 : 2}>
-                <Text code style={{ wordBreak: 'break-all' }}>
-                  {currentRecord.route || '—'}
-                </Text>
+              <Descriptions.Item label="建议修复动作" span={isMobile ? 1 : 2}>
+                <Space direction="vertical" size={2}>
+                  <Text strong>
+                    <ToolOutlined style={{ marginRight: 6 }} />
+                    {currentGroup.fixAction}
+                  </Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {currentGroup.fixHint}
+                  </Text>
+                </Space>
               </Descriptions.Item>
-              <Descriptions.Item label="受影响用户">
-                {userTag(currentRecord.userRole, currentRecord.userId)}
+              <Descriptions.Item label="合并统计">
+                共发生 <b>{currentGroup.occurrenceCount}</b> 次 · 影响{' '}
+                <b>{currentGroup.impactedUsersCount}</b> 名已登录用户
               </Descriptions.Item>
-              <Descriptions.Item label="网络与IP">
-                {currentRecord.networkType || '—'} {currentRecord.ip ? `(${currentRecord.ip})` : ''}
-              </Descriptions.Item>
-              <Descriptions.Item label="排查状态" span={isMobile ? 1 : 2}>
-                {currentRecord.resolved ? (
-                  <Space wrap>
-                    <Badge status="success" text="已排查" />
-                    {currentRecord.resolvedAt && (
-                      <Text type="secondary">
-                        ({dayjs(currentRecord.resolvedAt).format('YYYY-MM-DD HH:mm')})
-                      </Text>
-                    )}
-                    {currentRecord.resolvedNote && (
-                      <Text type="secondary">备忘：{currentRecord.resolvedNote}</Text>
-                    )}
-                  </Space>
-                ) : (
-                  <Badge status="error" text="待排查处理" />
-                )}
+              <Descriptions.Item label="时间跨度">
+                {dayjs(currentGroup.firstOccurredAt).format('MM-DD HH:mm')} ~{' '}
+                {dayjs(currentGroup.latestOccurredAt).format('MM-DD HH:mm')}
               </Descriptions.Item>
             </Descriptions>
 
-            {/* 终端设备信息 */}
-            {currentRecord.deviceInfo && (
-              <div style={{ marginBottom: 16 }}>
-                <Text strong style={{ display: 'block', marginBottom: 6 }}>
-                  终端环境详细信息
-                </Text>
-                <div
-                  style={{
-                    background: 'var(--nb-page)',
-                    padding: '8px 12px',
-                    borderRadius: 6,
-                    border: '1px solid var(--nb-line)',
-                    fontSize: 13,
-                  }}
-                >
-                  {(() => {
-                    const d = parseDeviceJson(currentRecord.deviceInfo);
-                    if (!d) return currentRecord.deviceInfo;
-                    return (
-                      <Row gutter={[12, 6]}>
-                        <Col xs={24} sm={12}>
-                          机型品牌: <b>{String(d.brand || d.model || '—')}</b>
-                        </Col>
-                        <Col xs={24} sm={12}>
-                          操作系统: <b>{String(d.system || '—')}</b> ({String(d.platform || '')})
-                        </Col>
-                        <Col xs={24} sm={12}>
-                          微信版本: <b>{String(d.version || '—')}</b>
-                        </Col>
-                        <Col xs={24} sm={12}>
-                          基础库版本: <b>{String(d.SDKVersion || '—')}</b>
-                        </Col>
-                      </Row>
-                    );
-                  })()}
-                </div>
-              </div>
-            )}
-
-            {/* 报错消息 */}
-            <div style={{ marginBottom: 16 }}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: 6,
-                }}
-              >
-                <Text strong>报错信息 (Error Message)</Text>
+            <Alert
+              type={currentGroup.priority === 'P0' ? 'error' : 'warning'}
+              showIcon
+              message={currentGroup.latestError.message}
+              style={{ marginBottom: 16, wordBreak: 'break-all' }}
+              action={
                 <Button
                   size="small"
                   icon={<CopyOutlined />}
-                  onClick={() => copyToClipboard(currentRecord.message)}
+                  onClick={() => copyToClipboard(currentGroup.latestError.message)}
                 >
-                  复制信息
+                  复制
                 </Button>
-              </div>
-              <Alert
-                type="error"
-                showIcon
-                message={currentRecord.message}
-                style={{ wordBreak: 'break-all', fontSize: 13 }}
-              />
-            </div>
+              }
+            />
 
-            {/* 完整代码堆栈 */}
-            <div>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: 6,
-                }}
-              >
-                <Text strong>完整代码堆栈 (Stack Trace)</Text>
-                {currentRecord.stack && (
-                  <Button
-                    size="small"
-                    icon={<CopyOutlined />}
-                    onClick={() => copyToClipboard(currentRecord.stack!)}
-                  >
-                    复制完整堆栈
-                  </Button>
-                )}
-              </div>
-              <pre
-                style={{
-                  background: colors.action,
-                  color: colors.inverse,
-                  padding: '12px 14px',
-                  borderRadius: 6,
-                  maxHeight: 280,
-                  overflow: 'auto',
-                  fontSize: 12,
-                  lineHeight: 1.5,
-                  fontFamily: 'Consolas, Monaco, "Courier New", monospace',
-                }}
-              >
-                {currentRecord.stack || '无可用堆栈信息'}
-              </pre>
-            </div>
+            <Text strong style={{ display: 'block', marginBottom: 8 }}>
+              历次发生明细（按时间倒序，共 {currentGroup.occurrences.length} 条）
+            </Text>
+            <Collapse
+              defaultActiveKey={
+                currentGroup.occurrences[0] ? [String(currentGroup.occurrences[0].id)] : []
+              }
+              items={currentGroup.occurrences.map((occ, idx) => {
+                const d = parseDeviceJson(occ.deviceInfo);
+                return {
+                  key: String(occ.id),
+                  label: (
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: 8,
+                      }}
+                    >
+                      <Space size={8}>
+                        <Tag style={{ margin: 0 }}>#{occ.id}</Tag>
+                        <Text strong>{dayjs(occ.createdAt).format('YYYY-MM-DD HH:mm:ss')}</Text>
+                        {idx === 0 && <Tag color="blue">最新</Tag>}
+                      </Space>
+                      <Space size={8}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {occ.userRole ? `${occ.userRole}:${occ.userId || '-'}` : '访客'}
+                        </Text>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {occ.ip || '—'}
+                        </Text>
+                      </Space>
+                    </div>
+                  ),
+                  children: (
+                    <div>
+                      <Descriptions
+                        size="small"
+                        bordered
+                        column={isMobile ? 1 : 2}
+                        style={{ marginBottom: 10 }}
+                      >
+                        <Descriptions.Item label="页面/接口" span={isMobile ? 1 : 2}>
+                          <Text code style={{ wordBreak: 'break-all' }}>
+                            {occ.route || '—'}
+                          </Text>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="机型与系统">
+                          {d ? `${d.brand || d.model || '—'} · ${d.system || '—'}` : '—'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="微信与基础库">
+                          {d ? `${d.version || '—'} / 基础库 ${d.SDKVersion || '—'}` : '—'}
+                        </Descriptions.Item>
+                      </Descriptions>
+                      <pre
+                        style={{
+                          background: colors.action,
+                          color: colors.inverse,
+                          padding: '10px 12px',
+                          borderRadius: 6,
+                          maxHeight: 200,
+                          overflow: 'auto',
+                          fontSize: 12,
+                          margin: 0,
+                          fontFamily: 'Consolas, Monaco, "Courier New", monospace',
+                        }}
+                      >
+                        {occ.stack || '无可用堆栈信息'}
+                      </pre>
+                    </div>
+                  ),
+                };
+              })}
+            />
           </div>
         )}
       </Modal>
 
-      {/* 填写排查备注弹窗 */}
+      {/* 标记已完成确认弹窗 */}
       <Modal
-        title="标记错误为已排查"
+        title="标记同类型错误为已完成"
         open={resolveModalVisible}
+        confirmLoading={resolving}
         onCancel={() => setResolveModalVisible(false)}
         onOk={() => {
-          if (resolveTargetId) {
-            handleResolve(resolveTargetId, resolveNote);
-            setResolveModalVisible(false);
+          if (resolveTargetGroup) {
+            handleResolveGroup(resolveTargetGroup, resolveNote);
           }
         }}
       >
-        <div style={{ padding: '8px 0' }}>
-          <Text style={{ display: 'block', marginBottom: 8 }}>
-            排查备忘与修复记录（选填）：
-          </Text>
-          <Input.TextArea
-            rows={3}
-            placeholder="例如：已在 commit 8a9f 中修复空指针异常，并发布小程序热更新补丁"
-            value={resolveNote}
-            onChange={(e) => setResolveNote(e.target.value)}
-          />
-        </div>
+        {resolveTargetGroup && (
+          <div style={{ padding: '4px 0' }}>
+            <Alert
+              type="info"
+              showIcon
+              style={{ marginBottom: 12 }}
+              message={`将把【${resolveTargetGroup.categoryLabel}】下的共 ${resolveTargetGroup.occurrenceCount} 条同类型异常全部移入「已完成」Tab`}
+            />
+            <Text style={{ display: 'block', marginBottom: 8 }}>
+              修复动作与排查备忘（选填）：
+            </Text>
+            <Input.TextArea
+              rows={3}
+              placeholder={`例如：已完成【${resolveTargetGroup.fixAction}】，问题已解决`}
+              value={resolveNote}
+              onChange={(e) => setResolveNote(e.target.value)}
+            />
+          </div>
+        )}
       </Modal>
     </div>
   );
