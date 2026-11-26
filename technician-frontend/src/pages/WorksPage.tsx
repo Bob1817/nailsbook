@@ -317,7 +317,7 @@ export const WorksPage: React.FC = () => {
                     </div>
                   )}
 
-                  <label className="absolute left-3 top-3 flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg bg-white/90 shadow-sm">
+                  <label className="absolute left-3 top-3 flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg bg-[var(--nb-surface)]/90 shadow-sm">
                     <input
                       type="checkbox"
                       checked={checked}
@@ -328,16 +328,16 @@ export const WorksPage: React.FC = () => {
 
                   <div className="absolute right-3 top-3 flex gap-1.5">
                     {work.isPinned && (
-                      <span className="rounded-md bg-[var(--nb-action)] px-2 py-0.5 text-[11px] text-[var(--nb-inverse)]">
+                      <span className="rounded-md bg-[var(--nb-action)] px-2 py-0.5 text-[11px] font-medium text-[var(--nb-inverse)]">
                         置顶
                       </span>
                     )}
                     {work.publicationStatus === 'draft' ? (
-                      <span className="rounded-md bg-white/90 px-2 py-0.5 text-[11px] text-[var(--nb-secondary)]">
+                      <span className="rounded-md bg-[var(--nb-surface)]/90 px-2 py-0.5 text-[11px] text-[var(--nb-secondary)]">
                         草稿
                       </span>
                     ) : !work.isVisible ? (
-                      <span className="rounded-md bg-white/90 px-2 py-0.5 text-[11px] text-[var(--nb-muted)]">
+                      <span className="rounded-md bg-[var(--nb-surface)]/90 px-2 py-0.5 text-[11px] text-[var(--nb-muted)]">
                         已隐藏
                       </span>
                     ) : null}
@@ -369,53 +369,59 @@ export const WorksPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--nb-line)] pt-3 text-xs">
-                    <div className="flex items-center gap-2">
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--nb-line)] pt-3">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => navigate(`/works/${work.id}/edit`)}
-                        className="font-medium text-[var(--nb-ink)] hover:underline"
+                        className="inline-flex h-7 items-center rounded-md border border-[var(--nb-line)] bg-[var(--nb-page)] px-2.5 text-xs font-medium text-[var(--nb-ink)] transition hover:bg-[var(--nb-pressed)]"
                       >
                         编辑
                       </button>
                       <button
                         type="button"
                         onClick={() => void handleSingleAction(work, 'visible')}
-                        className="text-[var(--nb-secondary)] hover:underline"
+                        className="inline-flex h-7 items-center rounded-md px-2 text-xs text-[var(--nb-secondary)] transition hover:bg-[var(--nb-page)] hover:text-[var(--nb-ink)]"
                       >
                         {work.isVisible ? '隐藏' : '上架'}
                       </button>
                       <button
                         type="button"
                         onClick={() => void handleSingleAction(work, 'pinned')}
-                        className="text-[var(--nb-secondary)] hover:underline"
+                        className="inline-flex h-7 items-center rounded-md px-2 text-xs text-[var(--nb-secondary)] transition hover:bg-[var(--nb-page)] hover:text-[var(--nb-ink)]"
                       >
                         {work.isPinned ? '取消置顶' : '置顶'}
                       </button>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1">
                       <button
                         type="button"
                         disabled={idx === 0}
                         onClick={() => void moveWorkOrder(idx, -1)}
-                        className="rounded border border-[var(--nb-line)] px-1.5 py-0.5 text-[var(--nb-muted)] disabled:opacity-30"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[var(--nb-line)] text-[var(--nb-secondary)] transition hover:bg-[var(--nb-page)] disabled:opacity-30"
                         title="上移"
+                        aria-label="上移"
                       >
-                        ↑
+                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 19V5m-6 6 6-6 6 6" />
+                        </svg>
                       </button>
                       <button
                         type="button"
                         disabled={idx === filteredWorks.length - 1}
                         onClick={() => void moveWorkOrder(idx, 1)}
-                        className="rounded border border-[var(--nb-line)] px-1.5 py-0.5 text-[var(--nb-muted)] disabled:opacity-30"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[var(--nb-line)] text-[var(--nb-secondary)] transition hover:bg-[var(--nb-page)] disabled:opacity-30"
                         title="下移"
+                        aria-label="下移"
                       >
-                        ↓
+                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14m6-6-6 6-6-6" />
+                        </svg>
                       </button>
                       <button
                         type="button"
                         onClick={() => void handleSingleAction(work, 'delete')}
-                        className="ml-1 text-[var(--nb-muted)] hover:text-[var(--nb-ink)]"
+                        className="inline-flex h-7 items-center rounded-md px-2 text-xs text-[var(--nb-muted)] transition hover:bg-[var(--nb-page)] hover:text-[var(--nb-ink)]"
                       >
                         删除
                       </button>

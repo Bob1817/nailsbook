@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   ArrowLeftRight,
   ArrowRight,
@@ -36,6 +36,21 @@ export default function InteractiveDemoSection({
     textEn: string
   } | null>(null)
   const [syncPulse, setSyncPulse] = useState<boolean>(false)
+
+  useEffect(() => {
+    SCENARIOS.forEach((sc) => {
+      [
+        sc.doneClientScreen,
+        sc.doneArtistScreen,
+        ...sc.steps.flatMap((st) => [st.clientScreen, st.artistScreen]),
+      ].forEach((screen) => {
+        if (screen?.src) {
+          const img = new Image()
+          img.src = screen.src
+        }
+      })
+    })
+  }, [])
 
   const surface: DemoSurface = standalone ? 'standalone' : 'home'
   const currentScenario = SCENARIOS.find((s) => s.id === scenario) || SCENARIOS[0]

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLang } from '../i18n/LanguageContext'
 
 interface PhoneFrameProps {
@@ -31,6 +31,15 @@ function PhoneFrame({ src, alt, label }: PhoneFrameProps) {
 export default function AppPreview() {
   const { isZh } = useLang()
   const [view, setView] = useState<'overview' | 'detail'>('overview')
+
+  useEffect(() => {
+    ['/preview-technician.png', '/preview-client.png', '/preview-technician-crm.png', '/preview-work-detail.png'].forEach(
+      (src) => {
+        const img = new Image()
+        img.src = src
+      }
+    )
+  }, [])
 
   return (
     <div className="app-preview-container">

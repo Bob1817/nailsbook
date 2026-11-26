@@ -106,9 +106,10 @@ const translations = {
     // ─── Scan Modal ───
     scanModal: {
       followTitle: '关注 NailBook 公众号',
-      followHint: 'NailBook 是 OnlyNail 的公众号。关注后可发送消息咨询，申请入驻无需关注。',
+      followHint: 'NailBook 是 OnlyNail 的官方微信公众号，关注后可接收产品动态与在线咨询。',
       tryTitle: '打开 OnlyNail 小程序',
-      tryHint: '用微信扫码或搜索 OnlyNail。美甲师管理功能需邀请开通。',
+      tryHint: '用微信扫码或搜索「OnlyNail」小程序，基础版永久免费，注册即可使用。',
+      brandTip: '说明：OnlyNail 为产品与小程序名称，NailBook 为官方微信公众号名称。',
       close: '关闭',
       download: '保存图片',
       copyMpName: '复制公众号名称',

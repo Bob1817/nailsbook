@@ -1,4 +1,37 @@
 @import "./colors.generated.css";
+
+html {
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --nb-page: #121212;
+    --nb-page-rgb: 18, 18, 18;
+    --nb-surface: #1B1B1B;
+    --nb-surface-rgb: 27, 27, 27;
+    --nb-pressed: #262626;
+    --nb-pressed-rgb: 38, 38, 38;
+    --nb-ink: #F2F2F2;
+    --nb-ink-rgb: 242, 242, 242;
+    --nb-secondary: #B8B8B8;
+    --nb-secondary-rgb: 184, 184, 184;
+    --nb-muted: #8E8E8E;
+    --nb-muted-rgb: 142, 142, 142;
+    --nb-line: #2E2E2E;
+    --nb-line-rgb: 46, 46, 46;
+    --nb-control: #737373;
+    --nb-control-rgb: 115, 115, 115;
+    --nb-active-surface: #242424;
+    --nb-active-surface-rgb: 36, 36, 36;
+    --nb-action: #F2F2F2;
+    --nb-action-rgb: 242, 242, 242;
+    --nb-action-pressed: #DCDCDC;
+    --nb-action-pressed-rgb: 220, 220, 220;
+    --nb-inverse: #141414;
+    --nb-inverse-rgb: 20, 20, 20;
+  }
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -96,16 +129,21 @@ body {
   display: none;
 }
 
-input, button, textarea, select {
-  font-size: 16px;
-  font-family: inherit;
-  touch-action: manipulation;
-}
+@layer base {
+  input, button, textarea, select {
+    font-family: inherit;
+    touch-action: manipulation;
+  }
 
-input:focus,
-textarea:focus,
-select:focus {
-  font-size: 16px;
+  input, textarea, select {
+    font-size: 16px;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    font-size: 16px;
+  }
 }
 
 @media (max-width: 390px) {

@@ -183,6 +183,11 @@ export default function ScanQrModal({
           />
         </div>
         <p className="mt-4 text-[13px] text-ink-muted">{hint}</p>
+        <p className="mt-1.5 text-[11px] text-ink-muted">
+          {isZh
+            ? '注：OnlyNail 为产品与小程序名称，NailBook 为官方微信公众号名称。'
+            : 'Note: OnlyNail is the product & mini program; NailBook is our official WeChat account.'}
+        </p>
 
         <div className="mt-5 flex gap-2">
           <a

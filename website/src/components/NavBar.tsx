@@ -145,7 +145,7 @@ export default function NavBar() {
             rel="noopener noreferrer"
             className="site-button small secondary nav-apply"
           >
-            {isZh ? '创作者中心' : 'Creator Studio'}
+            {isZh ? '美甲师管理后台' : 'Artist Console'}
           </a>
           <Link to="/apply" className="site-button small nav-apply">
             {c.apply}
@@ -209,7 +209,7 @@ export default function NavBar() {
             className="site-button secondary"
             onClick={() => setOpen(false)}
           >
-            {isZh ? '创作者中心' : 'Creator Studio'}
+            {isZh ? '美甲师管理后台' : 'Artist Console'}
           </a>
           <Link to="/apply" className="site-button" onClick={() => setOpen(false)}>
             {c.apply}

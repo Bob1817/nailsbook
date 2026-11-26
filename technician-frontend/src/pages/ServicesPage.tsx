@@ -155,7 +155,7 @@ const ServicesPage: React.FC = () => {
       {/* Service List */}
       <div className="space-y-6">
         {services.length === 0 ? (
-          <div className="rounded-2xl bg-white px-6 py-12 text-center shadow-sm border border-[var(--nb-line)]">
+          <div className="rounded-2xl border border-[var(--nb-line)] bg-[var(--nb-surface)] px-6 py-12 text-center shadow-sm">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--nb-page)]">
               <span className="text-3xl">💅</span>
             </div>
@@ -181,7 +181,7 @@ const ServicesPage: React.FC = () => {
                   {categoryServices.map((service) => (
                     <div
                       key={service.id}
-                      className={`rounded-2xl bg-white p-4 shadow-sm border ${
+                      className={`rounded-2xl border bg-[var(--nb-surface)] p-4 shadow-sm ${
                         service.isActive ? 'border-[var(--nb-line)]' : 'border-[var(--nb-line)] opacity-60'
                       }`}
                     >
@@ -250,7 +250,7 @@ const ServicesPage: React.FC = () => {
       {/* Add/Edit Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl border border-[var(--nb-line)] bg-[var(--nb-surface)] sm:rounded-3xl">
             <div className="px-6 py-5 border-b border-[var(--nb-line)] flex items-center justify-between">
               <h2 className="text-lg font-bold text-[var(--nb-ink)]">
                 {editingService ? '编辑服务' : '新增服务'}

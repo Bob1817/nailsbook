@@ -238,7 +238,7 @@ export default function ModelArtistCampaignPage() {
 
   const requirements = [
     '具备独立执业能力的美甲师或美甲工作室主理人（到店或上门均可）；',
-    '需保证每周都有正常预约试用项目，超过两周无预约试用记录的将取消官方扶持资格；',
+    '首月内完成首次真实预约使用，即可持续保留官方扶持权益；',
     '日常有稳定的接单客流，愿意在日常接单排期与客户服务中真实使用 OnlyNail；',
     '愿意与产品团队保持沟通，分享真实的使用体验和改进建议。',
   ]
@@ -247,7 +247,7 @@ export default function ModelArtistCampaignPage() {
     <>
       <Meta
         title="OnlyNail 官方指导配置标杆美甲师计划"
-        description="官方专人1对1指导配置专属账号，全套梳理价目表与精选作品，带教微信快捷报价，赠首年全功能系统（价值¥1299）。"
+        description="官方专人 1 对 1 指导配置专属账号，全套梳理价目表与精选作品，带教微信快捷报价，赠首年高阶版（价值¥948）。"
       />
       <NavBar />
 
@@ -268,7 +268,7 @@ export default function ModelArtistCampaignPage() {
           <p className="model-campaign-subtitle">
             不用担心不会用或不会设置。官方资深运营专员 1 对 1 手把手指导，
             <br />
-            协助梳理<strong>服务价目分类与作品包装</strong>，带教<strong>微信 10 秒快捷报价</strong>，赠<strong>首年全功能系统（价值 ¥1299/年）</strong>，日常使用持续续免。
+            协助梳理<strong>服务价目分类与作品包装</strong>，带教<strong>微信 10 秒快捷报价</strong>，赠<strong>首年高阶版（价值 ¥948/年）</strong>，到期可按需续费或切回基础版。
           </p>
 
           <div className="model-campaign-stats">
@@ -279,7 +279,7 @@ export default function ModelArtistCampaignPage() {
             <div className="stat-divider" />
             <div className="stat-card">
               <span className="stat-num">¥0</span>
-              <span className="stat-label">首年全免 (省¥1299)</span>
+              <span className="stat-label">首年高阶版 (省¥948)</span>
             </div>
             <div className="stat-divider" />
             <div className="stat-card">
@@ -449,7 +449,7 @@ export default function ModelArtistCampaignPage() {
                   <span className="step-index">04</span>
                   <div>
                     <h4>开通激活与物料寄送</h4>
-                    <p>正式开通终身免费权限，顺丰寄送专属台卡与微信预约物料。</p>
+                    <p>正式开通首年高阶版权益，顺丰寄送专属台卡与微信预约物料。</p>
                   </div>
                 </div>
               </div>
@@ -463,7 +463,7 @@ export default function ModelArtistCampaignPage() {
             <div className="form-card-header">
               <span className="form-badge">🔥 官方指导配置计划</span>
               <h2>申请官方 1v1 指导配置账号</h2>
-              <p>名额有限（首批仅限 10 席），我们将按提交时间先后及匹配度预约 1v1 配置指导时间并开通首年全免权限。</p>
+              <p>名额有限（首批仅限 10 席），我们将按提交时间先后及匹配度预约 1 对 1 配置指导时间并开通首年高阶版权益。</p>
             </div>
 
             {submitted ? (

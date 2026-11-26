@@ -213,7 +213,7 @@ export const Login: React.FC = () => {
             </h2>
             <p className="mt-2 text-sm text-[var(--nb-secondary)]">
               {loginMode === 'qr'
-                ? '使用微信「扫一扫」授权登录创作者中心'
+                ? '使用微信「扫一扫」授权登录美甲师管理后台'
                 : step === 'phone'
                   ? '输入手机号以登录或注册美甲师账号'
                   : step === 'login'
@@ -334,7 +334,7 @@ export const Login: React.FC = () => {
                   if (phoneError) setPhoneError('');
                 }}
                 maxLength={11}
-                className={`h-14 w-full rounded-2xl border bg-white px-4 text-base text-[var(--nb-ink)] placeholder:text-[var(--nb-muted)] focus:outline-none focus:ring-2 ${
+                className={`h-14 w-full rounded-2xl border bg-[var(--nb-surface)] px-4 text-base text-[var(--nb-ink)] placeholder:text-[var(--nb-muted)] focus:outline-none focus:ring-2 ${
                   phoneError
                     ? 'border-[var(--nb-ink)] focus:ring-[var(--nb-line)]'
                     : 'border-[var(--nb-line)] focus:ring-[var(--nb-control)]/30'
@@ -371,7 +371,7 @@ export const Login: React.FC = () => {
                 placeholder="请输入密码"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-14 w-full rounded-2xl border border-[var(--nb-line)] bg-white px-4 text-base focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]/30"
+                className="h-14 w-full rounded-2xl border border-[var(--nb-line)] bg-[var(--nb-surface)] px-4 text-base text-[var(--nb-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]/30"
               />
               <AgreementCheckbox agreed={agreed} setAgreed={setAgreed} />
               <button
@@ -424,21 +424,21 @@ export const Login: React.FC = () => {
                 placeholder="姓名"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="h-14 w-full rounded-2xl border border-[var(--nb-line)] bg-white px-4 text-base focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]/30"
+                className="h-14 w-full rounded-2xl border border-[var(--nb-line)] bg-[var(--nb-surface)] px-4 text-base text-[var(--nb-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]/30"
               />
               <input
                 type="password"
                 placeholder="设置密码（至少 8 位，含字母和数字）"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-14 w-full rounded-2xl border border-[var(--nb-line)] bg-white px-4 text-base focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]/30"
+                className="h-14 w-full rounded-2xl border border-[var(--nb-line)] bg-[var(--nb-surface)] px-4 text-base text-[var(--nb-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]/30"
               />
               <input
                 type="password"
                 placeholder="确认密码"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="h-14 w-full rounded-2xl border border-[var(--nb-line)] bg-white px-4 text-base focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]/30"
+                className="h-14 w-full rounded-2xl border border-[var(--nb-line)] bg-[var(--nb-surface)] px-4 text-base text-[var(--nb-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--nb-control)]/30"
               />
               <AgreementCheckbox agreed={agreed} setAgreed={setAgreed} />
               <button

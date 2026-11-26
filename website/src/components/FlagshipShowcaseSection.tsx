@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import {
   Sparkles,
   MapPin,
@@ -22,16 +23,16 @@ export interface ShowcaseWork {
 const STATIC_WORKS: ShowcaseWork[] = [
   {
     id: 24,
-    title: '烟岚流银水墨大理石 / 冰透灰阶水韵款',
+    title: '烟岚流银水墨大理石',
     coverUrl:
       'https://nails-products-lunails.oss-cn-hangzhou.aliyuncs.com/images/1794735133336-504294697425-medium.webp',
     style: '新中式水墨',
     tags: ['水墨大理石', '新中式', '气质显白'],
-    price: 298,
+    price: 268,
   },
   {
     id: 23,
-    title: '巴洛克哥特暗黑高定 / 复古报纸手绘与重工十字',
+    title: '巴洛克哥特暗黑高定',
     coverUrl:
       'https://nails-products-lunails.oss-cn-hangzhou.aliyuncs.com/images/1794735131505-2960d3d59704-medium.webp',
     style: '哥特巴洛克',
@@ -40,21 +41,20 @@ const STATIC_WORKS: ShowcaseWork[] = [
   },
   {
     id: 20,
-    title: '极光流金微波流线 / 轻奢尖圆延长甲',
+    title: '极光流金微波延长甲',
     coverUrl:
       'https://nails-products-lunails.oss-cn-hangzhou.aliyuncs.com/images/1794735128999-64c664d9c715-medium.webp',
     style: '轻奢老钱风',
     tags: ['尖圆延长', '流光金线', '修长显手细'],
-    price: 298,
+    price: 328,
   },
   {
     id: 21,
-    title: '复古法式浮雕手绘 / 宫廷金边与立体雕花',
-    coverUrl:
-      'https://nails-products-lunails.oss-cn-hangzhou.aliyuncs.com/images/1794735129977-94d8cb8e6302-medium.webp',
+    title: '法式琥珀金箔立体雕花',
+    coverUrl: '/images/campaign-cases/case-work-detail.webp',
     style: '复古法式',
     tags: ['法式高定', '立体浮雕', '精致优雅'],
-    price: 298,
+    price: 358,
   },
 ]
 
@@ -118,11 +118,12 @@ export default function FlagshipShowcaseSection({ onOpenScan }: FlagshipShowcase
         <div className="rounded-3xl border border-line bg-surface p-6 sm:p-8 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-line pb-6">
             <div className="flex items-start gap-4">
-              <img
-                src="https://nails-products-lunails.oss-cn-hangzhou.aliyuncs.com/images/1794496771737-389508962067-medium.webp"
-                alt="贝贝"
-                className="h-14 w-14 rounded-2xl object-cover shrink-0 border border-line"
-              />
+              <div
+                aria-label="听栖美甲工作室"
+                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-line bg-neutral-100 text-base font-bold tracking-tight text-ink"
+              >
+                听栖
+              </div>
               <div>
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-ink">
@@ -144,17 +145,26 @@ export default function FlagshipShowcaseSection({ onOpenScan }: FlagshipShowcase
               </div>
             </div>
 
-            <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => onOpenScan('artist')}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-ink px-5 py-2 text-xs font-bold text-white transition hover:bg-neutral-800 active:scale-[0.98]"
-              >
-                <QrCode size={15} />
-                {isZh ? '微信扫码预览效果' : 'Preview in WeChat'}
-              </button>
+            <div className="flex flex-wrap sm:flex-col items-center sm:items-end justify-between gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  to="/demo"
+                  className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-line bg-surface px-4 py-2 text-xs font-semibold text-ink transition hover:bg-neutral-100"
+                >
+                  {isZh ? '查看样板间' : 'View Demo'}
+                  <ArrowUpRight size={14} />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => onOpenScan('artist')}
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-ink px-5 py-2 text-xs font-bold text-white transition hover:bg-neutral-800 active:scale-[0.98]"
+                >
+                  <QrCode size={15} />
+                  {isZh ? '微信扫码预览效果' : 'Preview in WeChat'}
+                </button>
+              </div>
               <span className="text-[11px] text-ink-muted">
-                {isZh ? '体验客户打开你主页时的真实视角' : 'See the client-side view'}
+                {isZh ? '支持网页版直接体验或微信扫码查看真实客户视角' : 'Interactive web preview or WeChat scan'}
               </span>
             </div>
           </div>

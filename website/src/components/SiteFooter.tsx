@@ -7,8 +7,13 @@ export default function SiteFooter() {
   const c = recruitment[lang]
   return (
     <footer className="site-footer site-container">
-      <div>
-        <strong>OnlyNail</strong>
+      <div className="footer-brand-col">
+        <div className="brand-mark">
+          <span className="brand-dot" aria-hidden="true">
+            ON
+          </span>
+          <strong>OnlyNail</strong>
+        </div>
         <p>{c.footer}</p>
         <p className="fine-print">{c.brandNote}</p>
       </div>

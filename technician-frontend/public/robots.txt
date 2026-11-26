@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /login
+Disallow: /works/
+Disallow: /customers/
+
+Sitemap: https://tech.lunails.cn/sitemap.xml

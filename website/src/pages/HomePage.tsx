@@ -32,6 +32,13 @@ export default function HomePage() {
   const hero = useRef<HTMLElement>(null)
 
   useEffect(() => {
+    ['/miniprogram-code.jpg', '/wechat-mp-qrcode.jpg'].forEach((src) => {
+      const img = new Image()
+      img.src = src
+    })
+  }, [])
+
+  useEffect(() => {
     const target = hero.current
     if (!target) return
 
@@ -60,13 +67,13 @@ export default function HomePage() {
             <Link to="/model-artists" className="hero-campaign-banner" role="banner">
               <span className="hero-campaign-badge">
                 <Sparkles size={13} />
-                官方 1v1 指导配置 · 仅限10席
+                {isZh ? '官方 1 对 1 指导 · 限10席' : '1-on-1 Setup · 10 Spots'}
               </span>
               <span className="hero-campaign-text">
-                1v1 协助整理价目、作品与快捷报价，赠首年全功能
+                {isZh ? '专人 1 对 1 协助建店，赠首年高阶版' : 'Free 1-on-1 setup + 1st year Pro'}
               </span>
               <span className="hero-campaign-arrow">
-                了解详情 <ArrowUpRight size={14} />
+                {isZh ? '了解详情' : 'Details'} <ArrowUpRight size={14} />
               </span>
             </Link>
             <p className="eyebrow">{c.eyebrow}</p>
@@ -201,6 +208,27 @@ export default function HomePage() {
                     ))}
                   </div>
                 ) : null}
+                <div className="pricing-card-cta">
+                  {tier.price === '¥0' ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setScanMeta(null)
+                        setScan('try')
+                      }}
+                      className="site-button small w-full"
+                    >
+                      {isZh ? '免费开始使用' : 'Start Free'}
+                    </button>
+                  ) : (
+                    <Link
+                      to={`/apply?plan=${encodeURIComponent(tier.name)}`}
+                      className={`site-button small w-full ${tier.featured ? '' : 'secondary'}`}
+                    >
+                      {isZh ? `选择${tier.name}` : `Choose ${tier.name}`}
+                    </Link>
+                  )}
+                </div>
               </article>
             ))}
           </div>

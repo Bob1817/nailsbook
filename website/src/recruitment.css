@@ -286,13 +286,17 @@ html {
   margin-bottom: 22px;
 }
 .site-section {
-  padding-block: 80px;
+  padding-block: 56px;
   scroll-margin-top: 96px;
 }
+.site-section h2,
 .recruitment-site .section-intro {
-  margin-top: 18px;
+  text-wrap: balance;
+}
+.recruitment-site .section-intro {
+  margin-top: 16px;
   font-size: 16px;
-  max-width: 560px;
+  max-width: 580px;
 }
 .scenario-grid {
   display: grid;
@@ -415,8 +419,13 @@ html {
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 16px;
+  margin-bottom: 18px;
   padding-top: 14px;
   border-top: 1px solid var(--nb-line);
+}
+.pricing-card-cta {
+  margin-top: auto;
+  padding-top: 4px;
 }
 .pricing-feature-tag {
   padding: 4px 8px;
@@ -1028,9 +1037,6 @@ html {
 .hero-campaign-text {
   font-weight: 500;
   color: var(--nb-inverse);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .hero-campaign-arrow {

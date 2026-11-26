@@ -35,7 +35,7 @@ export const MainLayout: React.FC = () => {
 
   const pageTitle =
     ROUTE_TITLES[location.pathname] ||
-    (location.pathname.startsWith('/works') ? '作品工坊' : 'OnlyNail 创作者中心');
+    (location.pathname.startsWith('/works') ? '作品工坊' : 'OnlyNail 美甲师管理后台');
 
   const handleLogout = () => {
     logout();
@@ -51,7 +51,7 @@ export const MainLayout: React.FC = () => {
           </div>
           <div>
             <div className="text-sm font-semibold text-[var(--nb-ink)]">OnlyNail</div>
-            <div className="text-[11px] text-[var(--nb-muted)]">创作者中心</div>
+            <div className="text-[11px] text-[var(--nb-muted)]">美甲师管理后台</div>
           </div>
         </div>
 
