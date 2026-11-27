@@ -14,10 +14,13 @@ export class TechnicianUploadService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async uploadImage(technicianId: number, file: UploadFile) {
+  async uploadImage(technicianId: number, file: UploadFile, isDemo = false) {
     const bytes = file.size ?? file.buffer.length;
     await this.subscriptions.assertCanUseStorage(technicianId, bytes * 3);
-    const result = await this.storage.uploadImage(file);
+    const result = await this.storage.uploadImage(
+      file,
+      isDemo ? { prefix: 'demo' } : undefined,
+    );
     await this.subscriptions.recordStorageUsage(
       technicianId,
       result.bytesStored,

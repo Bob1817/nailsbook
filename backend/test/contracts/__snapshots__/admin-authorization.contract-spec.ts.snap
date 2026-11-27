@@ -136,6 +136,27 @@ exports[`Admin authorization HTTP contract covers every admin business route wit
     ],
   },
   {
+    "method": "POST",
+    "path": "/api/admin/demo/reset",
+    "permissions": [
+      "feature_flag:update",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/demo/status",
+    "permissions": [
+      "feature_flag:view",
+    ],
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/demo/toggle",
+    "permissions": [
+      "feature_flag:update",
+    ],
+  },
+  {
     "method": "GET",
     "path": "/api/admin/feature-flags",
     "permissions": [
@@ -453,6 +474,13 @@ exports[`Admin authorization HTTP contract covers every admin business route wit
   {
     "method": "POST",
     "path": "/api/admin/system-errors/batch-resolve",
+    "permissions": [
+      "log:view",
+    ],
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/system-errors/groups",
     "permissions": [
       "log:view",
     ],

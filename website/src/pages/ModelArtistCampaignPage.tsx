@@ -19,6 +19,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import NavBar from '../components/NavBar'
 import SiteFooter from '../components/SiteFooter'
+import ScanQrModal from '../components/ScanQrModal'
 import { Meta } from '../components/Meta'
 import { submitArtistApplication } from '../services/api'
 
@@ -43,6 +44,10 @@ export default function ModelArtistCampaignPage() {
   const [errorMsg, setErrorMsg] = useState('')
   const [activeCaseTab, setActiveCaseTab] = useState(0)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const [scan, setScan] = useState<'try' | 'follow' | 'artist' | null>(null)
+  // 活动申请前置：官网无法直接校验小程序注册状态，这里用显式确认门——
+  // 未勾选“我已完成免费注册”时提交按钮不可用；点“去免费注册”打开扫码弹窗。
+  const [registered, setRegistered] = useState(false)
 
   const {
     register,
@@ -62,12 +67,13 @@ export default function ModelArtistCampaignPage() {
   })
 
   const onSubmit = async (values: FormData) => {
+    if (!registered) return
     if (submitting) return
     setSubmitting(true)
     setErrorMsg('')
     try {
       const combinedNote = [
-        '【官方扶持标杆美甲师申请】',
+        '【前期 1 对 1 指导活动申请】',
         `工作室/品牌: ${values.shopName}`,
         values.experience ? `从业年限: ${values.experience}` : null,
         values.note ? `申请理由/痛点: ${values.note}` : null,
@@ -99,7 +105,7 @@ export default function ModelArtistCampaignPage() {
   const perks = [
     {
       icon: Settings,
-      title: '官方专人 1v1 全程指导配置账号',
+      title: '官方 1 对 1 指导：全程协助配置账号',
       desc: '资深运营专员全程 1 对 1 手把手指导，协助录入服务价目表、作品主页、店铺导航与经营时间，为您定制最顺手的预约与报价流程，直接上手。',
       tag: '核心特权',
     },
@@ -111,8 +117,8 @@ export default function ModelArtistCampaignPage() {
     },
     {
       icon: Gift,
-      title: '赠送首年全功能系统（价值 ¥1,299/年）',
-      desc: '全功能无保留开放：智能预约排期、快捷报价单、客户档案记录、经营账本与数据分析，首年免除年费；日常保持真实使用，次年优先自动续免。',
+      title: '赠首年高阶版（价值 ¥948/年）',
+      desc: '入选即赠首年高阶版：智能预约排期、快捷报价单、客户档案记录、经营账本与数据分析全量开放，到期可按需续费或切回基础版。',
       tag: '高值扶持',
     },
     {
@@ -133,7 +139,7 @@ export default function ModelArtistCampaignPage() {
       images: [
         {
           src: '/images/campaign-cases/case-artist-home.webp',
-          alt: '样板美甲师主页',
+          alt: '演示样板间主页',
           caption: '美甲师主页（主理人形象、工作室门头、推荐款式）',
         },
         {
@@ -153,7 +159,7 @@ export default function ModelArtistCampaignPage() {
       tabName: '服务价目与店铺指引',
       badge: '规范分类 · 到店指引',
       title: '标准化服务价目与工作室到店导航',
-      desc: '专人 1v1 协助将美甲师的服务项目规范录入后台：从纯色、猫眼、建构延长到各类卸甲修型，时长与阶梯价格清晰明了。同时配置详细工作室环境照与图文到店指引。',
+      desc: '专人 1 对 1 协助将美甲师的服务项目规范录入后台：从纯色、猫眼、建构延长到各类卸甲修型，时长与阶梯价格清晰明了。同时配置详细工作室环境照与图文到店指引。',
       images: [
         {
           src: '/images/campaign-cases/case-service-list.webp',
@@ -238,7 +244,7 @@ export default function ModelArtistCampaignPage() {
 
   const requirements = [
     '具备独立执业能力的美甲师或美甲工作室主理人（到店或上门均可）；',
-    '首月内完成首次真实预约使用，即可持续保留官方扶持权益；',
+    '入选后请在首月内完成首次真实预约使用，指导围绕你的真实使用展开；',
     '日常有稳定的接单客流，愿意在日常接单排期与客户服务中真实使用 OnlyNail；',
     '愿意与产品团队保持沟通，分享真实的使用体验和改进建议。',
   ]
@@ -246,8 +252,8 @@ export default function ModelArtistCampaignPage() {
   return (
     <>
       <Meta
-        title="OnlyNail 官方指导配置标杆美甲师计划"
-        description="官方专人 1 对 1 指导配置专属账号，全套梳理价目表与精选作品，带教微信快捷报价，赠首年高阶版（价值¥948）。"
+        title="官方 1 对 1 指导（前期活动）· OnlyNail"
+        description="官方 1 对 1 指导是 OnlyNail 前期活动，为已注册美甲师提供一对一协助，名额有限；入选赠首年高阶版（价值 ¥948/年）。不参加活动不影响免费使用基础版。"
       />
       <NavBar />
 
@@ -256,25 +262,25 @@ export default function ModelArtistCampaignPage() {
         <section className="model-campaign-hero site-container">
           <div className="model-campaign-pill">
             <span className="pill-dot" />
-            <span>官方 1v1 指导配置 · 首批限 10 席</span>
+            <span>前期活动 · 已注册美甲师可申请官方 1 对 1 指导 · 本批限 10 席</span>
           </div>
 
           <h1 className="model-campaign-title">
-            官方指导配置标杆美甲师
+            官方 1 对 1 指导（前期活动）
             <br />
             <span>专人 1 对 1 手把手帮您理顺账号</span>
           </h1>
 
           <p className="model-campaign-subtitle">
-            不用担心不会用或不会设置。官方资深运营专员 1 对 1 手把手指导，
+            这是 OnlyNail 的前期活动：申请前请先完成免费注册；不参加活动也能正常免费使用基础版。
             <br />
-            协助梳理<strong>服务价目分类与作品包装</strong>，带教<strong>微信 10 秒快捷报价</strong>，赠<strong>首年高阶版（价值 ¥948/年）</strong>，到期可按需续费或切回基础版。
+            官方资深运营专员 1 对 1 手把手指导，协助梳理<strong>服务价目分类与作品包装</strong>，带教<strong>微信 10 秒快捷报价</strong>，赠<strong>首年高阶版（价值 ¥948/年）</strong>，到期可按需续费或切回基础版。
           </p>
 
           <div className="model-campaign-stats">
             <div className="stat-card">
               <span className="stat-num">1 对 1</span>
-              <span className="stat-label">官方指导配置</span>
+              <span className="stat-label">官方指导活动</span>
             </div>
             <div className="stat-divider" />
             <div className="stat-card">
@@ -283,8 +289,8 @@ export default function ModelArtistCampaignPage() {
             </div>
             <div className="stat-divider" />
             <div className="stat-card">
-              <span className="stat-num">持续续免</span>
-              <span className="stat-label">日常真实使用即续</span>
+              <span className="stat-num">限 10 席</span>
+              <span className="stat-label">本批名额有限</span>
             </div>
           </div>
         </section>
@@ -293,8 +299,8 @@ export default function ModelArtistCampaignPage() {
         <section className="model-campaign-perks site-container">
           <div className="section-head text-center">
             <p className="eyebrow">EXCLUSIVE PERKS</p>
-            <h2>标杆美甲师享有哪些官方扶持特权？</h2>
-            <p className="section-intro">我们不仅提供系统，更由专人协助您落地全套数字化预约与客户运营标准。</p>
+            <h2>参加 1 对 1 指导活动，能得到哪些帮助？</h2>
+            <p className="section-intro">除了系统本身，专人协助你把价目、作品与报价流程真正落地。</p>
           </div>
 
           <div className="perks-grid">
@@ -320,9 +326,9 @@ export default function ModelArtistCampaignPage() {
         <section className="model-campaign-showcase site-container">
           <div className="section-head text-center">
             <p className="eyebrow">REAL CONFIGURED CASES</p>
-            <h2>实景案例展示 · 样板美甲师已配置效果</h2>
+            <h2>指导效果示例 · 演示样板间已配置效果</h2>
             <p className="section-intro">
-              专属运营管家 1 对 1 全程协助录入！以下为系统真实运行截图，助您零门槛拥有顶级主页与数字化经营工具。
+              以下为演示样板间的配置效果示例：价目、作品与预约流程都已理顺，免费注册后你也可以拥有自己的工作台。
             </p>
           </div>
 
@@ -367,10 +373,10 @@ export default function ModelArtistCampaignPage() {
 
                   <div className="showcase-cta-wrap">
                     <a href="#apply-form" className="site-button">
-                      申请专属样板配置
+                      申请 1 对 1 指导
                       <ChevronRight size={16} />
                     </a>
-                    <span className="showcase-cta-hint">官方协助代录，完全无需自己费心填写</span>
+                    <span className="showcase-cta-hint">申请前请先完成免费注册</span>
                   </div>
                 </div>
 
@@ -422,34 +428,34 @@ export default function ModelArtistCampaignPage() {
 
             <div className="steps-col">
               <p className="eyebrow">HOW IT WORKS</p>
-              <h2>入选与服务流程</h2>
+              <h2>申请与指导流程</h2>
               <div className="steps-list">
                 <div className="step-item">
                   <span className="step-index">01</span>
                   <div>
-                    <h4>在线提交申请</h4>
-                    <p>填写下方简要信息，简述您的美甲经营情况。</p>
+                    <h4>完成免费注册</h4>
+                    <p>微信扫码免费注册，先开通自己的工作台（基础版永久免费）。</p>
                   </div>
                 </div>
                 <div className="step-item">
                   <span className="step-index">02</span>
                   <div>
-                    <h4>官方微信/电话沟通</h4>
-                    <p>运营人员将在 1 个工作日内与您取得联系，确认合作意向。</p>
+                    <h4>提交活动申请</h4>
+                    <p>填写下方简要信息，简述您的美甲经营情况。</p>
                   </div>
                 </div>
                 <div className="step-item">
                   <span className="step-index">03</span>
                   <div>
-                    <h4>专属管家代录配置</h4>
-                    <p>发送服务价目与作品图片，专属专员 24 小时内帮您配齐所有线上店铺数据。</p>
+                    <h4>官方沟通确认</h4>
+                    <p>运营人员将在 1 个工作日内与您取得联系，确认指导安排。</p>
                   </div>
                 </div>
                 <div className="step-item">
                   <span className="step-index">04</span>
                   <div>
-                    <h4>开通激活与物料寄送</h4>
-                    <p>正式开通首年高阶版权益，顺丰寄送专属台卡与微信预约物料。</p>
+                    <h4>开始 1 对 1 指导</h4>
+                    <p>专人协助梳理价目与作品，带教微信快捷报价；入选即赠首年高阶版，物料随指导安排寄送。</p>
                   </div>
                 </div>
               </div>
@@ -461,9 +467,34 @@ export default function ModelArtistCampaignPage() {
         <section id="apply-form" className="model-campaign-form-section site-container">
           <div className="form-card-container">
             <div className="form-card-header">
-              <span className="form-badge">🔥 官方指导配置计划</span>
-              <h2>申请官方 1v1 指导配置账号</h2>
-              <p>名额有限（首批仅限 10 席），我们将按提交时间先后及匹配度预约 1 对 1 配置指导时间并开通首年高阶版权益。</p>
+              <span className="form-badge">前期活动 · 本批限 10 席</span>
+              <h2>申请官方 1 对 1 指导</h2>
+              <p>申请前请先完成免费注册；注册后回到本页即可继续申请。名额有限（本批仅限 10 席），我们将按提交时间先后及匹配度安排 1 对 1 指导时间，入选即赠首年高阶版（价值 ¥948/年）。</p>
+            </div>
+
+            {/* 注册前置确认：活动只面向已注册美甲师 */}
+            <div className="rounded-2xl border border-line bg-brand-bg p-4 sm:p-5 mb-5 text-left">
+              <label className="flex items-start gap-2.5 text-sm font-bold text-ink cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={registered}
+                  onChange={(e) => setRegistered(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-black"
+                />
+                <span>我已完成免费注册</span>
+              </label>
+              <p className="mt-2 text-xs leading-relaxed text-ink-muted">
+                申请前请先完成免费注册；注册后回到本页即可继续申请。不参加活动也能正常免费使用基础版。
+              </p>
+              {!registered && (
+                <button
+                  type="button"
+                  className="site-button small mt-3"
+                  onClick={() => setScan('try')}
+                >
+                  还没注册？去免费注册
+                </button>
+              )}
             </div>
 
             {submitted ? (
@@ -471,14 +502,17 @@ export default function ModelArtistCampaignPage() {
                 <div className="success-icon-wrap">
                   <CheckCircle2 size={48} />
                 </div>
-                <h3>申请已成功提交！</h3>
+                <h3>活动申请已提交！</h3>
                 <p>
-                  感谢您对 OnlyNail 的信任。专属运营管家将在 <strong>1 个工作日内</strong> 与您电话或微信取得联系。
+                  专属运营将在 <strong>1 个工作日内</strong> 与您电话或微信取得联系，确认指导安排。
                   <br />
-                  请保持电话畅通，我们期待与您携手打造美甲行业数字化标杆！
+                  等待期间也可以直接使用工作台：基础版永久免费，不需要等确认结果。
                 </p>
                 <div className="success-actions">
-                  <Link to="/" className="site-button">
+                  <Link to="/demo" className="site-button">
+                    先看看样板间
+                  </Link>
+                  <Link to="/" className="site-button secondary">
                     返回官网首页
                   </Link>
                 </div>
@@ -506,7 +540,7 @@ export default function ModelArtistCampaignPage() {
                     </label>
                     <input
                       type="tel"
-                      placeholder="11位手机号（用于开通与联系）"
+                      placeholder="11位手机号（用于联系与确认指导安排）"
                       {...register('phone')}
                     />
                     {errors.phone && <span className="field-error">{errors.phone.message}</span>}
@@ -546,7 +580,7 @@ export default function ModelArtistCampaignPage() {
                     </label>
                     <input
                       type="text"
-                      placeholder="如：听栖美甲工作室 / 个人独立上门"
+                      placeholder="如：你的工作室名称 / 个人独立上门"
                       {...register('shopName')}
                     />
                     {errors.shopName && (
@@ -575,7 +609,11 @@ export default function ModelArtistCampaignPage() {
                 </div>
 
                 <div className="form-submit-wrap">
-                  <button type="submit" disabled={submitting} className="site-button submit-btn">
+                  <button
+                    type="submit"
+                    disabled={!registered || submitting}
+                    className="site-button submit-btn"
+                  >
                     {submitting ? (
                       <>
                         <Loader2 size={18} className="spinner" />
@@ -583,13 +621,16 @@ export default function ModelArtistCampaignPage() {
                       </>
                     ) : (
                       <>
-                        提交申请 · 预约官方 1v1 配置指导
+                        提交申请 · 申请官方 1 对 1 指导
                         <ArrowRight size={18} />
                       </>
                     )}
                   </button>
+                  {!registered && (
+                    <p className="privacy-hint">请先勾选“我已完成免费注册”再提交活动申请。</p>
+                  )}
                   <p className="privacy-hint">
-                    <ShieldCheck size={14} /> 您的个人隐私与联系信息受到严格保护，仅用于本次官方指导配置标杆美甲师对接。
+                    <ShieldCheck size={14} /> 您的个人隐私与联系信息受到严格保护，仅用于本次前期 1 对 1 指导活动对接。
                   </p>
                 </div>
               </form>
@@ -615,6 +656,7 @@ export default function ModelArtistCampaignPage() {
         </div>
       )}
 
+      {scan && <ScanQrModal type={scan} onClose={() => setScan(null)} />}
       <SiteFooter />
     </>
   )

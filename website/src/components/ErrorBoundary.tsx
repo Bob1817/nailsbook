@@ -62,7 +62,7 @@ function ErrorFallback({ error, onReset }: { error: Error | null; onReset: () =>
         <div className="mt-6 flex gap-3">
           <button
             onClick={onReset}
-            className="flex-1 min-h-12 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-brand to-brand-deep px-6 text-[15px] font-bold text-white shadow-lg shadow-black/50 transition active:scale-[0.98]"
+            className="flex-1 min-h-12 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-brand to-brand-deep px-6 text-[15px] font-bold text-inverse shadow-lg shadow-black/50 transition active:scale-[0.98]"
           >
             {t.errorBoundary?.retry || '重试'}
           </button>

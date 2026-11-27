@@ -108,6 +108,7 @@ model Technician {
   styleTags                  String? // JSON array of style tags ["风格1", "风格2"]
   isVerified                 Boolean                     @default(false) // Platform verified
   verifiedAt                 DateTime?
+  isDemo                     Boolean                     @default(false) // Isolated Demo / Showcase tenant flag
   // Qualifications
   qualifications             TechnicianQualification[]
   featuredComments           TechnicianFeaturedComment[]
@@ -159,6 +160,8 @@ model Technician {
   contentPublicationTasks    ContentPublicationTask[]
   notices                    TechnicianNotice[]
   activities                 TechnicianActivity[]
+
+  @@index([isDemo])
 }
 
 model TechnicianQualification {
@@ -540,6 +543,7 @@ model ClientUser {
   city                      String?
   bio                       String?
   status                    String                 @default("active")
+  isDemo                    Boolean                @default(false) // Isolated Demo / Showcase client flag
   createdAt                 DateTime               @default(now())
   updatedAt                 DateTime               @default(now()) @updatedAt
   bindings                  ClientTechBinding[]
@@ -569,6 +573,8 @@ model ClientUser {
   leads                     Lead[]
   publicationConsents       PublicationConsent[]
   bookingQuotes             BookingQuote[]
+
+  @@index([isDemo])
 }
 
 model TechnicianFollow {
@@ -1593,6 +1599,7 @@ model Feedback {
   status         String    @default("pending") // 'pending' | 'processing' | 'resolved'
   replyContent   String?
   repliedAt      DateTime?
+  replyReadAt    DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @default(now()) @updatedAt
 
@@ -2290,4 +2297,18 @@ model SystemErrorLog {
   @@index([resolved])
 }
 
+model DemoResetLog {
+  id           Int       @id @default(autoincrement())
+  seedVersion  String
+  trigger      String    // cron | manual | init
+  status       String    // success | failed
+  affectedTech Int       @default(0)
+  message      String?
+  startedAt    DateTime  @default(now())
+  finishedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([createdAt])
+  @@index([status])
+}
 

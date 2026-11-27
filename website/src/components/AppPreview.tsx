@@ -45,13 +45,13 @@ export default function AppPreview() {
     <div className="app-preview-container">
       {/* Perspective Toggle */}
       <div className="flex justify-center mb-4">
-        <div className="inline-flex rounded-xl bg-neutral-100 p-1 border border-line">
+        <div className="inline-flex rounded-xl bg-brand-bg p-1 border border-line">
           <button
             type="button"
             onClick={() => setView('overview')}
             className={`min-h-[44px] px-4 py-2 rounded-lg text-xs font-semibold transition ${
               view === 'overview'
-                ? 'bg-white text-ink shadow-xs'
+                ? 'bg-surface text-ink shadow-xs'
                 : 'text-ink-muted hover:text-ink'
             }`}
           >
@@ -62,7 +62,7 @@ export default function AppPreview() {
             onClick={() => setView('detail')}
             className={`min-h-[44px] px-4 py-2 rounded-lg text-xs font-semibold transition ${
               view === 'detail'
-                ? 'bg-white text-ink shadow-xs'
+                ? 'bg-surface text-ink shadow-xs'
                 : 'text-ink-muted hover:text-ink'
             }`}
           >

@@ -164,7 +164,7 @@ export default function WorksGalleryPage() {
                   onClick={() => setSelectedTag(null)}
                   className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
                     selectedTag === null
-                      ? 'bg-brand text-white'
+                      ? 'bg-brand text-inverse'
                       : 'bg-surface text-ink-muted hover:bg-brand-mist'
                   }`}
                 >
@@ -176,7 +176,7 @@ export default function WorksGalleryPage() {
                     onClick={() => setSelectedTag(tag)}
                     className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
                       selectedTag === tag
-                        ? 'bg-brand text-white'
+                        ? 'bg-brand text-inverse'
                         : 'bg-surface text-ink-muted hover:bg-brand-mist'
                     }`}
                   >

@@ -42,7 +42,7 @@ export default function WorkDetailModal({ workId, onClose }: { workId: number; o
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-ink shadow-md backdrop-blur-sm transition hover:bg-white active:scale-95"
+          className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-surface/90 text-ink shadow-md backdrop-blur-sm transition hover:bg-surface active:scale-95"
           aria-label="Close"
         >
           <X className="h-5 w-5" aria-hidden="true" />
@@ -69,7 +69,7 @@ export default function WorkDetailModal({ workId, onClose }: { workId: number; o
                       <button
                         type="button"
                         onClick={() => setActiveImage((prev) => (prev > 0 ? prev - 1 : detail.imageUrls.length - 1))}
-                        className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-ink shadow-md backdrop-blur-sm transition hover:bg-white"
+                        className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-surface/80 text-ink shadow-md backdrop-blur-sm transition hover:bg-surface"
                         aria-label="Previous image"
                       >
                         <ChevronLeft className="h-5 w-5" aria-hidden="true" />
@@ -77,7 +77,7 @@ export default function WorkDetailModal({ workId, onClose }: { workId: number; o
                       <button
                         type="button"
                         onClick={() => setActiveImage((prev) => (prev < detail.imageUrls.length - 1 ? prev + 1 : 0))}
-                        className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-ink shadow-md backdrop-blur-sm transition hover:bg-white"
+                        className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-surface/80 text-ink shadow-md backdrop-blur-sm transition hover:bg-surface"
                         aria-label="Next image"
                       >
                         <ChevronRight className="h-5 w-5" aria-hidden="true" />

@@ -19,13 +19,13 @@ describe('FlagshipShowcaseSection', () => {
     const handleScan = vi.fn()
     renderSection(handleScan)
 
-    expect(screen.getByText(/真实配置样板/i)).toBeInTheDocument()
-    expect(screen.getByText(/听栖美甲工作室 · 贝贝/i)).toBeInTheDocument()
+    expect(screen.getByText(/^演示样板间$/i)).toBeInTheDocument()
+    expect(screen.getByText(/栖木美甲工作室 · Luna/i)).toBeInTheDocument()
     expect(screen.getByText(/自主上传作品、自由定价/i)).toBeInTheDocument()
 
     const scanButton = screen.getByRole('button', { name: /微信扫码预览效果/i })
     expect(scanButton).toBeInTheDocument()
     fireEvent.click(scanButton)
-    expect(handleScan).toHaveBeenCalledWith('artist')
+    expect(handleScan).toHaveBeenCalledWith('try')
   })
 })

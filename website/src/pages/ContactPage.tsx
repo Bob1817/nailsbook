@@ -11,6 +11,7 @@ export default function ContactPage() {
   const { lang } = useLang()
   const c = recruitment[lang]
   const [showCode, setShowCode] = useState(false)
+  const [showTry, setShowTry] = useState(false)
   return (
     <div className="recruitment-site">
       <Meta title={c.contact} />
@@ -26,15 +27,16 @@ export default function ContactPage() {
           <button className="site-button" onClick={() => setShowCode(true)}>
             {c.follow}
           </button>
-          <Link className="site-button secondary" to="/apply">
+          <button className="site-button secondary" onClick={() => setShowTry(true)}>
             {c.apply}
-          </Link>
+          </button>
         </div>
         <p className="contact-note">{c.contactNote}</p>
         <p className="fine-print">{c.brandNote}</p>
       </main>
       <SiteFooter />
       {showCode && <ScanQrModal type="follow" onClose={() => setShowCode(false)} />}
+      {showTry && <ScanQrModal type="try" onClose={() => setShowTry(false)} />}
     </div>
   )
 }

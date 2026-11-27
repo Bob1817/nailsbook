@@ -26,6 +26,19 @@ export class TechnicianFeedbackController {
     return this.service.findMine('technician', req.user.technicianId);
   }
 
+  @Get('unread-count')
+  @ApiOperation({ summary: '未读客服回复数量' })
+  async unreadCount(@Req() req: { user: { technicianId: number } }) {
+    const count = await this.service.countUnreadReplies('technician', req.user.technicianId);
+    return { count };
+  }
+
+  @Post('read-all')
+  @ApiOperation({ summary: '将所有客服回复标记为已读' })
+  markAllRead(@Req() req: { user: { technicianId: number } }) {
+    return this.service.markAllRepliesRead('technician', req.user.technicianId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: '我的客服问询与问题反馈详情' })
   findMineById(

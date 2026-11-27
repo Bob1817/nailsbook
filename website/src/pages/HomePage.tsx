@@ -18,6 +18,7 @@ import ScanQrModal from '../components/ScanQrModal'
 import FlagshipShowcaseSection from '../components/FlagshipShowcaseSection'
 import InteractiveDemoSection from '../components/demo/InteractiveDemoSection'
 import { Meta } from '../components/Meta'
+import { getFeaturedP0Guides, GUIDE_CATEGORY_MAP } from '../content/guides'
 import { useLang } from '../i18n/LanguageContext'
 import { recruitment } from '../content/recruitment'
 
@@ -67,10 +68,10 @@ export default function HomePage() {
             <Link to="/model-artists" className="hero-campaign-banner" role="banner">
               <span className="hero-campaign-badge">
                 <Sparkles size={13} />
-                {isZh ? '官方 1 对 1 指导 · 限10席' : '1-on-1 Setup · 10 Spots'}
+                {isZh ? '前期活动 · 已注册可申请' : 'Early Program · Registered Artists'}
               </span>
               <span className="hero-campaign-text">
-                {isZh ? '专人 1 对 1 协助建店，赠首年高阶版' : 'Free 1-on-1 setup + 1st year Pro'}
+                {isZh ? '官方 1 对 1 指导 · 本批限 10 席' : '1-on-1 Guidance · 10 spots this round'}
               </span>
               <span className="hero-campaign-arrow">
                 {isZh ? '了解详情' : 'Details'} <ArrowUpRight size={14} />
@@ -95,8 +96,8 @@ export default function HomePage() {
                 <QrCode size={17} />
                 {c.scanTryBtn}
               </button>
-              <Link to="/apply" className="site-button secondary">
-                {c.applyHero || c.apply}
+              <Link to="/demo" className="site-button secondary">
+                {isZh ? '查看 demo 样板间（免登录）' : 'View Demo (No Sign-in)'}
                 <ArrowUpRight size={18} />
               </Link>
             </div>
@@ -114,13 +115,13 @@ export default function HomePage() {
             </p>
             <AppPreview />
             <div className="mt-3 flex justify-center">
-              <a
-                href="#interactive-demo"
-                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-line bg-surface px-4 py-1.5 text-xs font-semibold text-ink shadow-xs transition hover:bg-neutral-100"
+              <Link
+                to="/demo"
+                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-line bg-surface px-4 py-1.5 text-xs font-semibold text-ink shadow-xs transition hover:bg-[var(--nb-pressed)]"
               >
                 <Sparkles size={13} />
-                {isZh ? '亲手体验 30 秒双端交互演示 ↓' : 'Try 30s interactive demo ↓'}
-              </a>
+                {isZh ? '查看样板间（免登录直达）→' : 'View Demo Showcase →'}
+              </Link>
             </div>
           </div>
         </section>
@@ -218,15 +219,19 @@ export default function HomePage() {
                       }}
                       className="site-button small w-full"
                     >
-                      {isZh ? '免费开始使用' : 'Start Free'}
+                      {isZh ? '免费注册' : 'Register Free'}
                     </button>
                   ) : (
-                    <Link
-                      to={`/apply?plan=${encodeURIComponent(tier.name)}`}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setScanMeta(null)
+                        setScan('try')
+                      }}
                       className={`site-button small w-full ${tier.featured ? '' : 'secondary'}`}
                     >
                       {isZh ? `选择${tier.name}` : `Choose ${tier.name}`}
-                    </Link>
+                    </button>
                   )}
                 </div>
               </article>
@@ -252,6 +257,15 @@ export default function HomePage() {
             ))}
           </ol>
 
+          <p className="mt-4 text-xs text-ink-muted">
+            {isZh ? '已经注册，想有人带一把？' : 'Already registered and want a hand? '}
+            <Link to="/model-artists" className="font-semibold text-ink hover:underline">
+              {isZh
+                ? '可申请前期 1 对 1 指导活动（名额有限）'
+                : 'Apply for the early 1-on-1 guidance program (limited spots)'}
+            </Link>
+          </p>
+
           <div className="flow-cta-banner">
             <div>
               <h3>{c.finalTitle}</h3>
@@ -269,8 +283,8 @@ export default function HomePage() {
                 <QrCode size={17} />
                 {c.scanTryBtn}
               </button>
-              <Link to="/apply" className="site-button secondary">
-                {c.applyHero || c.apply}
+              <Link to="/demo" className="site-button secondary">
+                {isZh ? '查看 demo 样板间（免登录）' : 'View Demo (No Sign-in)'}
                 <ArrowUpRight size={18} />
               </Link>
             </div>
@@ -299,26 +313,69 @@ export default function HomePage() {
               ))}
             </div>
           </div>
+
+          <div className="mt-10 pt-8 border-t border-line">
+            <div className="flex items-center justify-between mb-4 gap-2">
+              <div>
+                <h3 className="text-base font-bold text-ink">
+                  {isZh ? '独立美甲师接单与经营指南' : 'Guides for Independent Nail Artists'}
+                </h3>
+                <p className="text-xs text-ink-muted mt-0.5">
+                  {isZh
+                    ? '没有店怎么接单、客户怎么管、报价怎么定，一问一页讲透。'
+                    : 'Practical answers on orders, clients, pricing, and daily workflow.'}
+                </p>
+              </div>
+              <Link
+                to="/guides"
+                className="inline-flex min-h-[44px] items-center gap-1 text-xs font-semibold text-ink-muted hover:text-ink shrink-0"
+              >
+                <span>{isZh ? '查看全部 40 篇指南' : 'All Guides'}</span>
+                <ArrowRight size={14} />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {getFeaturedP0Guides(4).map((guide) => (
+                <Link
+                  key={guide.slug}
+                  to={`/guides/${guide.slug}`}
+                  className="group flex flex-col justify-between rounded-2xl border border-line bg-surface p-4 min-h-[44px] transition hover:border-ink/40"
+                >
+                  <div>
+                    <span className="inline-block rounded-full bg-[var(--nb-pressed)] px-2 py-0.5 text-[10px] font-semibold text-ink mb-2">
+                      {GUIDE_CATEGORY_MAP[guide.category].label}
+                    </span>
+                    <div className="text-sm font-bold text-ink leading-snug group-hover:underline">
+                      {guide.title}
+                    </div>
+                    <p className="mt-1.5 text-xs text-ink-muted line-clamp-2">{guide.summary}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
         </section>
       </main>
       <SiteFooter />
       {showMobileApply && !scan && (
         <div className="mobile-apply">
+          <Link
+            to="/demo"
+            className="site-button secondary mobile-btn-half"
+          >
+            <span>{isZh ? '查看样板间' : 'View Demo'}</span>
+          </Link>
           <button
             type="button"
-            className="site-button secondary mobile-btn-half"
+            className="site-button mobile-btn-half"
             onClick={() => {
               setScanMeta(null)
               setScan('try')
             }}
           >
-            <QrCode size={15} />
-            <span>{c.flagshipBtnShort || '扫码体验'}</span>
-          </button>
-          <Link className="site-button mobile-btn-half" to="/apply">
-            {c.applyHero || c.apply}
+            {isZh ? '免费注册' : 'Register Free'}
             <ArrowUpRight size={16} />
-          </Link>
+          </button>
         </div>
       )}
       {scan && (

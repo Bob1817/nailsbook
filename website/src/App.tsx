@@ -10,6 +10,10 @@ import AboutPage from './pages/AboutPage'
 import ApplicationInfoPage from './pages/ApplicationInfoPage'
 import ModelArtistCampaignPage from './pages/ModelArtistCampaignPage'
 import DemoPage from './pages/DemoPage'
+import GuidesListPage from './pages/GuidesListPage'
+import GuideCategoryPage from './pages/GuideCategoryPage'
+import GuideDetailPage from './pages/GuideDetailPage'
+import NotFoundPage from './pages/NotFoundPage'
 import { QuoteCalculatorPage } from './pages/quote/QuoteCalculatorPage'
 import { QuoteDetailPage } from './pages/quote/QuoteDetailPage'
 
@@ -31,9 +35,9 @@ function ScrollToTop() {
   return null
 }
 
-function AppRouter() {
+export function AppRoutes() {
   return (
-    <BrowserRouter>
+    <>
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<HomePage />} />
@@ -43,12 +47,25 @@ function AppRouter() {
         <Route path="/campaign" element={<ModelArtistCampaignPage />} />
         <Route path="/gallery" element={<WorksGalleryPage />} />
         <Route path="/faq" element={<FAQPage />} />
+        <Route path="/guides" element={<GuidesListPage />} />
+        <Route path="/guides/category/:key" element={<GuideCategoryPage />} />
+        <Route path="/guides/:slug" element={<GuideDetailPage />} />
+        <Route path="/404" element={<NotFoundPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/application-info" element={<ApplicationInfoPage />} />
         <Route path="/quote" element={<QuoteCalculatorPage />} />
         <Route path="/q/:token" element={<QuoteDetailPage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
+    </>
+  )
+}
+
+function AppRouter() {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
     </BrowserRouter>
   )
 }

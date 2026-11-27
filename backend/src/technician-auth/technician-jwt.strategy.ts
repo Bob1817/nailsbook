@@ -32,7 +32,7 @@ export class TechnicianJwtStrategy extends PassportStrategy(
     }
     const technician = await this.prisma.technician.findUnique({
       where: { id: payload.sub },
-      select: { tokenVersion: true, passwordHash: true, status: true },
+      select: { tokenVersion: true, passwordHash: true, status: true, isDemo: true },
     });
     if (!technician || ['deleted', 'suspended'].includes(technician.status)) {
       throw new UnauthorizedException('美甲师不存在');
@@ -48,6 +48,8 @@ export class TechnicianJwtStrategy extends PassportStrategy(
       phone: payload.phone,
       userType: payload.userType,
       isTourist,
+      isDemo: Boolean(technician.isDemo || payload.isDemo),
+      demoReadOnly: Boolean(payload.demoReadOnly),
     };
   }
 }

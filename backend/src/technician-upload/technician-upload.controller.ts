@@ -40,7 +40,7 @@ export class TechnicianUploadController {
   @ApiResponse({ status: 400, description: '请选择图片文件' })
   @ApiResponse({ status: 401, description: '未授权' })
   uploadImage(
-    @Req() request: { user: { technicianId: number } },
+    @Req() request: { user: { technicianId: number; isDemo?: boolean } },
     @UploadedFile() file: Express.Multer.File | undefined,
   ) {
     if (!file) {
@@ -50,6 +50,7 @@ export class TechnicianUploadController {
     return this.technicianUploadService.uploadImage(
       request.user.technicianId,
       file,
+      Boolean(request.user?.isDemo),
     );
   }
 

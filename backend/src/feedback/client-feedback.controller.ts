@@ -25,6 +25,19 @@ export class ClientFeedbackController {
     return this.service.findMine('client', req.user.clientUserId);
   }
 
+  @Get('unread-count')
+  @ApiOperation({ summary: '未读客服回复数量' })
+  async unreadCount(@Req() req: { user: { clientUserId: number } }) {
+    const count = await this.service.countUnreadReplies('client', req.user.clientUserId);
+    return { count };
+  }
+
+  @Post('read-all')
+  @ApiOperation({ summary: '将所有客服回复标记为已读' })
+  markAllRead(@Req() req: { user: { clientUserId: number } }) {
+    return this.service.markAllRepliesRead('client', req.user.clientUserId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: '我的客服问询与问题反馈详情' })
   findMineById(

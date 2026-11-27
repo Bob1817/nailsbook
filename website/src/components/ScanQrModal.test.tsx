@@ -2,16 +2,19 @@ import { useState } from 'react'
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { LanguageProvider } from '../i18n/LanguageContext'
 import ScanQrModal from './ScanQrModal'
 
 function Harness() {
   const [open, setOpen] = useState(false)
   return (
-    <LanguageProvider>
-      <button onClick={() => setOpen(true)}>查看小程序</button>
-      {open && <ScanQrModal type="try" onClose={() => setOpen(false)} />}
-    </LanguageProvider>
+    <MemoryRouter>
+      <LanguageProvider>
+        <button onClick={() => setOpen(true)}>查看小程序</button>
+        {open && <ScanQrModal type="try" onClose={() => setOpen(false)} />}
+      </LanguageProvider>
+    </MemoryRouter>
   )
 }
 
@@ -23,7 +26,7 @@ describe('QR dialog keyboard navigation', () => {
     await user.click(trigger)
     expect(screen.getByRole('button', { name: '关闭' })).toHaveFocus()
     await user.tab({ shift: true })
-    expect(screen.getByRole('button', { name: '复制小程序名称' })).toHaveFocus()
+    expect(screen.getByRole('link', { name: '查看样板间（网页免登录直达）' })).toHaveFocus()
     await user.tab()
     expect(screen.getByRole('button', { name: '关闭' })).toHaveFocus()
     await user.keyboard('{Escape}')

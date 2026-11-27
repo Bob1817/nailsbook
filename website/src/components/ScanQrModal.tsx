@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Download, Copy, Check } from 'lucide-react'
+import { X, Download, Copy, Check, ArrowUpRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useLang } from '../i18n/LanguageContext'
 
 export type ScanType = 'follow' | 'try' | 'artist'
@@ -183,6 +184,34 @@ export default function ScanQrModal({
           />
         </div>
         <p className="mt-4 text-[13px] text-ink-muted">{hint}</p>
+        {type === 'try' && (
+          <div className="mt-4 rounded-2xl border border-line bg-brand-bg p-3 text-left">
+            <p className="text-xs font-bold text-ink">
+              {isZh ? '注册后 3 步就能开始接单' : 'After registering, 3 steps to your first booking'}
+            </p>
+            <ol className="mt-1.5 space-y-1 text-xs text-ink-muted">
+              <li>
+                1.{' '}
+                {isZh ? '录入常用服务价目与作品' : 'Add your services, works and prices'}
+              </li>
+              <li>
+                2.{' '}
+                {isZh ? '设置到店 / 上门排期' : 'Set your studio / home-visit schedule'}
+              </li>
+              <li>
+                3.{' '}
+                {isZh
+                  ? '分享个人主页，微信问价时发报价单'
+                  : 'Share your artist page and send quotes in WeChat'}
+              </li>
+            </ol>
+            <p className="mt-2 text-xs text-ink-muted">
+              {isZh
+                ? '想有人 1 对 1 带你理顺价目和作品，可申请前期指导活动（名额有限）。'
+                : 'Want 1-on-1 help getting set up? Registered artists can apply for the early guidance program (limited spots).'}
+            </p>
+          </div>
+        )}
         <p className="mt-1.5 text-[11px] text-ink-muted">
           {isZh
             ? '注：OnlyNail 为产品与小程序名称，NailBook 为官方微信公众号名称。'
@@ -210,6 +239,16 @@ export default function ScanQrModal({
             )}
             {copied ? t.scanModal.copied : copyLabel}
           </button>
+        </div>
+        <div className="mt-3">
+          <Link
+            to="/demo"
+            onClick={onClose}
+            className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full bg-ink text-[13px] font-bold text-inverse transition hover:bg-action-pressed"
+          >
+            {isZh ? '查看样板间（网页免登录直达）' : 'View Demo Showcase'}
+            <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
         </div>
         <p className="mt-3 text-xs text-ink-muted" role="status">
           {copyFailed

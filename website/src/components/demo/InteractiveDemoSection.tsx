@@ -188,7 +188,7 @@ export default function InteractiveDemoSection({
             }}
             className={`inline-flex min-h-[40px] items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
               guided
-                ? 'border-ink bg-ink text-white'
+                ? 'border-ink bg-ink text-inverse'
                 : 'border-line bg-surface text-ink-muted hover:text-ink'
             }`}
           >
@@ -204,7 +204,7 @@ export default function InteractiveDemoSection({
           <button
             type="button"
             onClick={() => switchScenario(undefined, 'reset')}
-            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-1.5 text-xs font-semibold text-ink hover:bg-neutral-100 transition"
+            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-1.5 text-xs font-semibold text-ink hover:bg-[var(--nb-pressed)] transition"
           >
             <RotateCcw size={13} />
             {isZh ? '重播当前剧本' : 'Replay'}
@@ -221,7 +221,7 @@ export default function InteractiveDemoSection({
                   surface,
                 })
               }
-              className="inline-flex min-h-[40px] items-center gap-1 rounded-full border border-line bg-surface px-3.5 py-1.5 text-xs font-semibold text-ink hover:bg-neutral-100 transition"
+              className="inline-flex min-h-[40px] items-center gap-1 rounded-full border border-line bg-surface px-3.5 py-1.5 text-xs font-semibold text-ink hover:bg-[var(--nb-pressed)] transition"
             >
               {isZh ? '全屏演示页' : 'Full Page'}
               <ArrowUpRight size={14} />
@@ -249,20 +249,20 @@ export default function InteractiveDemoSection({
                 onClick={() => switchScenario(item.id, 'tab')}
                 className={`text-left rounded-2xl border p-3.5 transition ${
                   active
-                    ? 'border-ink bg-ink text-white shadow-xs'
+                    ? 'border-ink bg-ink text-inverse shadow-xs'
                     : 'border-line bg-brand-bg/60 text-ink hover:border-ink/40'
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
                   <span
                     className={`text-[10px] font-bold uppercase tracking-wider ${
-                      active ? 'text-neutral-300' : 'text-ink-muted'
+                      active ? 'text-inverse/75' : 'text-ink-muted'
                     }`}
                   >
                     {isZh ? item.badgeZh : item.badgeEn}
                   </span>
                   {active && (
-                    <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold text-white">
+                    <span className="rounded-full bg-inverse/15 px-2 py-0.5 text-[10px] font-semibold text-inverse">
                       {isCompleted
                         ? isZh
                           ? '已完成'
@@ -276,7 +276,7 @@ export default function InteractiveDemoSection({
                 </div>
                 <span
                   className={`block text-xs mt-0.5 line-clamp-1 ${
-                    active ? 'text-neutral-200' : 'text-ink-muted'
+                    active ? 'text-inverse/80' : 'text-ink-muted'
                   }`}
                 >
                   {isZh ? item.subtitleZh : item.subtitleEn}
@@ -299,7 +299,7 @@ export default function InteractiveDemoSection({
                   onClick={() => handleJumpToStep(idx)}
                   className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition ${
                     current
-                      ? 'bg-ink text-white'
+                      ? 'bg-ink text-inverse'
                       : done
                         ? 'bg-active-surface text-ink border border-ink/20'
                         : 'bg-surface text-ink-muted border border-line hover:text-ink'
@@ -315,7 +315,7 @@ export default function InteractiveDemoSection({
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-2 border-t border-line">
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1 rounded-full bg-ink px-2.5 py-0.5 text-[11px] font-bold text-white">
+                <span className="inline-flex items-center gap-1 rounded-full bg-ink px-2.5 py-0.5 text-[11px] font-bold text-inverse">
                   {isCompleted ? (
                     <>
                       <CheckCircle2 size={12} />
@@ -350,7 +350,7 @@ export default function InteractiveDemoSection({
               <button
                 type="button"
                 onClick={() => switchScenario(nextScenarioMeta.id, 'next_button')}
-                className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl bg-ink px-4 py-2 text-xs font-bold text-white hover:bg-action-pressed shrink-0"
+                className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl bg-ink px-4 py-2 text-xs font-bold text-inverse hover:bg-action-pressed shrink-0"
               >
                 {isZh
                   ? `体验下一个：${nextScenarioMeta.titleZh}`
@@ -361,7 +361,7 @@ export default function InteractiveDemoSection({
               <button
                 type="button"
                 onClick={handleAdvanceStep}
-                className="inline-flex min-h-[38px] items-center justify-center gap-1 rounded-xl border border-line bg-surface px-3.5 py-1.5 text-xs font-semibold text-ink hover:bg-neutral-100 shrink-0"
+                className="inline-flex min-h-[38px] items-center justify-center gap-1 rounded-xl border border-line bg-surface px-3.5 py-1.5 text-xs font-semibold text-ink hover:bg-[var(--nb-pressed)] shrink-0"
               >
                 {isZh ? '直接看下一步' : 'Next Step'}
                 <ArrowRight size={13} />
@@ -438,7 +438,7 @@ export default function InteractiveDemoSection({
                   surface,
                 })
               }}
-              className="w-full rounded-xl bg-ink px-3.5 py-2.5 text-left text-xs font-semibold text-white flex items-center justify-between gap-2 shadow-xs animate-fade-in-up"
+              className="w-full rounded-xl bg-ink px-3.5 py-2.5 text-left text-xs font-semibold text-inverse flex items-center justify-between gap-2 shadow-xs animate-fade-in-up"
             >
               <span>{isZh ? mobileToast.textZh : mobileToast.textEn}</span>
               <ArrowRight size={14} className="shrink-0" />
@@ -465,7 +465,7 @@ export default function InteractiveDemoSection({
             <div
               className={`flex h-11 w-11 items-center justify-center rounded-full border transition duration-300 ${
                 syncPulse
-                  ? 'border-ink bg-ink text-white scale-110'
+                  ? 'border-ink bg-ink text-inverse scale-110'
                   : 'border-line bg-brand-bg text-ink'
               }`}
             >
@@ -502,9 +502,7 @@ export default function InteractiveDemoSection({
               {isZh ? '想亲自在微信里打开真实小程序？' : 'Want to try the real Mini-Program in WeChat?'}
             </strong>{' '}
             <span>
-              {isZh
-                ? '免费注册即用，无需审批；也可以预约官方 1v1 协助整理价目与作品。'
-                : 'Free to start with zero approval wait, or book a 1-on-1 setup session.'}
+              {isZh ? '免费注册即用，无需审批。' : 'Free to start with zero approval wait.'}
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
@@ -525,22 +523,6 @@ export default function InteractiveDemoSection({
               <QrCode size={15} />
               {isZh ? '微信扫码真机体验' : 'Try in WeChat'}
             </button>
-            <Link
-              to="/apply"
-              onClick={() =>
-                trackDemoEvent('demo_cta_click', {
-                  target: 'apply_1v1',
-                  scenario,
-                  step: stepIndex,
-                  completed: isCompleted,
-                  surface,
-                })
-              }
-              className="site-button small secondary"
-            >
-              {isZh ? '预约 1v1 配置' : 'Book 1v1 Setup'}
-              <ArrowUpRight size={15} />
-            </Link>
           </div>
         </div>
       </div>

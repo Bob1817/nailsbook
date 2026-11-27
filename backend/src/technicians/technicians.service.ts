@@ -57,7 +57,7 @@ export class TechniciansService {
     status?: string,
     search?: string,
   ) {
-    const where: any = {};
+    const where: any = { isDemo: false };
 
     if (status) {
       where.status = status;

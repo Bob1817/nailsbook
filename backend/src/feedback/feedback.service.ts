@@ -192,11 +192,38 @@ export class FeedbackService {
   }
 
   async findMine(sourceType: 'client' | 'technician', sourceId: number) {
-    const list = await this.prisma.feedback.findMany({
-      where: { sourceType, sourceId },
-      orderBy: { createdAt: 'desc' },
+    const [list, unreadCount] = await Promise.all([
+      this.prisma.feedback.findMany({
+        where: { sourceType, sourceId },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.countUnreadReplies(sourceType, sourceId),
+    ]);
+    return { list: list.map((item) => this.serialize(item)), unreadCount };
+  }
+
+  async countUnreadReplies(sourceType: 'client' | 'technician', sourceId: number) {
+    return this.prisma.feedback.count({
+      where: {
+        sourceType,
+        sourceId,
+        replyContent: { not: null },
+        replyReadAt: null,
+      },
     });
-    return { list: list.map((item) => this.serialize(item)) };
+  }
+
+  async markAllRepliesRead(sourceType: 'client' | 'technician', sourceId: number) {
+    const result = await this.prisma.feedback.updateMany({
+      where: {
+        sourceType,
+        sourceId,
+        replyContent: { not: null },
+        replyReadAt: null,
+      },
+      data: { replyReadAt: new Date() },
+    });
+    return { markedCount: result.count };
   }
 
   async findMineById(
@@ -204,10 +231,16 @@ export class FeedbackService {
     sourceType: 'client' | 'technician',
     sourceId: number,
   ) {
-    const item = await this.prisma.feedback.findFirst({
+    let item = await this.prisma.feedback.findFirst({
       where: { id, sourceType, sourceId },
     });
     if (!item) throw new NotFoundException('反馈不存在');
+    if (item.replyContent && !item.replyReadAt) {
+      item = await this.prisma.feedback.update({
+        where: { id: item.id },
+        data: { replyReadAt: new Date() },
+      });
+    }
     return this.serialize(item);
   }
 
@@ -239,6 +272,7 @@ export class FeedbackService {
         status: input.status,
         replyContent: replyContent || found.replyContent,
         repliedAt: replyContent ? new Date() : found.repliedAt,
+        replyReadAt: replyContent ? null : found.replyReadAt,
       },
     });
     return this.serialize(item);

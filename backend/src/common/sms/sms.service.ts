@@ -52,6 +52,10 @@ export class SmsService {
    * 发送验证码。最终失败会记录 error 并抛出（调用方可选择 fire-and-forget）。
    */
   async sendVerificationCode(phone: string, code: string, scene = '验证码'): Promise<void> {
+    if (phone.startsWith('199000000')) {
+      this.logger.log(`[DEMO SANDBOX] 拦截发往演示号码 ${this.mask(phone)} 的「${scene}」短信`);
+      return;
+    }
     if (!this.provider) {
       this.logger.warn(
         `[SMS 未配置] 向 ${phone} 发送「${scene}」验证码：${code}（开发环境请使用此码或开发固定码）`,

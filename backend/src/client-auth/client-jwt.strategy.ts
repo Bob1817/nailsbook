@@ -25,7 +25,7 @@ export class ClientJwtStrategy extends PassportStrategy(Strategy, 'client-jwt') 
     }
     const client = await this.prisma.clientUser.findUnique({
       where: { id: payload.sub },
-      select: { tokenVersion: true, status: true, phone: true },
+      select: { tokenVersion: true, status: true, phone: true, isDemo: true },
     });
     if (!client || client.status !== 'active') {
       throw new UnauthorizedException('用户不存在');
@@ -40,6 +40,8 @@ export class ClientJwtStrategy extends PassportStrategy(Strategy, 'client-jwt') 
       clientUserId: payload.sub,
       phone: payload.phone,
       userType: payload.userType,
+      isDemo: Boolean(client.isDemo || payload.isDemo),
+      demoReadOnly: Boolean(payload.demoReadOnly),
     };
   }
 }

@@ -43,7 +43,7 @@ export default function RealScreenPhone({
           {roleLabel}
         </span>
         {isActiveTurn && (
-          <span className="rounded-full bg-ink px-2.5 py-0.5 text-[11px] font-medium text-white">
+          <span className="rounded-full bg-ink px-2.5 py-0.5 text-[11px] font-medium text-inverse">
             {isZh ? '点击界面体验' : 'Tap screen'}
           </span>
         )}
@@ -99,7 +99,7 @@ export default function RealScreenPhone({
 
                   {guided && (
                     <span
-                      className={`pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap inline-flex items-center gap-1 rounded-full bg-ink px-3 py-1 text-[11px] font-bold text-white shadow-md transition group-hover:scale-105 ${
+                      className={`pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap inline-flex items-center gap-1 rounded-full bg-ink px-3 py-1 text-[11px] font-bold text-inverse shadow-md transition group-hover:scale-105 ${
                         hotspot.tooltipPos === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'
                       }`}
                     >

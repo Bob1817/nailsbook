@@ -159,9 +159,9 @@ export const CaseShowcaseModal: React.FC<CaseShowcaseModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[90vh] flex flex-col shadow-2xl border border-[var(--nb-line)] overflow-hidden">
+      <div className="bg-[var(--nb-surface)] w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[90vh] flex flex-col shadow-2xl border border-[var(--nb-line)] overflow-hidden">
         {/* 1. 顶部 Header */}
-        <div className="px-5 py-4 border-b border-[var(--nb-line)] flex items-center justify-between bg-white shrink-0">
+        <div className="px-5 py-4 border-b border-[var(--nb-line)] flex items-center justify-between bg-[var(--nb-surface)] shrink-0">
           <div>
             <div className="flex items-center gap-1.5 text-xs font-bold text-[#F4C95D] uppercase tracking-wider mb-0.5">
               <Sparkles size={13} />
@@ -192,11 +192,11 @@ export const CaseShowcaseModal: React.FC<CaseShowcaseModalProps> = ({
                 onClick={() => setSelectedCaseId(item.id)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 ${
                   isSelected
-                    ? 'bg-[var(--nb-ink)] text-white shadow-xs'
-                    : 'bg-white border border-[var(--nb-line)] text-[var(--nb-secondary)] hover:bg-[var(--nb-pressed)]'
+                    ? 'bg-[var(--nb-ink)] text-[var(--nb-inverse)] shadow-xs'
+                    : 'bg-[var(--nb-surface)] border border-[var(--nb-line)] text-[var(--nb-secondary)] hover:bg-[var(--nb-pressed)]'
                 }`}
               >
-                <span className="w-5 h-5 rounded-full bg-[#F4C95D] text-[var(--nb-ink)] flex items-center justify-center text-[10px] font-black">
+                <span className="w-5 h-5 rounded-full bg-[#F4C95D] text-[#141414] flex items-center justify-center text-[10px] font-black">
                   {item.avatarText}
                 </span>
                 <span>{item.name}</span>
@@ -207,12 +207,12 @@ export const CaseShowcaseModal: React.FC<CaseShowcaseModalProps> = ({
         </div>
 
         {/* 3. 案例专属页面详情区 */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-white">
+        <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-[var(--nb-surface)]">
           {/* 美甲师与店铺核心看板 (模拟客户看到的专属微主页头部) */}
           <div className="p-4 rounded-2xl bg-[var(--nb-page)] border border-[var(--nb-line)] relative overflow-hidden">
             <div className="flex items-start justify-between gap-3 relative z-10">
               <div className="flex items-center gap-3">
-                <div className="w-13 h-13 rounded-2xl bg-[var(--nb-ink)] text-[#F4C95D] flex items-center justify-center text-xl font-black shadow-xs shrink-0">
+                <div className="w-13 h-13 rounded-2xl bg-[#141414] text-[#F4C95D] flex items-center justify-center text-xl font-black shadow-xs shrink-0">
                   {currentCase.avatarText}
                 </div>
                 <div>
@@ -220,7 +220,7 @@ export const CaseShowcaseModal: React.FC<CaseShowcaseModalProps> = ({
                     <span className="font-black text-base text-[var(--nb-ink)]">
                       {currentCase.shopName}
                     </span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--nb-ink)] text-[#F4C95D]">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#141414] text-[#F4C95D]">
                       {currentCase.badge}
                     </span>
                   </div>
@@ -243,7 +243,7 @@ export const CaseShowcaseModal: React.FC<CaseShowcaseModalProps> = ({
               <span>店铺专属信息与预约规则</span>
             </h4>
             <div className="grid grid-cols-1 gap-2 text-xs">
-              <div className="p-3 rounded-xl bg-white border border-[var(--nb-line)] flex items-start gap-2.5">
+              <div className="p-3 rounded-xl bg-[var(--nb-surface)] border border-[var(--nb-line)] flex items-start gap-2.5">
                 <MapPin size={15} className="text-[var(--nb-secondary)] shrink-0 mt-0.5" />
                 <div>
                   <span className="font-semibold text-[var(--nb-ink)]">服务坐标与方式：</span>
@@ -251,7 +251,7 @@ export const CaseShowcaseModal: React.FC<CaseShowcaseModalProps> = ({
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-white border border-[var(--nb-line)] flex items-start gap-2.5">
+              <div className="p-3 rounded-xl bg-[var(--nb-surface)] border border-[var(--nb-line)] flex items-start gap-2.5">
                 <Clock size={15} className="text-[var(--nb-secondary)] shrink-0 mt-0.5" />
                 <div>
                   <span className="font-semibold text-[var(--nb-ink)]">营业时间：</span>
@@ -259,7 +259,7 @@ export const CaseShowcaseModal: React.FC<CaseShowcaseModalProps> = ({
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-white border border-[var(--nb-line)] flex items-start gap-2.5">
+              <div className="p-3 rounded-xl bg-[var(--nb-surface)] border border-[var(--nb-line)] flex items-start gap-2.5">
                 <ShieldCheck size={15} className="text-[var(--nb-secondary)] shrink-0 mt-0.5" />
                 <div>
                   <span className="font-semibold text-[var(--nb-ink)]">定金与质保：</span>
@@ -288,7 +288,7 @@ export const CaseShowcaseModal: React.FC<CaseShowcaseModalProps> = ({
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                     />
                   </div>
-                  <div className="p-2.5 bg-white flex items-center justify-between">
+                  <div className="p-2.5 bg-[var(--nb-surface)] flex items-center justify-between">
                     <span className="text-xs font-bold text-[var(--nb-ink)] truncate">
                       {w.title}
                     </span>
@@ -325,7 +325,7 @@ export const CaseShowcaseModal: React.FC<CaseShowcaseModalProps> = ({
         </div>
 
         {/* 4. 底部操作栏 */}
-        <div className="p-4 border-t border-[var(--nb-line)] bg-white flex items-center justify-between gap-3 shrink-0">
+        <div className="p-4 border-t border-[var(--nb-line)] bg-[var(--nb-surface)] flex items-center justify-between gap-3 shrink-0">
           <div className="text-left">
             <div className="text-xs font-bold text-[var(--nb-ink)]">
               觉得这套定价适合您？
@@ -341,7 +341,7 @@ export const CaseShowcaseModal: React.FC<CaseShowcaseModalProps> = ({
               onApplyTemplate(currentCase.catalogOverrides, currentCase.profileOverrides);
               onClose();
             }}
-            className="h-10 px-4 rounded-xl bg-[var(--nb-action)] text-white text-xs font-bold hover:bg-[var(--nb-action-pressed)] active:scale-[0.98] transition-all flex items-center gap-1.5 shadow-xs whitespace-nowrap"
+            className="h-10 px-4 rounded-xl bg-[var(--nb-action)] text-[var(--nb-inverse)] text-xs font-bold hover:bg-[var(--nb-action-pressed)] active:scale-[0.98] transition-all flex items-center gap-1.5 shadow-xs whitespace-nowrap"
           >
             <Check size={14} />
             <span>套用此主理人模板</span>

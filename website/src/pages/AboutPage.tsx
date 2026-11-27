@@ -41,6 +41,7 @@ export default function AboutPage() {
   const { lang, isZh } = useLang()
   const c = recruitment[lang]
   const [showQr, setShowQr] = useState(false)
+  const [showTry, setShowTry] = useState(false)
   const [copiedEmail, setCopiedEmail] = useState(false)
   const [copiedWechat, setCopiedWechat] = useState(false)
 
@@ -198,9 +199,13 @@ export default function AboutPage() {
             <p>{c.inviteNote}</p>
           </div>
           <div className="about-footer-actions">
-            <Link to="/apply" className="site-button touch-target">
+            <button
+              type="button"
+              className="site-button touch-target"
+              onClick={() => setShowTry(true)}
+            >
               {c.apply}
-            </Link>
+            </button>
             <button
               type="button"
               className="site-button secondary touch-target"
@@ -213,6 +218,7 @@ export default function AboutPage() {
       </main>
       <SiteFooter />
       {showQr && <ScanQrModal type="follow" onClose={() => setShowQr(false)} />}
+      {showTry && <ScanQrModal type="try" onClose={() => setShowTry(false)} />}
     </div>
   )
 }

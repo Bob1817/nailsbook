@@ -6,7 +6,7 @@ import { useLang } from '../i18n/LanguageContext'
 import { recruitment } from '../content/recruitment'
 
 export default function ApplicationInfoPage() {
-  const { lang } = useLang()
+  const { lang, isZh } = useLang()
   const c = recruitment[lang]
   return (
     <div className="recruitment-site">
@@ -14,7 +14,7 @@ export default function ApplicationInfoPage() {
       <NavBar />
       <main className="site-container reading-page">
         <Link className="text-button" to="/apply">
-          ← {c.apply}
+          ← {isZh ? '返回活动申请页' : 'Back to program application'}
         </Link>
         <h1>{c.infoTitle}</h1>
         <p className="section-intro">{c.infoIntro}</p>

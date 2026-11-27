@@ -3,9 +3,10 @@ import { AccountDeletionModule } from './account-deletion/account-deletion.modul
 import { ActionTasksModule } from './action-tasks/action-tasks.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { IsolatedThrottlerStorage } from './common/isolated-throttler-storage';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { VerificationCodeModule } from './common/verification-code/verification-code.module';
 import { SmsModule } from './common/sms/sms.module';
 import { StorageModule } from './common/storage/storage.module';
@@ -64,9 +65,13 @@ import { BrandProfilesModule } from './brand-profiles/brand-profiles.module';
 import { BookingQuotesModule } from './booking-quotes/booking-quotes.module';
 import { PlatformCampaignsModule } from './platform-campaigns/platform-campaigns.module';
 import { SystemErrorsModule } from './system-errors/system-errors.module';
+import { DemoModule } from './demo/demo.module';
+import { DemoPolicyInterceptor } from './demo/demo.policy.interceptor';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
+    DemoModule,
     ReleasesModule,
     AccountDeletionModule,
     ActionTasksModule,
@@ -146,6 +151,7 @@ import { SystemErrorsModule } from './system-errors/system-errors.module';
     DevelopmentAuthSeedService,
     DevelopmentDemoSeedService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_INTERCEPTOR, useClass: DemoPolicyInterceptor },
     ThrottlerCleanupService,
   ],
 })

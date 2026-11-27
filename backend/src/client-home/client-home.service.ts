@@ -888,6 +888,7 @@ export class ClientHomeService {
       isVisible: true,
       isFeatured: true,
       visibilityScope: 'public' as const,
+      technician: { isDemo: false },
       ...(technicianId ? { techId: technicianId } : {}),
     };
     const [works, total] = await Promise.all([
@@ -914,7 +915,11 @@ export class ClientHomeService {
   async getWorksPublic(techId?: number) {
     const where: any = { isVisible: true, visibilityScope: 'public' };
     const technicianId = launchTechnicianFilterId();
-    if (technicianId || techId) where.techId = technicianId ?? techId;
+    if (technicianId || techId) {
+      where.techId = technicianId ?? techId;
+    } else {
+      where.technician = { isDemo: false };
+    }
     const works = await this.prisma.nailWork.findMany({
       where,
       orderBy: [

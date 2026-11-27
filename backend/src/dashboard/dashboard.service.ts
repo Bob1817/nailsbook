@@ -38,15 +38,15 @@ export class DashboardService {
       subPaymentTotal,
       subPaymentLast30Days,
     ] = await Promise.all([
-      this.prisma.technician.count({ where: { status: { not: 'deleted' } } }),
-      this.prisma.technician.count({ where: { status: 'active' } }),
-      this.prisma.customer.count(),
-      this.prisma.order.count(),
-      this.prisma.order.count({ where: { status: 'pending_confirm' } }),
-      this.prisma.order.count({ where: { status: 'pending_home' } }),
-      this.prisma.order.count({ where: { status: 'pending_shop' } }),
-      this.prisma.order.count({ where: { status: 'completed' } }),
-      this.prisma.revenue.aggregate({ _sum: { amount: true } }),
+      this.prisma.technician.count({ where: { isDemo: false, status: { not: 'deleted' } } }),
+      this.prisma.technician.count({ where: { isDemo: false, status: 'active' } }),
+      this.prisma.customer.count({ where: { technician: { isDemo: false } } }),
+      this.prisma.order.count({ where: { technician: { isDemo: false } } }),
+      this.prisma.order.count({ where: { status: 'pending_confirm', technician: { isDemo: false } } }),
+      this.prisma.order.count({ where: { status: 'pending_home', technician: { isDemo: false } } }),
+      this.prisma.order.count({ where: { status: 'pending_shop', technician: { isDemo: false } } }),
+      this.prisma.order.count({ where: { status: 'completed', technician: { isDemo: false } } }),
+      this.prisma.revenue.aggregate({ where: { technician: { isDemo: false } }, _sum: { amount: true } }),
       this.prisma.technicianSubscription.count(),
       this.prisma.technicianSubscription.count({
         where: {
@@ -77,16 +77,16 @@ export class DashboardService {
       this.prisma.nailWorkReport.count({ where: { status: 'pending' } }),
       this.prisma.feedback.count({ where: { status: 'pending' } }),
       this.prisma.technician.count({
-        where: { status: { not: 'deleted' }, createdAt: { gte: thirtyDaysAgo } },
+        where: { isDemo: false, status: { not: 'deleted' }, createdAt: { gte: thirtyDaysAgo } },
       }),
       this.prisma.customer.count({
-        where: { createdAt: { gte: thirtyDaysAgo } },
+        where: { technician: { isDemo: false }, createdAt: { gte: thirtyDaysAgo } },
       }),
       this.prisma.order.count({
-        where: { createdAt: { gte: thirtyDaysAgo } },
+        where: { technician: { isDemo: false }, createdAt: { gte: thirtyDaysAgo } },
       }),
       this.prisma.revenue.aggregate({
-        where: { recognizedAt: { gte: thirtyDaysAgo } },
+        where: { technician: { isDemo: false }, recognizedAt: { gte: thirtyDaysAgo } },
         _sum: { amount: true },
       }),
       this.prisma.paymentOrder.aggregate({
@@ -232,6 +232,7 @@ export class DashboardService {
     // 1. 美甲师入驻趋势
     const technicians = await this.prisma.technician.findMany({
       where: {
+        isDemo: false,
         status: { not: 'deleted' },
         createdAt: { gte: queryStartDate, lte: queryEndDate },
       },
@@ -283,6 +284,7 @@ export class DashboardService {
     const revenues = await this.prisma.revenue.findMany({
       where: {
         status: 'confirmed',
+        technician: { isDemo: false },
         recognizedAt: { gte: queryStartDate, lte: queryEndDate },
       },
       select: { amount: true, recognizedAt: true },
@@ -311,6 +313,7 @@ export class DashboardService {
       by: ['technicianId'],
       where: {
         status: 'confirmed',
+        technician: { isDemo: false },
         recognizedAt: { gte: queryStartDate, lte: queryEndDate },
       },
       _sum: { amount: true },

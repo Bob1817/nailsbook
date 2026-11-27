@@ -55,7 +55,10 @@ export class StorageService {
     return provider === 'oss' || !!this.configService.get<string>('OSS_BUCKET');
   }
 
-  async uploadImage(file: UploadFile): Promise<{
+  async uploadImage(
+    file: UploadFile,
+    options?: { prefix?: string },
+  ): Promise<{
     url: string;
     highUrl: string;
     mediumUrl: string;
@@ -67,7 +70,8 @@ export class StorageService {
     if (!file || !file.buffer || file.buffer.length === 0) {
       throw new BadRequestException('请选择图片文件');
     }
-    const baseName = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
+    const prefix = options?.prefix ? options.prefix.replace(/^\/+|\/+$/g, '') + '/' : '';
+    const baseName = `${prefix}${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
     const [{ width, height }, high, medium, thumbnail] = await Promise.all([
       this.readImageSize(file.buffer),
       this.optimizeImage(file.buffer, 2048, 84),
@@ -140,8 +144,9 @@ export class StorageService {
 
   private putToLocal(name: string, buffer: Buffer): string {
     const dir = path.resolve(process.cwd(), 'uploads');
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, name), buffer);
+    const targetPath = path.join(dir, name);
+    fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+    fs.writeFileSync(targetPath, buffer);
     return `/uploads/${name}`;
   }
 

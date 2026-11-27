@@ -3,6 +3,7 @@ import { Menu, X, Globe } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { useLang } from '../i18n/LanguageContext'
 import { recruitment } from '../content/recruitment'
+import ScanQrModal from './ScanQrModal'
 
 const SECTION_IDS = ['features', 'interactive-demo', 'flagship', 'pricing']
 const HEADER_OFFSET = 120
@@ -19,11 +20,13 @@ export default function NavBar() {
   const c = recruitment[lang]
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
+  const [scan, setScan] = useState(false)
   const [activeSection, setActiveSection] = useState<string>('')
 
   const links: NavLinkItem[] = [
     { href: '/#features', label: isZh ? '核心能力' : 'Features', sectionId: 'features' },
-    { href: '/demo', label: isZh ? '交互演示' : 'Live Demo' },
+    { href: '/demo', label: isZh ? '查看样板间' : 'View Demo' },
+    { href: '/guides', label: isZh ? '指南' : 'Guides' },
     { href: '/#flagship', label: isZh ? '主页效果' : 'Preview', sectionId: 'flagship' },
     { href: '/#pricing', label: isZh ? '版本方案' : 'Pricing', sectionId: 'pricing' },
     { href: '/faq', label: isZh ? '常见问题' : 'FAQ' },
@@ -74,6 +77,9 @@ export default function NavBar() {
   const isLinkActive = (link: NavLinkItem) => {
     if (pathname === '/') {
       return link.sectionId ? activeSection === link.sectionId : false
+    }
+    if (link.href === '/guides') {
+      return pathname === '/guides' || pathname.startsWith('/guides/')
     }
     return pathname === link.href
   }
@@ -147,9 +153,13 @@ export default function NavBar() {
           >
             {isZh ? '美甲师管理后台' : 'Artist Console'}
           </a>
-          <Link to="/apply" className="site-button small nav-apply">
+          <button
+            type="button"
+            className="site-button small nav-apply"
+            onClick={() => setScan(true)}
+          >
             {c.apply}
-          </Link>
+          </button>
           <button
             type="button"
             className="icon-button"
@@ -170,6 +180,7 @@ export default function NavBar() {
           </button>
         </div>
       </nav>
+      {scan && <ScanQrModal type="try" onClose={() => setScan(false)} />}
       {open && (
         <div
           id="mobile-navigation"
@@ -211,9 +222,16 @@ export default function NavBar() {
           >
             {isZh ? '美甲师管理后台' : 'Artist Console'}
           </a>
-          <Link to="/apply" className="site-button" onClick={() => setOpen(false)}>
+          <button
+            type="button"
+            className="site-button"
+            onClick={() => {
+              setOpen(false)
+              setScan(true)
+            }}
+          >
             {c.apply}
-          </Link>
+          </button>
         </div>
       )}
     </header>

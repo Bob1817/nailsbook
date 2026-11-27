@@ -235,10 +235,10 @@ export default function ArtistApplicationPage() {
                     className="p-3.5 sm:p-4 rounded-xl border border-line bg-surface/50 transition hover:bg-surface hover:border-ink/20"
                   >
                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-md bg-neutral-100 text-ink shrink-0">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--nb-pressed)] text-ink shrink-0">
                         <Icon size={14} />
                       </div>
-                      <span className="text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full bg-neutral-100 text-ink">
+                      <span className="text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--nb-pressed)] text-ink">
                         {cap.tag}
                       </span>
                       <h3 className="text-xs sm:text-sm font-bold text-ink">
@@ -274,13 +274,22 @@ export default function ArtistApplicationPage() {
             <ol className="space-y-2.5">
               {c.steps.map((step, i) => (
                 <li key={step} className="flex items-center gap-3 text-xs sm:text-sm text-ink-muted">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-[10px] font-bold text-ink">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--nb-pressed)] text-[10px] font-bold text-ink">
                     0{i + 1}
                   </span>
                   <span>{step}</span>
                 </li>
               ))}
             </ol>
+            <div className="mt-4 pt-3 border-t border-line">
+              <Link
+                to="/demo"
+                className="inline-flex min-h-[44px] items-center gap-1.5 text-xs font-semibold text-ink hover:underline"
+              >
+                <span>{isZh ? '查看样板间（免登录预览工作台效果）' : 'View Demo Showcase'}</span>
+                <ArrowUpRight size={14} />
+              </Link>
+            </div>
           </div>
         </aside>
 
@@ -318,12 +327,12 @@ export default function ArtistApplicationPage() {
             <div>
               <div className="mb-6">
                 <h2 className="text-lg sm:text-xl font-bold text-ink mb-1.5">
-                  {isZh ? '美甲师入驻申请登记' : 'Artist Application'}
+                  {isZh ? '前期 1 对 1 指导活动申请' : 'Early 1-on-1 Guidance Program'}
                 </h2>
                 <p className="text-xs sm:text-sm text-ink-muted leading-relaxed">
                   {isZh
-                    ? '留下您的基本情况与微信，专属顾问将在 1 个工作日内完成审核。开通后可直接免密免码授权登录。'
-                    : 'Leave your contact information and our dedicated team will assist you with onboarding within 1 business day.'}
+                    ? '留下您的基本情况与微信，运营将在 1 个工作日内联系您确认指导安排。申请前请先完成免费注册；不参加活动也能正常使用基础版。'
+                    : 'Leave your contact information and our team will confirm your guidance session within 1 business day. Please register free first — the free tier works without joining the program.'}
                 </p>
               </div>
 
@@ -337,7 +346,7 @@ export default function ArtistApplicationPage() {
 
                   <div className="my-5 p-4 rounded-xl border border-line bg-surface text-left space-y-3">
                     <div className="flex items-center justify-between flex-wrap gap-2">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-neutral-100 text-ink">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--nb-pressed)] text-ink">
                         <Clock size={13} className="text-ink" />
                         {c.statusPending}
                       </span>
@@ -356,7 +365,7 @@ export default function ArtistApplicationPage() {
                       </li>
                       <li className="flex items-center gap-2">
                         <Sparkles size={15} className="text-ink-muted" />
-                        <span>{c.step3Waiting} - 审核通过直接免密授权直登</span>
+                        <span>{c.step3Waiting} - 运营确认后安排指导时间</span>
                       </li>
                     </ol>
                   </div>
@@ -518,8 +527,8 @@ export default function ArtistApplicationPage() {
                     <ShieldCheck size={14} className="text-ink shrink-0" />
                     <span>
                       {isZh
-                        ? '信息严格加密 · 仅用于入驻沟通 · 不对外公开任何客户资料'
-                        : 'Encrypted & confidential · Used solely for artist onboarding'}
+                        ? '信息严格加密 · 仅用于活动沟通 · 不对外公开任何客户资料'
+                        : 'Encrypted & confidential · Used solely for program communication'}
                     </span>
                   </div>
 
@@ -596,11 +605,11 @@ export default function ArtistApplicationPage() {
 
               {/* Result Display */}
               {queryResult && (
-                <div className="query-result-block" role="region" aria-label="审核进度结果">
+                <div className="query-result-block" role="region" aria-label="活动申请进度结果">
                   {queryResult.status === 'pending' && (
                     <div className="p-5 rounded-2xl border border-line bg-surface space-y-4">
                       <div className="flex items-center justify-between flex-wrap gap-2">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-neutral-100 text-ink">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[var(--nb-pressed)] text-ink">
                           <Clock size={14} />
                           {c.statusPending}
                         </span>
@@ -673,7 +682,7 @@ export default function ArtistApplicationPage() {
                   {queryResult.status === 'approved' && (
                     <div className="p-5 sm:p-6 rounded-2xl border-2 border-ink bg-surface space-y-4">
                       <div className="flex items-center justify-between flex-wrap gap-2">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-neutral-900 text-white">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-ink text-inverse">
                           <CheckCircle2 size={14} />
                           {c.statusApproved}
                         </span>
@@ -694,13 +703,13 @@ export default function ArtistApplicationPage() {
                           {c.approvedDesc}
                         </p>
                       </div>
-                      <div className="p-3.5 rounded-xl bg-neutral-100 text-xs text-ink space-y-1.5 border border-line">
+                      <div className="p-3.5 rounded-xl bg-[var(--nb-pressed)] text-xs text-ink space-y-1.5 border border-line">
                         <p className="font-bold flex items-center gap-1.5 text-ink">
                           <ShieldCheck size={16} />
                           免密免码 · 微信一键授权登入
                         </p>
                         <p className="text-ink-muted leading-relaxed">
-                          您的美甲师账号已开通就绪（绑定手机：<strong>{maskPhone(queryPhone)}</strong>）。
+                          您的活动申请已通过（绑定手机：<strong>{maskPhone(queryPhone)}</strong>）。
                           <strong>无需填写任何邀请码或密钥串</strong>。
                         </p>
                         <p className="text-ink font-semibold">
@@ -729,7 +738,7 @@ export default function ArtistApplicationPage() {
 
                   {queryResult.status === 'rejected' && (
                     <div className="p-5 rounded-2xl border border-line bg-surface space-y-3">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-neutral-100 text-ink">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[var(--nb-pressed)] text-ink">
                         <AlertCircle size={14} />
                         {c.statusRejected}
                       </span>
